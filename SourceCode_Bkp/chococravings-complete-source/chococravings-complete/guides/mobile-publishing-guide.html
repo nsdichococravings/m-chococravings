@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChocoCravings — Publish from Samsung Mobile</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#6B2FCE;--p2:#8B44E8;--pl:#C084FC;
+  --dark:#09010F;--d2:#110020;--d3:#1C003A;
+  --white:#FAF5FF;--dim:#9F7ABA;--faint:#4A3060;
+  --green:#22C55E;--gold:#F59E0B;--red:#EF4444;
+  --blue:#3B82F6;--teal:#14B8A6;--android:#34A853;
+  --bdr:rgba(255,255,255,.08);--card:rgba(255,255,255,.035);
+}
+body{background:var(--dark);color:var(--white);font-family:'DM Sans',sans-serif;min-height:100vh}
+.wrap{max-width:640px;margin:0 auto;padding:28px 18px 60px}
+
+/* ── HEADER ── */
+.hdr{text-align:center;padding:36px 0 32px}
+.hdr-tag{font-size:10px;color:var(--p);letter-spacing:4px;text-transform:uppercase;font-weight:700;margin-bottom:10px}
+.hdr-title{font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:700;line-height:1.15;margin-bottom:8px}
+.hdr-title em{color:var(--pl);font-style:italic}
+.hdr-sub{font-size:13px;color:var(--dim);line-height:1.7;max-width:420px;margin:0 auto 20px}
+.phone-visual{display:flex;justify-content:center;margin-bottom:20px}
+.phone-mock{width:60px;height:100px;background:linear-gradient(160deg,#1a1a2e,#16213e);border:2px solid rgba(255,255,255,.12);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 20px 60px rgba(107,47,206,.3);position:relative}
+.phone-mock::before{content:'';position:absolute;top:6px;width:18px;height:3px;background:rgba(255,255,255,.2);border-radius:2px}
+.yes-no-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:380px;margin:0 auto}
+.yn-card{padding:14px;border-radius:14px;text-align:center}
+.yn-yes{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2)}
+.yn-no{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2)}
+.yn-ico{font-size:22px;margin-bottom:5px}
+.yn-lbl{font-size:12px;font-weight:700}
+.yn-yes .yn-lbl{color:var(--green)}
+.yn-no .yn-lbl{color:var(--red)}
+.yn-sub{font-size:11px;color:var(--dim);margin-top:3px;line-height:1.4}
+
+/* ── FLOW BAR ── */
+.flow-bar{display:flex;overflow-x:auto;gap:0;background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:16px 14px;margin:24px 0;scrollbar-width:none}
+.flow-bar::-webkit-scrollbar{display:none}
+.fb-step{flex-shrink:0;text-align:center;padding:0 10px;position:relative}
+.fb-step::after{content:'→';position:absolute;right:-8px;top:50%;transform:translateY(-50%);color:var(--faint);font-size:14px}
+.fb-step:last-child::after{display:none}
+.fb-ico{font-size:22px;margin-bottom:4px}
+.fb-lbl{font-size:10px;font-weight:700;color:var(--white)}
+.fb-sub{font-size:9px;color:var(--dim)}
+
+/* ── PHASE ── */
+.phase{margin-bottom:28px}
+.phase-hdr{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.phase-num{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--p),var(--p2));font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.phase-title{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:700}
+.phase-sub{font-size:11px;color:var(--dim)}
+
+/* ── STEP CARDS ── */
+.step{background:var(--card);border:1px solid var(--bdr);border-radius:16px;margin-bottom:10px;overflow:hidden}
+.step-head{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s;user-select:none}
+.step-head:active{background:rgba(255,255,255,.04)}
+.sn{width:26px;height:26px;border-radius:8px;background:rgba(107,47,206,.2);border:1px solid rgba(107,47,206,.3);color:var(--pl);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.sn.done{background:rgba(34,197,94,.15);border-color:rgba(34,197,94,.3);color:var(--green)}
+.st-title{font-size:14px;font-weight:700;color:var(--white);margin-bottom:2px;flex:1}
+.st-sub{font-size:11px;color:var(--dim);line-height:1.4}
+.st-tag{padding:3px 8px;border-radius:7px;font-size:9px;font-weight:700;white-space:nowrap;margin-left:auto;flex-shrink:0;margin-top:2px}
+.tag-app{background:rgba(52,168,83,.12);color:var(--android);border:1px solid rgba(52,168,83,.2)}
+.tag-browser{background:rgba(59,130,246,.1);color:var(--blue);border:1px solid rgba(59,130,246,.2)}
+.tag-free{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2)}
+.tag-req{background:rgba(245,158,11,.1);color:var(--gold);border:1px solid rgba(245,158,11,.2)}
+
+.step-body{display:none;padding:0 16px 14px 54px}
+.step-body.open{display:block}
+
+/* ── INSTRUCTIONS ── */
+.inst{display:flex;flex-direction:column;gap:7px;margin-bottom:10px}
+.inst-row{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;background:rgba(255,255,255,.025);border-radius:9px;border:1px solid var(--bdr)}
+.in{width:20px;height:20px;border-radius:5px;background:rgba(107,47,206,.15);color:var(--pl);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.it{font-size:12px;color:var(--white);line-height:1.6;flex:1}
+.it a{color:var(--pl);text-decoration:none;font-weight:600}
+.it code{background:rgba(255,255,255,.07);padding:1px 6px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;color:var(--pl)}
+.it strong{color:var(--white)}
+
+/* ── ALERT ── */
+.alert{display:flex;gap:9px;padding:10px 12px;border-radius:10px;margin:8px 0}
+.al-tip{background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.18)}
+.al-warn{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.18)}
+.al-info{background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.18)}
+.al-purple{background:rgba(107,47,206,.08);border:1px solid rgba(107,47,206,.2)}
+.al-ico{font-size:16px;flex-shrink:0;margin-top:1px}
+.al-txt{font-size:12px;color:var(--dim);line-height:1.5}
+.al-txt strong{color:var(--white)}
+
+/* ── APP LINK BUTTON ── */
+.app-link{display:flex;align-items:center;gap:10px;padding:13px 16px;border-radius:13px;text-decoration:none;font-size:13px;font-weight:700;margin:8px 0;transition:all .18s;-webkit-tap-highlight-color:transparent}
+.app-link:active{transform:scale(.97)}
+.al-chrome{background:rgba(52,168,83,.1);border:1px solid rgba(52,168,83,.25);color:var(--android)}
+.al-play{background:rgba(52,168,83,.1);border:1px solid rgba(52,168,83,.25);color:var(--android)}
+.al-github{background:rgba(255,255,255,.04);border:1px solid var(--bdr);color:var(--white)}
+.al-netlify{background:rgba(0,197,255,.06);border:1px solid rgba(0,197,255,.2);color:#00c5ff}
+.app-link-ico{font-size:22px}
+.app-link-text .aln{font-weight:700}
+.app-link-text .als{font-size:11px;color:var(--dim);font-weight:400}
+.app-link-arr{margin-left:auto;font-size:16px;opacity:.5}
+
+/* ── CODE BLOCK ── */
+.code-wrap{background:#0A0018;border:1px solid rgba(107,47,206,.25);border-radius:11px;padding:13px 14px;margin:8px 0;position:relative}
+.code-wrap pre{font-family:'DM Mono',monospace;font-size:11.5px;color:#E9D5FF;line-height:1.7;overflow-x:auto;scrollbar-width:none;white-space:pre-wrap;word-break:break-all}
+pre .g{color:#86EFAC}
+pre .c{color:#4A3060;font-style:italic}
+pre .k{color:#C084FC}
+.copy-btn{position:absolute;top:9px;right:9px;background:rgba(107,47,206,.2);color:var(--pl);border:1px solid rgba(107,47,206,.3);border-radius:6px;padding:4px 9px;font-size:10px;font-weight:700;cursor:pointer}
+
+/* ── SCREENSHOT GUIDE ── */
+.screen-specs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.ss-card{background:rgba(255,255,255,.025);border:1px solid var(--bdr);border-radius:11px;padding:11px;text-align:center}
+.ss-preview{width:42px;height:74px;background:linear-gradient(160deg,var(--d3),var(--d2));border:1.5px solid rgba(107,47,206,.3);border-radius:8px;margin:0 auto 7px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.ss-name{font-size:11px;font-weight:700;color:var(--white)}
+.ss-size{font-family:'DM Mono',monospace;font-size:10px;color:var(--faint);margin-top:2px}
+
+/* ── CHECKLIST ── */
+.chk-list{display:flex;flex-direction:column;gap:6px;margin:10px 0}
+.chk{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--card);border:1px solid var(--bdr);border-radius:9px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all .15s;user-select:none}
+.chk:active{background:rgba(255,255,255,.05)}
+.chk.done{background:rgba(34,197,94,.05);border-color:rgba(34,197,94,.2)}
+.chk-box{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--faint);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;transition:all .15s}
+.chk.done .chk-box{background:var(--green);border-color:var(--green);color:#000;font-weight:700}
+.chk-txt{font-size:12px;color:var(--dim);line-height:1.4;flex:1}
+.chk.done .chk-txt{color:var(--white)}
+
+/* ── COST CARD ── */
+.cost-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+.cost-c{padding:14px;border-radius:14px;text-align:center}
+.cost-free{background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2)}
+.cost-paid{background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.2)}
+.cost-ico{font-size:24px;margin-bottom:5px}
+.cost-lbl{font-size:11px;font-weight:700}
+.cost-free .cost-lbl{color:var(--green)}
+.cost-paid .cost-lbl{color:var(--gold)}
+.cost-val{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;margin-top:2px}
+.cost-free .cost-val{color:var(--green)}
+.cost-paid .cost-val{color:var(--gold)}
+.cost-note{font-size:10px;color:var(--dim);margin-top:3px;line-height:1.4}
+
+/* ── DIVIDER ── */
+.divider{height:1px;background:var(--bdr);margin:24px 0}
+
+/* ── NOT POSSIBLE ── */
+.not-possible{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);border-radius:16px;padding:18px;margin:16px 0}
+.np-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.np-ico{font-size:26px}
+.np-title{font-size:15px;font-weight:700;color:var(--white)}
+.np-sub{font-size:12px;color:var(--dim);line-height:1.6}
+.np-options{margin-top:12px;display:flex;flex-direction:column;gap:7px}
+.np-opt{display:flex;align-items:flex-start;gap:9px;padding:10px 12px;background:rgba(255,255,255,.03);border-radius:10px;border:1px solid var(--bdr)}
+.np-opt-ico{font-size:18px;flex-shrink:0;margin-top:1px}
+.np-opt-txt{font-size:12px;color:var(--dim);line-height:1.5}
+.np-opt-txt strong{color:var(--white)}
+
+/* ── PROGRESS ── */
+.progress-tracker{background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:16px;margin-bottom:24px}
+.pt-title{font-size:12px;font-weight:700;color:var(--white);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.pt-bar{height:6px;background:rgba(255,255,255,.06);border-radius:3px;margin-bottom:10px;overflow:hidden}
+.pt-fill{height:100%;background:linear-gradient(90deg,var(--p),var(--pl));border-radius:3px;transition:width .4s ease;width:0%}
+.pt-steps{display:flex;justify-content:space-between}
+.pt-step{width:10px;height:10px;border-radius:50%;background:var(--faint);transition:all .2s}
+.pt-step.done{background:var(--green)}
+.pt-step.active{background:var(--p);box-shadow:0 0 0 3px rgba(107,47,206,.3)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-tag">Samsung Mobile · No Computer Needed</div>
+  <div class="hdr-title">Publish <em>ChocoCravings</em><br>to Play Store 📱</div>
+  <div class="hdr-sub">100% doable from your Samsung phone using PWABuilder — a free tool by Microsoft that turns your website into a Play Store app in minutes.</div>
+  <div class="phone-visual">
+    <div class="phone-mock">📱</div>
+  </div>
+  <div class="yes-no-row">
+    <div class="yn-card yn-yes">
+      <div class="yn-ico">🤖</div>
+      <div class="yn-lbl">Play Store ✅</div>
+      <div class="yn-sub">100% possible from Samsung phone</div>
+    </div>
+    <div class="yn-card yn-no">
+      <div class="yn-ico">🍎</div>
+      <div class="yn-lbl">App Store ❌</div>
+      <div class="yn-sub">Requires a Mac computer — not possible from Android</div>
+    </div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div class="flow-bar">
+  <div class="fb-step"><div class="fb-ico">☁️</div><div class="fb-lbl">Host App</div><div class="fb-sub">Netlify free</div></div>
+  <div class="fb-step"><div class="fb-ico">🔗</div><div class="fb-lbl">Get URL</div><div class="fb-sub">Your live link</div></div>
+  <div class="fb-step"><div class="fb-ico">🔨</div><div class="fb-lbl">PWABuilder</div><div class="fb-sub">Builds AAB</div></div>
+  <div class="fb-step"><div class="fb-ico">💳</div><div class="fb-lbl">Play Console</div><div class="fb-sub">₹1,650 once</div></div>
+  <div class="fb-step"><div class="fb-ico">🚀</div><div class="fb-lbl">Live!</div><div class="fb-sub">3–7 days</div></div>
+</div>
+
+<!-- COST -->
+<div class="cost-row">
+  <div class="cost-c cost-free">
+    <div class="cost-ico">☁️</div>
+    <div class="cost-lbl">Netlify Hosting</div>
+    <div class="cost-val">₹0</div>
+    <div class="cost-note">Free forever for this app size</div>
+  </div>
+  <div class="cost-c cost-paid">
+    <div class="cost-ico">🤖</div>
+    <div class="cost-lbl">Play Store</div>
+    <div class="cost-val">₹1,650</div>
+    <div class="cost-note">One-time fee ($25). Publish unlimited apps.</div>
+  </div>
+</div>
+
+<!-- PROGRESS TRACKER -->
+<div class="progress-tracker" id="tracker">
+  <div class="pt-title">
+    <span>Your Progress</span>
+    <span id="prog-count" style="color:var(--pl);font-family:'DM Mono',monospace">0 / 14</span>
+  </div>
+  <div class="pt-bar"><div class="pt-fill" id="prog-fill"></div></div>
+  <div class="pt-steps" id="prog-steps"></div>
+</div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PHASE 1: HOST YOUR APP -->
+<!-- ════════════════════════════════════════════ -->
+<div class="phase">
+  <div class="phase-hdr">
+    <div class="phase-num">1</div>
+    <div>
+      <div class="phase-title">Host Your App Online</div>
+      <div class="phase-sub">PWABuilder needs a live URL — Netlify is the easiest free option</div>
+    </div>
+  </div>
+
+  <!-- Step 1 -->
+  <div class="step" id="s1">
+    <div class="step-head" onclick="toggle('s1')">
+      <div class="sn">1</div>
+      <div style="flex:1">
+        <div class="st-title">Create a GitHub Account</div>
+        <div class="st-sub">Needed to host files on Netlify — free</div>
+      </div>
+      <span class="st-tag tag-browser">Samsung Browser</span>
+    </div>
+    <div class="step-body">
+      <a class="app-link al-github" href="https://github.com/signup" target="_blank">
+        <div class="app-link-ico">🐙</div>
+        <div class="app-link-text"><div class="aln">Open GitHub Signup</div><div class="als">github.com/signup</div></div>
+        <div class="app-link-arr">→</div>
+      </a>
+      <div class="inst">
+        <div class="inst-row"><div class="in">1</div><div class="it">Open the link above in Samsung Internet browser</div></div>
+        <div class="inst-row"><div class="in">2</div><div class="it">Enter any username (e.g. <strong>nsdi-chococravings</strong>), your email, set a password</div></div>
+        <div class="inst-row"><div class="in">3</div><div class="it">Verify your email → you're in!</div></div>
+      </div>
+      <div class="alert al-tip"><div class="al-ico">✅</div><div class="al-txt"><strong>Already have GitHub?</strong> Skip this step entirely.</div></div>
+    </div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="step" id="s2">
+    <div class="step-head" onclick="toggle('s2')">
+      <div class="sn">2</div>
+      <div style="flex:1">
+        <div class="st-title">Create a New GitHub Repository</div>
+        <div class="st-sub">This is where your app files will live</div>
+      </div>
+      <span class="st-tag tag-browser">Browser</span>
+    </div>
+    <div class="step-body">
+      <a class="app-link al-github" href="https://github.com/new" target="_blank">
+        <div class="app-link-ico">📁</div>
+        <div class="app-link-text"><div class="aln">Create New Repository</div><div class="als">github.com/new</div></div>
+        <div class="app-link-arr">→</div>
+      </a>
+      <div class="inst">
+        <div class="inst-row"><div class="in">1</div><div class="it">Repository name: <code>chococravings-app</code></div></div>
+        <div class="inst-row"><div class="in">2</div><div class="it">Set to <strong>Public</strong></div></div>
+        <div class="inst-row"><div class="in">3</div><div class="it">Tick <strong>"Add a README file"</strong></div></div>
+        <div class="inst-row"><div class="in">4</div><div class="it">Click <strong>Create repository</strong></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="step" id="s3">
+    <div class="step-head" onclick="toggle('s3')">
+      <div class="sn">3</div>
+      <div style="flex:1">
+        <div class="st-title">Upload Your App Files to GitHub</div>
+        <div class="st-sub">Upload index.html + manifest.json directly from phone</div>
+      </div>
+      <span class="st-tag tag-browser">Browser</span>
+    </div>
+    <div class="step-body">
+      <div class="alert al-info"><div class="al-ico">📂</div><div class="al-txt"><strong>Files you need to upload:</strong> Save both files from our previous deliverables to your Samsung phone's Downloads folder:<br>• <strong>chococravings-app-v2.html</strong> → rename to <code>index.html</code><br>• <strong>manifest.json</strong> (from the ZIP file)</div></div>
+      <div class="inst">
+        <div class="inst-row"><div class="in">1</div><div class="it">Open your GitHub repo → tap <strong>"Add file"</strong> → <strong>"Upload files"</strong></div></div>
+        <div class="inst-row"><div class="in">2</div><div class="it">Tap <strong>"choose your files"</strong> → select <code>index.html</code> from Downloads</div></div>
+        <div class="inst-row"><div class="in">3</div><div class="it">Upload again → add <code>manifest.json</code></div></div>
+        <div class="inst-row"><div class="in">4</div><div class="it">Scroll down → tap <strong>"Commit changes"</strong></div></div>
+      </div>
+      <div class="alert al-warn"><div class="al-ico">⚠️</div><div class="al-txt"><strong>Important rename:</strong> The file MUST be named exactly <code>index.html</code> (not chococravings-app-v2.html) — rename it in your phone's Files app before uploading.</div></div>
+    </div>
+  </div>
+
+  <!-- Step 4 -->
+  <div class="step" id="s4">
+    <div class="step-head" onclick="toggle('s4')">
+      <div class="sn">4</div>
+      <div style="flex:1">
+        <div class="st-title">Deploy on Netlify — Get Live URL</div>
+        <div class="st-sub">Connect GitHub to Netlify — your app gets a real HTTPS URL in 2 minutes</div>
+      </div>
+      <span class="st-tag tag-browser">Browser</span>
+    </div>
+    <div class="step-body">
+      <a class="app-link al-netlify" href="https://app.netlify.com/signup" target="_blank">
+        <div class="app-link-ico">🌐</div>
+        <div class="app-link-text"><div class="aln">Open Netlify</div><div class="als">app.netlify.com/signup</div></div>
+        <div class="app-link-arr">→</div>
+      </a>
+      <div class="inst">
+        <div class="inst-row"><div class="in">1</div><div class="it">Sign up with <strong>"Continue with GitHub"</strong> — uses your existing account</div></div>
+        <div class="inst-row"><div class="in">2</div><div class="it">Click <strong>"Add new site"</strong> → <strong>"Import an existing project"</strong></div></div>
+        <div class="inst-row"><div class="in">3</div><div class="it">Choose <strong>GitHub</strong> → select <strong>chococravings-app</strong> repository</div></div>
+        <div class="inst-row"><div class="in">4</div><div class="it">Leave all settings default → click <strong>"Deploy site"</strong></div></div>
+        <div class="inst-row"><div class="in">5</div><div class="it">Wait 1 minute → you get a URL like <code>choco-abc123.netlify.app</code></div></div>
+        <div class="inst-row"><div class="in">6</div><div class="it"><strong>Optional:</strong> Go to Site Settings → Change site name → set it to <code>chococravings</code> for a cleaner URL</div></div>
+      </div>
+      <div class="alert al-tip"><div class="al-ico">🎉</div><div class="al-txt"><strong>Test it:</strong> Open the Netlify URL in Samsung browser — your full app should load! This confirms everything is working.</div></div>
+    </div>
+  </div>
+
+</div><!-- /phase 1 -->
+
+<div class="divider"></div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PHASE 2: PWABUILDER -->
+<!-- ════════════════════════════════════════════ -->
+<div class="phase">
+  <div class="phase-hdr">
+    <div class="phase-num">2</div>
+    <div>
+      <div class="phase-title">Build Android App with PWABuilder</div>
+      <div class="phase-sub">Free Microsoft tool — turns your URL into a Play Store AAB file</div>
+    </div>
+  </div>
+
+  <!-- Step 5 -->
+  <div class="step" id="s5">
+    <div class="step-head" onclick="toggle('s5')">
+      <div class="sn">5</div>
+      <div style="flex:1">
+        <div class="st-title">Open PWABuilder & Enter Your URL</div>
+        <div class="st-sub">Microsoft's free tool at pwabuilder.com</div>
+      </div>
+      <span class="st-tag tag-browser">Browser</span>
+    </div>
+    <div class="step-body">
+      <a class="app-link al-chrome" href="https://www.pwabuilder.com" target="_blank">
+        <div class="app-link-ico">🔨</div>
+        <div class="app-link-text"><div class="aln">Open PWABuilder</div><div class="als">pwabuilder.com</div></div>
+        <div class="app-link-arr">→</div>
+      </a>
+      <div class="inst">
+        <div class="inst-row"><div class="in">1</div><div class="it">Open PWABuilder in Samsung Internet or Chrome</div></div>
+        <div class="inst-row"><div class="in">2</div><div class="it">In the big text box, enter your Netlify URL:<br><code>https://chococravings.netlify.app</code></div></div>
+        <div class="inst-row"><div class="in">3</div><div class="it">Tap <strong>"Start"</strong> — it will scan your app (takes ~30 seconds)</div></div>
+        <div class="inst-row"><div class="in">4</div><div class="it">You'll see a score card — look for the <strong>Android</strong> section</div></div>
+      </div>
+      <div class="alert al-info"><div class="al-ico">📊</div><div class="al-txt"><strong>Score doesn't need to be perfect.</strong> As long as you see the Android package option, you're good. The manifest.json we made gives you a high score automatically.</div></div>
+    </div>
+  </div>
+
+  <!-- Step 6 -->
+  <div class="step" id="s6">
+    <div class="step-head" onclick="toggle('s6')">
+      <div class="sn">6</div>
+      <div style="flex:1">
+        <div class="st-title">Generate Android Package (AAB)</div>
+        <div class="st-sub">Downloads the .aab file you upload to Play Store</div>
+      </div>
+      <span class="st-tag tag-browser">Browser</span>
+    </div>
+    <div class="step-body">
+      <div class="inst">
+        <div class="inst-row"><div class="in">1</div><div class="it">On the results page, scroll to <strong>"Android"</strong> → tap <strong>"Store Package"</strong></div></div>
+        <div class="inst-row"><div class="in">2</div><div class="it">A panel opens — fill in these details:</div></div>
+      </div>
+      <div class="code-wrap">
+        <pre><span class="k">Package ID:</span>      <span class="g">com.nsdi.chococravings</span>
+<span class="k">App Name:</span>        <span class="g">ChocoCravings</span>
+<span class="k">App Version:</span>     <span class="g">1.0.0</span>
+<span class="k">Version Code:</span>    <span class="g">1</span>
+<span class="k">Display Mode:</span>    <span class="g">Standalone</span>
+<span class="k">Orientation:</span>     <span class="g">Portrait</span>
+<span class="k">Theme Color:</span>     <span class="g">#6B2FCE</span>
+<span class="k">Background:</span>      <span class="g">#09010F</span>
+<span class="k">Nav Color:</span>       <span class="g">#09010F</span></pre>
+      </div>
+      <div class="inst">
+        <div class="inst-row"><div class="in">3</div><div class="it">Tap <strong>"Generate"</strong> → wait 1–2 minutes</div></div>
+        <div class="inst-row"><div class="in">4</div><div class="it">Download the ZIP file → inside you'll find <code>app-release-bundle.aab</code> and a <code>.keystore</code> file</div></div>
+      </div>
+      <div class="alert al-warn"><div class="al-ico">🔐</div><div class="al-txt"><strong>SAVE THE KEYSTORE FILE!</strong> PWABuilder generates a signing key for you. Download it and save to Google Drive immediately. You need it for every future update — if lost, you can never update the app.</div></div>
+      <div class="alert al-tip"><div class="al-ico">📋</div><div class="al-txt"><strong>Also save:</strong> The key passwords shown on screen — copy them to Notes or Google Keep before closing.</div></div>
+    </div>
+  </div>
+
+</div><!-- /phase 2 -->
+
+<div class="divider"></div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PHASE 3: APP ICON -->
+<!-- ════════════════════════════════════════════ -->
+<div class="phase">
+  <div class="phase-hdr">
+    <div class="phase-num">3</div>
+    <div>
+      <div class="phase-title">Create App Icon from Phone</div>
+      <div class="phase-sub">Design the icon customers see on their home screen</div>
+    </div>
+  </div>
+
+  <!-- Step 7 -->
+  <div class="step" id="s7">
+    <div class="step-head" onclick="toggle('s7')">
+      <div class="sn">7</div>
+      <div style="flex:1">
+        <div class="st-title">Design Icon Using Canva App</div>
+        <div class="st-sub">Free app — create a 512×512 icon in 5 minutes</div>
+      </div>
+      <span class="st-tag tag-app">Canva App</span>
+    </div>
+    <div class="step-body">
+      <a class="app-link al-play" href="https://play.google.com/store/apps/details?id=com.canva.editor" target="_blank">
+        <div class="app-link-ico">🎨</div>
+        <div class="app-link-text"><div class="aln">Install Canva (Free)</div><div class="als">Google Play Store</div></div>
+        <div class="app-link-arr">→</div>
+      </a>
+      <div class="inst">
+        <div class="inst-row"><div class="in">1</div><div class="it">Open Canva → tap <strong>"+"</strong> → <strong>Custom size</strong> → set <strong>512 × 512 px</strong></div></div>
+        <div class="inst-row"><div class="in">2</div><div class="it"><strong>Background:</strong> Fill with gradient — <code>#6B2FCE</code> to <code>#8B44E8</code> (purple)</div></div>
+        <div class="inst-row"><div class="in">3</div><div class="it"><strong>Add text:</strong> "CC" in white using a serif font — or add a brownie/chocolate emoji graphic</div></div>
+        <div class="inst-row"><div class="in">4</div><div class="it">Export as <strong>PNG</strong> → save to phone</div></div>
+      </div>
+      <div class="alert al-purple"><div class="al-ico">🍫</div><div class="al-txt"><strong>Icon design tip:</strong> Keep it simple — just "CC" letters or a chocolate square on the purple background. Simple icons look better as small phone icons than complex ones.</div></div>
+    </div>
+  </div>
+
+  <!-- Step 8 -->
+  <div class="step" id="s8">
+    <div class="step-head" onclick="toggle('s8')">
+      <div class="sn">8</div>
+      <div style="flex:1">
+        <div class="st-title">Generate All Icon Sizes</div>
+        <div class="st-sub">One website generates all required sizes from your 512px icon</div>
+      </div>
+      <span class="st-tag tag-browser">Browser</span>
+    </div>
+    <div class="step-body">
+      <a class="app-link al-chrome" href="https://www.appicon.co" target="_blank">
+        <div class="app-link-ico">📐</div>
+        <div class="app-link-text"><div class="aln">Open AppIcon.co</div><div class="als">Free icon resizer</div></div>
+        <div class="app-link-arr">→</div>
+      </a>
+      <div class="inst">
+        <div class="inst-row"><div class="in">1</div><div class="it">Open appicon.co in browser</div></div>
+        <div class="inst-row"><div class="in">2</div><div class="it">Upload your 512×512 PNG icon</div></div>
+        <div class="inst-row"><div class="in">3</div><div class="it">Tick <strong>"Android"</strong> → tap <strong>Generate</strong> → download ZIP</div></div>
+        <div class="inst-row"><div class="in">4</div><div class="it">You now have all icon sizes: 72px, 96px, 144px, 192px, 512px</div></div>
+      </div>
+      <div class="alert al-info"><div class="al-ico">📌</div><div class="al-txt"><strong>Play Store needs:</strong> Just the <strong>512×512 PNG</strong> for your store listing. The other sizes go inside the app itself — but PWABuilder already handles that from your manifest.json!</div></div>
+    </div>
+  </div>
+
+</div><!-- /phase 3 -->
+
+<div class="divider"></div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PHASE 4: SCREENSHOTS -->
+<!-- ════════════════════════════════════════════ -->
+<div class="phase">
+  <div class="phase-hdr">
+    <div class="phase-num">4</div>
+    <div>
+      <div class="phase-title">Take Screenshots from Your Phone</div>
+      <div class="phase-sub">Play Store needs minimum 2 screenshots — take them directly on Samsung</div>
+    </div>
+  </div>
+
+  <div class="step" id="s9">
+    <div class="step-head" onclick="toggle('s9')">
+      <div class="sn">9</div>
+      <div style="flex:1">
+        <div class="st-title">Take App Screenshots on Samsung</div>
+        <div class="st-sub">Open your Netlify app URL + take 5 screenshots of key screens</div>
+      </div>
+      <span class="st-tag tag-app">Camera</span>
+    </div>
+    <div class="step-body">
+      <div class="screen-specs">
+        <div class="ss-card"><div class="ss-preview">🏠</div><div class="ss-name">Home Screen</div><div class="ss-size">Screenshot 1</div></div>
+        <div class="ss-card"><div class="ss-preview">🍫</div><div class="ss-name">Product Page</div><div class="ss-size">Screenshot 2</div></div>
+        <div class="ss-card"><div class="ss-preview">🛒</div><div class="ss-name">Toppings</div><div class="ss-size">Screenshot 3</div></div>
+        <div class="ss-card"><div class="ss-preview">✅</div><div class="ss-name">Checkout</div><div class="ss-size">Screenshot 4</div></div>
+      </div>
+      <div class="inst">
+        <div class="inst-row"><div class="in">1</div><div class="it">Open <strong>your Netlify URL</strong> on Samsung browser — navigate to each screen</div></div>
+        <div class="inst-row"><div class="in">2</div><div class="it">Take screenshot: press <strong>Volume Down + Power</strong> together</div></div>
+        <div class="inst-row"><div class="in">3</div><div class="it">Take at least <strong>2 screenshots</strong> (minimum), ideally 4–5</div></div>
+      </div>
+      <div class="alert al-tip"><div class="al-ico">💡</div><div class="al-txt"><strong>Better screenshots:</strong> Turn on Full Screen mode in Samsung browser before screenshotting — hides the browser bar for cleaner images.</div></div>
+    </div>
+  </div>
+
+</div><!-- /phase 4 -->
+
+<div class="divider"></div>
+
+<!-- ════════════════════════════════════════════ -->
+<!-- PHASE 5: PLAY STORE -->
+<!-- ════════════════════════════════════════════ -->
+<div class="phase">
+  <div class="phase-hdr">
+    <div class="phase-num">5</div>
+    <div>
+      <div class="phase-title">Publish to Google Play Store</div>
+      <div class="phase-sub">All done from Samsung browser — no computer</div>
+    </div>
+  </div>
+
+  <!-- Step 10 -->
+  <div class="step" id="s10">
+    <div class="step-head" onclick="toggle('s10')">
+      <div class="sn">10</div>
+      <div style="flex:1">
+        <div class="st-title">Create Google Play Developer Account</div>
+        <div class="st-sub">One-time ₹1,650 registration — use same Google account as your phone</div>
+      </div>
+      <span class="st-tag tag-req">₹1,650</span>
+    </div>
+    <div class="step-body">
+      <a class="app-link al-play" href="https://play.google.com/console/signup" target="_blank">
+        <div class="app-link-ico">🤖</div>
+        <div class="app-link-text"><div class="aln">Open Play Console Signup</div><div class="als">play.google.com/console/signup</div></div>
+        <div class="app-link-arr">→</div>
+      </a>
+      <div class="inst">
+        <div class="inst-row"><div class="in">1</div><div class="it">Open the link — sign in with your Google account</div></div>
+        <div class="inst-row"><div class="in">2</div><div class="it">Choose <strong>"Personal"</strong> account type (not Organisation)</div></div>
+        <div class="inst-row"><div class="in">3</div><div class="it">Developer name: <strong>NSDI ChocoCravings</strong></div></div>
+        <div class="inst-row"><div class="in">4</div><div class="it">Pay <strong>₹1,650 ($25)</strong> with your debit/credit card via Google Pay</div></div>
+        <div class="inst-row"><div class="in">5</div><div class="it">Account activates within 24–48 hours — you get a confirmation email</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 11 -->
+  <div class="step" id="s11">
+    <div class="step-head" onclick="toggle('s11')">
+      <div class="sn">11</div>
+      <div style="flex:1">
+        <div class="st-title">Create New App in Play Console</div>
+        <div class="st-sub">Set up your app listing on Play Store</div>
+      </div>
+      <span class="st-tag tag-browser">Browser</span>
+    </div>
+    <div class="step-body">
+      <a class="app-link al-play" href="https://play.google.com/console" target="_blank">
+        <div class="app-link-ico">📱</div>
+        <div class="app-link-text"><div class="aln">Open Play Console</div><div class="als">play.google.com/console</div></div>
+        <div class="app-link-arr">→</div>
+      </a>
+      <div class="inst">
+        <div class="inst-row"><div class="in">1</div><div class="it">Go to Play Console → tap <strong>"Create app"</strong></div></div>
+        <div class="inst-row"><div class="in">2</div><div class="it">App name: <strong>ChocoCravings</strong> · Language: <strong>English (India)</strong> · Free · Not for children</div></div>
+        <div class="inst-row"><div class="in">3</div><div class="it">Accept Play Store Developer Distribution Agreement → <strong>Create app</strong></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 12 -->
+  <div class="step" id="s12">
+    <div class="step-head" onclick="toggle('s12')">
+      <div class="sn">12</div>
+      <div style="flex:1">
+        <div class="st-title">Fill Store Listing</div>
+        <div class="st-sub">Description, screenshots, icon — copy from store-listing-content.txt</div>
+      </div>
+      <span class="st-tag tag-browser">Browser</span>
+    </div>
+    <div class="step-body">
+      <div class="inst">
+        <div class="inst-row"><div class="in">1</div><div class="it"><strong>Main store listing:</strong> Paste the short + full description from <code>store-listing-content.txt</code></div></div>
+        <div class="inst-row"><div class="in">2</div><div class="it"><strong>App icon:</strong> Upload your 512×512 PNG</div></div>
+        <div class="inst-row"><div class="in">3</div><div class="it"><strong>Feature graphic:</strong> Make a 1024×500 px image in Canva — purple background, logo in center</div></div>
+        <div class="inst-row"><div class="in">4</div><div class="it"><strong>Screenshots:</strong> Upload the 4–5 screenshots you took</div></div>
+        <div class="inst-row"><div class="in">5</div><div class="it"><strong>Category:</strong> Food & Drink</div></div>
+        <div class="inst-row"><div class="in">6</div><div class="it"><strong>Privacy policy:</strong> Create a free one at <a href="https://app.termly.io" target="_blank">app.termly.io</a> → paste the URL</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 13 -->
+  <div class="step" id="s13">
+    <div class="step-head" onclick="toggle('s13')">
+      <div class="sn">13</div>
+      <div style="flex:1">
+        <div class="st-title">Complete App Content Section</div>
+        <div class="st-sub">Required questionnaires about your app's content</div>
+      </div>
+      <span class="st-tag tag-browser">Browser</span>
+    </div>
+    <div class="step-body">
+      <div class="inst">
+        <div class="inst-row"><div class="in">1</div><div class="it"><strong>Content rating:</strong> Start questionnaire → Category: <strong>Utilities</strong> or <strong>Shopping</strong> → answer all No → submit → you'll get <strong>"Everyone"</strong> rating</div></div>
+        <div class="inst-row"><div class="in">2</div><div class="it"><strong>Target audience:</strong> Age group → <strong>18 and over</strong> (simplest option for a food app)</div></div>
+        <div class="inst-row"><div class="in">3</div><div class="it"><strong>Data safety:</strong> Select what you collect — Name ✓, Email ✓, Phone ✓, Address ✓ → Used for "App functionality"</div></div>
+      </div>
+      <div class="alert al-tip"><div class="al-ico">✅</div><div class="al-txt"><strong>Check the dashboard:</strong> All items in the left panel should show a green tick ✓ before you can submit for review.</div></div>
+    </div>
+  </div>
+
+  <!-- Step 14 -->
+  <div class="step" id="s14">
+    <div class="step-head" onclick="toggle('s14')">
+      <div class="sn">14</div>
+      <div style="flex:1">
+        <div class="st-title">Upload AAB & Submit for Review</div>
+        <div class="st-sub">Final step — upload the .aab file from PWABuilder</div>
+      </div>
+      <span class="st-tag tag-browser">Browser</span>
+    </div>
+    <div class="step-body">
+      <div class="inst">
+        <div class="inst-row"><div class="in">1</div><div class="it">In Play Console → <strong>Production</strong> → <strong>Create new release</strong></div></div>
+        <div class="inst-row"><div class="in">2</div><div class="it">Tap <strong>"Upload"</strong> → select the <code>app-release-bundle.aab</code> file from your Downloads</div></div>
+        <div class="inst-row"><div class="in">3</div><div class="it"><strong>Release name:</strong> 1.0.0 · <strong>Release notes:</strong> paste from store-listing-content.txt "What's New" section</div></div>
+        <div class="inst-row"><div class="in">4</div><div class="it">Tap <strong>"Save"</strong> → <strong>"Review release"</strong> → check no errors → <strong>"Start rollout to Production"</strong></div></div>
+      </div>
+      <div class="alert al-tip"><div class="al-ico">🎉</div><div class="al-txt"><strong>After submission:</strong> Google reviews in <strong>3–7 days</strong>. You'll get an email when it's live. Then search "ChocoCravings" in Play Store and find your app! 🍫</div></div>
+    </div>
+  </div>
+
+</div><!-- /phase 5 -->
+
+<div class="divider"></div>
+
+<!-- iOS NOT POSSIBLE -->
+<div class="not-possible">
+  <div class="np-head">
+    <div class="np-ico">🍎</div>
+    <div class="np-title">Apple App Store — Needs a Mac</div>
+  </div>
+  <div class="np-sub">iOS apps must be built and signed using Xcode, which only runs on macOS. This cannot be done from a Samsung Android phone. Your options:</div>
+  <div class="np-options">
+    <div class="np-opt">
+      <div class="np-opt-ico">💻</div>
+      <div class="np-opt-txt"><strong>Borrow a Mac friend's laptop</strong> — Install Xcode, run all iOS steps in our publishing guide in ~2 hours</div>
+    </div>
+    <div class="np-opt">
+      <div class="np-opt-ico">☁️</div>
+      <div class="np-opt-txt"><strong>MacInCloud.com</strong> — Rent a cloud Mac for ~₹80/hour. Do the iOS build in 2 hours = ₹160 total</div>
+    </div>
+    <div class="np-opt">
+      <div class="np-opt-ico">📱</div>
+      <div class="np-opt-txt"><strong>Launch Android first</strong> — Get users on Play Store first. Add iOS later when you have access to a Mac. Most Indian users are Android anyway!</div>
+    </div>
+  </div>
+</div>
+
+<!-- FINAL CHECKLIST -->
+<div style="margin-top:28px">
+  <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;margin-bottom:14px">✅ Complete Checklist</div>
+  <div class="chk-list" id="final-checklist">
+    <div class="chk" onclick="chk(this)"><div class="chk-box"></div><div class="chk-txt">GitHub account created</div></div>
+    <div class="chk" onclick="chk(this)"><div class="chk-box"></div><div class="chk-txt">chococravings-app repository created on GitHub</div></div>
+    <div class="chk" onclick="chk(this)"><div class="chk-box"></div><div class="chk-txt">index.html + manifest.json uploaded to GitHub</div></div>
+    <div class="chk" onclick="chk(this)"><div class="chk-box"></div><div class="chk-txt">Netlify site deployed — live URL works in browser</div></div>
+    <div class="chk" onclick="chk(this)"><div class="chk-box"></div><div class="chk-txt">PWABuilder: entered Netlify URL and scanned app</div></div>
+    <div class="chk" onclick="chk(this)"><div class="chk-box"></div><div class="chk-txt">PWABuilder: Android AAB file downloaded</div></div>
+    <div class="chk" onclick="chk(this)"><div class="chk-box"></div><div class="chk-txt">Keystore .jks file saved to Google Drive ⚠️</div></div>
+    <div class="chk" onclick="chk(this)"><div class="chk-box"></div><div class="chk-txt">App icon designed in Canva (512×512 PNG)</div></div>
+    <div class="chk" onclick="chk(this)"><div class="chk-box"></div><div class="chk-txt">4–5 screenshots taken on Samsung phone</div></div>
+    <div class="chk" onclick="chk(this)"><div class="chk-box"></div><div class="chk-txt">Play Console account created + ₹1,650 paid</div></div>
+    <div class="chk" onclick="chk(this)"><div class="chk-box"></div><div class="chk-txt">Store listing filled (description + images + icon)</div></div>
+    <div class="chk" onclick="chk(this)"><div class="chk-box"></div><div class="chk-txt">Content rating + data safety completed</div></div>
+    <div class="chk" onclick="chk(this)"><div class="chk-box"></div><div class="chk-txt">Privacy policy URL added</div></div>
+    <div class="chk" onclick="chk(this)"><div class="chk-box"></div><div class="chk-txt">AAB uploaded + submitted for review 🎉</div></div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+<script>
+// Toggle steps
+function toggle(id){
+  const step = document.getElementById(id);
+  const body = step.querySelector('.step-body');
+  body.classList.toggle('open');
+}
+
+// Checklist
+const total = 14;
+function chk(el){
+  el.classList.toggle('done');
+  el.querySelector('.chk-box').textContent = el.classList.contains('done') ? '✓' : '';
+  updateProgress();
+}
+
+function updateProgress(){
+  const done = document.querySelectorAll('.chk.done').length;
+  document.getElementById('prog-count').textContent = done + ' / ' + total;
+  document.getElementById('prog-fill').style.width = (done/total*100) + '%';
+  // Update dots
+  const dots = document.querySelectorAll('.pt-step');
+  dots.forEach((d,i) => {
+    d.className = 'pt-step' + (i < done ? ' done' : (i === done ? ' active' : ''));
+  });
+}
+
+// Build progress dots
+const stepsEl = document.getElementById('prog-steps');
+for(let i=0;i<total;i++){
+  const d = document.createElement('div');
+  d.className = 'pt-step' + (i===0?' active':'');
+  stepsEl.appendChild(d);
+}
+</script>
+</body>
+</html>

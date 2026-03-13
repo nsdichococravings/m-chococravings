@@ -5,10 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NSDI ChocoCravings</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-// // ── ORDER STATE ──
-// let cartItems = [];
-// let currentPayMethod = 'cod';
-// let currentOrderTotal = 0;
+// ── ORDER STATE ──
+let cartItems = [];
+let currentPayMethod = 'cod';
+let currentOrderTotal = 0;
 
 // ── CHECKOUT HELPERS ──
 function goToCheckout() {
@@ -32,15 +32,9 @@ function goToCheckout() {
   document.getElementById('ck-item-price').textContent = '₹' + grand;
   document.getElementById('ck-total').textContent = '₹' + grand;
 
-  // Build SKU to look up product_id in Supabase
-  const skuPrefix = tier === 'couverture' ? 'COUV' : 'PREM';
-  const eggCode = egg === 'eggless' ? 'EL' : 'EG';
-  const varCodes = ['CLASSIC','DOUBLE','TRIPLE','NUTELLA','BISCOFF','NUTS','SEEDS','SEEDNUTS','WALNUT','HAZEL','ASSORTED','RAGI','WHEAT','BLACKRICE','MILLET'];
-  const sku = skuPrefix + '-' + eggCode + '-' + (varCodes[varIdx] || 'CLASSIC');
-
   // Store cart for order
   cartItems = [{
-    name, tier, egg, sku,
+    name, tier, egg,
     pack: packLabel, qty,
     base_price: base,
     toppings: Object.keys(topAdds),
@@ -91,7 +85,10 @@ function buildOwnerMsg(order) {
       `• ${i.name} (${i.tier}) — ${i.egg} — ${i.pack} × ${i.qty}` +
       (i.toppings.length ? `
   Toppings: ${i.toppings.join(', ')}` : '')
-    ).join('') + '' +
+    ).join('
+') + '
+
+' +
     `💰 *Total: ₹${order.total}*
 ` +
     `💳 *Payment: ${order.payment_method.toUpperCase()}*
@@ -130,7 +127,7 @@ function buildCustomerMsg(order) {
     `We'll WhatsApp you once your order is confirmed and ready! 🚀
 
 ` +
-    `📞 Questions? Call us: ${NSDI_PHONE}
+    `📞 Questions? Call us: +91 99721 41890
 ` +
     `📸 Instagram: @nsdi.chococravings
 
@@ -163,78 +160,29 @@ async function placeOrder() {
   document.getElementById('place-btn').disabled = true;
 
   const orderNum = genOrderNum();
-  const subtotal = cartItems.reduce((s,i) => s + i.base_price * i.qty, 0);
   const orderData = {
     order_number: orderNum,
     customer_name: name,
     customer_phone: phone.startsWith('+') ? phone : '+91' + phone.replace(/^0/,''),
     customer_email: email || null,
     delivery_address: address,
-    delivery_city: city,
-    delivery_pincode: pin || null,
-    subtotal: subtotal,
-    topping_total: currentOrderTotal - subtotal,
+    city, pincode: pin || null,
+    items: cartItems,
+    subtotal: cartItems.reduce((s,i) => s + i.base_price * i.qty, 0),
+    topping_total: topTotal * qty,
     delivery_fee: 0,
     total: currentOrderTotal,
     payment_method: currentPayMethod,
+    egg_preference: egg,
     special_notes: notes || null,
     status: 'pending',
     created_at: new Date().toISOString()
   };
 
-  // Keep items reference for WhatsApp message (not inserted into orders table)
-  orderData.items = cartItems;
-
   try {
-    // 1. Save order to Supabase (without items field)
-    const orderInsert = {...orderData};
-    delete orderInsert.items;
-    const { data, error } = await db.from('orders').insert([orderInsert]).select().single();
+    // 1. Save to Supabase
+    const { data, error } = await db.from('orders').insert([orderData]).select().single();
     if (error) throw error;
-
-    // 2. Save order items — look up product_id & variant_id from Supabase
-    const orderId = data.id;
-    const itemRows = await Promise.all(cartItems.map(async function(i) {
-      // Look up product by SKU
-      let product_id = null;
-      let variant_id = null;
-      try {
-        const { data: prod } = await db.from('products')
-          .select('id')
-          .eq('sku', i.sku)
-          .single();
-        if (prod) {
-          product_id = prod.id;
-          // Look up variant by product_id + pack_label
-          const packKey = i.pack.split(' ')[0]; // "4pcs", "9pcs", "16pcs"
-          const { data: vari } = await db.from('product_variants')
-            .select('id')
-            .eq('product_id', product_id)
-            .eq('pack_label', packKey)
-            .single();
-          if (vari) variant_id = vari.id;
-        }
-      } catch(e) { console.warn('Product lookup:', e.message); }
-
-      return {
-        order_id: orderId,
-        product_id: product_id,
-        variant_id: variant_id,
-        product_name: i.product_name,
-        tier: i.tier || 'premium',
-        egg_type: i.egg || 'eggless',
-        pack_label: i.pack || '4pcs',
-        quantity: i.qty || 1,
-        unit_price: i.base_price || 0,
-        topping_price: i.topping_price || 0,
-        line_total: (i.base_price || 0) * (i.qty || 1) + (i.topping_price || 0),
-        toppings: i.toppings && i.toppings.length ? JSON.stringify(i.toppings) : null
-      };
-    }));
-    if (itemRows.length > 0) {
-      const { error: itemsError } = await db.from('order_items').insert(itemRows);
-      if (itemsError) console.warn('Items insert warning:', itemsError.message);
-    }
 
     overlay.classList.remove('show');
 
@@ -265,7 +213,7 @@ async function placeOrder() {
     document.getElementById('place-btn').disabled = false;
 
     // Fallback — still show success with WhatsApp only if Supabase not configured
-    if (SUPABASE_URL.includes('yjbfditboewwpgyqzryd')) {
+    if (SUPABASE_URL.includes('YOUR_PROJECT_ID')) {
       document.getElementById('succ-order-id').textContent = orderNum;
       document.getElementById('succ-total').textContent = '₹' + currentOrderTotal;
       document.getElementById('succ-name').textContent = name;
@@ -276,7 +224,7 @@ async function placeOrder() {
       };
       showPage('success');
     } else {
-      alert('Order failed: ' + err.message + `\nPlease try again or call ${NSDI_PHONE}`);
+      alert('Order failed: ' + err.message + '\nPlease try again or call +91 99721 41890');
     }
   }
 }
@@ -511,7 +459,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 #page-detail{background:var(--dark)}
 .dhero{height:272px;display:flex;align-items:center;justify-content:center;font-size:108px;position:relative;background:linear-gradient(160deg,#2D0060,#6B2FCE,#A855F7)}
 .dhero::after{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");mix-blend-mode:overlay}
-.back{position:absolute;top:50px;left:18px;width:38px;height:38px;border-radius:12px;background:rgba(0,0,0,.38);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;border:1px solid rgba(255,255,255,.1);z-index:10;color: #D7CFDF}
+.back{position:absolute;top:50px;left:18px;width:38px;height:38px;border-radius:12px;background:rgba(0,0,0,.38);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;border:1px solid rgba(255,255,255,.1);z-index:10}
 .dfav{position:absolute;top:50px;right:18px;width:38px;height:38px;border-radius:12px;background:rgba(0,0,0,.38);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;border:1px solid rgba(255,255,255,.1);z-index:10}
 .dbody{background:var(--dark);border-radius:28px 28px 0 0;margin-top:-22px;padding:22px 22px;position:relative;z-index:5}
 
@@ -820,7 +768,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         <div class="chip"><em>🌿</em><span>No preservatives</span></div>
         <div class="chip"><em>⏱</em><span>Fresh 4–5 days</span></div>
         <div class="chip"><em>🎂</em><span>Custom cakes</span></div>
-        <div class="chip"><em>📞</em><span>+91 89731 41898</span></div>
+        <div class="chip"><em>📞</em><span>+91 99721 41890</span></div>
       </div>
 
       <!-- PROMOS -->
@@ -1115,7 +1063,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
             <span class="cb-pill">🏰 Brownie Tower</span>
             <span class="cb-pill">🎁 Brownie Layer</span>
           </div>
-          <div class="cb-cta" href="tel:+918973141898">📞 Enquire — +91 89731 41898</div>
+          <div class="cb-cta">📞 Enquire — +91 99721 41890</div>
         </div>
 
         <div class="dlabel">About NSDI Brownies</div>
@@ -1333,7 +1281,7 @@ const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // NSDI WhatsApp number (receives order notifications)
-const NSDI_PHONE = '+91 89731 41898';
+const NSDI_PHONE = '919972141890';
 
 // ── REAL PRICE DATA ──
 
@@ -1474,22 +1422,11 @@ function goToCheckout() {
   document.getElementById('ck-item-price').textContent = '₹' + grand;
   document.getElementById('ck-total').textContent = '₹' + grand;
 
-  // Build SKU to look up product_id in Supabase
-  const skuPrefix = tier === 'couverture' ? 'COUV' : 'PREM';
-  const eggCode = egg === 'eggless' ? 'EL' : 'EG';
-  const varCodes = ['CLASSIC','DOUBLE','TRIPLE','NUTELLA','BISCOFF','NUTS','SEEDS','SEEDNUTS','WALNUT','HAZEL','ASSORTED','RAGI','WHEAT','BLACKRICE','MILLET'];
-  const sku = skuPrefix + '-' + eggCode + '-' + (varCodes[varIdx] || 'CLASSIC');
-
   // Store cart for order
   cartItems = [{
-    product_name: name,
-    tier,
-    egg_type: egg,
-    pack_label: packLabel,
-    weight_grams: [250,500,1000][packIdx],
-    quantity: qty,
+    name, tier, egg,
+    pack: packLabel, qty,
     base_price: base,
-    unit_price: grand,
     toppings: Object.keys(topAdds),
     topping_price: topTotal,
     line_total: grand
@@ -1521,39 +1458,72 @@ function fmtDate(d) {
 
 // ── WHATSAPP MESSAGE BUILDERS ──
 function buildOwnerMsg(order) {
-  var nl = "\n";
-  var items = order.items.map(function(i) {
-    var line = "- " + i.name + " (" + i.tier + ") " + i.egg + " " + i.pack + " x" + i.qty;
-    if (i.toppings && i.toppings.length) line += nl + "  Toppings: " + i.toppings.join(", ");
-    return line;
-  }).join(nl);
-  var msg = "🔔 *NEW ORDER: " + order.order_number + "*" + nl
-    + "Customer: " + order.customer_name + nl
-    + "Phone: " + order.customer_phone + nl
-    + "Address: " + order.delivery_address + ", " + order.city + " " + (order.pincode || "") + nl
-    + "Items:" + nl + items + nl
-    + "Total: Rs." + order.total + nl
-    + "Payment: " + order.payment_method.toUpperCase() + nl
-    + (order.special_notes ? "Notes: " + order.special_notes + nl : "")
-    + "Time: " + fmtDate(order.created_at) + nl
-    + "Reply: CONFIRM " + order.order_number;
-  return encodeURIComponent(msg);
+  return encodeURIComponent(
+    `🔔 *NEW ORDER — ${order.order_number}*
+
+` +
+    `👤 *Customer:* ${order.customer_name}
+` +
+    `📞 *Phone:* ${order.customer_phone}
+` +
+    `📍 *Address:* ${order.delivery_address}, ${order.city} ${order.pincode || ''}
+
+` +
+    `🛒 *Items:*
+` +
+    order.items.map(i =>
+      `• ${i.name} (${i.tier}) — ${i.egg} — ${i.pack} × ${i.qty}` +
+      (i.toppings.length ? `
+  Toppings: ${i.toppings.join(', ')}` : '')
+    ).join('
+') + '
+
+' +
+    `💰 *Total: ₹${order.total}*
+` +
+    `💳 *Payment: ${order.payment_method.toUpperCase()}*
+` +
+    (order.special_notes ? `📝 *Notes:* ${order.special_notes}
+` : '') +
+    `
+⏰ ${fmtDate(order.created_at)}
+` +
+    `
+Reply to confirm: *CONFIRM ${order.order_number}*`
+  );
 }
 
 function buildCustomerMsg(order) {
-  var nl = "\n";
-  var msg = "Order Confirmed: " + order.order_number + nl
-    + "Hi " + order.customer_name + "!" + nl
-    + "Your ChocoCravings order is placed!" + nl
-    + "Item: " + order.items[0].name + " " + order.items[0].pack + nl
-    + "Total: Rs." + order.total + nl
-    + "Payment: " + order.payment_method.toUpperCase() + nl
-    + "Delivery: " + order.delivery_address + ", " + order.city + nl
-    + "We'll WhatsApp you once your order is confirmed and ready! 🚀" + nl
-    + `📞 Questions? Call us: ${NSDI_PHONE}` + nl
-    + "📸 Instagram: @nsdi.chococravings" + nl
-    + "Happy to serve fresh!! - NSDI ChocoCravings";
-  return encodeURIComponent(msg);
+  return encodeURIComponent(
+    `✅ *Order Confirmed — ${order.order_number}*
+
+` +
+    `Hi ${order.customer_name}! 🍫
+
+` +
+    `Your NSDI ChocoCravings order has been placed successfully!
+
+` +
+    `🛒 *${order.items[0].name}* — ${order.items[0].pack}
+` +
+    `💰 *Total: ₹${order.total}*
+` +
+    `💳 Payment: ${order.payment_method.toUpperCase()}
+
+` +
+    `📍 Delivery to: ${order.delivery_address}, ${order.city}
+
+` +
+    `We'll WhatsApp you once your order is confirmed and ready! 🚀
+
+` +
+    `📞 Questions? Call us: +91 99721 41890
+` +
+    `📸 Instagram: @nsdi.chococravings
+
+` +
+    `_Happy to serve fresh!! — NSDI ChocoCravings_`
+  );
 }
 
 // ── PLACE ORDER (Supabase) ──
@@ -1580,79 +1550,29 @@ async function placeOrder() {
   document.getElementById('place-btn').disabled = true;
 
   const orderNum = genOrderNum();
-  console.log(cartItems);
-  const subtotal = cartItems.reduce((s,i) => s + i.base_price * i.quantity, 0);
   const orderData = {
     order_number: orderNum,
     customer_name: name,
     customer_phone: phone.startsWith('+') ? phone : '+91' + phone.replace(/^0/,''),
     customer_email: email || null,
     delivery_address: address,
-    delivery_city: city, delivery_pincode: pin || null,
-    subtotal: subtotal,
-    topping_total: currentOrderTotal - subtotal,
+    city, pincode: pin || null,
+    items: cartItems,
+    subtotal: cartItems.reduce((s,i) => s + i.base_price * i.qty, 0),
+    topping_total: topTotal * qty,
     delivery_fee: 0,
     total: currentOrderTotal,
     payment_method: currentPayMethod,
+    egg_preference: egg,
     special_notes: notes || null,
     status: 'pending',
     created_at: new Date().toISOString()
   };
 
-  // Keep items reference for WhatsApp message (not inserted into orders table)
-  orderData.items = cartItems;
-
   try {
-    // 1. Save order to Supabase (without items field)
-    const orderInsert = {...orderData};
-    delete orderInsert.items;
-    const { data, error } = await db.from('orders').insert([orderInsert]).select().single();
+    // 1. Save to Supabase
+    const { data, error } = await db.from('orders').insert([orderData]).select().single();
     if (error) throw error;
-
-    // 2. Save order items — look up product_id & variant_id from Supabase
-    const orderId = data.id;
-    const itemRows = await Promise.all(cartItems.map(async function(i) {
-      // Look up product by SKU
-      let product_id = null;
-      let variant_id = null;
-      try {
-        const { data: prod } = await db.from('products')
-          .select('id')
-          .eq('sku', i.sku)
-          .single();
-        if (prod) {
-          product_id = prod.id;
-          // Look up variant by product_id + pack_label
-          const packKey = i.pack.split(' ')[0]; // "4pcs", "9pcs", "16pcs"
-          const { data: vari } = await db.from('product_variants')
-            .select('id')
-            .eq('product_id', product_id)
-            .eq('pack_label', packKey)
-            .single();
-          if (vari) variant_id = vari.id;
-        }
-      } catch(e) { console.warn('Product lookup:', e.message); }
-
-      return {
-        order_id: orderId,
-        product_id: product_id,
-        variant_id: variant_id,
-        product_name: i.product_name,
-        tier: i.tier || 'premium',
-        egg_type: i.egg || 'eggless',
-        pack_label: i.pack || '4pcs',
-        quantity: i.qty || 1,
-        unit_price: i.base_price || 0,
-        base_price: i.base_price || 0,
-        topping_price: i.topping_price || 0,
-        line_total: (i.base_price || 0) * (i.qty || 1) + (i.topping_price || 0),
-        toppings: i.toppings && i.toppings.length ? JSON.stringify(i.toppings) : null
-      };
-    }));
-    if (itemRows.length > 0) {
-      const { error: itemsError } = await db.from('order_items').insert(itemRows);
-      if (itemsError) console.warn('Items insert warning:', itemsError.message);
-    }
 
     overlay.classList.remove('show');
 
@@ -1694,7 +1614,7 @@ async function placeOrder() {
       };
       showPage('success');
     } else {
-      alert('Order failed: ' + err.message + `\nPlease try again or call ${NSDI_PHONE}`);
+      alert('Order failed: ' + err.message + '\nPlease try again or call +91 99721 41890');
     }
   }
 }

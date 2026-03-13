@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NSDI ChocoCravings — Setup Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#6B2FCE;--pl:#C084FC;--dark:#09010F;--d2:#110020;--d3:#1C003A;
+  --white:#FAF5FF;--dim:#9F7ABA;--faint:#4A3060;
+  --green:#22C55E;--gold:#F59E0B;--red:#EF4444;--blue:#3B82F6;
+  --card:rgba(255,255,255,.04);--bdr:rgba(255,255,255,.08);
+}
+body{background:var(--dark);color:var(--white);font-family:'DM Sans',sans-serif;min-height:100vh;padding:0}
+.layout{max-width:900px;margin:0 auto;padding:40px 24px}
+
+/* HEADER */
+.guide-header{text-align:center;padding:48px 0 36px;border-bottom:1px solid var(--bdr);margin-bottom:40px}
+.gh-eyebrow{font-size:11px;color:var(--p);letter-spacing:4px;text-transform:uppercase;font-weight:600;margin-bottom:10px}
+.gh-title{font-family:'Cormorant Garamond',serif;font-size:42px;font-weight:700;margin-bottom:8px}
+.gh-title span{color:var(--pl);font-style:italic}
+.gh-sub{font-size:15px;color:var(--dim);max-width:520px;margin:0 auto;line-height:1.6}
+
+/* PROGRESS BAR */
+.progress-row{display:flex;gap:0;margin-bottom:40px;border-radius:14px;overflow:hidden;border:1px solid var(--bdr)}
+.prog-step{flex:1;padding:14px 10px;text-align:center;background:var(--card);border-right:1px solid var(--bdr);cursor:pointer;transition:all .2s}
+.prog-step:last-child{border:none}
+.prog-step.done{background:rgba(34,197,94,.08)}
+.prog-step.active{background:rgba(107,47,206,.15)}
+.ps-num{font-size:11px;color:var(--faint);font-weight:700;letter-spacing:1px}
+.ps-lbl{font-size:12px;color:var(--dim);margin-top:2px;font-weight:500}
+.prog-step.done .ps-num{color:var(--green)}
+.prog-step.done .ps-lbl{color:var(--white)}
+.prog-step.active .ps-num{color:var(--pl)}
+.prog-step.active .ps-lbl{color:var(--white);font-weight:600}
+
+/* STEP CARDS */
+.step-card{background:var(--card);border:1px solid var(--bdr);border-radius:22px;padding:28px;margin-bottom:20px;position:relative;overflow:hidden}
+.step-card.highlight{border-color:rgba(107,47,206,.4)}
+.step-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--bdr)}
+.step-card.done::before{background:var(--green)}
+.step-card.active::before{background:var(--p)}
+.step-num{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:10px;background:var(--pg,rgba(107,47,206,.15));color:var(--pl);font-size:13px;font-weight:700;margin-bottom:12px;border:1px solid rgba(107,47,206,.25)}
+.step-card.done .step-num{background:rgba(34,197,94,.1);color:var(--green);border-color:rgba(34,197,94,.25)}
+.step-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;margin-bottom:6px}
+.step-sub{font-size:13px;color:var(--dim);margin-bottom:18px;line-height:1.6}
+.step-body{font-size:13px;color:var(--dim);line-height:1.8}
+
+/* INSTRUCTIONS */
+.inst-list{display:flex;flex-direction:column;gap:10px}
+.inst-item{display:flex;gap:14px;align-items:flex-start;padding:12px 14px;background:rgba(255,255,255,.025);border-radius:12px;border:1px solid var(--bdr)}
+.inst-num{width:24px;height:24px;border-radius:7px;background:rgba(107,47,206,.2);color:var(--pl);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.inst-txt{font-size:13px;color:var(--white);line-height:1.6}
+.inst-txt strong{color:var(--white);font-weight:600}
+.inst-txt a{color:var(--pl);text-decoration:none}
+.inst-txt a:hover{text-decoration:underline}
+
+/* CODE BLOCKS */
+.code-block{background:#0D0020;border:1px solid rgba(107,47,206,.3);border-radius:14px;padding:18px 20px;margin:14px 0;position:relative;overflow:hidden}
+.code-block .cb-label{font-size:10px;color:var(--faint);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;font-weight:600}
+.code-block pre{font-family:'DM Mono',monospace;font-size:12.5px;color:#E9D5FF;line-height:1.7;overflow-x:auto;scrollbar-width:thin}
+.code-block .key{color:#C084FC}
+.code-block .val{color:#86EFAC}
+.code-block .cmt{color:#4A3060;font-style:italic}
+.copy-btn{position:absolute;top:14px;right:14px;background:rgba(107,47,206,.2);color:var(--pl);border:1px solid rgba(107,47,206,.3);border-radius:8px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s}
+.copy-btn:hover{background:var(--p);color:#fff;border-color:var(--p)}
+
+/* SCREENSHOT PLACEHOLDER */
+.screenshot{background:rgba(255,255,255,.025);border:1px solid var(--bdr);border-radius:14px;padding:28px;text-align:center;margin:14px 0;font-size:13px;color:var(--faint)}
+.screenshot .sc-ico{font-size:32px;margin-bottom:8px}
+.screenshot .sc-txt{color:var(--dim)}
+
+/* ALERT BOXES */
+.alert{display:flex;gap:12px;padding:14px 16px;border-radius:12px;margin:14px 0;align-items:flex-start}
+.alert-tip{background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.2)}
+.alert-warn{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2)}
+.alert-info{background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2)}
+.alert-ico{font-size:18px;flex-shrink:0;margin-top:1px}
+.alert-txt{font-size:13px;color:var(--dim);line-height:1.6}
+.alert-txt strong{color:var(--white)}
+
+/* COST TABLE */
+.cost-table{width:100%;border-collapse:separate;border-spacing:0;border-radius:14px;overflow:hidden;border:1px solid var(--bdr);margin:14px 0}
+.cost-table th{background:rgba(255,255,255,.04);padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:var(--faint);letter-spacing:1px;text-transform:uppercase;border-bottom:1px solid var(--bdr)}
+.cost-table td{padding:12px 16px;font-size:13px;border-bottom:1px solid var(--bdr)}
+.cost-table tr:last-child td{border:none}
+.cost-table tr:hover td{background:rgba(107,47,206,.04)}
+.tag-free{background:rgba(34,197,94,.12);color:var(--green);padding:3px 9px;border-radius:8px;font-size:11px;font-weight:700}
+.tag-paid{background:rgba(245,158,11,.12);color:var(--gold);padding:3px 9px;border-radius:8px;font-size:11px;font-weight:700}
+
+/* FLOW DIAGRAM */
+.flow{display:flex;align-items:center;gap:0;margin:18px 0;flex-wrap:wrap;gap:6px}
+.flow-box{background:rgba(107,47,206,.1);border:1px solid rgba(107,47,206,.25);border-radius:12px;padding:12px 16px;text-align:center;min-width:110px}
+.fb-ico{font-size:22px;margin-bottom:4px}
+.fb-lbl{font-size:12px;font-weight:600;color:var(--white)}
+.fb-sub{font-size:10px;color:var(--dim);margin-top:2px}
+.flow-arrow{font-size:20px;color:var(--pl);flex-shrink:0}
+
+/* CHECKLIST */
+.checklist{display:flex;flex-direction:column;gap:8px;margin:14px 0}
+.cl-item{display:flex;align-items:center;gap:10px;padding:11px 14px;background:rgba(255,255,255,.02);border:1px solid var(--bdr);border-radius:11px;cursor:pointer;transition:all .2s}
+.cl-item:hover{border-color:rgba(107,47,206,.3)}
+.cl-item.checked{background:rgba(34,197,94,.05);border-color:rgba(34,197,94,.2)}
+.cl-box{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;transition:all .2s}
+.cl-item.checked .cl-box{background:var(--green);border-color:var(--green);color:#000}
+.cl-txt{font-size:13px;color:var(--dim)}
+.cl-item.checked .cl-txt{color:var(--white)}
+
+/* FOOTER */
+.guide-footer{text-align:center;padding:32px 0;border-top:1px solid var(--bdr);margin-top:40px}
+.gf-txt{font-size:13px;color:var(--faint);line-height:1.7}
+.gf-contact{display:inline-flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <div class="guide-header">
+    <div class="gh-eyebrow">Technical Setup Guide</div>
+    <div class="gh-title">NSDI <span>ChocoCravings</span><br>Backend Integration</div>
+    <div class="gh-sub">Complete step-by-step guide to connect Supabase, activate WhatsApp notifications, and go live — in under 30 minutes.</div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="progress-row">
+    <div class="prog-step done"><div class="ps-num">✓ 1</div><div class="ps-lbl">Supabase Setup</div></div>
+    <div class="prog-step active"><div class="ps-num">→ 2</div><div class="ps-lbl">Add Keys</div></div>
+    <div class="prog-step"><div class="ps-num">3</div><div class="ps-lbl">Run SQL</div></div>
+    <div class="prog-step"><div class="ps-num">4</div><div class="ps-lbl">Enable Realtime</div></div>
+    <div class="prog-step"><div class="ps-num">5</div><div class="ps-lbl">Test Order</div></div>
+    <div class="prog-step"><div class="ps-num">6</div><div class="ps-lbl">Go Live 🎉</div></div>
+  </div>
+
+  <!-- ORDER FLOW -->
+  <div class="step-card highlight">
+    <div class="step-num">🗺</div>
+    <div class="step-title">How It All Works Together</div>
+    <div class="step-sub">Here's the complete flow from customer order to you receiving a WhatsApp notification:</div>
+    <div class="flow">
+      <div class="flow-box"><div class="fb-ico">📱</div><div class="fb-lbl">Customer</div><div class="fb-sub">Places order in app</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box"><div class="fb-ico">🗄</div><div class="fb-lbl">Supabase</div><div class="fb-sub">Stores order instantly</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box"><div class="fb-ico">📲</div><div class="fb-lbl">WhatsApp</div><div class="fb-sub">Notifies you + customer</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box"><div class="fb-ico">📊</div><div class="fb-lbl">Admin Panel</div><div class="fb-sub">Live order feed</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box"><div class="fb-ico">🍫</div><div class="fb-lbl">You Bake!</div><div class="fb-sub">Update & deliver</div></div>
+    </div>
+  </div>
+
+  <!-- STEP 1 -->
+  <div class="step-card done">
+    <div class="step-num">1</div>
+    <div class="step-title">Create Your Supabase Account</div>
+    <div class="step-sub">Supabase is a free cloud database. Your order data will be stored here securely.</div>
+    <div class="inst-list">
+      <div class="inst-item"><div class="inst-num">1</div><div class="inst-txt">Go to <a href="https://supabase.com" target="_blank"><strong>supabase.com</strong></a> and click <strong>"Start your project"</strong></div></div>
+      <div class="inst-item"><div class="inst-num">2</div><div class="inst-txt">Sign up with your <strong>Google account</strong> (fastest) or email</div></div>
+      <div class="inst-item"><div class="inst-num">3</div><div class="inst-txt">Click <strong>"New Project"</strong> → Name it <strong>"nsdi-chococravings"</strong></div></div>
+      <div class="inst-item"><div class="inst-num">4</div><div class="inst-txt">Set a <strong>Database Password</strong> (save this somewhere!) → Choose <strong>Region: Mumbai (ap-south-1)</strong> → Click <strong>Create Project</strong></div></div>
+      <div class="inst-item"><div class="inst-num">5</div><div class="inst-txt">Wait ~2 minutes for project to be ready</div></div>
+    </div>
+    <div class="alert alert-tip"><div class="alert-ico">✅</div><div class="alert-txt"><strong>Free forever:</strong> Supabase free tier gives you 500MB storage and 2GB data transfer per month — more than enough to handle thousands of orders!</div></div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="step-card active">
+    <div class="step-num">2</div>
+    <div class="step-title">Get Your API Keys</div>
+    <div class="step-sub">These keys connect the app and admin panel to your Supabase database.</div>
+    <div class="inst-list">
+      <div class="inst-item"><div class="inst-num">1</div><div class="inst-txt">In your Supabase project, click <strong>Settings</strong> (gear icon) in the left sidebar</div></div>
+      <div class="inst-item"><div class="inst-num">2</div><div class="inst-txt">Click <strong>API</strong> under Project Settings</div></div>
+      <div class="inst-item"><div class="inst-num">3</div><div class="inst-txt">Copy your <strong>Project URL</strong> — looks like: <code style="background:rgba(255,255,255,.07);padding:2px 8px;border-radius:5px;font-size:11px;color:#C084FC">https://abcdefghij.supabase.co</code></div></div>
+      <div class="inst-item"><div class="inst-num">4</div><div class="inst-txt">Copy the <strong>anon / public</strong> key (the long string starting with <code style="background:rgba(255,255,255,.07);padding:2px 8px;border-radius:5px;font-size:11px;color:#C084FC">eyJhbGci…</code>)</div></div>
+    </div>
+    <div class="alert alert-warn"><div class="alert-ico">⚠️</div><div class="alert-txt"><strong>Important:</strong> Use only the <strong>anon / public</strong> key in the app. Never use the "service_role" secret key in frontend code — that's only for server-side use.</div></div>
+
+    <div style="margin-top:16px;font-size:13px;font-weight:600;color:var(--white);margin-bottom:10px">Now paste your keys into BOTH files:</div>
+
+    <div class="code-block">
+      <div class="cb-label">📱 chococravings-app-v2.html — find line ~30</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><span class="cmt">// Replace these two lines:</span>
+<span class="key">const</span> <span class="val">SUPABASE_URL</span> = <span class="val">'https://YOUR_PROJECT_ID.supabase.co'</span>;
+<span class="key">const</span> <span class="val">SUPABASE_ANON_KEY</span> = <span class="val">'YOUR_ANON_PUBLIC_KEY'</span>;
+
+<span class="cmt">// With your actual keys like this:</span>
+<span class="key">const</span> <span class="val">SUPABASE_URL</span> = <span class="val">'https://abcdefghij.supabase.co'</span>;
+<span class="key">const</span> <span class="val">SUPABASE_ANON_KEY</span> = <span class="val">'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'</span>;</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="cb-label">📊 chococravings-admin-v2.html — find line ~30</div>
+      <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+      <pre><span class="cmt">// Same keys, replace in admin file too:</span>
+<span class="key">let</span> <span class="val">SUPABASE_URL</span> = localStorage.getItem(<span class="val">'sb_url'</span>) || <span class="val">'https://abcdefghij.supabase.co'</span>;
+<span class="key">let</span> <span class="val">SUPABASE_KEY</span> = localStorage.getItem(<span class="val">'sb_key'</span>) || <span class="val">'eyJhbGciOiJIUzI1NiIs...'</span>;</pre>
+    </div>
+
+    <div class="alert alert-info"><div class="alert-ico">💡</div><div class="alert-txt"><strong>Shortcut:</strong> In the Admin Panel, go to <strong>Settings</strong> tab and paste your keys there — they'll be saved automatically to your browser!</div></div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="step-card">
+    <div class="step-num">3</div>
+    <div class="step-title">Create the Database Tables</div>
+    <div class="step-sub">Run the SQL script to create your orders, customers, and notifications tables.</div>
+    <div class="inst-list">
+      <div class="inst-item"><div class="inst-num">1</div><div class="inst-txt">In Supabase, click <strong>SQL Editor</strong> in the left sidebar</div></div>
+      <div class="inst-item"><div class="inst-num">2</div><div class="inst-txt">Click <strong>"New Query"</strong></div></div>
+      <div class="inst-item"><div class="inst-num">3</div><div class="inst-txt">Open the file <strong>supabase-setup.sql</strong> (provided) → copy its entire contents → paste into the SQL editor</div></div>
+      <div class="inst-item"><div class="inst-num">4</div><div class="inst-txt">Click the green <strong>▶ Run</strong> button → you should see <strong>"Success. No rows returned"</strong></div></div>
+    </div>
+
+    <div class="code-block">
+      <div class="cb-label">Tables that will be created</div>
+      <pre><span class="key">orders</span>              <span class="cmt">→ stores every customer order</span>
+<span class="key">order_status_history</span> <span class="cmt">→ tracks status changes over time</span>
+<span class="key">customers</span>           <span class="cmt">→ customer profiles + loyalty points</span>
+<span class="key">notifications</span>       <span class="cmt">→ log of all WhatsApp/email alerts sent</span></pre>
+    </div>
+    <div class="alert alert-tip"><div class="alert-ico">✅</div><div class="alert-txt"><strong>Verify it worked:</strong> Click <strong>Table Editor</strong> in the left sidebar — you should see the 4 tables listed there.</div></div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="step-card">
+    <div class="step-num">4</div>
+    <div class="step-title">Enable Realtime (Live Order Feed)</div>
+    <div class="step-sub">This makes new orders appear instantly in the admin panel without refreshing.</div>
+    <div class="inst-list">
+      <div class="inst-item"><div class="inst-num">1</div><div class="inst-txt">In Supabase, go to <strong>Database → Replication</strong> in the left sidebar</div></div>
+      <div class="inst-item"><div class="inst-num">2</div><div class="inst-txt">Find the <strong>orders</strong> table in the list</div></div>
+      <div class="inst-item"><div class="inst-num">3</div><div class="inst-txt">Toggle ON for <strong>INSERT</strong> and <strong>UPDATE</strong> events</div></div>
+      <div class="inst-item"><div class="inst-num">4</div><div class="inst-txt">Click <strong>Save</strong></div></div>
+    </div>
+    <div class="alert alert-tip"><div class="alert-ico">🔔</div><div class="alert-txt"><strong>What this does:</strong> Every time a customer places an order, the admin dashboard will <strong>automatically update</strong> and play a notification sound — just like Swiggy/Zomato!</div></div>
+  </div>
+
+  <!-- STEP 5 -->
+  <div class="step-card">
+    <div class="step-num">5</div>
+    <div class="step-title">Set Up WhatsApp Notifications</div>
+    <div class="step-sub">When a customer places an order, both you and the customer get a WhatsApp message automatically.</div>
+
+    <div style="font-size:13px;font-weight:600;color:var(--white);margin-bottom:12px">How it works (no extra service needed):</div>
+    <div class="inst-list">
+      <div class="inst-item"><div class="inst-num">1</div><div class="inst-txt">Customer places order → app saves to Supabase → shows success screen</div></div>
+      <div class="inst-item"><div class="inst-num">2</div><div class="inst-txt">Customer clicks <strong>"📲 Get WhatsApp Confirmation"</strong> button</div></div>
+      <div class="inst-item"><div class="inst-num">3</div><div class="inst-txt">WhatsApp opens automatically with a pre-filled message → customer taps <strong>Send</strong></div></div>
+      <div class="inst-item"><div class="inst-num">4</div><div class="inst-txt">You receive the order details on <strong>+91 99721 41890</strong> — your WhatsApp Business number</div></div>
+      <div class="inst-item"><div class="inst-num">5</div><div class="inst-txt">From the Admin Panel, click <strong>📲</strong> button on any order to send status updates to the customer</div></div>
+    </div>
+
+    <div class="alert alert-info"><div class="alert-ico">📲</div><div class="alert-txt"><strong>WhatsApp message you'll receive for every order:</strong></div></div>
+    <div class="code-block">
+      <div class="cb-label">Sample WhatsApp message — Owner notification</div>
+      <pre><span class="val">🔔 NEW ORDER — CC-123456</span>
+
+👤 Customer: Priya Krishnan
+📞 Phone: +91 9876543210
+📍 Address: 12, Anna Nagar, Chennai 600040
+
+🛒 Items:
+• Classic Fudge Brownie (premium) — eggless — 9pcs × 1
+  Toppings: Dark Ganache
+
+💰 Total: ₹680
+💳 Payment: COD
+⏰ 10 Mar 2025, 3:45 PM
+
+Reply to confirm: CONFIRM CC-123456</pre>
+    </div>
+
+    <div style="margin-top:16px;font-size:13px;font-weight:600;color:var(--white);margin-bottom:10px">Make sure you have WhatsApp Business installed:</div>
+    <div class="inst-list">
+      <div class="inst-item"><div class="inst-num">✓</div><div class="inst-txt">Download <strong>WhatsApp Business</strong> app (free) on your phone with number +91 99721 41890</div></div>
+      <div class="inst-item"><div class="inst-num">✓</div><div class="inst-txt">Set up your <strong>business profile</strong> with NSDI ChocoCravings name, address, description</div></div>
+      <div class="inst-item"><div class="inst-num">✓</div><div class="inst-txt">Set <strong>Away Message</strong>: "Thanks for your order! We'll confirm within 15 minutes 🍫"</div></div>
+    </div>
+  </div>
+
+  <!-- STEP 6 -->
+  <div class="step-card">
+    <div class="step-num">6</div>
+    <div class="step-title">Test Your First Order End-to-End</div>
+    <div class="step-sub">Before going live, do a test order to make sure everything is working.</div>
+    <div class="checklist">
+      <div class="cl-item" onclick="this.classList.toggle('checked');this.querySelector('.cl-box').textContent=this.classList.contains('checked')?'✓':''"><div class="cl-box"></div><div class="cl-txt">Open <strong>chococravings-app-v2.html</strong> → select a brownie → tap Add to Cart</div></div>
+      <div class="cl-item" onclick="this.classList.toggle('checked');this.querySelector('.cl-box').textContent=this.classList.contains('checked')?'✓':''"><div class="cl-box"></div><div class="cl-txt">Fill checkout form with your own phone number → tap <strong>Place Order</strong></div></div>
+      <div class="cl-item" onclick="this.classList.toggle('checked');this.querySelector('.cl-box').textContent=this.classList.contains('checked')?'✓':''"><div class="cl-box"></div><div class="cl-txt">See the success screen with order ID (e.g. CC-123456)</div></div>
+      <div class="cl-item" onclick="this.classList.toggle('checked');this.querySelector('.cl-box').textContent=this.classList.contains('checked')?'✓':''"><div class="cl-box"></div><div class="cl-txt">Open <strong>Supabase → Table Editor → orders</strong> and verify the row was saved</div></div>
+      <div class="cl-item" onclick="this.classList.toggle('checked');this.querySelector('.cl-box').textContent=this.classList.contains('checked')?'✓':''"><div class="cl-box"></div><div class="cl-txt">Open <strong>chococravings-admin-v2.html</strong> → the order should appear in the live feed</div></div>
+      <div class="cl-item" onclick="this.classList.toggle('checked');this.querySelector('.cl-box').textContent=this.classList.contains('checked')?'✓':''"><div class="cl-box"></div><div class="cl-txt">In Admin → click <strong>Status ▾</strong> → change to "Confirmed" → verify order updates</div></div>
+      <div class="cl-item" onclick="this.classList.toggle('checked');this.querySelector('.cl-box').textContent=this.classList.contains('checked')?'✓':''"><div class="cl-box"></div><div class="cl-txt">In Admin → click <strong>📲</strong> → verify WhatsApp opens with customer update message</div></div>
+    </div>
+  </div>
+
+  <!-- COST BREAKDOWN -->
+  <div class="step-card">
+    <div class="step-num">💰</div>
+    <div class="step-title">Cost Breakdown</div>
+    <div class="step-sub">What you pay monthly to keep everything running:</div>
+    <table class="cost-table">
+      <tr><th>Service</th><th>What it does</th><th>Cost</th></tr>
+      <tr><td><strong>Supabase</strong></td><td>Database, realtime, authentication</td><td><span class="tag-free">FREE</span></td></tr>
+      <tr><td><strong>WhatsApp Business</strong></td><td>Order notifications (wa.me link method)</td><td><span class="tag-free">FREE</span></td></tr>
+      <tr><td><strong>HTML Files (hosted locally)</strong></td><td>Customer app + admin dashboard</td><td><span class="tag-free">FREE</span></td></tr>
+      <tr><td><strong>Email (Gmail)</strong></td><td>Order confirmation emails via mailto:</td><td><span class="tag-free">FREE</span></td></tr>
+      <tr><td colspan="2"><strong>Total Monthly Cost</strong></td><td><strong style="color:var(--green)">₹0 / month</strong></td></tr>
+    </table>
+    <div class="alert alert-tip"><div class="alert-ico">🚀</div><div class="alert-txt"><strong>When you scale up:</strong> If you want automated WhatsApp (no customer button click), you can add <strong>Twilio WhatsApp API</strong> (~₹0.80/message) or <strong>Interakt</strong> (~₹999/month) — but that's optional and only needed at higher volumes.</div></div>
+  </div>
+
+  <!-- WHAT'S NEXT -->
+  <div class="step-card">
+    <div class="step-num">🚀</div>
+    <div class="step-title">What's Next — Future Upgrades</div>
+    <div class="inst-list">
+      <div class="inst-item"><div class="inst-num">→</div><div class="inst-txt"><strong>Razorpay Payment Gateway</strong> — Accept UPI, cards, net banking directly in app (₹0 setup, 2% per transaction)</div></div>
+      <div class="inst-item"><div class="inst-num">→</div><div class="inst-txt"><strong>React Native / Flutter App</strong> — Convert to real mobile app on Play Store (push notifications, no WhatsApp click needed)</div></div>
+      <div class="inst-item"><div class="inst-num">→</div><div class="inst-txt"><strong>Automated WhatsApp API</strong> — Orders auto-sent to your WhatsApp via Interakt/Twilio (no customer action needed)</div></div>
+      <div class="inst-item"><div class="inst-num">→</div><div class="inst-txt"><strong>Email Notifications</strong> — Auto email to you (nsdi@gmail.com) + customer via EmailJS or Resend (free tier)</div></div>
+      <div class="inst-item"><div class="inst-num">→</div><div class="inst-txt"><strong>Web Hosting</strong> — Host on Vercel (free) so customers get a real URL like <code style="font-size:11px;background:rgba(255,255,255,.07);padding:2px 8px;border-radius:5px;color:#C084FC">nsdi.vercel.app</code></div></div>
+      <div class="inst-item"><div class="inst-num">→</div><div class="inst-txt"><strong>Loyalty Points System</strong> — Auto-calculate and update customer points after each delivered order</div></div>
+    </div>
+  </div>
+
+  <div class="guide-footer">
+    <div class="gf-txt">Built for <strong>NSDI ChocoCravings</strong> — Tamil Nadu's premium homemade brownie brand 🍫<br>Need help with setup? Reach out!</div>
+    <div class="gf-contact">📞 +91 99721 41890 &nbsp;|&nbsp; 📸 @nsdi.chococravings</div>
+  </div>
+
+</div>
+
+<script>
+function copyCode(btn) {
+  const pre = btn.parentElement.querySelector('pre');
+  navigator.clipboard.writeText(pre.innerText).then(()=>{
+    btn.textContent = 'Copied!';
+    setTimeout(()=>btn.textContent='Copy', 1800);
+  });
+}
+</script>
+</body>
+</html>

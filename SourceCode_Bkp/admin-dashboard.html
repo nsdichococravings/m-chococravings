@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NSDI ChocoCravings — Admin</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#6B2FCE;--p2:#8B44E8;--pl:#C084FC;--pg:rgba(107,47,206,.12);
+  --dark:#09010F;--d2:#110020;--d3:#1C003A;--d4:#0F0018;
+  --white:#FAF5FF;--off:#E9D5FF;--dim:#9F7ABA;--faint:#4A3060;
+  --green:#22C55E;--pink:#F472B6;--gold:#F59E0B;--red:#EF4444;--blue:#3B82F6;
+  --card:rgba(255,255,255,.035);--bdr:rgba(255,255,255,.07);--bdr2:rgba(107,47,206,.25);
+  --sidebar:200px;
+}
+body{background:var(--dark);font-family:'DM Sans',sans-serif;color:var(--white);min-height:100vh;display:flex;overflow:hidden}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar);background:var(--d4);border-right:1px solid var(--bdr);display:flex;flex-direction:column;height:100vh;position:fixed;left:0;top:0;z-index:100;transition:transform .3s}
+.sb-logo{padding:22px 18px 16px;border-bottom:1px solid var(--bdr)}
+.sb-brand{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:700;color:var(--white);line-height:1.2}
+.sb-brand span{color:var(--pl);font-style:italic}
+.sb-tag{font-size:9px;color:var(--faint);letter-spacing:2px;text-transform:uppercase;margin-top:2px}
+.sb-nav{flex:1;padding:12px 10px;overflow-y:auto;scrollbar-width:none}
+.sb-nav::-webkit-scrollbar{display:none}
+.sb-section{font-size:9px;color:var(--faint);letter-spacing:2px;text-transform:uppercase;padding:10px 8px 5px;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 10px;border-radius:10px;cursor:pointer;transition:all .2s;margin-bottom:2px;position:relative}
+.nav-item:hover{background:var(--pg)}
+.nav-item.on{background:var(--pg);border:1px solid var(--bdr2)}
+.nav-item.on .nav-icon{filter:none}
+.nav-icon{font-size:17px;filter:grayscale(60%)}
+.nav-label{font-size:13px;color:var(--dim);font-weight:500}
+.nav-item.on .nav-label{color:var(--white);font-weight:600}
+.nav-badge{position:absolute;right:9px;top:50%;transform:translateY(-50%);background:var(--pink);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px;animation:badgePulse 2s infinite}
+@keyframes badgePulse{0%,100%{opacity:1}50%{opacity:.7}}
+.sb-bottom{padding:12px;border-top:1px solid var(--bdr)}
+.sb-user{display:flex;align-items:center;gap:9px}
+.sb-avatar{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--p),var(--pl));display:flex;align-items:center;justify-content:center;font-size:16px}
+.sb-uname{font-size:12px;font-weight:600;color:var(--white)}
+.sb-urole{font-size:10px;color:var(--faint)}
+
+/* ── MAIN ── */
+.main{margin-left:var(--sidebar);flex:1;height:100vh;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--p) transparent}
+
+/* ── TOPBAR ── */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 28px;background:rgba(9,1,15,.9);backdrop-filter:blur(20px);border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:50}
+.tb-left{display:flex;align-items:center;gap:12px}
+.page-title{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700}
+.live-badge{display:flex;align-items:center;gap:6px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25);color:var(--green);font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:livepulse 1.5s infinite}
+@keyframes livepulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(1.3)}}
+.tb-right{display:flex;align-items:center;gap:10px}
+.tb-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--card);border:1px solid var(--bdr);border-radius:10px;font-size:12px;font-weight:600;color:var(--dim);cursor:pointer;transition:all .2s}
+.tb-btn:hover{border-color:var(--p);color:var(--white)}
+.tb-btn.primary{background:var(--p);border-color:var(--p);color:#fff}
+.conn-status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dim)}
+.conn-dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+.conn-dot.err{background:var(--red)}
+.conn-dot.connecting{background:var(--gold);animation:livepulse 1s infinite}
+
+/* ── CONTENT SECTIONS ── */
+.content{padding:24px 28px}
+
+/* ── STAT CARDS ── */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:var(--card);border:1px solid var(--bdr);border-radius:18px;padding:20px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s}
+.stat-card:hover{transform:translateY(-2px);border-color:var(--bdr2)}
+.stat-card::before{content:'';position:absolute;top:-30px;right:-30px;width:90px;height:90px;border-radius:50%;opacity:.12;filter:blur(20px)}
+.sc-green::before{background:var(--green)}
+.sc-purple::before{background:var(--p)}
+.sc-gold::before{background:var(--gold)}
+.sc-pink::before{background:var(--pink)}
+.stat-ico{font-size:26px;margin-bottom:10px}
+.stat-val{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:700;color:var(--white);line-height:1}
+.stat-lbl{font-size:12px;color:var(--dim);margin-top:4px}
+.stat-delta{font-size:11px;font-weight:600;margin-top:6px}
+.delta-up{color:var(--green)}
+.delta-dn{color:var(--red)}
+
+/* ── ORDERS TABLE ── */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.section-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700}
+.filter-pills{display:flex;gap:7px}
+.fpill{padding:6px 14px;border-radius:20px;background:var(--card);border:1px solid var(--bdr);font-size:12px;color:var(--dim);cursor:pointer;transition:all .2s}
+.fpill.on{background:var(--p);border-color:var(--p);color:#fff}
+
+.orders-table{background:var(--card);border:1px solid var(--bdr);border-radius:18px;overflow:hidden}
+.ot-head{display:grid;grid-template-columns:120px 1fr 140px 100px 120px 100px 130px;gap:0;padding:13px 18px;background:rgba(255,255,255,.025);border-bottom:1px solid var(--bdr)}
+.ot-th{font-size:10px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.8px}
+.ot-body{max-height:480px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--p) transparent}
+.ot-row{display:grid;grid-template-columns:120px 1fr 140px 100px 120px 100px 130px;gap:0;padding:14px 18px;border-bottom:1px solid var(--bdr);transition:background .2s;cursor:pointer;align-items:center}
+.ot-row:last-child{border:none}
+.ot-row:hover{background:rgba(107,47,206,.06)}
+.ot-row.new-order{animation:rowSlide .4s ease-out both,rowGlow 2s ease-out}
+@keyframes rowSlide{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes rowGlow{0%{background:rgba(34,197,94,.12)}100%{background:transparent}}
+.ot-id{font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:700;color:var(--pl)}
+.ot-customer .cn{font-size:13px;font-weight:600;color:var(--white)}
+.ot-customer .cp{font-size:11px;color:var(--dim)}
+.ot-items .oi{font-size:12px;color:var(--white);font-weight:500}
+.ot-items .od{font-size:11px;color:var(--dim)}
+.ot-price{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:700;color:var(--gold)}
+.status-pill{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.sp-pending{background:rgba(245,158,11,.12);color:var(--gold);border:1px solid rgba(245,158,11,.25)}
+.sp-confirmed{background:rgba(59,130,246,.12);color:var(--blue);border:1px solid rgba(59,130,246,.25)}
+.sp-preparing{background:rgba(107,47,206,.15);color:var(--pl);border:1px solid var(--bdr2)}
+.sp-out_for_delivery{background:rgba(34,197,94,.12);color:var(--green);border:1px solid rgba(34,197,94,.25)}
+.sp-delivered{background:rgba(34,197,94,.08);color:#6ee7b7;border:1px solid rgba(34,197,94,.15)}
+.sp-cancelled{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.ot-pay{font-size:12px;color:var(--dim);text-transform:uppercase;font-weight:600}
+.ot-actions{display:flex;gap:6px}
+.action-btn{padding:5px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;border:none;transition:all .18s}
+.ab-confirm{background:rgba(59,130,246,.15);color:var(--blue);border:1px solid rgba(59,130,246,.2)}
+.ab-confirm:hover{background:var(--blue);color:#fff}
+.ab-wa{background:rgba(37,211,102,.12);color:#25D366;border:1px solid rgba(37,211,102,.2)}
+.ab-wa:hover{background:#25D366;color:#fff}
+.ab-status{background:var(--pg);color:var(--pl);border:1px solid var(--bdr2)}
+.ab-status:hover{background:var(--p);color:#fff}
+
+/* ── STATUS DROPDOWN ── */
+.status-dropdown{position:fixed;background:var(--d2);border:1px solid var(--bdr2);border-radius:14px;padding:6px;z-index:1000;min-width:180px;box-shadow:0 20px 60px rgba(0,0,0,.5);display:none}
+.sd-option{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:9px;cursor:pointer;transition:background .15s;font-size:13px;font-weight:500;color:var(--white)}
+.sd-option:hover{background:var(--pg)}
+
+/* ── ORDER DETAIL PANEL ── */
+.detail-panel{position:fixed;right:0;top:0;width:380px;height:100vh;background:var(--d2);border-left:1px solid var(--bdr);z-index:200;transform:translateX(100%);transition:transform .35s cubic-bezier(.4,0,.2,1);overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--p) transparent}
+.detail-panel.open{transform:translateX(0)}
+.dp-head{padding:22px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--d2);z-index:10}
+.dp-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700}
+.dp-close{width:34px;height:34px;border-radius:10px;background:var(--card);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px;border:1px solid var(--bdr)}
+.dp-body{padding:20px 22px}
+.dp-section{margin-bottom:20px}
+.dp-slabel{font-size:10px;font-weight:700;color:var(--faint);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+.dp-row{display:flex;justify-content:space-between;margin-bottom:7px}
+.dp-key{font-size:12px;color:var(--dim)}
+.dp-val{font-size:13px;font-weight:600;color:var(--white);text-align:right;max-width:200px}
+.dp-items{display:flex;flex-direction:column;gap:8px}
+.dp-item{background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:12px}
+.di-name{font-size:13px;font-weight:600;color:var(--white);margin-bottom:4px}
+.di-detail{font-size:11px;color:var(--dim);line-height:1.6}
+.di-price{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:700;color:var(--gold);margin-top:6px}
+.dp-total{display:flex;justify-content:space-between;align-items:center;background:rgba(107,47,206,.1);border:1px solid var(--bdr2);border-radius:12px;padding:12px 14px;margin-top:10px}
+.dt-lbl{font-size:14px;font-weight:700}
+.dt-val{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:var(--pl)}
+
+/* STATUS UPDATER IN PANEL */
+.status-select{width:100%;background:var(--card);border:1.5px solid var(--bdr2);border-radius:10px;padding:10px 13px;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--white);cursor:pointer;outline:none}
+.status-select option{background:var(--d2)}
+.update-status-btn{width:100%;padding:12px;background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;border:none;border-radius:10px;cursor:pointer;margin-top:8px;transition:opacity .2s}
+.update-status-btn:hover{opacity:.9}
+.wa-notify-btn{width:100%;padding:11px;background:rgba(37,211,102,.12);color:#25D366;border:1px solid rgba(37,211,102,.25);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;border-radius:10px;cursor:pointer;margin-top:7px;transition:all .2s}
+.wa-notify-btn:hover{background:#25D366;color:#fff}
+
+/* ── CHARTS ROW ── */
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.chart-card{background:var(--card);border:1px solid var(--bdr);border-radius:18px;padding:20px}
+.chart-title{font-size:14px;font-weight:600;color:var(--white);margin-bottom:16px}
+.bar-chart{display:flex;flex-direction:column;gap:8px}
+.bar-row{display:flex;align-items:center;gap:10px}
+.bar-lbl{font-size:11px;color:var(--dim);min-width:80px}
+.bar-track{flex:1;height:8px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+.bar-val{font-size:11px;color:var(--dim);min-width:36px;text-align:right}
+.donut-wrap{display:flex;align-items:center;gap:16px}
+.donut-svg{flex-shrink:0}
+.donut-legend{display:flex;flex-direction:column;gap:7px}
+.dl-item{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--dim)}
+.dl-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+
+/* ── NOTIFICATION TOAST ── */
+.notif-toast{position:fixed;top:20px;right:20px;background:var(--d2);border:1px solid var(--green);border-radius:16px;padding:14px 18px;z-index:9999;transform:translateX(200px);opacity:0;transition:all .4s cubic-bezier(.16,1,.3,1);max-width:320px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.notif-toast.show{transform:translateX(0);opacity:1}
+.nt-head{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.nt-dot{width:9px;height:9px;border-radius:50%;background:var(--green);animation:livepulse 1s infinite}
+.nt-title{font-size:13px;font-weight:700;color:var(--white)}
+.nt-body{font-size:12px;color:var(--dim);line-height:1.5}
+.nt-close{position:absolute;top:10px;right:12px;font-size:16px;cursor:pointer;color:var(--faint)}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:60px 20px;color:var(--faint)}
+.empty-state .es-ico{font-size:48px;margin-bottom:12px;filter:grayscale(50%)}
+.empty-state .es-title{font-size:16px;font-weight:600;color:var(--dim);margin-bottom:6px}
+.empty-state .es-sub{font-size:13px}
+
+/* ── SETUP BANNER ── */
+.setup-banner{background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(239,68,68,.08));border:1px solid rgba(245,158,11,.25);border-radius:16px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:flex-start;gap:14px}
+.sb-ico{font-size:24px;flex-shrink:0;margin-top:2px}
+.sb-txt .sb-title{font-size:14px;font-weight:700;color:var(--gold);margin-bottom:4px}
+.sb-txt .sb-desc{font-size:12px;color:var(--dim);line-height:1.6}
+.sb-txt code{background:rgba(255,255,255,.07);padding:2px 7px;border-radius:5px;font-size:11px;color:var(--pl)}
+
+/* ── SCROLL ── */
+.main::-webkit-scrollbar{width:6px}
+.main::-webkit-scrollbar-track{background:transparent}
+.main::-webkit-scrollbar-thumb{background:var(--p);border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- ── SIDEBAR ── -->
+<nav class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-brand">Choco<span>Cravings</span></div>
+    <div class="sb-tag">Admin Panel v2</div>
+  </div>
+  <div class="sb-nav">
+    <div class="sb-section">Main</div>
+    <div class="nav-item on" onclick="showView('dashboard',this)"><span class="nav-icon">📊</span><span class="nav-label">Dashboard</span></div>
+    <div class="nav-item" onclick="showView('orders',this)"><span class="nav-icon">📦</span><span class="nav-label">Orders</span><span class="nav-badge" id="pending-badge">0</span></div>
+    <div class="nav-item" onclick="showView('products',this)"><span class="nav-icon">🍫</span><span class="nav-label">Products</span></div>
+    <div class="nav-section">Tools</div>
+    <div class="nav-item" onclick="showView('analytics',this)"><span class="nav-icon">📈</span><span class="nav-label">Analytics</span></div>
+    <div class="nav-item" onclick="showView('customers',this)"><span class="nav-icon">👥</span><span class="nav-label">Customers</span></div>
+    <div class="nav-item" onclick="showView('notifications',this)"><span class="nav-icon">🔔</span><span class="nav-label">Notifications</span></div>
+    <div class="nav-section">Settings</div>
+    <div class="nav-item" onclick="showView('settings',this)"><span class="nav-icon">⚙️</span><span class="nav-label">Settings</span></div>
+  </div>
+  <div class="sb-bottom">
+    <div class="sb-user">
+      <div class="sb-avatar">👑</div>
+      <div><div class="sb-uname">NSDI Admin</div><div class="sb-urole">Owner</div></div>
+    </div>
+  </div>
+</nav>
+
+<!-- ── MAIN ── -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="tb-left">
+      <div class="page-title" id="topbar-title">Dashboard</div>
+      <div class="live-badge"><div class="live-dot"></div>Live</div>
+    </div>
+    <div class="tb-right">
+      <div class="conn-status"><div class="conn-dot connecting" id="conn-dot"></div><span id="conn-txt">Connecting…</span></div>
+      <div class="tb-btn" onclick="loadOrders()">🔄 Refresh</div>
+      <div class="tb-btn primary" onclick="window.open('chococravings-app-v2.html','_blank')">👁 View App</div>
+    </div>
+  </div>
+
+  <!-- ══ DASHBOARD VIEW ══ -->
+  <div id="view-dashboard" class="content">
+
+    <!-- Setup Banner (shown until Supabase connected) -->
+    <div class="setup-banner" id="setup-banner">
+      <div class="sb-ico">⚠️</div>
+      <div class="sb-txt">
+        <div class="sb-title">Supabase Not Connected Yet</div>
+        <div class="sb-desc">Replace <code>YOUR_PROJECT_ID</code> and <code>YOUR_ANON_KEY</code> at the top of this file with your real Supabase credentials. See the <strong>Setup Guide</strong> file for step-by-step instructions. Once connected, live orders will appear here automatically.</div>
+      </div>
+    </div>
+
+    <!-- STAT CARDS -->
+    <div class="stats-grid">
+      <div class="stat-card sc-green">
+        <div class="stat-ico">📦</div>
+        <div class="stat-val" id="stat-total-orders">0</div>
+        <div class="stat-lbl">Total Orders</div>
+        <div class="stat-delta delta-up" id="stat-orders-delta">Loading…</div>
+      </div>
+      <div class="stat-card sc-gold">
+        <div class="stat-ico">💰</div>
+        <div class="stat-val" id="stat-revenue">₹0</div>
+        <div class="stat-lbl">Total Revenue</div>
+        <div class="stat-delta delta-up" id="stat-rev-delta">Loading…</div>
+      </div>
+      <div class="stat-card sc-pink">
+        <div class="stat-ico">⏳</div>
+        <div class="stat-val" id="stat-pending">0</div>
+        <div class="stat-lbl">Pending Orders</div>
+        <div class="stat-delta" id="stat-pend-delta" style="color:var(--gold)">Needs action</div>
+      </div>
+      <div class="stat-card sc-purple">
+        <div class="stat-ico">✅</div>
+        <div class="stat-val" id="stat-delivered">0</div>
+        <div class="stat-lbl">Delivered Today</div>
+        <div class="stat-delta delta-up" id="stat-del-delta">Loading…</div>
+      </div>
+    </div>
+
+    <!-- CHARTS ROW -->
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title">📊 Orders by Status</div>
+        <div class="bar-chart" id="status-chart">
+          <div style="color:var(--faint);font-size:12px">Loading chart…</div>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">🍫 Top Selling Variants</div>
+        <div class="bar-chart" id="variant-chart">
+          <div style="color:var(--faint);font-size:12px">Loading chart…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECENT ORDERS (mini) -->
+    <div class="section-header">
+      <div class="section-title">Recent Orders</div>
+      <div class="tb-btn" onclick="showView('orders',document.querySelector('.nav-item:nth-child(2))'))">View All →</div>
+    </div>
+    <div class="orders-table">
+      <div class="ot-head">
+        <div class="ot-th">Order ID</div>
+        <div class="ot-th">Customer</div>
+        <div class="ot-th">Items</div>
+        <div class="ot-th">Amount</div>
+        <div class="ot-th">Status</div>
+        <div class="ot-th">Payment</div>
+        <div class="ot-th">Actions</div>
+      </div>
+      <div class="ot-body" id="recent-orders-body">
+        <div class="empty-state"><div class="es-ico">📦</div><div class="es-title">No orders yet</div><div class="es-sub">Orders will appear here in real time</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ ORDERS VIEW ══ -->
+  <div id="view-orders" class="content" style="display:none">
+    <div class="section-header">
+      <div class="section-title">All Orders</div>
+      <div class="filter-pills">
+        <div class="fpill on" onclick="filterOrders('all',this)">All</div>
+        <div class="fpill" onclick="filterOrders('pending',this)">⏳ Pending</div>
+        <div class="fpill" onclick="filterOrders('confirmed',this)">✅ Confirmed</div>
+        <div class="fpill" onclick="filterOrders('preparing',this)">🍫 Preparing</div>
+        <div class="fpill" onclick="filterOrders('out_for_delivery',this)">🚚 Out</div>
+        <div class="fpill" onclick="filterOrders('delivered',this)">✓ Delivered</div>
+      </div>
+    </div>
+    <div class="orders-table">
+      <div class="ot-head">
+        <div class="ot-th">Order ID</div>
+        <div class="ot-th">Customer</div>
+        <div class="ot-th">Items</div>
+        <div class="ot-th">Amount</div>
+        <div class="ot-th">Status</div>
+        <div class="ot-th">Payment</div>
+        <div class="ot-th">Actions</div>
+      </div>
+      <div class="ot-body" id="all-orders-body">
+        <div class="empty-state"><div class="es-ico">📦</div><div class="es-title">No orders yet</div><div class="es-sub">Orders will appear here in real time once customers start ordering</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ OTHER VIEWS (placeholder) ══ -->
+  <div id="view-products" class="content" style="display:none">
+    <div class="section-title" style="margin-bottom:16px">Products Catalogue</div>
+    <div style="color:var(--dim);font-size:13px;background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:20px">Product management coming soon. All 15 brownie variants, 2 tiers, toppings will be editable here.</div>
+  </div>
+  <div id="view-analytics" class="content" style="display:none">
+    <div class="section-title" style="margin-bottom:16px">Analytics</div>
+    <div style="color:var(--dim);font-size:13px;background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:20px">Revenue charts, popular products, peak hours — coming in next build.</div>
+  </div>
+  <div id="view-customers" class="content" style="display:none">
+    <div class="section-title" style="margin-bottom:16px">Customers</div>
+    <div style="color:var(--dim);font-size:13px;background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:20px">Customer database with order history, loyalty points — coming in next build.</div>
+  </div>
+  <div id="view-notifications" class="content" style="display:none">
+    <div class="section-title" style="margin-bottom:16px">Notification Log</div>
+    <div style="color:var(--dim);font-size:13px;background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:20px">WhatsApp / Email notification history will appear here.</div>
+  </div>
+  <div id="view-settings" class="content" style="display:none">
+    <div class="section-title" style="margin-bottom:16px">Settings</div>
+    <div style="background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px">
+      <div><div style="font-size:12px;color:var(--faint);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Supabase URL</div><input style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--bdr);border-radius:9px;padding:10px 14px;color:var(--white);font-size:13px;font-family:'DM Sans'" placeholder="https://YOUR_PROJECT_ID.supabase.co" id="setting-url"></div>
+      <div><div style="font-size:12px;color:var(--faint);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px">Supabase Anon Key</div><input style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--bdr);border-radius:9px;padding:10px 14px;color:var(--white);font-size:13px;font-family:'DM Sans'" placeholder="eyJhbGciOiJIUzI1NiIs…" id="setting-key"></div>
+      <button onclick="saveSettings()" style="width:fit-content;padding:10px 20px;background:var(--p);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer">Save & Reconnect</button>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- ORDER DETAIL PANEL -->
+<div class="detail-panel" id="detail-panel">
+  <div class="dp-head">
+    <div class="dp-title" id="dp-order-id">Order Detail</div>
+    <div class="dp-close" onclick="closePanel()">✕</div>
+  </div>
+  <div class="dp-body" id="dp-body">
+    <div style="color:var(--dim);font-size:13px">Select an order to view details</div>
+  </div>
+</div>
+
+<!-- STATUS DROPDOWN -->
+<div class="status-dropdown" id="status-dropdown">
+  <div class="sd-option" onclick="updateStatus(currentOrderId,'pending')">⏳ Pending</div>
+  <div class="sd-option" onclick="updateStatus(currentOrderId,'confirmed')">✅ Confirmed</div>
+  <div class="sd-option" onclick="updateStatus(currentOrderId,'preparing')">🍫 Preparing</div>
+  <div class="sd-option" onclick="updateStatus(currentOrderId,'out_for_delivery')">🚚 Out for Delivery</div>
+  <div class="sd-option" onclick="updateStatus(currentOrderId,'delivered')">✓ Delivered</div>
+  <div class="sd-option" onclick="updateStatus(currentOrderId,'cancelled')">✗ Cancelled</div>
+</div>
+
+<!-- NOTIFICATION TOAST -->
+<div class="notif-toast" id="notif-toast">
+  <span class="nt-close" onclick="closeToast()">✕</span>
+  <div class="nt-head"><div class="nt-dot"></div><div class="nt-title" id="nt-title">New Order!</div></div>
+  <div class="nt-body" id="nt-body">A new order has been placed.</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  CONFIG — Replace with your Supabase keys
+//  supabase.com → Project → Settings → API
+// ══════════════════════════════════════════════
+let SUPABASE_URL = localStorage.getItem('sb_url') || 'https://YOUR_PROJECT_ID.supabase.co';
+let SUPABASE_KEY = localStorage.getItem('sb_key') || 'YOUR_ANON_PUBLIC_KEY';
+const NSDI_PHONE = '919972141890';
+
+const { createClient } = supabase;
+let db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── STATE ──
+let allOrders = [];
+let currentFilter = 'all';
+let currentOrderId = null;
+let realtimeChannel = null;
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async () => {
+  setConn('connecting');
+  await loadOrders();
+  subscribeRealtime();
+  updatePendingBadge();
+  // Hide setup banner if connected
+  if (!SUPABASE_URL.includes('YOUR_PROJECT_ID')) {
+    const b = document.getElementById('setup-banner');
+    if (b) b.style.display = 'none';
+  }
+});
+
+// ── SETTINGS SAVE ──
+function saveSettings() {
+  SUPABASE_URL = document.getElementById('setting-url').value.trim();
+  SUPABASE_KEY = document.getElementById('setting-key').value.trim();
+  localStorage.setItem('sb_url', SUPABASE_URL);
+  localStorage.setItem('sb_key', SUPABASE_KEY);
+  db = createClient(SUPABASE_URL, SUPABASE_KEY);
+  loadOrders();
+  subscribeRealtime();
+  showToast('Settings Saved', 'Reconnecting to Supabase…');
+}
+
+// ══════════════════════════════════════════════
+//  LOAD ORDERS FROM SUPABASE
+// ══════════════════════════════════════════════
+async function loadOrders() {
+  setConn('connecting');
+  try {
+    const { data, error } = await db
+      .from('orders')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(200);
+
+    if (error) throw error;
+    allOrders = data || [];
+    setConn('connected');
+    renderAll();
+    updateStats();
+    renderCharts();
+  } catch (err) {
+    setConn('error');
+    console.error('Supabase error:', err.message);
+    // Show demo data if not configured
+    if (SUPABASE_URL.includes('YOUR_PROJECT_ID')) {
+      allOrders = getDemoOrders();
+      renderAll();
+      updateStats();
+      renderCharts();
+    }
+  }
+}
+
+// ══════════════════════════════════════════════
+//  REALTIME SUBSCRIPTION
+// ══════════════════════════════════════════════
+function subscribeRealtime() {
+  if (realtimeChannel) db.removeChannel(realtimeChannel);
+  realtimeChannel = db
+    .channel('orders-live')
+    .on('postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'orders' },
+      payload => {
+        const order = payload.new;
+        allOrders.unshift(order);
+        renderAll();
+        updateStats();
+        renderCharts();
+        updatePendingBadge();
+        // Flash new order notification
+        showToast(
+          `🔔 New Order — ${order.order_number}`,
+          `${order.customer_name} · ₹${order.total} · ${order.city}`
+        );
+        // Play notification sound
+        playBeep();
+      })
+    .on('postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'orders' },
+      payload => {
+        const idx = allOrders.findIndex(o => o.id === payload.new.id);
+        if (idx !== -1) allOrders[idx] = payload.new;
+        renderAll();
+        updateStats();
+      })
+    .subscribe();
+}
+
+// ══════════════════════════════════════════════
+//  RENDER ORDER ROWS
+// ══════════════════════════════════════════════
+function renderOrderRow(order, isNew = false) {
+  const items = Array.isArray(order.items) ? order.items : [];
+  const firstItem = items[0] || {};
+  const statusClass = `sp-${order.status}`;
+  const statusLabel = {
+    pending:'⏳ Pending', confirmed:'✅ Confirmed', preparing:'🍫 Preparing',
+    out_for_delivery:'🚚 Out for Del.', delivered:'✓ Delivered', cancelled:'✗ Cancelled'
+  }[order.status] || order.status;
+  const dt = new Date(order.created_at).toLocaleString('en-IN',{
+    day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+
+  return `<div class="ot-row${isNew?' new-order':''}" onclick="openPanel('${order.id}')">
+    <div class="ot-id">${order.order_number || '—'}</div>
+    <div class="ot-customer"><div class="cn">${order.customer_name}</div><div class="cp">${order.customer_phone}</div></div>
+    <div class="ot-items"><div class="oi">${firstItem.name || '—'}${items.length>1?' +'+( items.length-1)+' more':''}</div><div class="od">${firstItem.pack||''} · ${order.egg_preference==='eggless'?'💚 Eggless':'❤️ Egg'} · ${dt}</div></div>
+    <div class="ot-price">₹${order.total}</div>
+    <div><span class="status-pill ${statusClass}">${statusLabel}</span></div>
+    <div class="ot-pay">${(order.payment_method||'cod').toUpperCase()}</div>
+    <div class="ot-actions" onclick="event.stopPropagation()">
+      <button class="action-btn ab-status" onclick="openStatusDrop(event,'${order.id}')">Status ▾</button>
+      <button class="action-btn ab-wa" onclick="sendWAUpdate('${order.id}')">📲</button>
+    </div>
+  </div>`;
+}
+
+function renderAll() {
+  const filtered = currentFilter === 'all'
+    ? allOrders
+    : allOrders.filter(o => o.status === currentFilter);
+
+  const html = filtered.length
+    ? filtered.map((o,i) => renderOrderRow(o, i===0)).join('')
+    : `<div class="empty-state"><div class="es-ico">📦</div><div class="es-title">No ${currentFilter} orders</div><div class="es-sub">They'll appear here in real time</div></div>`;
+
+  const recent = allOrders.slice(0,8).map(o => renderOrderRow(o)).join('') ||
+    `<div class="empty-state"><div class="es-ico">📦</div><div class="es-title">No orders yet</div><div class="es-sub">Orders will appear here in real time</div></div>`;
+
+  const rb = document.getElementById('recent-orders-body');
+  const ab = document.getElementById('all-orders-body');
+  if (rb) rb.innerHTML = recent;
+  if (ab) ab.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════
+//  STATS
+// ══════════════════════════════════════════════
+function updateStats() {
+  const total = allOrders.length;
+  const revenue = allOrders.filter(o=>o.status!=='cancelled').reduce((s,o)=>s+Number(o.total||0),0);
+  const pending = allOrders.filter(o=>o.status==='pending').length;
+  const today = new Date().toDateString();
+  const delivered = allOrders.filter(o=>o.status==='delivered' && new Date(o.created_at).toDateString()===today).length;
+
+  document.getElementById('stat-total-orders').textContent = total;
+  document.getElementById('stat-revenue').textContent = '₹' + (revenue>=1000 ? (revenue/1000).toFixed(1)+'K' : revenue);
+  document.getElementById('stat-pending').textContent = pending;
+  document.getElementById('stat-delivered').textContent = delivered;
+  document.getElementById('stat-orders-delta').textContent = `${total} total orders`;
+  document.getElementById('stat-rev-delta').textContent = `₹${revenue.toLocaleString('en-IN')} total`;
+  document.getElementById('stat-pend-delta').textContent = pending > 0 ? `${pending} need action!` : 'All clear ✓';
+  document.getElementById('stat-del-delta').textContent = `Today's deliveries`;
+}
+
+function updatePendingBadge() {
+  const n = allOrders.filter(o=>o.status==='pending').length;
+  const badge = document.getElementById('pending-badge');
+  if (badge) { badge.textContent = n; badge.style.display = n>0 ? '' : 'none'; }
+}
+
+// ── CHARTS ──
+function renderCharts() {
+  const statusCount = {pending:0,confirmed:0,preparing:0,out_for_delivery:0,delivered:0,cancelled:0};
+  allOrders.forEach(o => { if(statusCount[o.status]!==undefined) statusCount[o.status]++; });
+  const max = Math.max(1,...Object.values(statusCount));
+  const colors = {pending:'#F59E0B',confirmed:'#3B82F6',preparing:'#A855F7',out_for_delivery:'#22C55E',delivered:'#6EE7B7',cancelled:'#EF4444'};
+  const labels = {pending:'Pending',confirmed:'Confirmed',preparing:'Preparing',out_for_delivery:'Out',delivered:'Delivered',cancelled:'Cancelled'};
+  document.getElementById('status-chart').innerHTML = Object.entries(statusCount).map(([k,v])=>`
+    <div class="bar-row">
+      <div class="bar-lbl">${labels[k]}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(v/max*100).toFixed(1)}%;background:${colors[k]}"></div></div>
+      <div class="bar-val">${v}</div>
+    </div>`).join('');
+
+  // Variant chart from items
+  const vc = {};
+  allOrders.forEach(o=>{
+    (Array.isArray(o.items)?o.items:[]).forEach(item=>{
+      const n = (item.name||'').replace(' Brownie','');
+      vc[n] = (vc[n]||0) + (item.qty||1);
+    });
+  });
+  const top5 = Object.entries(vc).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const mxV = Math.max(1,...top5.map(e=>e[1]));
+  const vColors = ['#C084FC','#A855F7','#8B44E8','#7C3AED','#6D28D9'];
+  document.getElementById('variant-chart').innerHTML = top5.length
+    ? top5.map(([k,v],i)=>`
+      <div class="bar-row">
+        <div class="bar-lbl" style="font-size:10px">${k.slice(0,12)}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${(v/mxV*100).toFixed(1)}%;background:${vColors[i]}"></div></div>
+        <div class="bar-val">${v}</div>
+      </div>`).join('')
+    : '<div style="color:var(--faint);font-size:12px">No orders yet</div>';
+}
+
+// ══════════════════════════════════════════════
+//  ORDER DETAIL PANEL
+// ══════════════════════════════════════════════
+function openPanel(id) {
+  const order = allOrders.find(o=>o.id===id); if(!order) return;
+  document.getElementById('dp-order-id').textContent = order.order_number || 'Order';
+  const items = Array.isArray(order.items) ? order.items : [];
+  const dt = new Date(order.created_at).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'});
+
+  document.getElementById('dp-body').innerHTML = `
+    <div class="dp-section">
+      <div class="dp-slabel">Customer</div>
+      <div class="dp-row"><span class="dp-key">Name</span><span class="dp-val">${order.customer_name}</span></div>
+      <div class="dp-row"><span class="dp-key">Phone</span><span class="dp-val">${order.customer_phone}</span></div>
+      ${order.customer_email?`<div class="dp-row"><span class="dp-key">Email</span><span class="dp-val">${order.customer_email}</span></div>`:''}
+      <div class="dp-row"><span class="dp-key">City</span><span class="dp-val">${order.city}${order.pincode?' — '+order.pincode:''}</span></div>
+      <div class="dp-row"><span class="dp-key">Address</span><span class="dp-val">${order.delivery_address}</span></div>
+    </div>
+    <div class="dp-section">
+      <div class="dp-slabel">Order Info</div>
+      <div class="dp-row"><span class="dp-key">Ordered</span><span class="dp-val">${dt}</span></div>
+      <div class="dp-row"><span class="dp-key">Payment</span><span class="dp-val">${(order.payment_method||'').toUpperCase()}</span></div>
+      <div class="dp-row"><span class="dp-key">Egg</span><span class="dp-val">${order.egg_preference==='eggless'?'💚 Eggless':'❤️ Contains Egg'}</span></div>
+      ${order.special_notes?`<div class="dp-row"><span class="dp-key">Notes</span><span class="dp-val" style="color:var(--gold)">${order.special_notes}</span></div>`:''}
+    </div>
+    <div class="dp-section">
+      <div class="dp-slabel">Items Ordered</div>
+      <div class="dp-items">
+        ${items.map(item=>`
+          <div class="dp-item">
+            <div class="di-name">${item.name||'—'}</div>
+            <div class="di-detail">
+              ${item.tier==='couverture'?'🌟 Couverture':'Premium'} · ${item.egg==='eggless'?'💚 Eggless':'❤️ Egg'}<br>
+              Pack: ${item.pack||'—'} · Qty: ${item.qty||1}<br>
+              ${item.toppings&&item.toppings.length?'Toppings: '+item.toppings.join(', '):'No toppings'}
+            </div>
+            <div class="di-price">₹${item.line_total||item.base_price||0}</div>
+          </div>`).join('')}
+      </div>
+      <div class="dp-total"><span class="dt-lbl">Total</span><span class="dt-val">₹${order.total}</span></div>
+    </div>
+    <div class="dp-section">
+      <div class="dp-slabel">Update Status</div>
+      <select class="status-select" id="panel-status" onchange="">
+        <option value="pending" ${order.status==='pending'?'selected':''}>⏳ Pending</option>
+        <option value="confirmed" ${order.status==='confirmed'?'selected':''}>✅ Confirmed</option>
+        <option value="preparing" ${order.status==='preparing'?'selected':''}>🍫 Preparing</option>
+        <option value="out_for_delivery" ${order.status==='out_for_delivery'?'selected':''}>🚚 Out for Delivery</option>
+        <option value="delivered" ${order.status==='delivered'?'selected':''}>✓ Delivered</option>
+        <option value="cancelled" ${order.status==='cancelled'?'selected':''}>✗ Cancelled</option>
+      </select>
+      <button class="update-status-btn" onclick="updateStatusFromPanel('${order.id}')">Update Status</button>
+      <button class="wa-notify-btn" onclick="sendWAUpdate('${order.id}')">📲 WhatsApp Customer</button>
+    </div>
+  `;
+  document.getElementById('detail-panel').classList.add('open');
+}
+
+function closePanel() { document.getElementById('detail-panel').classList.remove('open'); }
+
+// ══════════════════════════════════════════════
+//  UPDATE ORDER STATUS
+// ══════════════════════════════════════════════
+async function updateStatus(id, newStatus) {
+  closeStatusDrop();
+  try {
+    const { error } = await db.from('orders').update({ status: newStatus }).eq('id', id);
+    if (error) throw error;
+    const o = allOrders.find(o=>o.id===id);
+    if (o) o.status = newStatus;
+    renderAll();
+    updateStats();
+    showToast('Status Updated', `Order → ${newStatus.replace(/_/g,' ')}`);
+  } catch(err) {
+    showToast('Error', err.message || 'Update failed');
+  }
+}
+
+async function updateStatusFromPanel(id) {
+  const sel = document.getElementById('panel-status');
+  if (!sel) return;
+  await updateStatus(id, sel.value);
+}
+
+// ── STATUS DROPDOWN ──
+function openStatusDrop(e, id) {
+  e.stopPropagation();
+  currentOrderId = id;
+  const dd = document.getElementById('status-dropdown');
+  dd.style.display = 'block';
+  dd.style.top = (e.clientY + 8) + 'px';
+  dd.style.left = Math.min(e.clientX, window.innerWidth - 200) + 'px';
+}
+function closeStatusDrop() { document.getElementById('status-dropdown').style.display = 'none'; }
+document.addEventListener('click', closeStatusDrop);
+
+// ══════════════════════════════════════════════
+//  WHATSAPP NOTIFICATION TO CUSTOMER
+// ══════════════════════════════════════════════
+function sendWAUpdate(id) {
+  const order = allOrders.find(o=>o.id===id); if(!order) return;
+  const statusMsg = {
+    confirmed:'✅ Your order has been confirmed! We are now preparing your fresh brownies 🍫',
+    preparing:'🍫 Your brownies are being freshly baked right now! Get ready for deliciousness 😋',
+    out_for_delivery:'🚚 Your order is out for delivery! Should arrive shortly at '+order.city,
+    delivered:'✓ Delivered! Hope you loved your NSDI ChocoCravings brownies! Rate us ⭐⭐⭐⭐⭐',
+    cancelled:'❌ We\'re sorry, your order has been cancelled. Call us: +91 99721 41890 for help.'
+  }[order.status] || '📦 Order update from NSDI ChocoCravings';
+
+  const msg = encodeURIComponent(
+    `Hi ${order.customer_name}! 🍫\n\n` +
+    `*Order ${order.order_number} Update:*\n\n` +
+    statusMsg + '\n\n' +
+    `📞 Queries: +91 99721 41890\n📸 @nsdi.chococravings\n\n_NSDI ChocoCravings — Happy to serve fresh!!_`
+  );
+  const phone = order.customer_phone.replace(/[^0-9]/g,'');
+  window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+}
+
+// ══════════════════════════════════════════════
+//  NAV & UI HELPERS
+// ══════════════════════════════════════════════
+function showView(name, el) {
+  document.querySelectorAll('[id^="view-"]').forEach(v=>v.style.display='none');
+  const v = document.getElementById('view-'+name);
+  if(v) v.style.display='';
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('on'));
+  if(el) el.classList.add('on');
+  const titles = {dashboard:'Dashboard',orders:'Orders',products:'Products',analytics:'Analytics',customers:'Customers',notifications:'Notifications',settings:'Settings'};
+  document.getElementById('topbar-title').textContent = titles[name]||name;
+}
+
+function filterOrders(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.fpill').forEach(p=>p.classList.remove('on'));
+  if(el) el.classList.add('on');
+  renderAll();
+}
+
+function setConn(state) {
+  const dot = document.getElementById('conn-dot');
+  const txt = document.getElementById('conn-txt');
+  if(state==='connected'){dot.className='conn-dot';txt.textContent='Connected'}
+  else if(state==='error'){dot.className='conn-dot err';txt.textContent='Not connected'}
+  else{dot.className='conn-dot connecting';txt.textContent='Connecting…'}
+}
+
+let toastTimer;
+function showToast(title, body) {
+  document.getElementById('nt-title').textContent = title;
+  document.getElementById('nt-body').textContent = body;
+  const t = document.getElementById('notif-toast');
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 5000);
+}
+function closeToast(){ document.getElementById('notif-toast').classList.remove('show'); }
+
+function playBeep() {
+  try {
+    const ctx = new AudioContext();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.frequency.value = 880; o.type = 'sine';
+    g.gain.setValueAtTime(.3, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + .4);
+    o.start(); o.stop(ctx.currentTime + .4);
+  } catch(e) {}
+}
+
+// ── DEMO DATA (shown before Supabase is connected) ──
+function getDemoOrders() {
+  const now = new Date();
+  const mins = (m) => new Date(now - m*60000).toISOString();
+  return [
+    {id:'demo-1',order_number:'CC-001',customer_name:'Priya Krishnan',customer_phone:'+919876543210',customer_email:'priya@example.com',delivery_address:'12 Anna Nagar',city:'Chennai',pincode:'600040',items:[{name:'Classic Fudge Brownie',tier:'premium',egg:'eggless',pack:'9pcs',qty:1,base_price:590,toppings:['Dark Ganache'],topping_price:90,line_total:680}],subtotal:590,topping_total:90,total:680,payment_method:'cod',egg_preference:'eggless',status:'pending',created_at:mins(5)},
+    {id:'demo-2',order_number:'CC-002',customer_name:'Karthik S.',customer_phone:'+919845123456',customer_email:'',delivery_address:'45 T Nagar, 2nd St',city:'Chennai',pincode:'600017',items:[{name:'Triple Chocolate Brownie',tier:'couverture',egg:'eggless',pack:'4pcs',qty:2,base_price:750,toppings:['Ferrero Rocher'],topping_price:130,line_total:1760}],subtotal:1500,topping_total:260,total:1760,payment_method:'upi',egg_preference:'eggless',status:'confirmed',created_at:mins(22)},
+    {id:'demo-3',order_number:'CC-003',customer_name:'Meena R.',customer_phone:'+919789456123',customer_email:'meena@gmail.com',delivery_address:'7 RS Puram',city:'Coimbatore',pincode:'641002',items:[{name:'Nutella Brownie',tier:'premium',egg:'egg',pack:'16pcs',qty:1,base_price:1220,toppings:['Nutella+Hazelnut'],topping_price:140,line_total:1360}],subtotal:1220,topping_total:140,total:1360,payment_method:'cod',egg_preference:'egg',status:'preparing',created_at:mins(45)},
+    {id:'demo-4',order_number:'CC-004',customer_name:'Ravi M.',customer_phone:'+919765432198',customer_email:'',delivery_address:'33 Saibaba Colony',city:'Coimbatore',pincode:'641011',items:[{name:'Assorted Brownie',tier:'premium',egg:'eggless',pack:'9pcs',qty:1,base_price:760,toppings:[],topping_price:0,line_total:760}],subtotal:760,topping_total:0,total:760,payment_method:'cod',egg_preference:'eggless',status:'out_for_delivery',created_at:mins(90)},
+    {id:'demo-5',order_number:'CC-005',customer_name:'Anjali P.',customer_phone:'+919876001234',customer_email:'anjali@yahoo.com',delivery_address:'8 Adyar, 4th Ave',city:'Chennai',pincode:'600020',items:[{name:'Biscoff Brownie',tier:'couverture',egg:'eggless',pack:'4pcs',qty:1,base_price:570,toppings:['Biscoff + Lotus Biscuits'],topping_price:50,line_total:620}],subtotal:570,topping_total:50,total:620,payment_method:'card',egg_preference:'eggless',status:'delivered',created_at:mins(200)},
+  ];
+}
+</script>
+</body>
+</html>

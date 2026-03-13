@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NSDI ChocoCravings — System Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#6B2FCE;--p2:#8B44E8;--p3:#A855F7;--pl:#C084FC;
+  --dark:#09010F;--d2:#110020;--d3:#1C003A;--d4:#0D0018;
+  --white:#FAF5FF;--dim:#9F7ABA;--faint:#4A3060;
+  --green:#22C55E;--gold:#F59E0B;--red:#EF4444;
+  --blue:#3B82F6;--teal:#14B8A6;--pink:#F472B6;
+  --android:#34A853;--ios:#007AFF;
+  --bdr:rgba(255,255,255,.07);
+}
+body{background:var(--dark);color:var(--white);font-family:'DM Sans',sans-serif;overflow-x:hidden}
+
+/* ── PAGE ── */
+.page{min-width:1100px;padding:40px 48px 60px}
+
+/* ── HEADER ── */
+.hdr{text-align:center;margin-bottom:48px}
+.hdr-eye{font-size:10px;letter-spacing:5px;text-transform:uppercase;color:var(--p);font-weight:700;margin-bottom:10px}
+.hdr-title{font-family:'Cormorant Garamond',serif;font-size:42px;font-weight:700;margin-bottom:6px}
+.hdr-title span{color:var(--pl);font-style:italic}
+.hdr-sub{font-size:13px;color:var(--dim);margin-bottom:20px}
+.hdr-stats{display:flex;justify-content:center;gap:16px;flex-wrap:wrap}
+.hs{padding:8px 18px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid}
+.hs-files{background:rgba(107,47,206,.1);border-color:rgba(107,47,206,.3);color:var(--pl)}
+.hs-tables{background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.2);color:var(--gold)}
+.hs-tech{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.2);color:var(--green)}
+.hs-store{background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.2);color:var(--blue)}
+
+/* ── MAIN ARCHITECTURE GRID ── */
+.arch{display:grid;grid-template-columns:220px 1fr 220px;grid-template-rows:auto auto auto;gap:20px;align-items:start;margin-bottom:40px}
+
+/* ── LAYER LABELS ── */
+.layer-label{writing-mode:vertical-rl;text-orientation:mixed;font-size:9px;letter-spacing:3px;text-transform:uppercase;font-weight:700;color:var(--faint);display:flex;align-items:center;gap:8px;padding:0 8px}
+
+/* ── NODE BASE ── */
+.node{border-radius:16px;padding:16px;position:relative;transition:transform .2s,box-shadow .2s}
+.node:hover{transform:translateY(-2px)}
+.node-ico{font-size:26px;margin-bottom:8px}
+.node-name{font-size:13px;font-weight:700;color:var(--white);margin-bottom:3px}
+.node-tech{font-family:'DM Mono',monospace;font-size:10px;color:var(--faint);margin-bottom:6px}
+.node-desc{font-size:11px;color:var(--dim);line-height:1.5}
+.node-files{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.nf{font-family:'DM Mono',monospace;font-size:9px;padding:2px 7px;border-radius:5px;background:rgba(255,255,255,.06);color:var(--pl);border:1px solid rgba(107,47,206,.2)}
+
+/* ── NODE COLOURS ── */
+.n-customer{background:rgba(107,47,206,.1);border:1.5px solid rgba(107,47,206,.3)}
+.n-admin{background:rgba(245,158,11,.07);border:1.5px solid rgba(245,158,11,.2)}
+.n-auth{background:rgba(20,184,166,.07);border:1.5px solid rgba(20,184,166,.2)}
+.n-supabase{background:rgba(34,197,94,.07);border:1.5px solid rgba(34,197,94,.2)}
+.n-whatsapp{background:rgba(37,211,102,.07);border:1.5px solid rgba(37,211,102,.2)}
+.n-android{background:rgba(52,168,83,.07);border:1.5px solid rgba(52,168,83,.2)}
+.n-ios{background:rgba(0,122,255,.07);border:1.5px solid rgba(0,122,255,.2)}
+.n-capacitor{background:rgba(59,130,246,.07);border:1.5px solid rgba(59,130,246,.2)}
+.n-hosting{background:rgba(244,114,182,.07);border:1.5px solid rgba(244,114,182,.2)}
+
+/* ── FULL SYSTEM DIAGRAM ── */
+.system-diagram{display:flex;flex-direction:column;gap:0}
+
+/* LAYER ROW */
+.layer-row{display:flex;align-items:stretch;gap:0;position:relative}
+.layer-row::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:1px;background:rgba(255,255,255,.04)}
+
+.layer-side{width:100px;display:flex;align-items:center;justify-content:center;padding:16px 8px;flex-shrink:0}
+.layer-side-label{font-size:9px;letter-spacing:3px;text-transform:uppercase;font-weight:700;color:var(--faint);writing-mode:vertical-rl;text-orientation:mixed}
+
+.layer-content{flex:1;display:flex;gap:16px;padding:20px;align-items:flex-start;flex-wrap:wrap}
+
+/* LAYER BACKGROUNDS */
+.lr-clients{background:rgba(107,47,206,.03)}
+.lr-app{background:rgba(245,158,11,.02)}
+.lr-backend{background:rgba(34,197,94,.025)}
+.lr-infra{background:rgba(59,130,246,.02)}
+.lr-stores{background:rgba(52,168,83,.02)}
+
+/* ── MINI NODE ── */
+.mnode{border-radius:14px;padding:14px;flex:1;min-width:160px;max-width:240px}
+.mn-ico{font-size:22px;margin-bottom:6px}
+.mn-name{font-size:12px;font-weight:700;color:var(--white);margin-bottom:2px}
+.mn-tech{font-family:'DM Mono',monospace;font-size:9px;color:var(--faint);margin-bottom:5px}
+.mn-desc{font-size:11px;color:var(--dim);line-height:1.5}
+.mn-files{display:flex;flex-wrap:wrap;gap:3px;margin-top:7px}
+.mf{font-family:'DM Mono',monospace;font-size:9px;padding:2px 6px;border-radius:4px;background:rgba(255,255,255,.05);color:var(--dim);border:1px solid rgba(255,255,255,.08)}
+
+/* ── CONNECTORS ── */
+.connectors{position:relative;height:60px;margin:0;display:flex;align-items:center;justify-content:center;gap:0}
+.conn-svg{width:100%;height:60px;overflow:visible}
+
+/* ── FLOW ARROWS SECTION ── */
+.flow-section{margin-bottom:40px}
+.flow-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:10px}
+.flow-title span{color:var(--pl)}
+
+.flow-diagram{display:flex;flex-direction:column;gap:0}
+.flow-row{display:flex;align-items:center;gap:0}
+.flow-box{padding:12px 16px;border-radius:12px;min-width:140px;text-align:center;flex-shrink:0}
+.fb-ico{font-size:20px;margin-bottom:4px}
+.fb-name{font-size:12px;font-weight:700;color:var(--white)}
+.fb-sub{font-size:10px;color:var(--dim);margin-top:2px;line-height:1.4}
+.flow-arr{display:flex;align-items:center;gap:0;flex:1;position:relative;min-width:40px}
+.flow-line{flex:1;height:1.5px}
+.flow-tip{font-size:14px;color:var(--faint)}
+.flow-note{position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--dim);white-space:nowrap;background:var(--dark);padding:0 6px}
+
+/* ── DB SCHEMA SECTION ── */
+.db-section{margin-bottom:40px}
+.db-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.db-group{display:flex;flex-direction:column;gap:8px}
+.db-group-title{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:6px 10px;border-radius:6px;text-align:center}
+.dg-catalogue{background:rgba(107,47,206,.12);color:var(--pl)}
+.dg-orders{background:rgba(245,158,11,.1);color:var(--gold)}
+.dg-customers{background:rgba(34,197,94,.08);color:var(--green)}
+.dg-offers{background:rgba(244,114,182,.08);color:var(--pink)}
+.dg-ops{background:rgba(20,184,166,.08);color:var(--teal)}
+
+.db-table{background:var(--d2);border:1px solid var(--bdr);border-radius:10px;overflow:hidden}
+.dbt-head{display:flex;align-items:center;gap:7px;padding:8px 10px;border-bottom:1px solid var(--bdr)}
+.dbt-ico{font-size:13px}
+.dbt-name{font-family:'DM Mono',monospace;font-size:10px;font-weight:500;color:var(--white)}
+.dbt-cols{padding:6px 10px}
+.dbc{font-size:9px;color:var(--faint);line-height:1.8;font-family:'DM Mono',monospace}
+.dbc .pk{color:var(--gold)}
+.dbc .fk{color:var(--blue)}
+
+/* ── TECH STACK ── */
+.tech-section{margin-bottom:40px}
+.tech-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.tech-card{background:var(--d2);border:1px solid var(--bdr);border-radius:14px;padding:16px;text-align:center;transition:border-color .2s}
+.tech-card:hover{border-color:var(--bdr2,rgba(107,47,206,.3))}
+.tc-ico{font-size:28px;margin-bottom:8px}
+.tc-name{font-size:13px;font-weight:700;color:var(--white);margin-bottom:3px}
+.tc-role{font-size:11px;color:var(--dim);line-height:1.4}
+.tc-badge{margin-top:7px;display:inline-block;padding:2px 8px;border-radius:6px;font-size:9px;font-weight:700}
+.tb-free{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2)}
+.tb-paid{background:rgba(245,158,11,.1);color:var(--gold);border:1px solid rgba(245,158,11,.2)}
+.tb-once{background:rgba(107,47,206,.12);color:var(--pl);border:1px solid rgba(107,47,206,.2)}
+
+/* ── FILE MANIFEST ── */
+.files-section{margin-bottom:40px}
+.files-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.file-card{background:var(--d2);border:1px solid var(--bdr);border-radius:14px;padding:16px;display:flex;gap:12px;align-items:flex-start;transition:border-color .2s}
+.file-card:hover{border-color:rgba(107,47,206,.3)}
+.fc-ico{font-size:24px;flex-shrink:0}
+.fc-name{font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:var(--pl);margin-bottom:3px}
+.fc-desc{font-size:11px;color:var(--dim);line-height:1.5}
+.fc-meta{display:flex;gap:5px;margin-top:6px;flex-wrap:wrap}
+.fcm{font-size:9px;padding:2px 7px;border-radius:5px;border:1px solid var(--bdr);color:var(--faint);font-weight:600}
+
+/* ── SECTION TITLES ── */
+.sec-title{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;margin-bottom:20px;display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--bdr)}
+.sec-num{font-family:'DM Mono',monospace;font-size:12px;color:var(--faint)}
+
+/* ── COST SUMMARY ── */
+.cost-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:40px}
+.cost-c{background:var(--d2);border:1px solid var(--bdr);border-radius:12px;padding:14px;text-align:center}
+.cc-ico{font-size:22px;margin-bottom:6px}
+.cc-name{font-size:11px;color:var(--dim);margin-bottom:4px}
+.cc-val{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700}
+.cc-free{color:var(--green)}
+.cc-paid{color:var(--gold)}
+
+/* ── FOOTER ── */
+.footer{text-align:center;padding:24px 0;border-top:1px solid var(--bdr);font-size:11px;color:var(--faint)}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-eye">System Architecture · Full Stack Overview</div>
+  <div class="hdr-title">NSDI <span>ChocoCravings</span></div>
+  <div class="hdr-sub">Complete technical blueprint — Customer App · Admin Dashboard · Database · Mobile Publishing · Notifications</div>
+  <div class="hdr-stats">
+    <span class="hs hs-files">📁 9 Source Files</span>
+    <span class="hs hs-tables">🗄 20 Database Tables</span>
+    <span class="hs hs-tech">⚡ 100% Free Infrastructure</span>
+    <span class="hs hs-store">📱 Android + iOS Ready</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 1. SYSTEM LAYERS DIAGRAM -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="sec-title"><span class="sec-num">01 —</span> System Layers</div>
+<div class="system-diagram" style="border:1px solid var(--bdr);border-radius:20px;overflow:hidden;margin-bottom:40px">
+
+  <!-- LAYER: CLIENT APPS -->
+  <div class="layer-row lr-clients">
+    <div class="layer-side"><div class="layer-side-label">Clients</div></div>
+    <div class="layer-content">
+      <div class="mnode n-customer">
+        <div class="mn-ico">📱</div>
+        <div class="mn-name">Customer App</div>
+        <div class="mn-tech">HTML5 · CSS3 · Vanilla JS</div>
+        <div class="mn-desc">5 screens: Home, Explore, Product, Cart, Checkout, Success. Supabase JS SDK integrated. WhatsApp deep links.</div>
+        <div class="mn-files"><span class="mf">chococravings-app-v2.html</span></div>
+      </div>
+      <div class="mnode n-admin">
+        <div class="mn-ico">📊</div>
+        <div class="mn-name">Admin Dashboard</div>
+        <div class="mn-tech">HTML5 · Supabase Realtime</div>
+        <div class="mn-desc">7 views: Dashboard, Orders, Products, Analytics, Customers, Notifications, Settings. Live order feed via WebSocket.</div>
+        <div class="mn-files"><span class="mf">chococravings-admin-v2.html</span></div>
+      </div>
+      <div class="mnode n-auth">
+        <div class="mn-ico">🔐</div>
+        <div class="mn-name">Auth System</div>
+        <div class="mn-tech">HTML5 · Custom Flow</div>
+        <div class="mn-desc">5 screens: Welcome, Login, OTP, Register, Profile. Customer ID CC-XXXXXX. ₹50 welcome wallet. 15 TN cities.</div>
+        <div class="mn-files"><span class="mf">chococravings-auth.html</span></div>
+      </div>
+      <div class="mnode" style="background:rgba(244,114,182,.07);border:1.5px solid rgba(244,114,182,.2);min-width:150px;max-width:180px">
+        <div class="mn-ico">🌐</div>
+        <div class="mn-name">Web Hosting</div>
+        <div class="mn-tech">Your existing host</div>
+        <div class="mn-desc">cPanel / Hostinger / GoDaddy. Files in public_html/app/. HTTPS required for PWA.</div>
+        <div class="mn-files"><span class="mf">index.html</span><span class="mf">manifest.json</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONNECTOR -->
+  <div style="display:flex;align-items:center;padding:0 0 0 100px;background:var(--d4)">
+    <div style="flex:1;display:flex;justify-content:space-around;padding:8px 20px">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px"><div style="width:1px;height:20px;background:rgba(107,47,206,.4)"></div><div style="font-size:9px;color:var(--faint)">Supabase JS</div><div style="width:1px;height:20px;background:rgba(107,47,206,.4)"></div></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px"><div style="width:1px;height:20px;background:rgba(245,158,11,.4)"></div><div style="font-size:9px;color:var(--faint)">Realtime WS</div><div style="width:1px;height:20px;background:rgba(245,158,11,.4)"></div></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px"><div style="width:1px;height:20px;background:rgba(34,197,94,.3)"></div><div style="font-size:9px;color:var(--faint)">REST API</div><div style="width:1px;height:20px;background:rgba(34,197,94,.3)"></div></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px"><div style="width:1px;height:20px;background:rgba(59,130,246,.3)"></div><div style="font-size:9px;color:var(--faint)">wa.me link</div><div style="width:1px;height:20px;background:rgba(59,130,246,.3)"></div></div>
+    </div>
+  </div>
+
+  <!-- LAYER: BACKEND SERVICES -->
+  <div class="layer-row lr-backend">
+    <div class="layer-side"><div class="layer-side-label">Backend</div></div>
+    <div class="layer-content">
+      <div class="mnode n-supabase" style="flex:2;min-width:280px">
+        <div class="mn-ico">🗄️</div>
+        <div class="mn-name">Supabase (PostgreSQL)</div>
+        <div class="mn-tech">supabase.co · Free tier · Mumbai region</div>
+        <div class="mn-desc">20 tables, 3 views, 18 RLS policies, 14 indexes, 3 auto-triggers. Realtime enabled on orders table for live admin feed.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:8px">
+          <div style="background:rgba(34,197,94,.08);border-radius:6px;padding:5px 7px;font-size:9px;text-align:center;color:var(--green);border:1px solid rgba(34,197,94,.15)">📦 orders</div>
+          <div style="background:rgba(34,197,94,.08);border-radius:6px;padding:5px 7px;font-size:9px;text-align:center;color:var(--green);border:1px solid rgba(34,197,94,.15)">👤 customers</div>
+          <div style="background:rgba(34,197,94,.08);border-radius:6px;padding:5px 7px;font-size:9px;text-align:center;color:var(--green);border:1px solid rgba(34,197,94,.15)">🍫 products</div>
+          <div style="background:rgba(34,197,94,.08);border-radius:6px;padding:5px 7px;font-size:9px;text-align:center;color:var(--green);border:1px solid rgba(34,197,94,.15)">🏷️ offers</div>
+          <div style="background:rgba(34,197,94,.08);border-radius:6px;padding:5px 7px;font-size:9px;text-align:center;color:var(--green);border:1px solid rgba(34,197,94,.15)">📈 sales</div>
+          <div style="background:rgba(34,197,94,.08);border-radius:6px;padding:5px 7px;font-size:9px;text-align:center;color:var(--green);border:1px solid rgba(34,197,94,.15)">+15 more</div>
+        </div>
+        <div class="mn-files"><span class="mf">supabase-complete-schema.sql</span></div>
+      </div>
+      <div class="mnode n-whatsapp" style="min-width:160px;max-width:200px">
+        <div class="mn-ico">📲</div>
+        <div class="mn-name">WhatsApp Business</div>
+        <div class="mn-tech">wa.me deep link API · Free</div>
+        <div class="mn-desc">Order placed → pre-filled WA message → customer taps Send → owner (+91 99721 41890) receives full order details instantly.</div>
+        <div style="margin-top:8px">
+          <div style="background:rgba(37,211,102,.08);border-radius:6px;padding:5px 7px;font-size:9px;color:#25D366;border:1px solid rgba(37,211,102,.15);margin-bottom:4px">→ Owner notification</div>
+          <div style="background:rgba(37,211,102,.08);border-radius:6px;padding:5px 7px;font-size:9px;color:#25D366;border:1px solid rgba(37,211,102,.15)">→ Customer confirmation</div>
+        </div>
+      </div>
+      <div class="mnode" style="background:rgba(244,114,182,.07);border:1.5px solid rgba(244,114,182,.2);min-width:150px;max-width:180px">
+        <div class="mn-ico">⭐</div>
+        <div class="mn-name">Reviews & Loyalty</div>
+        <div class="mn-tech">Supabase tables</div>
+        <div class="mn-desc">Stars per product, bronze/silver/gold/platinum tiers, points earned per order, birthday rewards.</div>
+        <div style="margin-top:8px">
+          <div style="background:rgba(244,114,182,.08);border-radius:6px;padding:5px 7px;font-size:9px;color:var(--pink);border:1px solid rgba(244,114,182,.15)">reviews table</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONNECTOR -->
+  <div style="display:flex;align-items:center;padding:0 0 0 100px;background:var(--d4)">
+    <div style="flex:1;display:flex;justify-content:space-around;padding:8px 20px">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px"><div style="width:1px;height:20px;background:rgba(59,130,246,.4)"></div><div style="font-size:9px;color:var(--faint)">Capacitor wrap</div><div style="width:1px;height:20px;background:rgba(59,130,246,.4)"></div></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px"><div style="width:1px;height:20px;background:rgba(52,168,83,.4)"></div><div style="font-size:9px;color:var(--faint)">AAB bundle</div><div style="width:1px;height:20px;background:rgba(52,168,83,.4)"></div></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px"><div style="width:1px;height:20px;background:rgba(0,122,255,.3)"></div><div style="font-size:9px;color:var(--faint)">IPA archive</div><div style="width:1px;height:20px;background:rgba(0,122,255,.3)"></div></div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px"><div style="width:1px;height:20px;background:rgba(255,255,255,.15)"></div><div style="font-size:9px;color:var(--faint)">PWABuilder</div><div style="width:1px;height:20px;background:rgba(255,255,255,.15)"></div></div>
+    </div>
+  </div>
+
+  <!-- LAYER: MOBILE -->
+  <div class="layer-row lr-stores">
+    <div class="layer-side"><div class="layer-side-label">Mobile</div></div>
+    <div class="layer-content">
+      <div class="mnode n-capacitor">
+        <div class="mn-ico">⚡</div>
+        <div class="mn-name">Capacitor 6</div>
+        <div class="mn-tech">@capacitor/core · @capacitor/android · @capacitor/ios</div>
+        <div class="mn-desc">Wraps HTML app into native Android & iOS. Splash screen, status bar, push notifications, deep links all configured.</div>
+        <div class="mn-files"><span class="mf">capacitor.config.ts</span><span class="mf">package.json</span></div>
+      </div>
+      <div class="mnode n-android">
+        <div class="mn-ico">🤖</div>
+        <div class="mn-name">Android (Play Store)</div>
+        <div class="mn-tech">minSdk 22 · targetSdk 34 · AAB bundle</div>
+        <div class="mn-desc">com.nsdi.chococravings · Adaptive icons · Release signing keystore · ₹1,650 one-time fee.</div>
+        <div class="mn-files"><span class="mf">AndroidManifest.xml</span><span class="mf">build.gradle</span><span class="mf">strings.xml</span></div>
+      </div>
+      <div class="mnode n-ios">
+        <div class="mn-ico">🍎</div>
+        <div class="mn-name">iOS (App Store)</div>
+        <div class="mn-tech">iOS 13+ · Xcode archive · IPA</div>
+        <div class="mn-desc">com.nsdi.chococravings · Portrait only · WhatsApp & Instagram URL schemes. Requires Mac. ₹8,300/yr.</div>
+        <div class="mn-files"><span class="mf">Info.plist</span></div>
+      </div>
+      <div class="mnode" style="background:rgba(255,255,255,.03);border:1.5px solid var(--bdr);min-width:150px;max-width:180px">
+        <div class="mn-ico">🔨</div>
+        <div class="mn-name">PWABuilder Path</div>
+        <div class="mn-tech">pwabuilder.com · Samsung only</div>
+        <div class="mn-desc">No-code Android AAB from browser. Upload index.html to hosting → scan URL → download AAB → upload to Play Console.</div>
+        <div class="mn-files"><span class="mf">manifest.json</span></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /system-diagram -->
+
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 2. ORDER FLOW DIAGRAM -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="sec-title"><span class="sec-num">02 —</span> Order Lifecycle Flow</div>
+<div style="background:var(--d2);border:1px solid var(--bdr);border-radius:20px;padding:28px;margin-bottom:40px">
+
+  <!-- ROW 1: CUSTOMER SIDE -->
+  <div style="font-size:10px;font-weight:700;color:var(--faint);letter-spacing:3px;text-transform:uppercase;margin-bottom:12px">👤 Customer Journey</div>
+  <div style="display:flex;align-items:center;gap:0;margin-bottom:24px;overflow-x:auto">
+    <div style="text-align:center;padding:12px 14px;background:rgba(107,47,206,.1);border:1px solid rgba(107,47,206,.25);border-radius:12px;min-width:110px"><div style="font-size:20px;margin-bottom:4px">🏠</div><div style="font-size:11px;font-weight:700;color:var(--white)">Browse Home</div><div style="font-size:10px;color:var(--dim)">Categories + Featured</div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;padding:0 8px"><div style="height:1.5px;width:36px;background:var(--faint)"></div></div>
+    <div style="text-align:center;padding:12px 14px;background:rgba(107,47,206,.1);border:1px solid rgba(107,47,206,.25);border-radius:12px;min-width:110px"><div style="font-size:20px;margin-bottom:4px">🍫</div><div style="font-size:11px;font-weight:700;color:var(--white)">Select Product</div><div style="font-size:10px;color:var(--dim)">Tier · Egg · Pack size</div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;padding:0 8px"><div style="height:1.5px;width:36px;background:var(--faint)"></div></div>
+    <div style="text-align:center;padding:12px 14px;background:rgba(107,47,206,.1);border:1px solid rgba(107,47,206,.25);border-radius:12px;min-width:110px"><div style="font-size:20px;margin-bottom:4px">✨</div><div style="font-size:11px;font-weight:700;color:var(--white)">Add Toppings</div><div style="font-size:10px;color:var(--dim)">15 ganache options</div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;padding:0 8px"><div style="height:1.5px;width:36px;background:var(--faint)"></div></div>
+    <div style="text-align:center;padding:12px 14px;background:rgba(107,47,206,.1);border:1px solid rgba(107,47,206,.25);border-radius:12px;min-width:110px"><div style="font-size:20px;margin-bottom:4px">🛒</div><div style="font-size:11px;font-weight:700;color:var(--white)">Checkout</div><div style="font-size:10px;color:var(--dim)">Name · Phone · Address</div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;padding:0 8px"><div style="height:1.5px;width:36px;background:var(--faint)"></div></div>
+    <div style="text-align:center;padding:12px 14px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:12px;min-width:110px"><div style="font-size:20px;margin-bottom:4px">✅</div><div style="font-size:11px;font-weight:700;color:var(--green)">Order Placed</div><div style="font-size:10px;color:var(--dim)">CC-XXXXXX ID</div></div>
+  </div>
+
+  <!-- MIDDLE: DATA FLOW -->
+  <div style="display:flex;justify-content:space-around;padding:0 80px;margin-bottom:16px">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px"><div style="width:1.5px;height:24px;background:rgba(34,197,94,.4)"></div><div style="font-size:9px;color:var(--green);background:rgba(34,197,94,.08);padding:3px 8px;border-radius:5px;border:1px solid rgba(34,197,94,.15)">INSERT → orders table</div><div style="width:1.5px;height:24px;background:rgba(34,197,94,.4)"></div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px"><div style="width:1.5px;height:24px;background:rgba(37,211,102,.4)"></div><div style="font-size:9px;color:#25D366;background:rgba(37,211,102,.08);padding:3px 8px;border-radius:5px;border:1px solid rgba(37,211,102,.15)">wa.me → owner + customer</div><div style="width:1.5px;height:24px;background:rgba(37,211,102,.4)"></div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:3px"><div style="width:1.5px;height:24px;background:rgba(245,158,11,.4)"></div><div style="font-size:9px;color:var(--gold);background:rgba(245,158,11,.08);padding:3px 8px;border-radius:5px;border:1px solid rgba(245,158,11,.15)">Realtime → admin panel</div><div style="width:1.5px;height:24px;background:rgba(245,158,11,.4)"></div></div>
+  </div>
+
+  <!-- ROW 2: ADMIN SIDE -->
+  <div style="font-size:10px;font-weight:700;color:var(--faint);letter-spacing:3px;text-transform:uppercase;margin-bottom:12px">👑 Admin (NSDI) Actions</div>
+  <div style="display:flex;align-items:center;gap:0;overflow-x:auto">
+    <div style="text-align:center;padding:12px 14px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:12px;min-width:110px"><div style="font-size:20px;margin-bottom:4px">🔔</div><div style="font-size:11px;font-weight:700;color:var(--white)">New Order Alert</div><div style="font-size:10px;color:var(--dim)">Beep + green flash</div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;padding:0 8px"><div style="height:1.5px;width:36px;background:var(--faint)"></div></div>
+    <div style="text-align:center;padding:12px 14px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:12px;min-width:110px"><div style="font-size:20px;margin-bottom:4px">✅</div><div style="font-size:11px;font-weight:700;color:var(--white)">Confirm Order</div><div style="font-size:10px;color:var(--dim)">Status → confirmed</div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;padding:0 8px"><div style="height:1.5px;width:36px;background:var(--faint)"></div></div>
+    <div style="text-align:center;padding:12px 14px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:12px;min-width:110px"><div style="font-size:20px;margin-bottom:4px">🍫</div><div style="font-size:11px;font-weight:700;color:var(--white)">Bake Order</div><div style="font-size:10px;color:var(--dim)">Status → preparing</div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;padding:0 8px"><div style="height:1.5px;width:36px;background:var(--faint)"></div></div>
+    <div style="text-align:center;padding:12px 14px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:12px;min-width:110px"><div style="font-size:20px;margin-bottom:4px">🚚</div><div style="font-size:11px;font-weight:700;color:var(--white)">Dispatch</div><div style="font-size:10px;color:var(--dim)">WA update sent</div></div>
+    <div style="display:flex;flex-direction:column;align-items:center;padding:0 8px"><div style="height:1.5px;width:36px;background:var(--faint)"></div></div>
+    <div style="text-align:center;padding:12px 14px;background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:12px;min-width:110px"><div style="font-size:20px;margin-bottom:4px">✓</div><div style="font-size:11px;font-weight:700;color:var(--green)">Delivered</div><div style="font-size:10px;color:var(--dim)">Points awarded</div></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 3. DATABASE SCHEMA -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="sec-title"><span class="sec-num">03 —</span> Database Schema (20 Tables)</div>
+<div class="db-grid" style="margin-bottom:40px">
+
+  <!-- CATALOGUE -->
+  <div class="db-group">
+    <div class="db-group-title dg-catalogue">🍫 Catalogue</div>
+    <div class="db-table"><div class="dbt-head"><span class="dbt-ico">🍫</span><span class="dbt-name">products</span></div><div class="dbt-cols"><div class="dbc"><span class="pk">id (PK)</span><br>sku · name · slug<br>category · tier<br>egg_type · is_active<br>is_featured · tags[]</div></div></div>
+    <div class="db-table"><div class="dbt-head"><span class="dbt-ico">📦</span><span class="dbt-name">product_variants</span></div><div class="dbt-cols"><div class="dbc"><span class="pk">id (PK)</span><br><span class="fk">product_id (FK)</span><br>pack_label · weight_grams<br>pieces · price<br>cost_price · stock_qty</div></div></div>
+    <div class="db-table"><div class="dbt-head"><span class="dbt-ico">✨</span><span class="dbt-name">toppings</span></div><div class="dbt-cols"><div class="dbc"><span class="pk">id (PK)</span><br>name · slug<br>price_4pcs · price_9pcs<br>price_16pcs · emoji<br>is_premium</div></div></div>
+  </div>
+
+  <!-- ORDERS -->
+  <div class="db-group">
+    <div class="db-group-title dg-orders">🧾 Orders</div>
+    <div class="db-table"><div class="dbt-head"><span class="dbt-ico">🧾</span><span class="dbt-name">orders</span></div><div class="dbt-cols"><div class="dbc"><span class="pk">id (PK)</span><br>order_number<br><span class="fk">customer_id (FK)</span><br>status · total<br>payment_method<br>discount_code</div></div></div>
+    <div class="db-table"><div class="dbt-head"><span class="dbt-ico">🛒</span><span class="dbt-name">order_items</span></div><div class="dbt-cols"><div class="dbc"><span class="pk">id (PK)</span><br><span class="fk">order_id (FK)</span><br><span class="fk">product_id (FK)</span><br><span class="fk">variant_id (FK)</span><br>quantity · toppings<br>line_total</div></div></div>
+    <div class="db-table"><div class="dbt-head"><span class="dbt-ico">📋</span><span class="dbt-name">order_status_history</span></div><div class="dbt-cols"><div class="dbc"><span class="pk">id (PK)</span><br><span class="fk">order_id (FK)</span><br>from_status · to_status<br>changed_by · note</div></div></div>
+  </div>
+
+  <!-- CUSTOMERS -->
+  <div class="db-group">
+    <div class="db-group-title dg-customers">👤 Customers</div>
+    <div class="db-table"><div class="dbt-head"><span class="dbt-ico">👤</span><span class="dbt-name">customers</span></div><div class="dbt-cols"><div class="dbc"><span class="pk">id (PK)</span><br>customer_code<br>name · phone · email<br>loyalty_points<br>loyalty_tier · total_spent<br>referral_code</div></div></div>
+    <div class="db-table"><div class="dbt-head"><span class="dbt-ico">📍</span><span class="dbt-name">customer_addresses</span></div><div class="dbt-cols"><div class="dbc"><span class="pk">id (PK)</span><br><span class="fk">customer_id (FK)</span><br>label · address<br>city · pincode<br>is_default</div></div></div>
+    <div class="db-table"><div class="dbt-head"><span class="dbt-ico">⭐</span><span class="dbt-name">loyalty_transactions</span></div><div class="dbt-cols"><div class="dbc"><span class="pk">id (PK)</span><br><span class="fk">customer_id (FK)</span><br>type · points<br>balance_after</div></div></div>
+  </div>
+
+  <!-- OFFERS + OPS -->
+  <div class="db-group">
+    <div class="db-group-title dg-offers">🏷️ Offers</div>
+    <div class="db-table"><div class="dbt-head"><span class="dbt-ico">🏷️</span><span class="dbt-name">offers</span></div><div class="dbt-cols"><div class="dbc"><span class="pk">id (PK)</span><br>code · type<br>discount_value<br>min_order_value<br>valid_until · is_active</div></div></div>
+    <div class="db-table"><div class="dbt-head"><span class="dbt-ico">✅</span><span class="dbt-name">offer_usage</span></div><div class="dbt-cols"><div class="dbc"><span class="pk">id (PK)</span><br><span class="fk">offer_id (FK)</span><br><span class="fk">customer_id (FK)</span><br>discount_applied</div></div></div>
+    <div style="margin-top:6px"><div class="db-group-title dg-ops" style="margin-bottom:8px">📦 Inventory</div></div>
+    <div class="db-table"><div class="dbt-head"><span class="dbt-ico">📦</span><span class="dbt-name">inventory</span></div><div class="dbt-cols"><div class="dbc"><span class="pk">id (PK)</span><br><span class="fk">variant_id (FK)</span><br>stock_qty · reserved_qty<br>available_qty (computed)</div></div></div>
+  </div>
+
+  <!-- ANALYTICS + SUPPORT -->
+  <div class="db-group">
+    <div class="db-group-title" style="background:rgba(59,130,246,.1);color:var(--blue)">📈 Analytics + Support</div>
+    <div class="db-table"><div class="dbt-head"><span class="dbt-ico">📈</span><span class="dbt-name">sales_daily</span></div><div class="dbt-cols"><div class="dbc"><span class="pk">sale_date (PK)</span><br>total_orders · revenue<br>avg_order_value<br>top_product</div></div></div>
+    <div class="db-table"><div class="dbt-head"><span class="dbt-ico">⭐</span><span class="dbt-name">reviews</span></div><div class="dbt-cols"><div class="dbc"><span class="pk">id (PK)</span><br><span class="fk">customer_id (FK)</span><br>rating · body<br>is_verified · is_approved</div></div></div>
+    <div class="db-table"><div class="dbt-head"><span class="dbt-ico">📲</span><span class="dbt-name">notifications</span></div><div class="dbt-cols"><div class="dbc"><span class="pk">id (PK)</span><br><span class="fk">order_id (FK)</span><br>type · recipient<br>message · status</div></div></div>
+    <div class="db-table"><div class="dbt-head"><span class="dbt-ico">🎂</span><span class="dbt-name">custom_cake_enquiries</span></div><div class="dbt-cols"><div class="dbc"><span class="pk">id (PK)</span><br>occasion · cake_type<br>event_date · status<br>quoted_price</div></div></div>
+    <div class="db-table"><div class="dbt-head"><span class="dbt-ico">⚙️</span><span class="dbt-name">app_settings</span></div><div class="dbt-cols"><div class="dbc"><span class="pk">key (PK)</span><br>value · value_json<br>14 settings pre-seeded</div></div></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 4. FILE MANIFEST -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="sec-title"><span class="sec-num">04 —</span> Complete File Manifest</div>
+<div class="files-grid" style="margin-bottom:40px">
+  <div class="file-card"><div class="fc-ico">📱</div><div><div class="fc-name">chococravings-app-v2.html</div><div class="fc-desc">Customer-facing app. 5 navigable screens: Home hero, Explore catalogue, Product detail with tier/egg/toppings picker, Checkout form, Order success + tracking. Supabase JS SDK integrated. WhatsApp order notification.</div><div class="fc-meta"><span class="fcm">1624 lines</span><span class="fcm">HTML+CSS+JS</span><span class="fcm">Supabase</span><span class="fcm">WhatsApp</span></div></div></div>
+
+  <div class="file-card"><div class="fc-ico">📊</div><div><div class="fc-name">chococravings-admin-v2.html</div><div class="fc-desc">Owner dashboard. Live order feed via Supabase Realtime WebSocket. Status updater. WhatsApp push to customer. Stats cards: orders, revenue, pending, delivered. Bar chart analytics. Order detail slide panel.</div><div class="fc-meta"><span class="fcm">810 lines</span><span class="fcm">HTML+CSS+JS</span><span class="fcm">Realtime</span><span class="fcm">Desktop</span></div></div></div>
+
+  <div class="file-card"><div class="fc-ico">🔐</div><div><div class="fc-name">chococravings-auth.html</div><div class="fc-desc">Authentication flow. 5 screens: Welcome splash, Phone login, OTP verification, Registration with 15 Tamil Nadu cities, Profile page. Customer ID CC-XXXXXX format. ₹50 welcome wallet credit. Egg preference selection.</div><div class="fc-meta"><span class="fcm">844 lines</span><span class="fcm">HTML+CSS+JS</span><span class="fcm">Auth</span><span class="fcm">Tamil Nadu</span></div></div></div>
+
+  <div class="file-card"><div class="fc-ico">🗄️</div><div><div class="fc-name">supabase-complete-schema.sql</div><div class="fc-desc">Full PostgreSQL database. 20 tables, 3 views (orders summary, today's sales, top products), 18 RLS policies, 14 indexes, 3 triggers, auto-update timestamps, customer stats trigger on delivery. Pre-seeded with all products, toppings, offers, TN cities.</div><div class="fc-meta"><span class="fcm">799 lines</span><span class="fcm">SQL</span><span class="fcm">PostgreSQL</span><span class="fcm">Supabase</span></div></div></div>
+
+  <div class="file-card"><div class="fc-ico">⚡</div><div><div class="fc-name">capacitor.config.ts</div><div class="fc-desc">Capacitor native app config. App ID com.nsdi.chococravings. Splash screen: 2.5s, dark theme, purple background. Status bar dark icons. Keyboard resize. Push notification presentation options. Android debug flag.</div><div class="fc-meta"><span class="fcm">74 lines</span><span class="fcm">TypeScript</span><span class="fcm">Capacitor 6</span><span class="fcm">Android+iOS</span></div></div></div>
+
+  <div class="file-card"><div class="fc-ico">📦</div><div><div class="fc-name">package.json</div><div class="fc-desc">Node.js project manifest. Capacitor 6 core + android + ios packages. Splash screen, status bar, keyboard, push notifications, network, browser, clipboard, share plugins. npm run scripts for sync, open, run.</div><div class="fc-meta"><span class="fcm">38 lines</span><span class="fcm">JSON</span><span class="fcm">npm</span><span class="fcm">Capacitor 6</span></div></div></div>
+
+  <div class="file-card"><div class="fc-ico">📋</div><div><div class="fc-name">manifest.json</div><div class="fc-desc">PWA web app manifest. App name, theme color #6B2FCE, background #09010F, display standalone, orientation portrait. 8 icon sizes (72–512px). 3 screenshots spec. 2 app shortcuts (Browse, Custom Order). Food & Drink category.</div><div class="fc-meta"><span class="fcm">98 lines</span><span class="fcm">JSON</span><span class="fcm">PWA</span><span class="fcm">PWABuilder</span></div></div></div>
+
+  <div class="file-card"><div class="fc-ico">🤖</div><div><div class="fc-name">AndroidManifest.xml</div><div class="fc-desc">Android app manifest. Package com.nsdi.chococravings. Permissions: INTERNET, NETWORK_STATE, NOTIFICATIONS, VIBRATE. WhatsApp & deep link intent filters. Firebase push service. FileProvider for camera/uploads.</div><div class="fc-meta"><span class="fcm">99 lines</span><span class="fcm">XML</span><span class="fcm">Android</span><span class="fcm">Play Store</span></div></div></div>
+
+  <div class="file-card"><div class="fc-ico">🍎</div><div><div class="fc-name">Info.plist</div><div class="fc-desc">iOS app config. Bundle ID com.nsdi.chococravings. Camera, photo library, contacts, notifications usage descriptions. ATS exceptions for Supabase & wa.me. URL schemes for deep links. Background modes: push, fetch. Portrait only.</div><div class="fc-meta"><span class="fcm">119 lines</span><span class="fcm">XML (plist)</span><span class="fcm">iOS</span><span class="fcm">App Store</span></div></div></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 5. TECH STACK -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="sec-title"><span class="sec-num">05 —</span> Technology Stack</div>
+<div class="tech-grid" style="margin-bottom:40px">
+  <div class="tech-card"><div class="tc-ico">🌐</div><div class="tc-name">HTML5 + CSS3 + JS</div><div class="tc-role">All UI — no framework needed. Vanilla JS, CSS variables, animations. Cormorant Garamond + DM Sans fonts.</div><span class="tc-badge tb-free">Free</span></div>
+  <div class="tech-card"><div class="tc-ico">🗄️</div><div class="tc-name">Supabase</div><div class="tc-role">PostgreSQL database, realtime subscriptions, row-level security, REST & JS SDK. Mumbai (ap-south-1) region.</div><span class="tc-badge tb-free">Free tier</span></div>
+  <div class="tech-card"><div class="tc-ico">📲</div><div class="tc-name">WhatsApp Business</div><div class="tc-role">wa.me deep link API. Pre-filled order messages to owner (+91 99721 41890) and customer. Zero cost.</div><span class="tc-badge tb-free">Free</span></div>
+  <div class="tech-card"><div class="tc-ico">⚡</div><div class="tc-name">Capacitor 6</div><div class="tc-role">Ionic's native bridge. Wraps HTML into Android AAB + iOS IPA. Splash screen, status bar, push plugins included.</div><span class="tc-badge tb-free">Free / MIT</span></div>
+  <div class="tech-card"><div class="tc-ico">🔨</div><div class="tc-name">PWABuilder</div><div class="tc-role">Microsoft's free tool. Converts hosted URL → Android AAB bundle. No local build tools needed. Works from Samsung browser.</div><span class="tc-badge tb-free">Free</span></div>
+  <div class="tech-card"><div class="tc-ico">🎨</div><div class="tc-name">Canva (Mobile)</div><div class="tc-role">Free app for app icon design (512×512), feature graphic (1024×500), screenshots. Works entirely on Samsung phone.</div><span class="tc-badge tb-free">Free</span></div>
+  <div class="tech-card"><div class="tc-ico">🤖</div><div class="tc-name">Google Play Store</div><div class="tc-role">Android app distribution. AAB upload, store listing, content rating. com.nsdi.chococravings package ID.</div><span class="tc-badge tb-once">₹1,650 once</span></div>
+  <div class="tech-card"><div class="tc-ico">🍎</div><div class="tc-name">Apple App Store</div><div class="tc-role">iOS distribution. Requires Mac + Xcode. Portrait iPhone only. com.nsdi.chococravings bundle ID. Annual renewal.</div><span class="tc-badge tb-paid">₹8,300/yr</span></div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- 6. COST SUMMARY -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="sec-title"><span class="sec-num">06 —</span> Total Cost of Ownership</div>
+<div class="cost-row">
+  <div class="cost-c"><div class="cc-ico">🌐</div><div class="cc-name">Web Hosting</div><div class="cc-val cc-free">₹0</div><div style="font-size:10px;color:var(--dim);margin-top:4px">Your existing hosting</div></div>
+  <div class="cost-c"><div class="cc-ico">🗄️</div><div class="cc-name">Supabase Database</div><div class="cc-val cc-free">₹0/mo</div><div style="font-size:10px;color:var(--dim);margin-top:4px">Free tier: 500MB, 50K orders</div></div>
+  <div class="cost-c"><div class="cc-ico">📲</div><div class="cc-name">WhatsApp Notifs</div><div class="cc-val cc-free">₹0</div><div style="font-size:10px;color:var(--dim);margin-top:4px">wa.me link method</div></div>
+  <div class="cost-c"><div class="cc-ico">🤖</div><div class="cc-name">Play Store</div><div class="cc-val cc-paid">₹1,650</div><div style="font-size:10px;color:var(--dim);margin-top:4px">One-time, publish forever</div></div>
+</div>
+
+
+<!-- FOOTER -->
+<div class="footer">
+  NSDI ChocoCravings · System Architecture v1.0 · Tamil Nadu Premium Brownies 🍫<br>
+  +91 99721 41890 · +91 73732 78025 · @nsdi.chococravings
+</div>
+
+</div><!-- /page -->
+</body>
+</html>

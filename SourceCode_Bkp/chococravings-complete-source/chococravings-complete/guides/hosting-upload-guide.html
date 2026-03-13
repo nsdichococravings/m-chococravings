@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>ChocoCravings — Upload & Publish</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#6B2FCE;--p2:#8B44E8;--pl:#C084FC;
+  --dark:#09010F;--d2:#110020;--d3:#1C003A;
+  --white:#FAF5FF;--dim:#9F7ABA;--faint:#4A3060;
+  --green:#22C55E;--gold:#F59E0B;--red:#EF4444;
+  --blue:#3B82F6;--android:#34A853;
+  --bdr:rgba(255,255,255,.08);--card:rgba(255,255,255,.035);
+}
+body{background:var(--dark);color:var(--white);font-family:'DM Sans',sans-serif;min-height:100vh}
+.wrap{max-width:620px;margin:0 auto;padding:24px 16px 60px}
+
+/* ── HEADER ── */
+.hdr{text-align:center;padding:32px 0 28px}
+.hdr-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:var(--green);font-size:10px;font-weight:700;padding:5px 12px;border-radius:20px;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px}
+.hdr-title{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:700;line-height:1.15;margin-bottom:8px}
+.hdr-title em{color:var(--pl);font-style:italic}
+.hdr-sub{font-size:13px;color:var(--dim);line-height:1.7;margin-bottom:0}
+
+/* ── BIG 3-STEP FLOW ── */
+.big-flow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:22px 0}
+.bf-step{background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:16px 10px;text-align:center;position:relative}
+.bf-step::after{content:'→';position:absolute;right:-14px;top:50%;transform:translateY(-50%);color:var(--faint);font-size:18px;font-weight:700}
+.bf-step:last-child::after{display:none}
+.bf-num{font-family:'DM Mono',monospace;font-size:10px;color:var(--faint);margin-bottom:6px;font-weight:600;letter-spacing:1px}
+.bf-ico{font-size:28px;margin-bottom:7px}
+.bf-lbl{font-size:12px;font-weight:700;color:var(--white);line-height:1.3}
+.bf-sub{font-size:10px;color:var(--dim);margin-top:3px;line-height:1.4}
+
+/* ── HOSTING TABS ── */
+.htabs{display:flex;gap:0;background:var(--card);border:1px solid var(--bdr);border-radius:14px;overflow:hidden;margin-bottom:20px}
+.htab{flex:1;padding:11px 6px;text-align:center;font-size:11px;font-weight:700;color:var(--dim);cursor:pointer;transition:all .18s;border-right:1px solid var(--bdr);-webkit-tap-highlight-color:transparent;user-select:none}
+.htab:last-child{border:none}
+.htab.on{background:rgba(107,47,206,.15);color:var(--pl)}
+.htab-ico{font-size:18px;margin-bottom:3px}
+
+.hpanel{display:none}
+.hpanel.on{display:block}
+
+/* ── PHASE LABEL ── */
+.phase-lbl{display:flex;align-items:center;gap:8px;margin:20px 0 12px}
+.pl-bubble{background:linear-gradient(135deg,var(--p),var(--p2));width:26px;height:26px;border-radius:8px;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pl-title{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700}
+.pl-sub{font-size:11px;color:var(--dim)}
+
+/* ── STEP CARDS ── */
+.step{background:var(--card);border:1px solid var(--bdr);border-radius:15px;margin-bottom:9px;overflow:hidden}
+.step-hd{display:flex;align-items:flex-start;gap:11px;padding:13px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .15s;user-select:none}
+.step-hd:active{background:rgba(255,255,255,.04)}
+.sn{width:25px;height:25px;border-radius:7px;background:rgba(107,47,206,.18);border:1px solid rgba(107,47,206,.28);color:var(--pl);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.st{flex:1}
+.st-t{font-size:13px;font-weight:700;color:var(--white);line-height:1.3}
+.st-s{font-size:11px;color:var(--dim);margin-top:2px;line-height:1.4}
+.badge{padding:3px 8px;border-radius:7px;font-size:9px;font-weight:700;white-space:nowrap;margin-left:auto;margin-top:2px;flex-shrink:0}
+.b-free{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2)}
+.b-paid{background:rgba(245,158,11,.1);color:var(--gold);border:1px solid rgba(245,158,11,.2)}
+.b-key{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+
+.step-bd{display:none;padding:0 14px 13px 50px}
+.step-bd.open{display:block}
+
+/* ── INSTRUCTIONS ── */
+.inst{display:flex;flex-direction:column;gap:7px;margin:8px 0}
+.ir{display:flex;gap:9px;align-items:flex-start;padding:9px 11px;background:rgba(255,255,255,.025);border-radius:9px;border:1px solid var(--bdr)}
+.in{width:20px;height:20px;border-radius:5px;background:rgba(107,47,206,.14);color:var(--pl);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.it{font-size:12px;color:var(--white);line-height:1.6;flex:1}
+.it a{color:var(--pl);font-weight:600;text-decoration:none}
+.it code{background:rgba(255,255,255,.07);padding:1px 6px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;color:var(--pl)}
+.it strong{color:var(--white)}
+.it .path{font-family:'DM Mono',monospace;font-size:11px;background:rgba(107,47,206,.12);color:var(--pl);padding:2px 7px;border-radius:5px;border:1px solid rgba(107,47,206,.2);display:inline-block;margin:2px 0}
+
+/* ── ALERTS ── */
+.al{display:flex;gap:9px;padding:10px 12px;border-radius:10px;margin:8px 0;align-items:flex-start}
+.al-g{background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.18)}
+.al-y{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.18)}
+.al-b{background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.18)}
+.al-r{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.18)}
+.al-p{background:rgba(107,47,206,.08);border:1px solid rgba(107,47,206,.2)}
+.al-ico{font-size:15px;flex-shrink:0;margin-top:1px}
+.al-txt{font-size:12px;color:var(--dim);line-height:1.55;flex:1}
+.al-txt strong{color:var(--white)}
+.al-txt code{background:rgba(255,255,255,.07);padding:1px 5px;border-radius:4px;font-family:'DM Mono',monospace;font-size:11px;color:var(--pl)}
+
+/* ── CODE ── */
+.code{background:#080015;border:1px solid rgba(107,47,206,.25);border-radius:11px;padding:12px 14px;margin:8px 0;position:relative;overflow:hidden}
+.code pre{font-family:'DM Mono',monospace;font-size:11.5px;color:#E9D5FF;line-height:1.7;overflow-x:auto;white-space:pre-wrap;word-break:break-all}
+pre .g{color:#86EFAC}
+pre .c{color:#4A3060;font-style:italic}
+pre .k{color:#C084FC}
+pre .v{color:#FDE68A}
+.cbtn{position:absolute;top:8px;right:8px;background:rgba(107,47,206,.2);color:var(--pl);border:1px solid rgba(107,47,206,.3);border-radius:6px;padding:3px 9px;font-size:10px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.cbtn:active{background:var(--p);color:#fff}
+
+/* ── LINK BUTTON ── */
+.lbtn{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;text-decoration:none;font-size:13px;font-weight:700;margin:8px 0;-webkit-tap-highlight-color:transparent;transition:all .15s;border:none;cursor:pointer;width:100%}
+.lbtn:active{transform:scale(.97)}
+.lb-green{background:rgba(52,168,83,.1);border:1px solid rgba(52,168,83,.22);color:var(--android)}
+.lb-purple{background:rgba(107,47,206,.1);border:1px solid rgba(107,47,206,.25);color:var(--pl)}
+.lb-blue{background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);color:var(--blue)}
+.lbtn-ico{font-size:20px}
+.lbtn-txt .ln{font-weight:700}
+.lbtn-txt .ls{font-size:10px;font-weight:400;opacity:.7}
+.lbtn-arr{margin-left:auto;opacity:.5;font-size:16px}
+
+/* ── FILE UPLOAD VISUAL ── */
+.upload-visual{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.uv-card{background:rgba(255,255,255,.025);border:1.5px dashed var(--bdr);border-radius:12px;padding:14px;text-align:center}
+.uv-ico{font-size:28px;margin-bottom:6px}
+.uv-name{font-family:'DM Mono',monospace;font-size:11px;color:var(--pl);font-weight:500}
+.uv-desc{font-size:10px;color:var(--dim);margin-top:3px;line-height:1.4}
+
+/* ── PWA FORM PREVIEW ── */
+.pwa-form{background:rgba(255,255,255,.025);border:1px solid var(--bdr);border-radius:12px;padding:14px;margin:10px 0}
+.pf-title{font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px}
+.pf-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;padding-bottom:7px;border-bottom:1px solid var(--bdr)}
+.pf-row:last-child{margin:0;padding:0;border:none}
+.pf-key{font-size:11px;color:var(--dim)}
+.pf-val{font-family:'DM Mono',monospace;font-size:11px;color:var(--pl);font-weight:500}
+
+/* ── CHECKLIST ── */
+.chk-wrap{margin:16px 0}
+.chk-title{font-size:13px;font-weight:700;color:var(--white);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.chk-count{font-family:'DM Mono',monospace;font-size:11px;color:var(--pl)}
+.chk-bar{height:4px;background:rgba(255,255,255,.06);border-radius:2px;margin-bottom:12px;overflow:hidden}
+.chk-fill{height:100%;background:linear-gradient(90deg,var(--p),var(--pl));border-radius:2px;transition:width .3s ease;width:0%}
+.cl{display:flex;flex-direction:column;gap:6px}
+.ci{display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--card);border:1px solid var(--bdr);border-radius:9px;cursor:pointer;-webkit-tap-highlight-color:transparent;user-select:none;transition:all .15s}
+.ci:active{background:rgba(255,255,255,.05)}
+.ci.done{background:rgba(34,197,94,.05);border-color:rgba(34,197,94,.18)}
+.cb{width:17px;height:17px;border-radius:4px;border:1.5px solid var(--faint);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;transition:all .15s}
+.ci.done .cb{background:var(--green);border-color:var(--green);color:#000}
+.ct{font-size:12px;color:var(--dim);flex:1;line-height:1.3}
+.ci.done .ct{color:var(--white)}
+
+/* ── SUCCESS BANNER ── */
+.success-banner{background:linear-gradient(135deg,rgba(34,197,94,.1),rgba(107,47,206,.08));border:1px solid rgba(34,197,94,.2);border-radius:16px;padding:20px;text-align:center;margin-top:24px;display:none}
+.success-banner.show{display:block}
+.sb-ico{font-size:40px;margin-bottom:8px}
+.sb-t{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;margin-bottom:5px}
+.sb-s{font-size:12px;color:var(--dim);line-height:1.6}
+
+/* ── DIVIDER ── */
+.div{height:1px;background:var(--bdr);margin:22px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-badge">✅ You have hosting — Easiest path!</div>
+  <div class="hdr-title">Upload → PWABuilder<br>→ <em>Play Store</em></div>
+  <div class="hdr-sub">Since you already have hosting, you skip Netlify/GitHub entirely. Just upload 2 files, grab your URL, and let PWABuilder generate the Android app bundle.</div>
+</div>
+
+<!-- BIG 3-STEP OVERVIEW -->
+<div class="big-flow">
+  <div class="bf-step">
+    <div class="bf-num">STEP 01</div>
+    <div class="bf-ico">📤</div>
+    <div class="bf-lbl">Upload to Your Hosting</div>
+    <div class="bf-sub">2 files via File Manager</div>
+  </div>
+  <div class="bf-step">
+    <div class="bf-num">STEP 02</div>
+    <div class="bf-ico">🔨</div>
+    <div class="bf-lbl">PWABuilder → AAB</div>
+    <div class="bf-sub">Free, from browser</div>
+  </div>
+  <div class="bf-step">
+    <div class="bf-num">STEP 03</div>
+    <div class="bf-ico">🚀</div>
+    <div class="bf-lbl">Play Store</div>
+    <div class="bf-sub">₹1,650 · 3–7 days</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- PHASE 1: UPLOAD TO YOUR HOSTING -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="phase-lbl">
+  <div class="pl-bubble">1</div>
+  <div>
+    <div class="pl-title">Upload Files to Your Hosting</div>
+    <div class="pl-sub">Choose your hosting type below</div>
+  </div>
+</div>
+
+<!-- WHAT TO UPLOAD -->
+<div class="upload-visual">
+  <div class="uv-card">
+    <div class="uv-ico">📄</div>
+    <div class="uv-name">index.html</div>
+    <div class="uv-desc">Your ChocoCravings app<br>(rename from chococravings-app-v2.html)</div>
+  </div>
+  <div class="uv-card">
+    <div class="uv-ico">📋</div>
+    <div class="uv-name">manifest.json</div>
+    <div class="uv-desc">PWA config file<br>(from the mobile project ZIP)</div>
+  </div>
+</div>
+
+<div class="al al-y">
+  <div class="al-ico">⚠️</div>
+  <div class="al-txt"><strong>Important rename:</strong> The main file MUST be named exactly <code>index.html</code> before uploading. In your Samsung Files app → find <code>chococravings-app-v2.html</code> → long press → Rename → type <code>index.html</code></div>
+</div>
+
+<!-- HOSTING TYPE TABS -->
+<div class="htabs" style="margin-top:16px">
+  <div class="htab on" onclick="showHost('cpanel')"><div class="htab-ico">🖥️</div>cPanel</div>
+  <div class="htab" onclick="showHost('hostinger')"><div class="htab-ico">🌐</div>Hostinger</div>
+  <div class="htab" onclick="showHost('godaddy')"><div class="htab-ico">🐞</div>GoDaddy</div>
+  <div class="htab" onclick="showHost('other')"><div class="htab-ico">❓</div>Other</div>
+</div>
+
+<!-- cPANEL -->
+<div class="hpanel on" id="host-cpanel">
+  <div class="step" id="sc1">
+    <div class="step-hd" onclick="tog('sc1')">
+      <div class="sn">1</div>
+      <div class="st"><div class="st-t">Open cPanel File Manager from Phone</div><div class="st-s">Log in to your hosting control panel</div></div>
+      <span class="badge b-free">Free</span>
+    </div>
+    <div class="step-bd">
+      <div class="inst">
+        <div class="ir"><div class="in">1</div><div class="it">Open Samsung browser → go to your hosting login URL, e.g. <code>yourdomain.com/cpanel</code> or your host's dashboard link</div></div>
+        <div class="ir"><div class="in">2</div><div class="it">Log in with your hosting username + password</div></div>
+        <div class="ir"><div class="in">3</div><div class="it">Find and tap <strong>"File Manager"</strong> (usually in the Files section)</div></div>
+        <div class="ir"><div class="in">4</div><div class="it">Navigate to <strong>public_html</strong> folder (this is your website's root)</div></div>
+      </div>
+      <div class="al al-b"><div class="al-ico">💡</div><div class="al-txt"><strong>Can't find cPanel link?</strong> Try <code>yourdomain.com:2083</code> or check your hosting welcome email for the login URL.</div></div>
+    </div>
+  </div>
+
+  <div class="step" id="sc2">
+    <div class="step-hd" onclick="tog('sc2')">
+      <div class="sn">2</div>
+      <div class="st"><div class="st-t">Create an App Subfolder</div><div class="st-s">Keep your app separate from your main website</div></div>
+    </div>
+    <div class="step-bd">
+      <div class="inst">
+        <div class="ir"><div class="in">1</div><div class="it">Inside <strong>public_html</strong>, tap <strong>"+ Folder"</strong> or <strong>"New Folder"</strong></div></div>
+        <div class="ir"><div class="in">2</div><div class="it">Name it: <code>app</code> (so your URL will be <code>yourdomain.com/app</code>)</div></div>
+        <div class="ir"><div class="in">3</div><div class="it">Open the new <strong>app</strong> folder</div></div>
+      </div>
+      <div class="al al-g"><div class="al-ico">✅</div><div class="al-txt"><strong>Already have a subfolder?</strong> You can use any folder name — just remember the URL. E.g. <code>yourdomain.com/choco</code> also works fine.</div></div>
+    </div>
+  </div>
+
+  <div class="step" id="sc3">
+    <div class="step-hd" onclick="tog('sc3')">
+      <div class="sn">3</div>
+      <div class="st"><div class="st-t">Upload Both Files</div><div class="st-s">index.html + manifest.json into the app folder</div></div>
+    </div>
+    <div class="step-bd">
+      <div class="inst">
+        <div class="ir"><div class="in">1</div><div class="it">Tap <strong>"Upload"</strong> button in File Manager</div></div>
+        <div class="ir"><div class="in">2</div><div class="it">Tap <strong>"Choose File"</strong> → select <code>index.html</code> from your Downloads</div></div>
+        <div class="ir"><div class="in">3</div><div class="it">Upload again → select <code>manifest.json</code></div></div>
+        <div class="ir"><div class="in">4</div><div class="it">Both files should now appear in the <code>app</code> folder</div></div>
+      </div>
+      <div class="al al-g"><div class="al-ico">🎉</div><div class="al-txt"><strong>Your live URL is now:</strong> <code>https://yourdomain.com/app</code><br>Open it in Samsung browser to confirm the app loads!</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- HOSTINGER -->
+<div class="hpanel" id="host-hostinger">
+  <div class="step" id="sh1">
+    <div class="step-hd" onclick="tog('sh1')">
+      <div class="sn">1</div>
+      <div class="st"><div class="st-t">Open Hostinger hPanel on Samsung</div><div class="st-s">File Manager is inside hPanel dashboard</div></div>
+    </div>
+    <div class="step-bd">
+      <a class="lbtn lb-blue" href="https://hpanel.hostinger.com" target="_blank">
+        <div class="lbtn-ico">🌐</div><div class="lbtn-txt"><div class="ln">hpanel.hostinger.com</div><div class="ls">Log in with your Hostinger account</div></div><div class="lbtn-arr">→</div>
+      </a>
+      <div class="inst">
+        <div class="ir"><div class="in">1</div><div class="it">Log in → tap your website → tap <strong>"File Manager"</strong></div></div>
+        <div class="ir"><div class="in">2</div><div class="it">Go into <strong>public_html</strong> → tap <strong>"New Folder"</strong> → name it <code>app</code></div></div>
+        <div class="ir"><div class="in">3</div><div class="it">Open <code>app</code> folder → tap <strong>Upload</strong> icon (top toolbar) → upload <code>index.html</code></div></div>
+        <div class="ir"><div class="in">4</div><div class="it">Upload again → upload <code>manifest.json</code></div></div>
+      </div>
+      <div class="al al-g"><div class="al-ico">🔗</div><div class="al-txt"><strong>Your live URL:</strong> <code>https://yourdomain.com/app</code> — test it in browser before continuing.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- GODADDY -->
+<div class="hpanel" id="host-godaddy">
+  <div class="step" id="sg1">
+    <div class="step-hd" onclick="tog('sg1')">
+      <div class="sn">1</div>
+      <div class="st"><div class="st-t">Open GoDaddy File Manager</div><div class="st-s">Access via My Products → Hosting → cPanel</div></div>
+    </div>
+    <div class="step-bd">
+      <a class="lbtn lb-blue" href="https://myh.godaddy.com" target="_blank">
+        <div class="lbtn-ico">🐞</div><div class="lbtn-txt"><div class="ln">myh.godaddy.com</div><div class="ls">GoDaddy My Products</div></div><div class="lbtn-arr">→</div>
+      </a>
+      <div class="inst">
+        <div class="ir"><div class="in">1</div><div class="it">Log in → <strong>My Products</strong> → <strong>Web Hosting</strong> → <strong>Manage</strong></div></div>
+        <div class="ir"><div class="in">2</div><div class="it">Scroll to find <strong>cPanel Admin</strong> → open it → tap <strong>File Manager</strong></div></div>
+        <div class="ir"><div class="in">3</div><div class="it">Navigate to <strong>public_html</strong> → create <code>app</code> folder → upload both files</div></div>
+      </div>
+      <div class="al al-b"><div class="al-ico">💡</div><div class="al-txt"><strong>GoDaddy tip:</strong> If cPanel looks complex on mobile, try requesting the <strong>Desktop Site</strong> in Samsung browser → easier to navigate.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- OTHER -->
+<div class="hpanel" id="host-other">
+  <div class="step" id="so1">
+    <div class="step-hd" onclick="tog('so1')">
+      <div class="sn">1</div>
+      <div class="st"><div class="st-t">General File Upload Steps</div><div class="st-s">Works for any hosting with a File Manager</div></div>
+    </div>
+    <div class="step-bd">
+      <div class="inst">
+        <div class="ir"><div class="in">1</div><div class="it">Log in to your hosting control panel (check your hosting welcome email for the link)</div></div>
+        <div class="ir"><div class="in">2</div><div class="it">Find <strong>File Manager</strong> or <strong>FTP Files</strong> section</div></div>
+        <div class="ir"><div class="in">3</div><div class="it">Navigate to your <strong>web root folder</strong> (usually called <code>public_html</code>, <code>www</code>, or <code>htdocs</code>)</div></div>
+        <div class="ir"><div class="in">4</div><div class="it">Create a new folder called <code>app</code></div></div>
+        <div class="ir"><div class="in">5</div><div class="it">Upload <code>index.html</code> and <code>manifest.json</code> into that folder</div></div>
+        <div class="ir"><div class="in">6</div><div class="it">Your URL will be: <code>https://yourdomain.com/app</code></div></div>
+      </div>
+      <div class="al al-y"><div class="al-ico">⚠️</div><div class="al-txt"><strong>Must be HTTPS!</strong> Your URL must start with <code>https://</code> (not http://) for PWABuilder to work. Most modern hosting provides free SSL — check if it's enabled in your hosting panel.</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="div"></div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- PHASE 2: PWABUILDER -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="phase-lbl">
+  <div class="pl-bubble">2</div>
+  <div>
+    <div class="pl-title">Generate Android App — PWABuilder</div>
+    <div class="pl-sub">Free · Microsoft tool · Works from Samsung browser</div>
+  </div>
+</div>
+
+<div class="step" id="p1">
+  <div class="step-hd" onclick="tog('p1')">
+    <div class="sn">1</div>
+    <div class="st"><div class="st-t">Open PWABuilder & Scan Your URL</div><div class="st-s">Enter your live domain URL</div></div>
+    <span class="badge b-free">Free</span>
+  </div>
+  <div class="step-bd">
+    <a class="lbtn lb-purple" href="https://www.pwabuilder.com" target="_blank">
+      <div class="lbtn-ico">🔨</div><div class="lbtn-txt"><div class="ln">pwabuilder.com</div><div class="ls">Open in Samsung browser</div></div><div class="lbtn-arr">→</div>
+    </a>
+    <div class="inst">
+      <div class="ir"><div class="in">1</div><div class="it">In the big input box, enter your live URL:</div></div>
+    </div>
+    <div class="code">
+      <pre><span class="c"># Replace with your actual domain:</span>
+<span class="g">https://yourdomain.com/app</span>
+
+<span class="c"># Examples:</span>
+<span class="g">https://nsdi.in/app</span>
+<span class="g">https://chococravings.in</span>
+<span class="g">https://nsdi.chococravings.in</span></pre>
+    </div>
+    <div class="inst">
+      <div class="ir"><div class="in">2</div><div class="it">Tap <strong>"Start"</strong> → PWABuilder scans your app (~30 sec)</div></div>
+      <div class="ir"><div class="in">3</div><div class="it">A results page appears with scores — look for the <strong>Android</strong> section</div></div>
+    </div>
+    <div class="al al-g"><div class="al-ico">📊</div><div class="al-txt"><strong>Score tip:</strong> The manifest.json we built gives you a high PWA score automatically. You don't need a perfect score — just proceed to Android packaging.</div></div>
+  </div>
+</div>
+
+<div class="step" id="p2">
+  <div class="step-hd" onclick="tog('p2')">
+    <div class="sn">2</div>
+    <div class="st"><div class="st-t">Generate the Android App Bundle (AAB)</div><div class="st-s">Fill in app details — copy exactly from here</div></div>
+  </div>
+  <div class="step-bd">
+    <div class="inst">
+      <div class="ir"><div class="in">1</div><div class="it">On results page → tap <strong>"Package for stores"</strong> → tap <strong>"Android"</strong></div></div>
+      <div class="ir"><div class="in">2</div><div class="it">Fill in the form using these exact values:</div></div>
+    </div>
+    <div class="pwa-form">
+      <div class="pf-title">PWABuilder Android Settings</div>
+      <div class="pf-row"><div class="pf-key">Package ID</div><div class="pf-val">com.nsdi.chococravings</div></div>
+      <div class="pf-row"><div class="pf-key">App Name</div><div class="pf-val">ChocoCravings</div></div>
+      <div class="pf-row"><div class="pf-key">App Version</div><div class="pf-val">1.0.0</div></div>
+      <div class="pf-row"><div class="pf-key">Version Code</div><div class="pf-val">1</div></div>
+      <div class="pf-row"><div class="pf-key">Display Mode</div><div class="pf-val">Standalone</div></div>
+      <div class="pf-row"><div class="pf-key">Orientation</div><div class="pf-val">Portrait</div></div>
+      <div class="pf-row"><div class="pf-key">Theme Color</div><div class="pf-val">#6B2FCE</div></div>
+      <div class="pf-row"><div class="pf-key">Background</div><div class="pf-val">#09010F</div></div>
+    </div>
+    <div class="inst">
+      <div class="ir"><div class="in">3</div><div class="it">Tap <strong>"Generate"</strong> → wait 1–2 minutes</div></div>
+      <div class="ir"><div class="in">4</div><div class="it">Download the ZIP file → save to Samsung Downloads</div></div>
+      <div class="ir"><div class="in">5</div><div class="it">Unzip it (Samsung Files app → long press ZIP → Extract) → you'll see:<br>• <code>app-release-bundle.aab</code> → this is what you upload to Play Store<br>• <code>signing-key.keystore</code> → this is your app's key</div></div>
+    </div>
+    <div class="al al-r"><div class="al-ico">🔐</div><div class="al-txt"><strong>CRITICAL — Save the keystore!</strong> Copy <code>signing-key.keystore</code> and the passwords shown on screen to <strong>Google Drive immediately</strong>. Without this file you can NEVER update your app — you'd have to republish as a new app.</div></div>
+  </div>
+</div>
+
+<div class="div"></div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- PHASE 3: APP ICON + SCREENSHOTS -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="phase-lbl">
+  <div class="pl-bubble">3</div>
+  <div>
+    <div class="pl-title">Icon & Screenshots</div>
+    <div class="pl-sub">Both done from Samsung phone using Canva</div>
+  </div>
+</div>
+
+<div class="step" id="i1">
+  <div class="step-hd" onclick="tog('i1')">
+    <div class="sn">1</div>
+    <div class="st"><div class="st-t">Design App Icon in Canva</div><div class="st-s">512×512 px — 5 minutes in the free Canva app</div></div>
+    <span class="badge b-free">Free</span>
+  </div>
+  <div class="step-bd">
+    <a class="lbtn lb-green" href="https://play.google.com/store/apps/details?id=com.canva.editor" target="_blank">
+      <div class="lbtn-ico">🎨</div><div class="lbtn-txt"><div class="ln">Install Canva</div><div class="ls">Free from Play Store</div></div><div class="lbtn-arr">→</div>
+    </a>
+    <div class="inst">
+      <div class="ir"><div class="in">1</div><div class="it">Open Canva → <strong>"+"</strong> → <strong>Custom size</strong> → enter <strong>512</strong> width, <strong>512</strong> height, unit: <strong>px</strong></div></div>
+      <div class="ir"><div class="in">2</div><div class="it"><strong>Background:</strong> Tap background → color → enter <code>#6B2FCE</code> (deep purple)</div></div>
+      <div class="ir"><div class="in">3</div><div class="it"><strong>Add text "CC"</strong> in white, large font, centered — or search for a "chocolate" element in Canva's free assets</div></div>
+      <div class="ir"><div class="in">4</div><div class="it">Tap <strong>Download</strong> → format: <strong>PNG</strong> → save to phone</div></div>
+    </div>
+    <div class="al al-p"><div class="al-ico">🍫</div><div class="al-txt"><strong>Design shortcut:</strong> In Canva, search for <strong>"chocolate brownie"</strong> in Elements — there are free icons you can place on your purple background. Looks professional in 2 minutes!</div></div>
+  </div>
+</div>
+
+<div class="step" id="i2">
+  <div class="step-hd" onclick="tog('i2')">
+    <div class="sn">2</div>
+    <div class="st"><div class="st-t">Take App Screenshots</div><div class="st-s">Open your live URL → screenshot 4 key screens</div></div>
+  </div>
+  <div class="step-bd">
+    <div class="inst">
+      <div class="ir"><div class="in">1</div><div class="it">Open <code>https://yourdomain.com/app</code> in Samsung browser</div></div>
+      <div class="ir"><div class="in">2</div><div class="it">Tap the <strong>3-dot menu</strong> → <strong>Desktop site OFF</strong> → confirms mobile view</div></div>
+      <div class="ir"><div class="in">3</div><div class="it">Take 4 screenshots: <strong>Home</strong>, <strong>Product detail</strong>, <strong>Toppings</strong>, <strong>Checkout</strong></div></div>
+      <div class="ir"><div class="in">4</div><div class="it">Samsung shortcut: press <strong>Volume Down + Power</strong> simultaneously</div></div>
+    </div>
+    <div class="al al-g"><div class="al-ico">💡</div><div class="al-txt"><strong>Minimum required:</strong> Play Store needs at least 2 screenshots. 4–5 looks professional and helps conversion.</div></div>
+  </div>
+</div>
+
+<div class="div"></div>
+
+<!-- ══════════════════════════════════════════════ -->
+<!-- PHASE 4: PLAY STORE -->
+<!-- ══════════════════════════════════════════════ -->
+<div class="phase-lbl">
+  <div class="pl-bubble">4</div>
+  <div>
+    <div class="pl-title">Publish to Google Play Store</div>
+    <div class="pl-sub">₹1,650 one-time · All from Samsung browser</div>
+  </div>
+</div>
+
+<div class="step" id="g1">
+  <div class="step-hd" onclick="tog('g1')">
+    <div class="sn">1</div>
+    <div class="st"><div class="st-t">Create Play Developer Account</div><div class="st-s">One-time registration — same Google account as your Samsung</div></div>
+    <span class="badge b-paid">₹1,650</span>
+  </div>
+  <div class="step-bd">
+    <a class="lbtn lb-green" href="https://play.google.com/console/signup" target="_blank">
+      <div class="lbtn-ico">🤖</div><div class="lbtn-txt"><div class="ln">play.google.com/console/signup</div><div class="ls">Open in Samsung browser</div></div><div class="lbtn-arr">→</div>
+    </a>
+    <div class="inst">
+      <div class="ir"><div class="in">1</div><div class="it">Sign in → choose <strong>Personal account</strong></div></div>
+      <div class="ir"><div class="in">2</div><div class="it">Developer name: <strong>NSDI ChocoCravings</strong></div></div>
+      <div class="ir"><div class="in">3</div><div class="it">Pay <strong>₹1,650</strong> via Google Pay or card → submit</div></div>
+      <div class="ir"><div class="in">4</div><div class="it">Wait for email confirmation (24–48 hrs) → then continue</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="step" id="g2">
+  <div class="step-hd" onclick="tog('g2')">
+    <div class="sn">2</div>
+    <div class="st"><div class="st-t">Create App + Fill Store Listing</div><div class="st-s">Title, description, icon, screenshots</div></div>
+  </div>
+  <div class="step-bd">
+    <div class="inst">
+      <div class="ir"><div class="in">1</div><div class="it">Play Console → <strong>Create app</strong> → Name: <strong>ChocoCravings</strong> · Free · Not for children</div></div>
+      <div class="ir"><div class="in">2</div><div class="it"><strong>Main store listing:</strong> Use the text from <code>store-listing-content.txt</code> (provided) — paste the full description</div></div>
+      <div class="ir"><div class="in">3</div><div class="it"><strong>App icon:</strong> Upload your 512×512 PNG from Canva</div></div>
+      <div class="ir"><div class="in">4</div><div class="it"><strong>Screenshots:</strong> Upload your 4 Samsung screenshots</div></div>
+      <div class="ir"><div class="in">5</div><div class="it"><strong>Feature graphic:</strong> Make 1024×500 in Canva — purple background + "ChocoCravings" text + brownie emoji</div></div>
+      <div class="ir"><div class="in">6</div><div class="it"><strong>Category:</strong> Food & Drink</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="step" id="g3">
+  <div class="step-hd" onclick="tog('g3')">
+    <div class="sn">3</div>
+    <div class="st"><div class="st-t">Complete Required Sections</div><div class="st-s">Content rating, privacy policy, data safety</div></div>
+  </div>
+  <div class="step-bd">
+    <div class="inst">
+      <div class="ir"><div class="in">1</div><div class="it"><strong>Privacy Policy:</strong> Create free at <a href="https://app.termly.io/builder/websites/add" target="_blank">app.termly.io</a> → Website Privacy Policy → fill in NSDI details → publish → copy URL → paste in Play Console</div></div>
+      <div class="ir"><div class="in">2</div><div class="it"><strong>Content Rating:</strong> Start questionnaire → App type: <strong>Utility/Productivity</strong> → all answers: No → submit → rated <strong>Everyone</strong></div></div>
+      <div class="ir"><div class="in">3</div><div class="it"><strong>Target Audience:</strong> Select <strong>18 and older</strong></div></div>
+      <div class="ir"><div class="in">4</div><div class="it"><strong>Data Safety:</strong> You collect — Name ✓, Phone ✓, Email ✓, Address ✓ → purpose: App functionality → no sharing with third parties</div></div>
+    </div>
+    <div class="al al-g"><div class="al-ico">✅</div><div class="al-txt"><strong>Green ticks check:</strong> In the Play Console left menu, every section must show a ✓ green tick before the Submit button activates.</div></div>
+  </div>
+</div>
+
+<div class="step" id="g4">
+  <div class="step-hd" onclick="tog('g4')">
+    <div class="sn">4</div>
+    <div class="st"><div class="st-t">Upload AAB & Submit 🚀</div><div class="st-s">Final step — upload the file from PWABuilder</div></div>
+  </div>
+  <div class="step-bd">
+    <div class="inst">
+      <div class="ir"><div class="in">1</div><div class="it">Play Console → <strong>Testing → Internal testing</strong> → <strong>Create new release</strong><br><em>(Start with internal testing — faster to approve first)</em></div></div>
+      <div class="ir"><div class="in">2</div><div class="it">Tap <strong>Upload</strong> → select <code>app-release-bundle.aab</code> from your Downloads</div></div>
+      <div class="ir"><div class="in">3</div><div class="it">Release name: <strong>1.0.0</strong> · Release notes: paste from <code>store-listing-content.txt</code></div></div>
+      <div class="ir"><div class="in">4</div><div class="it">Save → <strong>Review release</strong> → no errors? → <strong>Rollout to internal testing</strong></div></div>
+      <div class="ir"><div class="in">5</div><div class="it">Once internal testing is approved (usually same day) → go to <strong>Production</strong> → create release → upload same AAB → submit for full review</div></div>
+    </div>
+    <div class="al al-g"><div class="al-ico">🎉</div><div class="al-txt"><strong>After 3–7 days</strong> you'll get an email from Google — your app is live on Play Store! Share the link on Instagram @nsdi.chococravings 🍫</div></div>
+  </div>
+</div>
+
+<div class="div"></div>
+
+<!-- FINAL CHECKLIST -->
+<div class="chk-wrap">
+  <div class="chk-title">
+    <span>✅ Complete Checklist</span>
+    <span class="chk-count" id="cnt">0 / 12</span>
+  </div>
+  <div class="chk-bar"><div class="chk-fill" id="fill"></div></div>
+  <div class="cl" id="cl">
+    <div class="ci" onclick="chk(this)"><div class="cb"></div><div class="ct">index.html renamed from chococravings-app-v2.html</div></div>
+    <div class="ci" onclick="chk(this)"><div class="cb"></div><div class="ct">manifest.json saved to phone from the project ZIP</div></div>
+    <div class="ci" onclick="chk(this)"><div class="cb"></div><div class="ct">Both files uploaded to hosting (public_html/app/)</div></div>
+    <div class="ci" onclick="chk(this)"><div class="cb"></div><div class="ct">Live URL tested in Samsung browser — app loads ✓</div></div>
+    <div class="ci" onclick="chk(this)"><div class="cb"></div><div class="ct">PWABuilder scanned the URL successfully</div></div>
+    <div class="ci" onclick="chk(this)"><div class="cb"></div><div class="ct">AAB file downloaded from PWABuilder</div></div>
+    <div class="ci" onclick="chk(this)"><div class="cb"></div><div class="ct">⚠️ Keystore file saved to Google Drive + passwords noted</div></div>
+    <div class="ci" onclick="chk(this)"><div class="cb"></div><div class="ct">512×512 app icon designed in Canva</div></div>
+    <div class="ci" onclick="chk(this)"><div class="cb"></div><div class="ct">4+ screenshots taken from Samsung phone</div></div>
+    <div class="ci" onclick="chk(this)"><div class="cb"></div><div class="ct">Play Console account created + ₹1,650 paid</div></div>
+    <div class="ci" onclick="chk(this)"><div class="cb"></div><div class="ct">Store listing complete — description, icon, screenshots, privacy policy</div></div>
+    <div class="ci" onclick="chk(this)"><div class="cb"></div><div class="ct">AAB uploaded + submitted for review 🎉</div></div>
+  </div>
+</div>
+
+<!-- SUCCESS BANNER (shows at 12/12) -->
+<div class="success-banner" id="success">
+  <div class="sb-ico">🍫</div>
+  <div class="sb-t">All Done! App Submitted!</div>
+  <div class="sb-s">Google will review in 3–7 days.<br>You'll get an email when ChocoCravings goes live on Play Store.<br><br>Share the link on Instagram @nsdi.chococravings and let your customers know! 🎉</div>
+</div>
+
+</div>
+<script>
+// Hosting tabs
+function showHost(id){
+  document.querySelectorAll('.htab').forEach(t=>t.classList.remove('on'));
+  document.querySelectorAll('.hpanel').forEach(p=>p.classList.remove('on'));
+  document.getElementById('host-'+id).classList.add('on');
+  event.currentTarget.classList.add('on');
+}
+// Fix tab clicks
+document.querySelectorAll('.htab').forEach((tab,i)=>{
+  const ids=['cpanel','hostinger','godaddy','other'];
+  tab.onclick=()=>{
+    document.querySelectorAll('.htab').forEach(t=>t.classList.remove('on'));
+    document.querySelectorAll('.hpanel').forEach(p=>p.classList.remove('on'));
+    tab.classList.add('on');
+    document.getElementById('host-'+ids[i]).classList.add('on');
+  };
+});
+
+// Step toggle
+function tog(id){
+  const b=document.getElementById(id).querySelector('.step-bd');
+  b.classList.toggle('open');
+}
+
+// Checklist
+const TOTAL=12;
+function chk(el){
+  el.classList.toggle('done');
+  el.querySelector('.cb').textContent=el.classList.contains('done')?'✓':'';
+  const done=document.querySelectorAll('.ci.done').length;
+  document.getElementById('cnt').textContent=done+' / '+TOTAL;
+  document.getElementById('fill').style.width=(done/TOTAL*100)+'%';
+  if(done===TOTAL) document.getElementById('success').classList.add('show');
+  else document.getElementById('success').classList.remove('show');
+}
+</script>
+</body>
+</html>
