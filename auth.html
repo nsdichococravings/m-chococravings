@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NSDI ChocoCravings — Login & Signup</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --dark:#07000f;--deep:#0f0020;--brown:#2d0055;
+  --caramel:#8B2FC9;--gold:#C084E8;--amber:#B56FE8;
+  --cream:#F5EEFF;--muted:#9a78c0;--dim:#4a2870;
+  --green:#4caf7d;--pink:#ff6b8a;--blue:#4a90d9;--purple:#8B2FC9;
+  --card:rgba(255,255,255,.05);--border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.15);
+}
+
+body{
+  background:var(--dark);font-family:'Sora',sans-serif;
+  display:flex;justify-content:center;align-items:flex-start;
+  min-height:100vh;padding:30px 16px;gap:40px;flex-wrap:wrap;
+}
+
+/* ── PHONE ── */
+.phone-wrap{display:flex;flex-direction:column;align-items:center;gap:14px}
+.phone-label{font-size:10px;color:var(--muted);letter-spacing:3px;text-transform:uppercase}
+.phone{
+  width:390px;height:844px;background:var(--dark);border-radius:54px;overflow:hidden;
+  box-shadow:0 0 0 11px #161616,0 0 0 13px #282828,0 60px 100px rgba(0,0,0,.9);
+  position:relative;flex-shrink:0;
+}
+.notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:34px;background:var(--dark);border-radius:0 0 22px 22px;z-index:200}
+.screen{width:100%;height:100%;overflow:hidden;position:relative}
+
+/* ── PAGES ── */
+.page{
+  position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;
+  scrollbar-width:none;
+  transition:transform .45s cubic-bezier(.4,0,.2,1),opacity .35s;
+  transform:translateX(100%);opacity:0;pointer-events:none;
+}
+.page::-webkit-scrollbar{display:none}
+.page.active{transform:translateX(0);opacity:1;pointer-events:all}
+.page.exit{transform:translateX(-40%);opacity:0}
+
+/* ── SPLASH ── */
+#pg-splash{
+  background:linear-gradient(160deg,#1a0038 0%,#0f0022 50%,#07000f 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.splash-orb{position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none}
+.so1{width:300px;height:300px;background:rgba(139,47,201,.3);top:-80px;right:-80px;animation:pulse 4s ease-in-out infinite}
+.so2{width:200px;height:200px;background:rgba(192,132,232,.2);bottom:100px;left:-60px;animation:pulse 6s ease-in-out infinite reverse}
+.so3{width:140px;height:140px;background:rgba(255,107,138,.15);top:300px;right:-30px;animation:pulse 5s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1) translateY(0)}50%{transform:scale(1.1) translateY(-15px)}}
+
+.splash-logo{text-align:center;position:relative;z-index:5;animation:fadeUp .8s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+
+.splash-icon{
+  width:90px;height:90px;border-radius:28px;
+  background:linear-gradient(135deg,var(--brown),var(--caramel));
+  display:flex;align-items:center;justify-content:center;
+  font-size:44px;margin:0 auto 24px;
+  box-shadow:0 20px 50px rgba(139,47,201,.4),0 0 0 1px rgba(192,132,232,.2);
+  animation:iconBob 3s ease-in-out infinite;
+}
+@keyframes iconBob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-8px) rotate(3deg)}}
+
+.splash-tag{font-size:11px;color:var(--caramel);letter-spacing:4px;text-transform:uppercase;font-weight:600;margin-bottom:8px}
+.splash-name{font-family:'Playfair Display',serif;font-size:36px;font-weight:900;color:var(--gold);line-height:1;text-shadow:0 0 50px rgba(192,132,232,.5)}
+.splash-name em{color:var(--cream);font-style:italic}
+.splash-sub{font-size:13px;color:var(--muted);margin-top:10px;line-height:1.6;max-width:240px;text-align:center}
+
+.splash-features{display:flex;gap:14px;margin-top:32px;position:relative;z-index:5;animation:fadeUp .8s .2s ease both}
+.sf-item{display:flex;flex-direction:column;align-items:center;gap:5px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:16px;padding:12px 14px;min-width:80px}
+.sf-emoji{font-size:22px}
+.sf-label{font-size:10px;color:var(--muted);white-space:nowrap}
+
+.splash-btns{display:flex;flex-direction:column;gap:12px;width:calc(100% - 48px);position:relative;z-index:5;margin-top:40px;animation:fadeUp .8s .4s ease both}
+.btn-primary{
+  background:linear-gradient(135deg,var(--caramel),var(--gold));
+  color:var(--dark);font-family:'Sora',sans-serif;font-size:15px;font-weight:700;
+  padding:16px;border-radius:18px;border:none;cursor:pointer;
+  transition:all .3s;box-shadow:0 12px 35px rgba(139,47,201,.4);
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-primary:active{transform:scale(.98);box-shadow:none}
+.btn-secondary{
+  background:rgba(255,255,255,.06);color:var(--cream);
+  font-family:'Sora',sans-serif;font-size:15px;font-weight:600;
+  padding:16px;border-radius:18px;border:1px solid var(--border2);cursor:pointer;
+  transition:all .3s;display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn-secondary:active{transform:scale(.98)}
+.btn-ghost{background:none;border:none;color:var(--muted);font-family:'Sora',sans-serif;font-size:13px;cursor:pointer;padding:8px;margin-top:4px}
+
+/* ── AUTH SHARED ── */
+.auth-bg{
+  min-height:100%;
+  background:linear-gradient(170deg,#140028 0%,#0d0020 40%,var(--dark) 100%);
+  position:relative;overflow:hidden;
+}
+.auth-wave{position:absolute;top:0;left:0;right:0;height:340px;background:linear-gradient(160deg,#2d0055,#110020);clip-path:ellipse(120% 100% at 50% 0%);z-index:0}
+.auth-orb{position:absolute;border-radius:50%;filter:blur(70px);pointer-events:none;z-index:1}
+.ao1{width:250px;height:250px;background:rgba(139,47,201,.25);top:-50px;right:-60px;animation:pulse 5s ease-in-out infinite}
+.ao2{width:160px;height:160px;background:rgba(192,132,232,.15);top:150px;left:-40px;animation:pulse 7s ease-in-out infinite reverse}
+
+.auth-header{position:relative;z-index:10;padding:52px 28px 24px;text-align:center}
+.auth-icon{width:64px;height:64px;border-radius:20px;background:linear-gradient(135deg,var(--brown),var(--caramel));display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 16px;box-shadow:0 10px 30px rgba(139,47,201,.35)}
+.auth-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:900;color:var(--cream);line-height:1.1}
+.auth-title span{color:var(--gold)}
+.auth-sub{font-size:13px;color:var(--muted);margin-top:6px}
+
+/* TABS */
+.auth-tabs{display:flex;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:16px;padding:4px;margin:0 28px 24px;position:relative;z-index:10}
+.auth-tab{flex:1;padding:10px;border-radius:12px;text-align:center;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;transition:all .25s}
+.auth-tab.on{background:linear-gradient(135deg,var(--caramel),var(--amber));color:var(--dark);box-shadow:0 4px 14px rgba(139,47,201,.4)}
+
+/* FORM */
+.auth-form{padding:0 28px;position:relative;z-index:10}
+.field-group{margin-bottom:16px}
+.field-label{font-size:11px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;font-weight:600;margin-bottom:7px;display:block}
+.field-wrap{position:relative;display:flex;align-items:center}
+.field-icon{position:absolute;left:16px;font-size:18px;pointer-events:none}
+.field-input{
+  width:100%;background:rgba(255,255,255,.06);border:1.5px solid var(--border);
+  border-radius:14px;padding:14px 16px 14px 46px;
+  color:var(--cream);font-family:'Sora',sans-serif;font-size:14px;outline:none;
+  transition:all .25s;
+}
+.field-input:focus{border-color:var(--caramel);background:rgba(139,47,201,.08);box-shadow:0 0 0 3px rgba(139,47,201,.12)}
+.field-input::placeholder{color:var(--dim)}
+.field-input.no-icon{padding-left:16px}
+.field-toggle{position:absolute;right:14px;font-size:16px;cursor:pointer;color:var(--muted)}
+
+/* PHONE FIELD SPECIAL */
+.phone-prefix{
+  position:absolute;left:46px;font-size:14px;color:var(--muted);
+  pointer-events:none;font-weight:600;
+}
+.field-input.phone-field{padding-left:88px}
+
+/* CITY SELECT */
+.field-select{
+  width:100%;background:rgba(255,255,255,.06);border:1.5px solid var(--border);
+  border-radius:14px;padding:14px 16px 14px 46px;
+  color:var(--cream);font-family:'Sora',sans-serif;font-size:14px;outline:none;
+  transition:all .25s;cursor:pointer;appearance:none;
+}
+.field-select:focus{border-color:var(--caramel);background:rgba(139,47,201,.08)}
+.field-select option{background:#110020;color:var(--cream)}
+
+/* DOB ROW */
+.dob-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.dob-row .field-input{padding-left:12px;text-align:center}
+
+/* GENDER CHIPS */
+.gender-chips{display:flex;gap:8px}
+.g-chip{flex:1;padding:12px;border-radius:12px;background:rgba(255,255,255,.05);border:1.5px solid var(--border);text-align:center;cursor:pointer;transition:all .25s;font-size:13px;color:var(--muted);font-weight:500}
+.g-chip.on{background:rgba(139,47,201,.15);border-color:var(--caramel);color:var(--gold);font-weight:700}
+
+/* PASSWORD STRENGTH */
+.pw-strength{display:flex;gap:4px;margin-top:8px}
+.ps-bar{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.08);transition:all .3s}
+.ps-bar.weak{background:var(--pink)}
+.ps-bar.fair{background:var(--amber)}
+.ps-bar.strong{background:var(--green)}
+.pw-label{font-size:11px;margin-top:5px;color:var(--muted)}
+
+/* TERMS */
+.terms-row{display:flex;align-items:flex-start;gap:10px;margin-bottom:20px}
+.terms-check{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--border);background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;margin-top:1px;transition:all .2s;font-size:12px;color:transparent}
+.terms-check.on{background:var(--caramel);border-color:var(--caramel);color:#fff}
+.terms-text{font-size:12px;color:var(--muted);line-height:1.5}
+.terms-text a{color:var(--caramel);text-decoration:none}
+
+/* DIVIDER */
+.auth-divider{display:flex;align-items:center;gap:12px;margin:16px 0}
+.ad-line{flex:1;height:1px;background:var(--border)}
+.ad-text{font-size:12px;color:var(--dim)}
+
+/* SOCIAL */
+.social-row{display:flex;gap:12px;margin-bottom:20px}
+.social-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:14px;padding:13px;cursor:pointer;transition:all .2s;font-size:13px;color:var(--cream);font-weight:500}
+.social-btn:hover{border-color:var(--border2);background:rgba(255,255,255,.08)}
+
+/* SUCCESS / WELCOME */
+#pg-success{background:linear-gradient(160deg,#0a0025 0%,#08001a 40%,var(--dark) 100%)}
+.success-content{
+  min-height:100%;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;padding:40px 28px;text-align:center;
+}
+.success-icon{
+  width:100px;height:100px;border-radius:50%;
+  background:linear-gradient(135deg,#1a1a6c,var(--green));
+  display:flex;align-items:center;justify-content:center;
+  font-size:48px;margin-bottom:24px;
+  box-shadow:0 0 0 16px rgba(76,175,125,.08),0 20px 50px rgba(76,175,125,.3);
+  animation:popIn .6s cubic-bezier(.34,1.56,.64,1) both;
+}
+@keyframes popIn{from{transform:scale(0) rotate(-30deg)}to{transform:scale(1) rotate(0)}}
+.success-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:900;color:var(--cream);margin-bottom:8px}
+.success-title span{color:var(--gold)}
+.success-sub{font-size:13px;color:var(--muted);line-height:1.6;max-width:260px}
+
+.customer-id-card{
+  background:linear-gradient(135deg,var(--brown),#4d1880);
+  border-radius:22px;padding:22px 24px;width:100%;margin:24px 0;
+  border:1px solid rgba(192,132,232,.2);
+  box-shadow:0 16px 40px rgba(0,0,0,.5);
+  position:relative;overflow:hidden;
+}
+.customer-id-card::before{content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.05)}
+.cid-label{font-size:10px;color:rgba(255,255,255,.6);letter-spacing:3px;text-transform:uppercase;margin-bottom:6px}
+.cid-value{font-family:'Playfair Display',serif;font-size:30px;font-weight:900;color:var(--gold);letter-spacing:2px;margin-bottom:4px}
+.cid-name{font-size:14px;color:rgba(255,255,255,.8);font-weight:600}
+.cid-city{font-size:12px;color:rgba(255,255,255,.5);margin-top:2px}
+.cid-copy{
+  position:absolute;top:50%;right:20px;transform:translateY(-50%);
+  background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);
+  border-radius:10px;padding:6px 14px;font-size:12px;color:#fff;font-weight:600;cursor:pointer;
+  transition:all .2s;
+}
+.cid-copy:hover{background:rgba(255,255,255,.25)}
+.cid-copy:active{transform:translateY(-50%) scale(.95)}
+
+.stats-preview{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;width:100%;margin-bottom:24px}
+.sp-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;text-align:center}
+.sp-num{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--gold)}
+.sp-lbl{font-size:10px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+
+/* ── CUSTOMER DASHBOARD ── */
+#pg-dashboard{background:linear-gradient(160deg,#110020 0%,#100600 40%,var(--dark) 100%)}
+.dash-header{padding:52px 24px 20px;position:relative}
+.dash-back{position:absolute;top:52px;left:20px;width:36px;height:36px;border-radius:12px;background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer}
+.dash-profile{display:flex;align-items:center;gap:14px;padding-left:52px}
+.dash-avatar{width:52px;height:52px;border-radius:18px;background:linear-gradient(135deg,var(--caramel),var(--gold));display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;border:2px solid rgba(192,132,232,.3)}
+.dash-name{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--cream)}
+.dash-id{font-size:11px;color:var(--caramel);font-weight:700;letter-spacing:1px;margin-top:2px}
+.dash-city{font-size:12px;color:var(--muted)}
+
+.loyalty-banner{
+  margin:12px 20px;border-radius:20px;
+  background:linear-gradient(135deg,#2d0060,#5a1090,#8B2FC9);
+  padding:18px 20px;position:relative;overflow:hidden;
+  border:1px solid rgba(192,132,232,.15);
+}
+.lb-bg{position:absolute;top:-20px;right:-20px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.06)}
+.lb-title{font-size:11px;color:rgba(255,255,255,.6);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px}
+.lb-points{font-family:'Playfair Display',serif;font-size:32px;font-weight:900;color:#fff}
+.lb-points span{font-size:16px;font-weight:400}
+.lb-bar-bg{background:rgba(255,255,255,.2);border-radius:6px;height:6px;margin-top:8px;overflow:hidden}
+.lb-bar-fill{height:100%;background:rgba(255,255,255,.9);border-radius:6px}
+.lb-sub{font-size:11px;color:rgba(255,255,255,.55);margin-top:5px}
+.lb-tier{position:absolute;top:18px;right:20px;background:rgba(255,255,255,.15);padding:4px 12px;border-radius:20px;font-size:11px;color:#fff;font-weight:700}
+
+.dash-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 20px}
+.ds-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;text-align:center;cursor:pointer;transition:all .2s}
+.ds-card:hover{border-color:var(--caramel);transform:translateY(-2px)}
+.ds-icon{font-size:20px;margin-bottom:6px}
+.ds-num{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--gold)}
+.ds-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+
+.dash-section{padding:4px 20px 10px}
+.ds-title{font-family:'Playfair Display',serif;font-size:17px;color:var(--cream);font-weight:700;margin-bottom:12px}
+
+.order-history{display:flex;flex-direction:column;gap:10px}
+.oh-item{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px}
+.oh-img{width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.ohi1{background:linear-gradient(135deg,#2d0055,#7a3a10)}
+.ohi2{background:linear-gradient(135deg,#1a0d2e,#4a1970)}
+.ohi3{background:linear-gradient(135deg,#1a1200,#524000)}
+.oh-info{flex:1}
+.oh-name{font-size:13px;font-weight:600;color:var(--cream)}
+.oh-detail{font-size:11px;color:var(--muted);margin-top:1px}
+.oh-right{text-align:right}
+.oh-price{font-size:14px;font-weight:700;color:var(--gold)}
+.oh-status{font-size:10px;font-weight:700;margin-top:3px;padding:2px 8px;border-radius:10px;display:inline-block}
+.ohs-done{background:rgba(76,175,125,.15);color:var(--green)}
+.ohs-new{background:rgba(192,132,232,.15);color:var(--gold)}
+
+.prefs-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.pref-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .2s}
+.pref-card:hover{border-color:var(--caramel)}
+.pc-icon{font-size:22px}
+.pc-info{}
+.pc-title{font-size:13px;font-weight:600;color:var(--cream)}
+.pc-sub{font-size:11px;color:var(--muted);margin-top:1px}
+
+/* ── TOAST ── */
+.toast{
+  position:fixed;bottom:110px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--green);color:#fff;font-size:13px;font-weight:600;
+  padding:12px 24px;border-radius:20px;opacity:0;transition:all .35s;
+  z-index:999;white-space:nowrap;pointer-events:none;
+  box-shadow:0 10px 30px rgba(76,175,125,.4);
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.error{background:var(--pink);box-shadow:0 10px 30px rgba(255,107,138,.4)}
+
+/* ── STATUSBAR ── */
+.statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 28px 0;font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<!-- ─────────── PANEL: FEATURE INFO ─────────── -->
+<div style="max-width:340px;padding:40px 10px;color:var(--cream)">
+  <div style="font-size:10px;color:var(--caramel);letter-spacing:3px;text-transform:uppercase;margin-bottom:8px">Auth System</div>
+  <div style="font-family:'Playfair Display',serif;font-size:36px;font-weight:900;color:var(--gold);line-height:1.1;margin-bottom:16px">Customer<br><em style="color:var(--cream)">Login &</em><br>Signup</div>
+  <p style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:28px">Every customer gets a <strong style="color:var(--cream)">unique ChocoCravings ID</strong> (CC-XXXXXX) linked to their profile — enabling rich personalization, loyalty tracking, and business analytics.</p>
+
+  <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:32px">
+    <div style="display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px">
+      <span style="font-size:22px;flex-shrink:0">🪪</span>
+      <div><strong style="display:block;color:var(--cream);font-size:14px;margin-bottom:2px">Unique Customer ID</strong><span style="font-size:12px;color:var(--muted)">Format: CC-XXXXXX — auto-generated at signup, permanent and tied to all orders</span></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px">
+      <span style="font-size:22px;flex-shrink:0">📊</span>
+      <div><strong style="display:block;color:var(--cream);font-size:14px;margin-bottom:2px">Sales Intelligence</strong><span style="font-size:12px;color:var(--muted)">Track orders per city, repeat purchase rate, average spend, favourite products</span></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px">
+      <span style="font-size:22px;flex-shrink:0">🎯</span>
+      <div><strong style="display:block;color:var(--cream);font-size:14px;margin-bottom:2px">Personalised Experience</strong><span style="font-size:12px;color:var(--muted)">Birthday offers, city-specific deals, loyalty tier upgrades (Bronze → Silver → Gold)</span></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px">
+      <span style="font-size:22px;flex-shrink:0">🔐</span>
+      <div><strong style="display:block;color:var(--cream);font-size:14px;margin-bottom:2px">Secure Auth Flow</strong><span style="font-size:12px;color:var(--muted)">Password strength meter, OTP via phone, Google/Apple sign-in, persistent session</span></div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+    <div style="text-align:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px">
+      <div style="font-family:'Playfair Display',serif;font-size:26px;color:var(--gold);font-weight:900">892</div>
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Customers</div>
+    </div>
+    <div style="text-align:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px">
+      <div style="font-family:'Playfair Display',serif;font-size:26px;color:var(--gold);font-weight:900">68%</div>
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Retention</div>
+    </div>
+    <div style="text-align:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px">
+      <div style="font-family:'Playfair Display',serif;font-size:26px;color:var(--gold);font-weight:900">38</div>
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Cities</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────── PHONE ─────────── -->
+<div class="phone-wrap">
+  <div class="phone-label">Tap to interact → try signing up!</div>
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="screen">
+
+      <!-- ══════ SPLASH ══════ -->
+      <div class="page active" id="pg-splash">
+        <div class="splash-orb so1"></div>
+        <div class="splash-orb so2"></div>
+        <div class="splash-orb so3"></div>
+        <div class="splash-logo">
+          <div class="splash-icon">🍫</div>
+          <div class="splash-tag">NSDI ✦ Premium</div>
+          <div class="splash-name">Choco<em>Cravings</em></div>
+          <div class="splash-sub">Handcrafted brownies & cakes delivered fresh across Tamil Nadu</div>
+        </div>
+        <div class="splash-features">
+          <div class="sf-item"><span class="sf-emoji">🚚</span><span class="sf-label">Fast Delivery</span></div>
+          <div class="sf-item"><span class="sf-emoji">🎁</span><span class="sf-label">Gift Boxes</span></div>
+          <div class="sf-item"><span class="sf-emoji">🎂</span><span class="sf-label">Custom Cakes</span></div>
+        </div>
+        <div class="splash-btns">
+          <button class="btn-primary" onclick="showPage('pg-signup')">🍫 Create Account</button>
+          <button class="btn-secondary" onclick="showPage('pg-login')">Sign In to your account</button>
+          <button class="btn-ghost" onclick="showPage('pg-dashboard')">👀 Preview Dashboard</button>
+        </div>
+      </div>
+
+      <!-- ══════ LOGIN ══════ -->
+      <div class="page" id="pg-login">
+        <div class="auth-bg">
+          <div class="auth-wave"></div>
+          <div class="auth-orb ao1"></div>
+          <div class="auth-orb ao2"></div>
+          <div class="statusbar" style="position:relative;z-index:20">
+            <span style="cursor:pointer;font-size:18px" onclick="showPage('pg-splash')">←</span>
+            <span>9:41</span>
+            <span>🔋</span>
+          </div>
+          <div class="auth-header">
+            <div class="auth-icon">🍫</div>
+            <div class="auth-title">Welcome <span>Back!</span></div>
+            <div class="auth-sub">Sign in to your ChocoCravings account</div>
+          </div>
+          <div class="auth-tabs">
+            <div class="auth-tab on">Sign In</div>
+            <div class="auth-tab" onclick="showPage('pg-signup')">Create Account</div>
+          </div>
+          <div class="auth-form">
+            <div class="field-group">
+              <label class="field-label">Phone Number or Email</label>
+              <div class="field-wrap">
+                <span class="field-icon">📱</span>
+                <input class="field-input" id="login-id" type="text" placeholder="Enter phone or email">
+              </div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Password</label>
+              <div class="field-wrap">
+                <span class="field-icon">🔒</span>
+                <input class="field-input" id="login-pw" type="password" placeholder="Enter your password">
+                <span class="field-toggle" onclick="togglePw('login-pw',this)">👁️</span>
+              </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;margin-bottom:20px">
+              <span style="font-size:12px;color:var(--caramel);cursor:pointer;font-weight:600" onclick="showPage('pg-forgot')">Forgot Password?</span>
+            </div>
+            <button class="btn-primary" style="width:100%;margin-bottom:16px" onclick="doLogin()">Sign In →</button>
+           <!--
+            <div class="auth-divider"><div class="ad-line"></div><span class="ad-text">or continue with</span><div class="ad-line"></div></div>
+            <div class="social-row">
+              <div class="social-btn" onclick="doSocialLogin('Google')">🌐 Google</div>
+              <div class="social-btn" onclick="doSocialLogin('Phone OTP')">📲 OTP</div>
+            </div>-->
+            <div style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:30px">
+              New here? <span style="color:var(--caramel);font-weight:700;cursor:pointer" onclick="showPage('pg-signup')">Create account →</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ SIGNUP ══════ -->
+      <div class="page" id="pg-signup">
+        <div class="auth-bg">
+          <div class="auth-wave"></div>
+          <div class="auth-orb ao1"></div>
+          <div class="auth-orb ao2"></div>
+          <div class="statusbar" style="position:relative;z-index:20">
+            <span style="cursor:pointer;font-size:18px" onclick="showPage('pg-splash')">←</span>
+            <span>9:41</span>
+            <span>🔋</span>
+          </div>
+          <div class="auth-header">
+            <div class="auth-icon">✨</div>
+            <div class="auth-title">Join <span>ChocoCravings</span></div>
+            <div class="auth-sub">Create your account & get ₹50 welcome credit!</div>
+          </div>
+          <div class="auth-tabs">
+            <div class="auth-tab" onclick="showPage('pg-login')">Sign In</div>
+            <div class="auth-tab on">Create Account</div>
+          </div>
+          <div class="auth-form">
+
+            <!-- NAME -->
+            <div class="field-group">
+              <label class="field-label">Full Name</label>
+              <div class="field-wrap">
+                <span class="field-icon">👤</span>
+                <input class="field-input" id="su-name" type="text" placeholder="Your full name">
+              </div>
+            </div>
+
+            <!-- PHONE -->
+            <div class="field-group">
+              <label class="field-label">Mobile Number</label>
+              <div class="field-wrap" style="position:relative">
+                <span class="field-icon">📱</span>
+                <span class="phone-prefix">+91</span>
+                <input class="field-input phone-field" id="su-phone" type="tel" maxlength="10" placeholder="10-digit number">
+              </div>
+            </div>
+
+            <!-- EMAIL -->
+            <div class="field-group">
+              <label class="field-label">Email Address</label>
+              <div class="field-wrap">
+                <span class="field-icon">✉️</span>
+                <input class="field-input" id="su-email" type="email" placeholder="yourname@gmail.com">
+              </div>
+            </div>
+
+            <!-- CITY -->
+            <div class="field-group">
+              <label class="field-label">City</label>
+              <div class="field-wrap">
+                <span class="field-icon">📍</span>
+                <select class="field-select" id="su-city">
+                  <option value="">Select your city</option>
+                  <option>Chennai</option><option>Coimbatore</option><option>Madurai</option>
+                  <option>Trichy</option><option>Salem</option><option>Tirunelveli</option>
+                  <option>Vellore</option><option>Erode</option><option>Thanjavur</option>
+                  <option>Dindigul</option><option>Kanchipuram</option><option>Kumbakonam</option>
+                  <option>Namakkal</option><option>Ramanathapuram</option><option>Other</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- DOB -->
+            <div class="field-group">
+              <label class="field-label">Date of Birth <span style="font-weight:400;color:var(--dim)">(for birthday surprises 🎂)</span></label>
+              <div class="dob-row">
+                <input class="field-input" id="su-dd" type="number" min="1" max="31" placeholder="DD">
+                <input class="field-input" id="su-mm" type="number" min="1" max="12" placeholder="MM">
+                <input class="field-input" id="su-yy" type="number" min="1950" max="2010" placeholder="YYYY">
+              </div>
+            </div>
+
+            <!-- GENDER -->
+            <div class="field-group">
+              <label class="field-label">Gender</label>
+              <div class="gender-chips">
+                <div class="g-chip" onclick="selectGender(this)">👨 Male</div>
+                <div class="g-chip" onclick="selectGender(this)">👩 Female</div>
+                <div class="g-chip" onclick="selectGender(this)">✨ Other</div>
+              </div>
+            </div>
+
+            <!-- PASSWORD -->
+            <div class="field-group">
+              <label class="field-label">Create Password</label>
+              <div class="field-wrap">
+                <span class="field-icon">🔒</span>
+                <input class="field-input" id="su-pw" type="password" placeholder="Minimum 8 characters" oninput="checkStrength(this.value)">
+                <span class="field-toggle" onclick="togglePw('su-pw',this)">👁️</span>
+              </div>
+              <div class="pw-strength" id="pw-bars">
+                <div class="ps-bar" id="pb1"></div>
+                <div class="ps-bar" id="pb2"></div>
+                <div class="ps-bar" id="pb3"></div>
+                <div class="ps-bar" id="pb4"></div>
+              </div>
+              <div class="pw-label" id="pw-label">Enter a password</div>
+            </div>
+
+            <!-- REFERRAL -->
+            <div class="field-group">
+              <label class="field-label">Referral Code <span style="font-weight:400;color:var(--dim)">(optional)</span></label>
+              <div class="field-wrap">
+                <span class="field-icon">🎁</span>
+                <input class="field-input" id="su-ref" type="text" placeholder="Enter referral code">
+              </div>
+            </div>
+
+            <!-- TERMS -->
+            <div class="terms-row">
+              <div class="terms-check" id="terms-check" onclick="toggleTerms()"></div>
+              <div class="terms-text">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>. I consent to receive order updates & exclusive offers via WhatsApp/SMS.</div>
+            </div>
+
+            <button class="btn-primary" style="width:100%;margin-bottom:16px" onclick="doSignup()">🍫 Create My Account</button>
+
+            <div class="auth-divider"><div class="ad-line"></div><span class="ad-text">or sign up with</span><div class="ad-line"></div></div>
+            <!--
+            <div class="social-row">
+              <div class="social-btn" onclick="doSocialLogin('Google')">🌐 Google</div>
+              <div class="social-btn" onclick="doSocialLogin('WhatsApp OTP')">💬 WhatsApp</div>
+            </div>-->
+            <div style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:30px">
+              Already have an account? <span style="color:var(--caramel);font-weight:700;cursor:pointer" onclick="showPage('pg-login')">Sign in →</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ SUCCESS ══════ -->
+      <div class="page" id="pg-success">
+        <div class="success-content">
+          <div class="success-icon">🎉</div>
+          <div class="success-title">Welcome to <span>ChocoCravings!</span></div>
+          <div class="success-sub">Your account is ready. Here's your unique Customer ID — keep it safe!</div>
+          <div class="customer-id-card">
+            <div class="cid-label">Your ChocoCravings ID</div>
+            <div class="cid-value" id="cid-display">CC-849273</div>
+            <div class="cid-name" id="cid-name">Priya Krishnan</div>
+            <div class="cid-city" id="cid-city">📍 Chennai, Tamil Nadu</div>
+            <div class="cid-copy" onclick="copyID()">📋 Copy</div>
+          </div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:16px;text-align:center;line-height:1.6;max-width:280px">
+            🎁 <strong style="color:var(--cream)">₹50 welcome credit</strong> has been added to your wallet! Use code <strong style="color:var(--gold)">WELCOME50</strong> on your first order.
+          </div>
+          <div class="stats-preview">
+            <div class="sp-card"><div class="sp-num">₹50</div><div class="sp-lbl">Wallet</div></div>
+            <div class="sp-card"><div class="sp-num">0</div><div class="sp-lbl">Orders</div></div>
+            <div class="sp-card"><div class="sp-num">0</div><div class="sp-lbl">Points</div></div>
+          </div>
+          <button class="btn-primary" style="width:100%;margin-bottom:12px" onclick="showPage('pg-dashboard')">🍫 Start Exploring →</button>
+          <button class="btn-ghost" onclick="showPage('pg-splash')">← Back to Home</button>
+        </div>
+      </div>
+
+      <!-- ══════ CUSTOMER DASHBOARD ══════ -->
+      <div class="page" id="pg-dashboard">
+        <div class="statusbar"><span>9:41</span><span>🔋</span></div>
+        <div class="dash-header">
+          <div class="dash-back" onclick="showPage('pg-splash')">←</div>
+          <div class="dash-profile">
+            <div class="dash-avatar">👩</div>
+            <div>
+              <div class="dash-name" id="dash-name-display">Priya Krishnan</div>
+              <div class="dash-id" id="dash-id-display">CC-849273</div>
+              <div class="dash-city" id="dash-city-display">📍 Chennai</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="loyalty-banner">
+          <div class="lb-bg"></div>
+          <div class="lb-tier">🥈 Silver Member</div>
+          <div class="lb-title">Loyalty Points</div>
+          <div class="lb-points">620 <span>pts</span></div>
+          <div class="lb-bar-bg"><div class="lb-bar-fill" style="width:62%"></div></div>
+          <div class="lb-sub">380 pts more to reach Gold 🥇</div>
+        </div>
+
+        <div class="dash-stats">
+          <div class="ds-card"><div class="ds-icon">📦</div><div class="ds-num">12</div><div class="ds-lbl">Orders</div></div>
+          <div class="ds-card"><div class="ds-icon">💰</div><div class="ds-num">₹4.8K</div><div class="ds-lbl">Spent</div></div>
+          <div class="ds-card"><div class="ds-icon">❤️</div><div class="ds-num">5</div><div class="ds-lbl">Saved</div></div>
+        </div>
+
+        <div class="dash-section">
+          <div class="ds-title">Recent Orders</div>
+          <div class="order-history">
+            <div class="oh-item">
+              <div class="oh-img ohi1">🍫</div>
+              <div class="oh-info">
+                <div class="oh-name">Classic Fudge Brownie</div>
+                <div class="oh-detail">#CC-1094 · 6 pcs · Dark</div>
+              </div>
+              <div class="oh-right">
+                <div class="oh-price">₹249</div>
+                <div class="oh-status ohs-done">Delivered</div>
+              </div>
+            </div>
+            <div class="oh-item">
+              <div class="oh-img ohi2">🎂</div>
+              <div class="oh-info">
+                <div class="oh-name">Choco Dream Cake</div>
+                <div class="oh-detail">#CC-1087 · 1kg · Truffle</div>
+              </div>
+              <div class="oh-right">
+                <div class="oh-price">₹649</div>
+                <div class="oh-status ohs-done">Delivered</div>
+              </div>
+            </div>
+            <div class="oh-item">
+              <div class="oh-img ohi3">🌟</div>
+              <div class="oh-info">
+                <div class="oh-name">Gold Gift Box</div>
+                <div class="oh-detail">#CC-1102 · 12 pcs</div>
+              </div>
+              <div class="oh-right">
+                <div class="oh-price">₹599</div>
+                <div class="oh-status ohs-new">In Transit</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-section" style="margin-top:8px">
+          <div class="ds-title">My Preferences</div>
+          <div class="prefs-row">
+            <div class="pref-card"><span class="pc-icon">🍫</span><div class="pc-info"><div class="pc-title">Fav Flavour</div><div class="pc-sub">Dark Chocolate</div></div></div>
+            <div class="pref-card"><span class="pc-icon">📍</span><div class="pc-info"><div class="pc-title">Saved Address</div><div class="pc-sub">3 addresses</div></div></div>
+            <div class="pref-card"><span class="pc-icon">💳</span><div class="pc-info"><div class="pc-title">Payment</div><div class="pc-sub">GPay linked</div></div></div>
+            <div class="pref-card"><span class="pc-icon">🔔</span><div class="pc-info"><div class="pc-title">Alerts</div><div class="pc-sub">WhatsApp ON</div></div></div>
+          </div>
+        </div>
+        <div style="height:30px"></div>
+      </div>
+
+    
+
+      <!-- ══════ RESET PASSWORD ══════ -->
+      <div class="page" id="pg-reset">
+        <div class="auth-bg">
+          <div class="auth-wave"></div>
+          <div class="auth-orb ao1"></div>
+          <div class="auth-orb ao2"></div>
+          <div class="statusbar" style="position:relative;z-index:20">
+            <span>9:41</span><span>🔋</span>
+          </div>
+          <div class="auth-header">
+            <div class="auth-icon">🔐</div>
+            <div class="auth-title">New <span>Password</span></div>
+            <div class="auth-sub">Choose a strong new password</div>
+          </div>
+          <div class="auth-form">
+            <div class="field-group">
+              <label class="field-label">New Password</label>
+              <div class="field-wrap">
+                <span class="field-icon">🔒</span>
+                <input class="field-input" id="reset-pw" type="password" placeholder="Minimum 8 characters" oninput="checkStrength(this.value)">
+                <span class="field-toggle" onclick="togglePw('reset-pw',this)">👁️</span>
+              </div>
+              <div class="pw-strength" id="pw-bars"><div class="ps-bar" id="pb1"></div><div class="ps-bar" id="pb2"></div><div class="ps-bar" id="pb3"></div><div class="ps-bar" id="pb4"></div></div>
+              <div class="pw-label" id="pw-label">Enter a password</div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Confirm Password</label>
+              <div class="field-wrap">
+                <span class="field-icon">🔒</span>
+                <input class="field-input" id="reset-pw2" type="password" placeholder="Repeat your password">
+              </div>
+            </div>
+            <button class="btn-primary" style="width:100%;margin-bottom:16px" onclick="doResetPassword()">🔐 Update Password</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ FORGOT PASSWORD ══════ -->
+      <div class="page" id="pg-forgot">
+        <div class="auth-bg">
+          <div class="auth-wave"></div>
+          <div class="auth-orb ao1"></div>
+          <div class="auth-orb ao2"></div>
+          <div class="statusbar" style="position:relative;z-index:20">
+            <span style="cursor:pointer;font-size:18px" onclick="showPage('pg-login')">←</span>
+            <span>9:41</span>
+            <span>🔋</span>
+          </div>
+          <div class="auth-header">
+            <div class="auth-icon">🔑</div>
+            <div class="auth-title">Reset <span>Password</span></div>
+            <div class="auth-sub">Enter your email and we'll send a reset link</div>
+          </div>
+          <div class="auth-form">
+
+            <!-- EMAIL FIELD — hidden after send -->
+            <div id="forgot-email-wrap">
+              <div class="field-group">
+                <label class="field-label">Email Address</label>
+                <div class="field-wrap">
+                  <span class="field-icon">✉️</span>
+                  <input class="field-input" id="forgot-email" type="email" placeholder="yourname@gmail.com">
+                </div>
+              </div>
+              <button class="btn-primary" style="width:100%;margin-bottom:16px" id="forgot-send-btn" onclick="doForgotPassword()">📧 Send Reset Link</button>
+            </div>
+
+            <!-- SUCCESS STATE — shown after send -->
+            <div id="forgot-sent-state" style="display:none">
+
+              <!-- Success card -->
+              <div style="background:rgba(76,175,125,.1);border:1px solid rgba(76,175,125,.3);border-radius:16px;padding:20px;margin-bottom:20px;text-align:center">
+                <div style="font-size:36px;margin-bottom:10px">📬</div>
+                <div style="font-size:14px;font-weight:700;color:#4caf7d;margin-bottom:6px">Email Sent!</div>
+                <div style="font-size:12px;color:var(--muted);line-height:1.6">Reset link sent to<br><strong id="forgot-email-display" style="color:var(--cream)"></strong></div>
+              </div>
+
+              <!-- Spam tip -->
+              <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:20px">
+                <div style="font-size:12px;color:var(--muted);line-height:1.7">
+                  📂 <strong style="color:var(--cream)">Can't find it?</strong> Check your <strong style="color:var(--cream)">Spam / Junk</strong> folder.<br>
+                  ✉️ Look for an email from <strong style="color:var(--caramel)">noreply@supabase.io</strong>
+                </div>
+              </div>
+
+              <!-- Resend section -->
+              <div style="text-align:center;margin-bottom:20px">
+                <!-- Countdown (shown during cooldown) -->
+                <div id="resend-countdown" style="font-size:13px;color:var(--muted)">
+                  Resend available in <span id="countdown-secs" style="color:var(--caramel);font-weight:700">45</span>s
+                </div>
+                <!-- Resend button (shown after countdown) -->
+                <div id="resend-btn-wrap" style="display:none">
+                  <button onclick="doResendReset()" style="background:rgba(139,47,201,.15);border:1.5px solid var(--caramel);color:var(--caramel);font-family:'Sora',sans-serif;font-size:13px;font-weight:700;padding:12px 28px;border-radius:14px;cursor:pointer;width:100%;transition:all .2s" id="resend-btn">
+                    🔄 Resend Reset Link
+                  </button>
+                  <div style="font-size:11px;color:var(--dim);margin-top:8px">Didn't receive it? Try resending</div>
+                </div>
+              </div>
+
+              <!-- Back to login -->
+              <button onclick="resetForgotState();showPage('pg-login')" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--cream);font-family:'Sora',sans-serif;font-size:13px;font-weight:600;padding:14px;border-radius:14px;cursor:pointer">
+                ← Back to Sign In
+              </button>
+            </div>
+
+            <div style="text-align:center;font-size:13px;color:var(--muted);margin-top:16px;margin-bottom:30px">
+              Remembered it? <span style="color:var(--caramel);font-weight:700;cursor:pointer" onclick="showPage('pg-login')">Sign in →</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+</div><!-- /screen -->
+  </div><!-- /phone -->
+  <div class="toast" id="toast"></div>
+</div><!-- /phone-wrap -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ── SUPABASE INIT ──
+const { createClient } = supabase;
+const db = createClient(
+  'https://yjbfditboewwpgyqzryd.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqYmZkaXRib2V3d3BneXF6cnlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNTgwNjcsImV4cCI6MjA4ODczNDA2N30.08Tvq71w2DBeWZrZb-IaiKfoI-2P_1MPJygzSPiRq24'
+);
+
+// ── PAGE NAV ──
+function showPage(id) {
+  const cur = document.querySelector('.page.active');
+  if (cur) { cur.classList.add('exit'); cur.classList.remove('active'); setTimeout(()=>cur.classList.remove('exit'),400); }
+  const next = document.getElementById(id);
+  if (next) { setTimeout(()=>{ next.classList.add('active'); next.scrollTop=0; },50); }
+}
+
+// ── TOAST ──
+let toastT;
+function toast(msg, err=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (err?' error':'');
+  clearTimeout(toastT);
+  toastT = setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ── TOGGLE PW ──
+function togglePw(id, btn) {
+  const inp = document.getElementById(id);
+  inp.type = inp.type==='password'?'text':'password';
+  btn.textContent = inp.type==='password'?'👁️':'🙈';
+}
+
+// ── GENDER ──
+function selectGender(el) {
+  document.querySelectorAll('.g-chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+}
+
+// ── TERMS ──
+let termsAccepted = false;
+function toggleTerms() {
+  termsAccepted = !termsAccepted;
+  const el = document.getElementById('terms-check');
+  el.classList.toggle('on', termsAccepted);
+  el.textContent = termsAccepted ? '✓' : '';
+}
+
+// ── PASSWORD STRENGTH ──
+function checkStrength(pw) {
+  const bars = ['pb1','pb2','pb3','pb4'];
+  const lbl = document.getElementById('pw-label');
+  bars.forEach(b=>{ const el=document.getElementById(b); el.className='ps-bar'; });
+  let score = 0;
+  if (pw.length>=8) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  const cls = score<=1?'weak':score<=2?'fair':'strong';
+  const labels = ['','Weak','Fair','Good','Strong 🔐'];
+  for(let i=0;i<score;i++) document.getElementById(bars[i]).classList.add(cls);
+  lbl.textContent = pw.length===0?'Enter a password':labels[score]||'Strong 🔐';
+  lbl.style.color = score<=1?'var(--pink)':score<=2?'var(--amber)':'var(--green)';
+}
+
+// ── GENERATE UNIQUE ID ──
+function generateID() {
+  const rand = Math.floor(100000 + Math.random() * 900000);
+  return 'CC-' + rand;
+}
+
+// ── SAVE CUSTOMER ──
+asyn
+
+
+
+// ── SIGNUP ──
+async function doSignup() {
+  const name  = document.getElementById('su-name').value.trim();
+  const phone = document.getElementById('su-phone').value.trim();
+  const email = document.getElementById('su-email').value.trim();
+  const city  = document.getElementById('su-city').value;
+  const pw    = document.getElementById('su-pw').value;
+
+  if (!name)               { toast('Please enter your name', true); return; }
+  if (phone.length !== 10) { toast('Enter a valid 10-digit number', true); return; }
+  if (!email.includes('@')) { toast('Enter a valid email', true); return; }
+  if (!city)               { toast('Please select your city', true); return; }
+  if (pw.length < 8)       { toast('Password must be 8+ characters', true); return; }
+  if (!termsAccepted)      { toast('Please accept Terms & Conditions', true); return; }
+
+  const dd     = document.getElementById('su-dd').value;
+  const mm     = document.getElementById('su-mm').value;
+  const yy     = document.getElementById('su-yy').value;
+  const gender = document.querySelector('.g-chip.on')?.textContent || '';
+
+  const btn = document.querySelector('button[onclick="doSignup()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Creating account...'; }
+
+  try {
+    // STEP 1: Create auth user in Supabase
+    const { data: authData, error: authErr } = await db.auth.signUp({ email, password: pw });
+    if (authErr) {
+      const msg = authErr.message.includes('already') ? 'Email already registered. Please sign in.' : authErr.message;
+      toast(msg, true);
+      if (btn) { btn.disabled = false; btn.textContent = '🍫 Create My Account'; }
+      return;
+    }
+
+    // STEP 2: Sign in immediately to get a valid session
+    const { data: signInData, error: signInErr } = await db.auth.signInWithPassword({ email, password: pw });
+    if (signInErr) {
+      toast('Account created! Please sign in.', false);
+      if (btn) { btn.disabled = false; btn.textContent = '🍫 Create My Account'; }
+      showPage('pg-login');
+      return;
+    }
+
+    const authUserId = signInData.user.id;
+    const phone_fmt  = '+91' + phone;
+    const custCode   = generateID();
+
+    // Format DOB
+    let dob = null;
+    if (dd && mm && yy && yy.length === 4) {
+      dob = yy + '-' + String(mm).padStart(2,'0') + '-' + String(dd).padStart(2,'0');
+    }
+
+    // Gender
+    const gRaw = gender.toLowerCase();
+    const gVal = gRaw.includes('female') ? 'female' : gRaw.includes('male') ? 'male' : gRaw.includes('other') ? 'other' : null;
+
+    // STEP 3: Insert into customers table
+    const { data: cust, error: custErr } = await db.from('customers').insert([{
+      auth_id:        authUserId,
+      customer_code:  custCode,
+      name:           name,
+      phone:          phone_fmt,
+      email:          email,
+      city:           city,
+      state:          'Tamil Nadu',
+      date_of_birth:  dob,
+      gender:         gVal,
+      egg_preference: 'eggless',
+      loyalty_points: 50,
+      loyalty_tier:   'bronze',
+      total_orders:   0,
+      total_spent:    0,
+      is_active:      true,
+      whatsapp_opted: true,
+      email_opted:    true,
+    }]).select('id, customer_code').single();
+
+    if (custErr) {
+      console.error('Customer insert error:', custErr.message);
+      // Auth user was created, show partial success
+      toast('Account created! Profile setup issue: ' + custErr.message, true);
+    }
+
+    // STEP 4: Save to localStorage
+    localStorage.setItem('cc_user', JSON.stringify({
+      name, phone: phone_fmt, email, city,
+      db_id:   cust?.id || null,
+      auth_id: authUserId,
+      id:      cust?.customer_code || custCode,
+      is_admin: false
+    }));
+
+    // STEP 5: Update success page
+    const displayCode = cust?.customer_code || custCode;
+    document.getElementById('cid-display').textContent = displayCode;
+    document.getElementById('cid-name').textContent    = name;
+    document.getElementById('cid-city').textContent    = '📍 ' + city + ', Tamil Nadu';
+    document.getElementById('dash-name-display').textContent = name;
+    document.getElementById('dash-id-display').textContent   = displayCode;
+    document.getElementById('dash-city-display').textContent = '📍 ' + city;
+
+    toast('✓ Welcome to ChocoCravings, ' + name + '! 🍫');
+    setTimeout(() => showPage('pg-success'), 500);
+
+  } catch(err) {
+    toast(err.message || 'Signup failed', true);
+    if (btn) { btn.disabled = false; btn.textContent = '🍫 Create My Account'; }
+  }
+}
+
+// ── LOGIN ──
+async function doLogin() {
+  const loginId = document.getElementById('login-id').value.trim();
+  const pw      = document.getElementById('login-pw').value;
+  if (!loginId) { toast('Enter your phone or email', true); return; }
+  if (!pw)      { toast('Enter your password', true); return; }
+
+  const btn = document.querySelector('button[onclick="doLogin()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Signing in...'; }
+
+  try {
+    let email = loginId;
+
+    // Phone number entered → look up email via RPC (bypasses RLS when logged out)
+    if (/^[0-9]/.test(loginId) && !loginId.includes('@')) {
+      const phone = loginId.replace(/\s+/g, '').replace(/^0/, '');
+      const { data: foundEmail, error: rpcErr } = await db.rpc('get_email_by_phone', { p_phone: phone });
+      if (rpcErr || !foundEmail) {
+        toast('No account found for this number. Please sign up.', true);
+        if (btn) { btn.disabled = false; btn.textContent = 'Sign In →'; }
+        return;
+      }
+      email = foundEmail;
+    }
+
+    // Sign in with Supabase Auth
+    const { data, error } = await db.auth.signInWithPassword({ email, password: pw });
+    if (error) {
+      toast(error.message.includes('Invalid') ? 'Wrong password. Try again.' : error.message, true);
+      if (btn) { btn.disabled = false; btn.textContent = 'Sign In →'; }
+      return;
+    }
+
+    // Load profile
+    const { data: cust } = await db.from('customers')
+      .select('id, name, phone, email, city, customer_code, is_admin')
+      .eq('email', email).single();
+
+    const sessionUser = {
+      name:    cust?.name  || data.user.user_metadata?.name || 'Customer',
+      phone:   cust?.phone || '',
+      email,
+      city:    cust?.city  || '',
+      db_id:   cust?.id    || null,
+      id:      cust?.customer_code || null,
+      auth_id: data.user.id,
+      is_admin: cust?.is_admin || false
+    };
+    localStorage.setItem('cc_user', JSON.stringify(sessionUser));
+
+    toast('✓ Welcome back, ' + sessionUser.name + '! 🍫');
+    setTimeout(() => window.location.href = 'index.html', 800);
+
+  } catch(err) {
+    toast(err.message || 'Login failed', true);
+    if (btn) { btn.disabled = false; btn.textContent = 'Sign In →'; }
+  }
+}
+
+// ── SOCIAL LOGIN ──
+function doSocialLogin(provider) {
+  toast('Connecting with ' + provider + '...');
+  setTimeout(()=>{ toast('✓ Signed in via ' + provider + '!'); setTimeout(()=>showPage('pg-dashboard'),600); },1200);
+}
+
+// ── COPY ID ──
+async function copyID() {
+  const id = document.getElementById('cid-display').textContent;
+  try {
+    await navigator.clipboard.writeText(id);
+    toast('📋 Customer ID copied!');
+  } catch(e) { toast('ID: ' + id); }
+}
+
+
+
+
+
+// ── RESET PASSWORD (after clicking email link) ──
+async function doResetPassword() {
+  const pw  = document.getElementById('reset-pw').value;
+  const pw2 = document.getElementById('reset-pw2').value;
+
+  if (pw.length < 8)  { toast('Password must be 8+ characters', true); return; }
+  if (pw !== pw2)     { toast('Passwords do not match', true); return; }
+
+  const btn = document.querySelector('#pg-reset .btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = 'Updating...'; }
+
+  try {
+    const { error } = await db.auth.updateUser({ password: pw });
+    if (error) {
+      toast(error.message, true);
+      if (btn) { btn.disabled = false; btn.textContent = '🔐 Update Password'; }
+      return;
+    }
+
+    toast('✅ Password updated! Signing you in...');
+    setTimeout(() => window.location.href = 'index.html', 1200);
+
+  } catch(err) {
+    toast(err.message || 'Failed to update password', true);
+    if (btn) { btn.disabled = false; btn.textContent = '🔐 Update Password'; }
+  }
+}
+
+
+// ── FORGOT PASSWORD ──
+var forgotCountdownTimer = null;
+
+async function sendResetEmail(email) {
+  return await db.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + '/auth.html?reset=true'
+  });
+}
+
+function startResendCountdown() {
+  var secs = 45;
+  var countEl  = document.getElementById('countdown-secs');
+  var countDiv = document.getElementById('resend-countdown');
+  var btnWrap  = document.getElementById('resend-btn-wrap');
+
+  countDiv.style.display = 'block';
+  btnWrap.style.display  = 'none';
+  countEl.textContent = secs;
+
+  clearInterval(forgotCountdownTimer);
+  forgotCountdownTimer = setInterval(function() {
+    secs--;
+    countEl.textContent = secs;
+    if (secs <= 0) {
+      clearInterval(forgotCountdownTimer);
+      countDiv.style.display = 'none';
+      btnWrap.style.display  = 'block';
+    }
+  }, 1000);
+}
+
+function resetForgotState() {
+  clearInterval(forgotCountdownTimer);
+  document.getElementById('forgot-email-wrap').style.display  = 'block';
+  document.getElementById('forgot-sent-state').style.display  = 'none';
+  document.getElementById('forgot-email').value = '';
+  var btn = document.getElementById('forgot-send-btn');
+  if (btn) { btn.disabled = false; btn.textContent = '📧 Send Reset Link'; }
+}
+
+async function doForgotPassword() {
+  const email = document.getElementById('forgot-email').value.trim();
+  if (!email || !email.includes('@')) { toast('Enter a valid email address', true); return; }
+
+  const btn = document.getElementById('forgot-send-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+
+  try {
+    const { error } = await sendResetEmail(email);
+    if (error) {
+      toast(error.message, true);
+      if (btn) { btn.disabled = false; btn.textContent = '📧 Send Reset Link'; }
+      return;
+    }
+
+    // Show sent state
+    document.getElementById('forgot-email-wrap').style.display  = 'none';
+    document.getElementById('forgot-sent-state').style.display  = 'block';
+    document.getElementById('forgot-email-display').textContent = email;
+    toast('✅ Reset link sent to ' + email);
+    startResendCountdown();
+
+  } catch(err) {
+    toast(err.message || 'Failed to send reset link', true);
+    if (btn) { btn.disabled = false; btn.textContent = '📧 Send Reset Link'; }
+  }
+}
+
+async function doResendReset() {
+  const email = document.getElementById('forgot-email-display').textContent;
+  if (!email) return;
+
+  const btn = document.getElementById('resend-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Resending...'; }
+
+  try {
+    const { error } = await sendResetEmail(email);
+    if (error) {
+      toast(error.message, true);
+      if (btn) { btn.disabled = false; btn.textContent = '🔄 Resend Reset Link'; }
+      return;
+    }
+    toast('✅ Reset link resent! Check your inbox.');
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 Resend Reset Link'; }
+    startResendCountdown(); // restart 45s countdown
+  } catch(err) {
+    toast(err.message || 'Failed to resend', true);
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 Resend Reset Link'; }
+  }
+}
+
+// ── HANDLE PASSWORD RESET REDIRECT ──
+// When user clicks the link in email, they land back on auth.html?reset=true
+// Supabase auto-sets the session — show a new password form
+(async function checkReset() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('reset') !== 'true') return;
+
+  // Get the session Supabase set from the reset link
+  const { data: { session } } = await db.auth.getSession();
+  if (!session) return;
+
+  // Show reset password UI
+  showPage('pg-reset');
+})();
+
+
+// ── SESSION RESTORE ──
+(async function() {
+  try {
+    const { data: { session } } = await db.auth.getSession();
+    if (session) {
+      // Already logged in — redirect to app
+      window.location.href = 'index.html';
+    }
+  } catch(e) { console.log('Session check:', e); }
+})();
+
+</script>
+</body>
+</html>
