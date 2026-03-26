@@ -1,0 +1,98 @@
+{
+  "name": "NSDI ChocoCravings",
+  "short_name": "ChocoCravings",
+  "description": "Premium handmade brownies & custom cakes from Tamil Nadu. Fresh-baked, no preservatives. Order now!",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#09010F",
+  "theme_color": "#6B2FCE",
+  "orientation": "portrait",
+  "lang": "en-IN",
+  "categories": ["food", "shopping", "lifestyle"],
+  "icons": [
+    {
+      "src": "icons/icon-72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshots/home.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "label": "Home — Browse premium brownies"
+    },
+    {
+      "src": "screenshots/product.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "label": "Product — Choose pack size & toppings"
+    },
+    {
+      "src": "screenshots/checkout.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "label": "Checkout — Easy ordering"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Browse Brownies",
+      "short_name": "Brownies",
+      "description": "View all brownie varieties",
+      "url": "/?page=explore",
+      "icons": [{"src": "icons/icon-96.png", "sizes": "96x96"}]
+    },
+    {
+      "name": "Custom Order",
+      "short_name": "Custom",
+      "description": "Order a custom cake or brownie",
+      "url": "/?page=custom",
+      "icons": [{"src": "icons/icon-96.png", "sizes": "96x96"}]
+    }
+  ]
+}

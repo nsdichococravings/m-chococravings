@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NSDI ChocoCravings — Database Schema</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#6B2FCE;--pl:#C084FC;--dark:#09010F;--d2:#110020;--d3:#1C003A;
+  --white:#FAF5FF;--dim:#9F7ABA;--faint:#4A3060;
+  --green:#22C55E;--gold:#F59E0B;--red:#EF4444;--blue:#3B82F6;--teal:#14B8A6;
+  --pink:#F472B6;--orange:#F97316;
+  --bdr:rgba(255,255,255,.08);
+}
+body{background:var(--dark);color:var(--white);font-family:'DM Sans',sans-serif;min-height:100vh;padding:32px 24px}
+.page{max-width:1400px;margin:0 auto}
+
+/* HEADER */
+.hdr{text-align:center;margin-bottom:36px}
+.hdr-eye{font-size:11px;color:var(--p);letter-spacing:4px;text-transform:uppercase;font-weight:600;margin-bottom:8px}
+.hdr-title{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:700;margin-bottom:6px}
+.hdr-title span{color:var(--pl);font-style:italic}
+.hdr-sub{font-size:14px;color:var(--dim);margin-bottom:16px}
+.hdr-stats{display:flex;justify-content:center;gap:20px;flex-wrap:wrap}
+.hstat{background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:12px;padding:10px 20px;text-align:center}
+.hstat-n{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700}
+.hstat-l{font-size:11px;color:var(--dim)}
+
+/* SECTION HEADERS */
+.sec-title{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;padding:0 4px}
+.sec-bar{height:3px;width:32px;border-radius:2px;display:inline-block;margin-right:4px}
+
+/* TABLE GRID */
+.tables-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:32px}
+
+/* TABLE CARD */
+.tbl{background:rgba(255,255,255,.03);border:1px solid var(--bdr);border-radius:18px;overflow:hidden;transition:transform .2s,border-color .2s}
+.tbl:hover{transform:translateY(-3px);border-color:rgba(107,47,206,.4)}
+.tbl-head{padding:14px 16px 10px;border-bottom:1px solid var(--bdr);display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.tbl-left{flex:1}
+.tbl-icon{font-size:22px;margin-bottom:6px}
+.tbl-name{font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--white);line-height:1}
+.tbl-desc{font-size:11px;color:var(--dim);margin-top:4px;line-height:1.5}
+.tbl-badge{padding:3px 9px;border-radius:8px;font-size:10px;font-weight:700;white-space:nowrap;flex-shrink:0}
+.badge-core   {background:rgba(107,47,206,.2);color:var(--pl);border:1px solid rgba(107,47,206,.3)}
+.badge-support{background:rgba(59,130,246,.15);color:var(--blue);border:1px solid rgba(59,130,246,.25)}
+.badge-analytics{background:rgba(245,158,11,.12);color:var(--gold);border:1px solid rgba(245,158,11,.2)}
+.badge-config {background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2)}
+
+/* COLUMNS */
+.tbl-cols{padding:12px 0}
+.col-row{display:flex;align-items:center;gap:9px;padding:5px 16px;transition:background .15s}
+.col-row:hover{background:rgba(255,255,255,.03)}
+.col-pk{color:var(--gold);font-size:13px;width:14px;flex-shrink:0}
+.col-fk{color:var(--blue);font-size:13px;width:14px;flex-shrink:0}
+.col-reg{color:transparent;width:14px;flex-shrink:0}
+.col-name{font-family:'DM Mono',monospace;font-size:12px;color:var(--white);font-weight:400;flex:1}
+.col-type{font-size:10px;color:var(--faint);min-width:60px;text-align:right}
+.col-note{font-size:10px;color:var(--dim);padding:2px 7px;background:rgba(255,255,255,.04);border-radius:5px;max-width:120px;text-align:right;line-height:1.4}
+.col-divider{height:1px;background:var(--bdr);margin:6px 16px}
+.col-more{font-size:11px;color:var(--faint);padding:6px 16px 10px;font-style:italic}
+
+/* REL MAP */
+.rel-section{margin-bottom:32px}
+.rel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.rel-card{background:rgba(255,255,255,.025);border:1px solid var(--bdr);border-radius:14px;padding:14px 16px}
+.rel-from{font-family:'DM Mono',monospace;font-size:12px;color:var(--pl);font-weight:500}
+.rel-arrow{font-size:12px;color:var(--faint);margin:3px 0}
+.rel-to{font-family:'DM Mono',monospace;font-size:12px;color:var(--white)}
+.rel-type{font-size:10px;color:var(--dim);margin-top:5px}
+
+/* LEGEND */
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:28px;padding:12px 16px;background:rgba(255,255,255,.025);border-radius:12px;border:1px solid var(--bdr)}
+.leg-item{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--dim)}
+.leg-ico{font-size:14px}
+
+/* COLOR MARKERS per section */
+.s-catalogue .tbl{border-top:3px solid var(--p)}
+.s-orders    .tbl{border-top:3px solid var(--gold)}
+.s-customers .tbl{border-top:3px solid var(--green)}
+.s-offers    .tbl{border-top:3px solid var(--pink)}
+.s-sales     .tbl{border-top:3px solid var(--blue)}
+.s-ops       .tbl{border-top:3px solid var(--teal)}
+.s-support   .tbl{border-top:3px solid var(--orange)}
+.s-config    .tbl{border-top:3px solid var(--dim)}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-eye">Database Architecture</div>
+  <div class="hdr-title">NSDI <span>ChocoCravings</span> — Complete Schema</div>
+  <div class="hdr-sub">Supabase PostgreSQL · 20 tables · Full relational structure with RLS policies</div>
+  <div class="hdr-stats">
+    <div class="hstat"><div class="hstat-n" style="color:var(--pl)">20</div><div class="hstat-l">Tables</div></div>
+    <div class="hstat"><div class="hstat-n" style="color:var(--gold)">3</div><div class="hstat-l">Views</div></div>
+    <div class="hstat"><div class="hstat-n" style="color:var(--green)">18</div><div class="hstat-l">RLS Policies</div></div>
+    <div class="hstat"><div class="hstat-n" style="color:var(--blue)">14</div><div class="hstat-l">Indexes</div></div>
+    <div class="hstat"><div class="hstat-n" style="color:var(--pink)">3</div><div class="hstat-l">Triggers</div></div>
+  </div>
+</div>
+
+<!-- LEGEND -->
+<div class="legend">
+  <div class="leg-item"><span class="leg-ico" style="color:var(--gold)">🔑</span>Primary Key (PK)</div>
+  <div class="leg-item"><span class="leg-ico" style="color:var(--blue)">🔗</span>Foreign Key (FK)</div>
+  <div class="leg-item"><span class="leg-ico">📦</span>Core table (orders, customers, products)</div>
+  <div class="leg-item"><span class="leg-ico">🔧</span>Support table (history, addresses, etc.)</div>
+  <div class="leg-item"><span class="leg-ico">📊</span>Analytics table</div>
+  <div class="leg-item"><span class="leg-ico">⚙️</span>Config / Settings</div>
+</div>
+
+<!-- ── SECTION 1: CATALOGUE ── -->
+<div class="sec-title"><span style="color:var(--p)">◆</span> 1. Product Catalogue</div>
+<div class="tables-grid s-catalogue">
+
+  <div class="tbl">
+    <div class="tbl-head"><div class="tbl-left"><div class="tbl-icon">🍫</div><div class="tbl-name">products</div><div class="tbl-desc">All brownie variants, tiers, egg types, categories</div></div><span class="tbl-badge badge-core">Core</span></div>
+    <div class="tbl-cols">
+      <div class="col-row"><div class="col-pk">🔑</div><div class="col-name">id</div><div class="col-type">UUID</div><div class="col-note">Primary key</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">sku</div><div class="col-type">TEXT</div><div class="col-note">PREM-EL-CLASSIC</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">name</div><div class="col-type">TEXT</div><div class="col-note">Display name</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">category</div><div class="col-type">ENUM</div><div class="col-note">brownie/cake/gift</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">tier</div><div class="col-type">ENUM</div><div class="col-note">premium/couverture</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">egg_type</div><div class="col-type">ENUM</div><div class="col-note">eggless/egg/both</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">is_active</div><div class="col-type">BOOL</div><div class="col-note">Show/hide in app</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">is_bestseller</div><div class="col-type">BOOL</div><div class="col-note">Featured badge</div></div>
+      <div class="col-more">+ tags, ingredients, image_url, sort_order…</div>
+    </div>
+  </div>
+
+  <div class="tbl">
+    <div class="tbl-head"><div class="tbl-left"><div class="tbl-icon">📦</div><div class="tbl-name">product_variants</div><div class="tbl-desc">Pack sizes (4pcs/9pcs/16pcs) with prices per product</div></div><span class="tbl-badge badge-core">Core</span></div>
+    <div class="tbl-cols">
+      <div class="col-row"><div class="col-pk">🔑</div><div class="col-name">id</div><div class="col-type">UUID</div><div class="col-note">Primary key</div></div>
+      <div class="col-row"><div class="col-fk">🔗</div><div class="col-name">product_id</div><div class="col-type">UUID</div><div class="col-note">→ products</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">pack_label</div><div class="col-type">TEXT</div><div class="col-note">"4pcs", "9pcs", "16pcs"</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">weight_grams</div><div class="col-type">INT</div><div class="col-note">250 / 500 / 1000</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">pieces</div><div class="col-type">INT</div><div class="col-note">4 / 9 / 16</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">price</div><div class="col-type">NUMERIC</div><div class="col-note">Selling price ₹</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">cost_price</div><div class="col-type">NUMERIC</div><div class="col-note">For margin tracking</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">stock_qty</div><div class="col-type">INT</div><div class="col-note">Current inventory</div></div>
+    </div>
+  </div>
+
+  <div class="tbl">
+    <div class="tbl-head"><div class="tbl-left"><div class="tbl-icon">🍫</div><div class="tbl-name">toppings</div><div class="tbl-desc">All ganache toppings with per-pack-size pricing</div></div><span class="tbl-badge badge-core">Core</span></div>
+    <div class="tbl-cols">
+      <div class="col-row"><div class="col-pk">🔑</div><div class="col-name">id</div><div class="col-type">UUID</div><div class="col-note">Primary key</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">name</div><div class="col-type">TEXT</div><div class="col-note">"Milk Choco Ganache"</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">price_4pcs</div><div class="col-type">NUMERIC</div><div class="col-note">e.g. ₹60</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">price_9pcs</div><div class="col-type">NUMERIC</div><div class="col-note">e.g. ₹120</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">price_16pcs</div><div class="col-type">NUMERIC</div><div class="col-note">e.g. ₹240</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">emoji</div><div class="col-type">TEXT</div><div class="col-note">🍫 🥛 🍯</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">is_premium</div><div class="col-type">BOOL</div><div class="col-note">Ferrero etc.</div></div>
+      <div class="col-more">15 toppings pre-seeded with real prices</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── SECTION 2: ORDERS ── -->
+<div class="sec-title"><span style="color:var(--gold)">◆</span> 2. Orders</div>
+<div class="tables-grid s-orders">
+
+  <div class="tbl">
+    <div class="tbl-head"><div class="tbl-left"><div class="tbl-icon">🧾</div><div class="tbl-name">orders</div><div class="tbl-desc">Master orders table — every customer order</div></div><span class="tbl-badge badge-core">Core</span></div>
+    <div class="tbl-cols">
+      <div class="col-row"><div class="col-pk">🔑</div><div class="col-name">id</div><div class="col-type">UUID</div><div class="col-note">Primary key</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">order_number</div><div class="col-type">TEXT</div><div class="col-note">CC-123456</div></div>
+      <div class="col-row"><div class="col-fk">🔗</div><div class="col-name">customer_id</div><div class="col-type">UUID</div><div class="col-note">→ customers</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">status</div><div class="col-type">ENUM</div><div class="col-note">pending→delivered</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">subtotal</div><div class="col-type">NUMERIC</div><div class="col-note">Before discount</div></div>
+      <div class="col-row"><div class="col-fk">🔗</div><div class="col-name">discount_code</div><div class="col-type">TEXT</div><div class="col-note">→ offers.code</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">total</div><div class="col-type">NUMERIC</div><div class="col-note">Final amount ₹</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">payment_method</div><div class="col-type">ENUM</div><div class="col-note">cod/upi/card</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">payment_status</div><div class="col-type">ENUM</div><div class="col-note">pending/paid</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">order_source</div><div class="col-type">ENUM</div><div class="col-note">app/whatsapp/insta</div></div>
+      <div class="col-more">+ delivery address snapshot, gift message, points…</div>
+    </div>
+  </div>
+
+  <div class="tbl">
+    <div class="tbl-head"><div class="tbl-left"><div class="tbl-icon">🛒</div><div class="tbl-name">order_items</div><div class="tbl-desc">Individual line items per order with toppings</div></div><span class="tbl-badge badge-core">Core</span></div>
+    <div class="tbl-cols">
+      <div class="col-row"><div class="col-pk">🔑</div><div class="col-name">id</div><div class="col-type">UUID</div><div class="col-note">Primary key</div></div>
+      <div class="col-row"><div class="col-fk">🔗</div><div class="col-name">order_id</div><div class="col-type">UUID</div><div class="col-note">→ orders</div></div>
+      <div class="col-row"><div class="col-fk">🔗</div><div class="col-name">product_id</div><div class="col-type">UUID</div><div class="col-note">→ products</div></div>
+      <div class="col-fk">🔗</div><div class="col-name" style="font-family:'DM Mono';font-size:12px;color:var(--white);flex:1;padding:5px 16px">variant_id</div><div class="col-type" style="font-size:10px;color:var(--faint);min-width:60px;text-align:right;padding:5px 0">UUID</div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">product_name</div><div class="col-type">TEXT</div><div class="col-note">Snapshot at order</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">quantity</div><div class="col-type">INT</div><div class="col-note">Number of packs</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">unit_price</div><div class="col-type">NUMERIC</div><div class="col-note">Price at order time</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">toppings</div><div class="col-type">JSONB</div><div class="col-note">[{name, price}]</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">line_total</div><div class="col-type">NUMERIC</div><div class="col-note">qty × (price+tops)</div></div>
+    </div>
+  </div>
+
+  <div class="tbl">
+    <div class="tbl-head"><div class="tbl-left"><div class="tbl-icon">📋</div><div class="tbl-name">order_status_history</div><div class="tbl-desc">Full audit trail of every status change</div></div><span class="tbl-badge badge-support">Support</span></div>
+    <div class="tbl-cols">
+      <div class="col-row"><div class="col-pk">🔑</div><div class="col-name">id</div><div class="col-type">UUID</div><div class="col-note">Primary key</div></div>
+      <div class="col-row"><div class="col-fk">🔗</div><div class="col-name">order_id</div><div class="col-type">UUID</div><div class="col-note">→ orders</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">from_status</div><div class="col-type">TEXT</div><div class="col-note">Previous status</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">to_status</div><div class="col-type">TEXT</div><div class="col-note">New status</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">changed_by</div><div class="col-type">TEXT</div><div class="col-note">admin/system</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">note</div><div class="col-type">TEXT</div><div class="col-note">Reason / message</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">created_at</div><div class="col-type">TIMESTAMPTZ</div><div class="col-note">When changed</div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── SECTION 3: CUSTOMERS ── -->
+<div class="sec-title"><span style="color:var(--green)">◆</span> 3. Customers & Loyalty</div>
+<div class="tables-grid s-customers">
+
+  <div class="tbl">
+    <div class="tbl-head"><div class="tbl-left"><div class="tbl-icon">👤</div><div class="tbl-name">customers</div><div class="tbl-desc">Customer profiles, preferences, loyalty tier</div></div><span class="tbl-badge badge-core">Core</span></div>
+    <div class="tbl-cols">
+      <div class="col-row"><div class="col-pk">🔑</div><div class="col-name">id</div><div class="col-type">UUID</div><div class="col-note">Primary key</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">customer_code</div><div class="col-type">TEXT</div><div class="col-note">CC-XXXXXX</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">name / phone / email</div><div class="col-type">TEXT</div><div class="col-note">Contact details</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">egg_preference</div><div class="col-type">ENUM</div><div class="col-note">eggless/egg/both</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">loyalty_points</div><div class="col-type">INT</div><div class="col-note">Current balance</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">loyalty_tier</div><div class="col-type">ENUM</div><div class="col-note">bronze→platinum</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">total_orders</div><div class="col-type">INT</div><div class="col-note">Auto-updated</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">total_spent</div><div class="col-type">NUMERIC</div><div class="col-note">Lifetime spend ₹</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">referral_code</div><div class="col-type">TEXT</div><div class="col-note">Unique refer code</div></div>
+      <div class="col-more">+ DOB, anniversary, whatsapp_opted, allergens…</div>
+    </div>
+  </div>
+
+  <div class="tbl">
+    <div class="tbl-head"><div class="tbl-left"><div class="tbl-icon">📍</div><div class="tbl-name">customer_addresses</div><div class="tbl-desc">Multiple saved addresses per customer</div></div><span class="tbl-badge badge-support">Support</span></div>
+    <div class="tbl-cols">
+      <div class="col-row"><div class="col-pk">🔑</div><div class="col-name">id</div><div class="col-type">UUID</div><div class="col-note">Primary key</div></div>
+      <div class="col-row"><div class="col-fk">🔗</div><div class="col-name">customer_id</div><div class="col-type">UUID</div><div class="col-note">→ customers</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">label</div><div class="col-type">ENUM</div><div class="col-note">Home/Work/Other</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">address_line1/2</div><div class="col-type">TEXT</div><div class="col-note">Street address</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">city / pincode</div><div class="col-type">TEXT</div><div class="col-note">Location</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">is_default</div><div class="col-type">BOOL</div><div class="col-note">Default address</div></div>
+    </div>
+  </div>
+
+  <div class="tbl">
+    <div class="tbl-head"><div class="tbl-left"><div class="tbl-icon">⭐</div><div class="tbl-name">loyalty_transactions</div><div class="tbl-desc">Points earned, redeemed, bonuses, expiry</div></div><span class="tbl-badge badge-support">Support</span></div>
+    <div class="tbl-cols">
+      <div class="col-row"><div class="col-pk">🔑</div><div class="col-name">id</div><div class="col-type">UUID</div><div class="col-note">Primary key</div></div>
+      <div class="col-row"><div class="col-fk">🔗</div><div class="col-name">customer_id</div><div class="col-type">UUID</div><div class="col-note">→ customers</div></div>
+      <div class="col-row"><div class="col-fk">🔗</div><div class="col-name">order_id</div><div class="col-type">UUID</div><div class="col-note">→ orders</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">type</div><div class="col-type">ENUM</div><div class="col-note">earned/redeemed/bonus</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">points</div><div class="col-type">INT</div><div class="col-note">+credit / -debit</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">balance_after</div><div class="col-type">INT</div><div class="col-note">Running balance</div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── SECTION 4: OFFERS ── -->
+<div class="sec-title"><span style="color:var(--pink)">◆</span> 4. Offers & Coupons</div>
+<div class="tables-grid s-offers">
+
+  <div class="tbl">
+    <div class="tbl-head"><div class="tbl-left"><div class="tbl-icon">🏷️</div><div class="tbl-name">offers</div><div class="tbl-desc">Promo codes, discounts, birthday offers, loyalty rewards</div></div><span class="tbl-badge badge-core">Core</span></div>
+    <div class="tbl-cols">
+      <div class="col-row"><div class="col-pk">🔑</div><div class="col-name">id</div><div class="col-type">UUID</div><div class="col-note">Primary key</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">code</div><div class="col-type">TEXT</div><div class="col-note">CHOCO20, BDAY</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">type</div><div class="col-type">ENUM</div><div class="col-note">percentage/flat/free_del</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">discount_value</div><div class="col-type">NUMERIC</div><div class="col-note">20 = 20% or ₹20</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">min_order_value</div><div class="col-type">NUMERIC</div><div class="col-note">Min cart for apply</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">applicable_to</div><div class="col-type">ENUM</div><div class="col-note">all/new/gold/platinum</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">usage_limit</div><div class="col-type">INT</div><div class="col-note">Total uses allowed</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">valid_until</div><div class="col-type">TIMESTAMPTZ</div><div class="col-note">Expiry date</div></div>
+      <div class="col-more">+ show_on_home, banner_text, emoji, product_ids…</div>
+    </div>
+  </div>
+
+  <div class="tbl">
+    <div class="tbl-head"><div class="tbl-left"><div class="tbl-icon">✅</div><div class="tbl-name">offer_usage</div><div class="tbl-desc">Tracks which customer used which coupon</div></div><span class="tbl-badge badge-support">Support</span></div>
+    <div class="tbl-cols">
+      <div class="col-row"><div class="col-pk">🔑</div><div class="col-name">id</div><div class="col-type">UUID</div><div class="col-note">Primary key</div></div>
+      <div class="col-row"><div class="col-fk">🔗</div><div class="col-name">offer_id</div><div class="col-type">UUID</div><div class="col-note">→ offers</div></div>
+      <div class="col-row"><div class="col-fk">🔗</div><div class="col-name">customer_id</div><div class="col-type">UUID</div><div class="col-note">→ customers</div></div>
+      <div class="col-row"><div class="col-fk">🔗</div><div class="col-name">order_id</div><div class="col-type">UUID</div><div class="col-note">→ orders</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">discount_applied</div><div class="col-type">NUMERIC</div><div class="col-note">Actual ₹ saved</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">used_at</div><div class="col-type">TIMESTAMPTZ</div><div class="col-note">When used</div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── SECTION 5: SALES & ANALYTICS ── -->
+<div class="sec-title"><span style="color:var(--blue)">◆</span> 5. Sales & Analytics</div>
+<div class="tables-grid s-sales">
+
+  <div class="tbl">
+    <div class="tbl-head"><div class="tbl-left"><div class="tbl-icon">📈</div><div class="tbl-name">sales_daily</div><div class="tbl-desc">Daily sales aggregates — revenue, orders, avg value</div></div><span class="tbl-badge badge-analytics">Analytics</span></div>
+    <div class="tbl-cols">
+      <div class="col-row"><div class="col-pk">🔑</div><div class="col-name">sale_date</div><div class="col-type">DATE</div><div class="col-note">One row per day</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">total_orders</div><div class="col-type">INT</div><div class="col-note">Orders that day</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">total_revenue</div><div class="col-type">NUMERIC</div><div class="col-note">Gross revenue ₹</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">net_revenue</div><div class="col-type">NUMERIC</div><div class="col-note">After discounts ₹</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">avg_order_value</div><div class="col-type">NUMERIC</div><div class="col-note">AOV that day</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">new_customers</div><div class="col-type">INT</div><div class="col-note">First-time buyers</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">top_product</div><div class="col-type">TEXT</div><div class="col-note">Best seller that day</div></div>
+      <div class="col-more">+ cod/upi/card split, cancelled_orders, top_city…</div>
+    </div>
+  </div>
+
+  <div class="tbl">
+    <div class="tbl-head"><div class="tbl-left"><div class="tbl-icon">🏆</div><div class="tbl-name">product_sales_stats</div><div class="tbl-desc">Per-product running totals for leaderboard</div></div><span class="tbl-badge badge-analytics">Analytics</span></div>
+    <div class="tbl-cols">
+      <div class="col-row"><div class="col-pk">🔑</div><div class="col-name">id</div><div class="col-type">UUID</div><div class="col-note">Primary key</div></div>
+      <div class="col-row"><div class="col-fk">🔗</div><div class="col-name">product_id</div><div class="col-type">UUID</div><div class="col-note">→ products</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">total_units_sold</div><div class="col-type">INT</div><div class="col-note">All-time units</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">total_revenue</div><div class="col-type">NUMERIC</div><div class="col-note">Revenue ₹ all-time</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">avg_rating</div><div class="col-type">NUMERIC</div><div class="col-note">Average star rating</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">last_sold_at</div><div class="col-type">TIMESTAMPTZ</div><div class="col-note">Most recent sale</div></div>
+    </div>
+  </div>
+
+  <div class="tbl">
+    <div class="tbl-head"><div class="tbl-left"><div class="tbl-icon">⭐</div><div class="tbl-name">reviews</div><div class="tbl-desc">Customer ratings and reviews per product</div></div><span class="tbl-badge badge-analytics">Analytics</span></div>
+    <div class="tbl-cols">
+      <div class="col-row"><div class="col-pk">🔑</div><div class="col-name">id</div><div class="col-type">UUID</div><div class="col-note">Primary key</div></div>
+      <div class="col-row"><div class="col-fk">🔗</div><div class="col-name">customer_id</div><div class="col-type">UUID</div><div class="col-note">→ customers</div></div>
+      <div class="col-row"><div class="col-fk">🔗</div><div class="col-name">product_id</div><div class="col-type">UUID</div><div class="col-note">→ products</div></div>
+      <div class="col-row"><div class="col-fk">🔗</div><div class="col-name">order_id</div><div class="col-type">UUID</div><div class="col-note">→ orders</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">rating</div><div class="col-type">INT</div><div class="col-note">1–5 stars</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">body</div><div class="col-type">TEXT</div><div class="col-note">Review text</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">is_verified</div><div class="col-type">BOOL</div><div class="col-note">Verified purchase</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">is_approved</div><div class="col-type">BOOL</div><div class="col-note">Admin moderated</div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── SECTION 6: OPS ── -->
+<div class="sec-title"><span style="color:var(--teal)">◆</span> 6. Operations & Inventory</div>
+<div class="tables-grid s-ops">
+
+  <div class="tbl">
+    <div class="tbl-head"><div class="tbl-left"><div class="tbl-icon">📦</div><div class="tbl-name">inventory</div><div class="tbl-desc">Real-time stock levels per product variant</div></div><span class="tbl-badge badge-core">Core</span></div>
+    <div class="tbl-cols">
+      <div class="col-row"><div class="col-pk">🔑</div><div class="col-name">id</div><div class="col-type">UUID</div><div class="col-note">Primary key</div></div>
+      <div class="col-row"><div class="col-fk">🔗</div><div class="col-name">variant_id</div><div class="col-type">UUID</div><div class="col-note">→ product_variants</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">stock_qty</div><div class="col-type">INT</div><div class="col-note">Total in stock</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">reserved_qty</div><div class="col-type">INT</div><div class="col-note">In pending orders</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">available_qty</div><div class="col-type">INT</div><div class="col-note">Computed (stock−reserved)</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">reorder_level</div><div class="col-type">INT</div><div class="col-note">Alert when below this</div></div>
+    </div>
+  </div>
+
+  <div class="tbl">
+    <div class="tbl-head"><div class="tbl-left"><div class="tbl-icon">🔄</div><div class="tbl-name">inventory_movements</div><div class="tbl-desc">Stock in/out audit — restock, sold, returned, damaged</div></div><span class="tbl-badge badge-support">Support</span></div>
+    <div class="tbl-cols">
+      <div class="col-row"><div class="col-pk">🔑</div><div class="col-name">id</div><div class="col-type">UUID</div><div class="col-note">Primary key</div></div>
+      <div class="col-row"><div class="col-fk">🔗</div><div class="col-name">variant_id</div><div class="col-type">UUID</div><div class="col-note">→ product_variants</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">movement_type</div><div class="col-type">ENUM</div><div class="col-note">restock/sold/damaged</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">quantity</div><div class="col-type">INT</div><div class="col-note">Units moved</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">balance_after</div><div class="col-type">INT</div><div class="col-note">Stock after move</div></div>
+    </div>
+  </div>
+
+  <div class="tbl">
+    <div class="tbl-head"><div class="tbl-left"><div class="tbl-icon">🚚</div><div class="tbl-name">delivery_zones</div><div class="tbl-desc">Tamil Nadu cities, delivery fees, free delivery threshold</div></div><span class="tbl-badge badge-config">Config</span></div>
+    <div class="tbl-cols">
+      <div class="col-row"><div class="col-pk">🔑</div><div class="col-name">id</div><div class="col-type">UUID</div><div class="col-note">Primary key</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">city</div><div class="col-type">TEXT</div><div class="col-note">15 TN cities seeded</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">delivery_fee</div><div class="col-type">NUMERIC</div><div class="col-note">₹ per order</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">min_order_free_delivery</div><div class="col-type">NUMERIC</div><div class="col-note">₹499 free threshold</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">estimated_days</div><div class="col-type">INT</div><div class="col-note">1 or 2 days</div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── SECTION 7: SUPPORT TABLES ── -->
+<div class="sec-title"><span style="color:var(--orange)">◆</span> 7. Communications & Custom Orders</div>
+<div class="tables-grid s-support">
+
+  <div class="tbl">
+    <div class="tbl-head"><div class="tbl-left"><div class="tbl-icon">📲</div><div class="tbl-name">notifications</div><div class="tbl-desc">Every WhatsApp / email / SMS sent to customers</div></div><span class="tbl-badge badge-support">Support</span></div>
+    <div class="tbl-cols">
+      <div class="col-row"><div class="col-pk">🔑</div><div class="col-name">id</div><div class="col-type">UUID</div><div class="col-note">Primary key</div></div>
+      <div class="col-fk">🔗</div>
+      <div class="col-row"><div class="col-fk">🔗</div><div class="col-name">order_id</div><div class="col-type">UUID</div><div class="col-note">→ orders</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">type</div><div class="col-type">ENUM</div><div class="col-note">whatsapp/email/sms</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">recipient</div><div class="col-type">TEXT</div><div class="col-note">Phone or email</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">message</div><div class="col-type">TEXT</div><div class="col-note">Full message sent</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">status</div><div class="col-type">ENUM</div><div class="col-note">sent/delivered/read</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">template_name</div><div class="col-type">TEXT</div><div class="col-note">order_confirmed etc.</div></div>
+    </div>
+  </div>
+
+  <div class="tbl">
+    <div class="tbl-head"><div class="tbl-left"><div class="tbl-icon">🎂</div><div class="tbl-name">custom_cake_enquiries</div><div class="tbl-desc">Anniversary/birthday/pregnancy slab, tower & layer orders</div></div><span class="tbl-badge badge-core">Core</span></div>
+    <div class="tbl-cols">
+      <div class="col-row"><div class="col-pk">🔑</div><div class="col-name">id</div><div class="col-type">UUID</div><div class="col-note">Primary key</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">enquiry_number</div><div class="col-type">TEXT</div><div class="col-note">ENQ-XXXXXX</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">occasion</div><div class="col-type">ENUM</div><div class="col-note">birthday/anniversary…</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">cake_type</div><div class="col-type">ENUM</div><div class="col-note">slab/tower/layer</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">event_date</div><div class="col-type">DATE</div><div class="col-note">When needed</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">status</div><div class="col-type">ENUM</div><div class="col-note">new→confirmed→delivered</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">quoted_price</div><div class="col-type">NUMERIC</div><div class="col-note">Admin sets quote</div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── SECTION 8: CONFIG ── -->
+<div class="sec-title"><span style="color:var(--dim)">◆</span> 8. App Configuration</div>
+<div class="tables-grid s-config">
+  <div class="tbl">
+    <div class="tbl-head"><div class="tbl-left"><div class="tbl-icon">⚙️</div><div class="tbl-name">app_settings</div><div class="tbl-desc">Business config, feature toggles, loyalty thresholds</div></div><span class="tbl-badge badge-config">Config</span></div>
+    <div class="tbl-cols">
+      <div class="col-row"><div class="col-pk">🔑</div><div class="col-name">key</div><div class="col-type">TEXT</div><div class="col-note">Setting name</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">value</div><div class="col-type">TEXT</div><div class="col-note">Setting value</div></div>
+      <div class="col-row"><div class="col-reg"></div><div class="col-name">value_json</div><div class="col-type">JSONB</div><div class="col-note">Complex config</div></div>
+      <div class="col-more">Pre-seeded: owner phone, free delivery ₹, loyalty thresholds, welcome points, Instagram handle, open/closed toggle…</div>
+    </div>
+  </div>
+</div>
+
+<!-- VIEWS -->
+<div class="sec-title" style="margin-top:8px"><span style="color:var(--pl)">◆</span> Views (pre-built queries)</div>
+<div class="rel-grid" style="margin-bottom:32px">
+  <div class="rel-card"><div style="font-size:13px;font-weight:700;color:var(--pl);font-family:'DM Mono',monospace;margin-bottom:6px">v_orders_summary</div><div style="font-size:12px;color:var(--dim)">Orders joined with item count + total units — powers admin table</div></div>
+  <div class="rel-card"><div style="font-size:13px;font-weight:700;color:var(--pl);font-family:'DM Mono',monospace;margin-bottom:6px">v_today_sales</div><div style="font-size:12px;color:var(--dim)">Today's live snapshot: orders, revenue, pending, AOV, payment split</div></div>
+  <div class="rel-card"><div style="font-size:13px;font-weight:700;color:var(--pl);font-family:'DM Mono',monospace;margin-bottom:6px">v_top_products</div><div style="font-size:12px;color:var(--dim)">Products ranked by units sold + revenue — powers leaderboard</div></div>
+</div>
+
+</div>
+</body>
+</html>

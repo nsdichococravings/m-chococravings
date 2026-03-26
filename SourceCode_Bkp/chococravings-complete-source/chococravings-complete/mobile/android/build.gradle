@@ -1,0 +1,85 @@
+// ═══════════════════════════════════════════════════
+//  android/app/build.gradle
+//  NSDI ChocoCravings — Android Build Configuration
+//  Place this content in your android/app/build.gradle
+//  after running: npx cap add android
+// ═══════════════════════════════════════════════════
+
+apply plugin: 'com.android.application'
+
+android {
+    namespace "com.nsdi.chococravings"
+    compileSdkVersion rootProject.ext.compileSdkVersion
+
+    defaultConfig {
+        applicationId "com.nsdi.chococravings"
+        minSdkVersion 22                    // Android 5.1+ (covers 98% of devices)
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1                       // Increment by 1 for every Play Store update
+        versionName "1.0.0"                 // User-facing version (e.g. 1.0.0, 1.1.0)
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+            // Ignore missing resources (safe for Capacitor)
+             ignoreAssetsPattern "!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~"
+        }
+    }
+
+    // ── RELEASE SIGNING (needed for Play Store upload) ──
+    // Steps:
+    // 1. Generate keystore:
+    //    keytool -genkey -v -keystore chococravings-release.jks
+    //             -keyalg RSA -keysize 2048 -validity 10000
+    //             -alias chococravings
+    // 2. Store keystore safely (never commit to git!)
+    // 3. Replace the values below with your actual passwords
+
+    signingConfigs {
+        release {
+            storeFile file("chococravings-release.jks")
+            storePassword "YOUR_STORE_PASSWORD"
+            keyAlias "chococravings"
+            keyPassword "YOUR_KEY_PASSWORD"
+        }
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix ".debug"
+            debuggable true
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+    }
+}
+
+repositories {
+    flatDir {
+        dirs '../capacitor-cordova-android-plugins'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.warn("google-services.json not found, not applying plugin")
+}

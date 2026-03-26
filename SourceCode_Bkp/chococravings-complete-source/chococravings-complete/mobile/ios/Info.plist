@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  ios/App/App/Info.plist
+  NSDI ChocoCravings — iOS Configuration
+  Merge these keys into your Info.plist after: npx cap add ios
+  In Xcode: open ios/App/App.xcworkspace → App → Info.plist
+-->
+<plist version="1.0">
+<dict>
+
+    <!-- ── APP IDENTITY ── -->
+    <key>CFBundleDisplayName</key>
+    <string>ChocoCravings</string>
+    <key>CFBundleName</key>
+    <string>ChocoCravings</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.nsdi.chococravings</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+
+    <!-- ── PERMISSIONS (shown to user on first launch) ── -->
+    <key>NSCameraUsageDescription</key>
+    <string>ChocoCravings uses your camera to upload photos for custom cake requests.</string>
+
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>ChocoCravings accesses your photos to upload images for custom cake orders.</string>
+
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>ChocoCravings saves your order receipts and brownie photos to your library.</string>
+
+    <key>NSContactsUsageDescription</key>
+    <string>ChocoCravings uses your contacts to help you send gift brownies to friends.</string>
+
+    <key>NSUserNotificationsUsageDescription</key>
+    <string>ChocoCravings sends you order updates and special offers via notifications.</string>
+
+    <!-- ── NETWORK ── -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <false/>
+        <key>NSExceptionDomains</key>
+        <dict>
+            <!-- Supabase -->
+            <key>supabase.co</key>
+            <dict>
+                <key>NSIncludesSubdomains</key>
+                <true/>
+                <key>NSThirdPartyExceptionAllowsInsecureHTTPLoads</key>
+                <false/>
+            </dict>
+            <!-- WhatsApp wa.me -->
+            <key>wa.me</key>
+            <dict>
+                <key>NSIncludesSubdomains</key>
+                <true/>
+            </dict>
+        </dict>
+    </dict>
+
+    <!-- ── URL SCHEMES (deep links) ── -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>com.nsdi.chococravings</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>com.nsdi.chococravings</string>
+                <string>chococravings</string>
+            </array>
+        </dict>
+    </array>
+
+    <!-- ── QUERIED URL SCHEMES (apps we open) ── -->
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>whatsapp</string>
+        <string>tel</string>
+        <string>mailto</string>
+        <string>https</string>
+        <string>instagram</string>
+    </array>
+
+    <!-- ── UI CONFIGURATION ── -->
+    <key>UILaunchStoryboardName</key>
+    <string>LaunchScreen</string>
+    <key>UIMainStoryboardFile</key>
+    <string>Main</string>
+    <key>UIRequiredDeviceCapabilities</key>
+    <array>
+        <string>armv7</string>
+    </array>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
+    <key>UIStatusBarStyle</key>
+    <string>UIStatusBarStyleLightContent</string>
+    <key>UIViewControllerBasedStatusBarAppearance</key>
+    <true/>
+
+    <!-- ── BACKGROUND MODES ── -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>remote-notification</string>
+        <string>fetch</string>
+    </array>
+
+    <!-- ── APP STORE METADATA ── -->
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
+
+</dict>
+</plist>

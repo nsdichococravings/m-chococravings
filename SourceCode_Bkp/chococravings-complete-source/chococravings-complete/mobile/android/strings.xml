@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  android/app/src/main/res/values/strings.xml
+  NSDI ChocoCravings — Android String Resources
+-->
+<resources>
+    <string name="app_name">ChocoCravings</string>
+    <string name="title_activity_main">ChocoCravings</string>
+    <string name="package_name">com.nsdi.chococravings</string>
+    <string name="custom_url_scheme">com.nsdi.chococravings</string>
+</resources>

@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NSDI ChocoCravings</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+// ── ORDER STATE ──
+let cartItems = [];
+let currentPayMethod = 'cod';
+let currentOrderTotal = 0;
+
+// ── CHECKOUT HELPERS ──
+function goToCheckout() {
+  // Build cart from current selection
+  const name = (['Classic Fudge','Double Choco','Triple Choco','Nutella','Biscoff',
+    'Nuts','Mixed Seeds','Seeds+Nuts','Walnut','Hazelnut','Assorted',
+    'Ragi','Wheat','Black Rice','Pearl Millet'])[varIdx] + ' Brownie';
+  const packLabel = ['4pcs (250g)','9pcs (500g)','16pcs (1kg)'][packIdx];
+  const base = getPrice();
+  const grand = (base + topTotal) * qty;
+  currentOrderTotal = grand;
+
+  // Collect selected toppings
+  const tops = Object.keys(topAdds).join(', ') || 'None';
+
+  // Update checkout summary
+  document.getElementById('ck-item-name').textContent = name;
+  document.getElementById('ck-item-desc').textContent =
+    `${egg==='eggless'?'💚 Eggless':'❤️ With Egg'} · ${tier==='couverture'?'🌟 Couverture':'Premium'} · ${packLabel} · Qty: ${qty}` +
+    (tops !== 'None' ? ` · Toppings: ${tops}` : '');
+  document.getElementById('ck-item-price').textContent = '₹' + grand;
+  document.getElementById('ck-total').textContent = '₹' + grand;
+
+  // Store cart for order
+  cartItems = [{
+    name, tier, egg,
+    pack: packLabel, qty,
+    base_price: base,
+    toppings: Object.keys(topAdds),
+    topping_price: topTotal,
+    line_total: grand
+  }];
+
+  showPage('checkout');
+}
+
+function selPay(el, method) {
+  document.querySelectorAll('.pay-opt').forEach(o => o.classList.remove('on'));
+  el.classList.add('on');
+  currentPayMethod = method;
+}
+
+// ── GENERATE ORDER NUMBER ──
+function genOrderNum() {
+  const ts = Date.now().toString().slice(-6);
+  const rand = Math.floor(Math.random() * 100).toString().padStart(2,'0');
+  return 'CC-' + ts + rand;
+}
+
+// ── FORMAT DATE ──
+function fmtDate(d) {
+  return new Date(d).toLocaleString('en-IN', {
+    day:'2-digit', month:'short', year:'numeric',
+    hour:'2-digit', minute:'2-digit'
+  });
+}
+
+// ── WHATSAPP MESSAGE BUILDERS ──
+function buildOwnerMsg(order) {
+  return encodeURIComponent(
+    `🔔 *NEW ORDER — ${order.order_number}*
+
+` +
+    `👤 *Customer:* ${order.customer_name}
+` +
+    `📞 *Phone:* ${order.customer_phone}
+` +
+    `📍 *Address:* ${order.delivery_address}, ${order.city} ${order.pincode || ''}
+
+` +
+    `🛒 *Items:*
+` +
+    order.items.map(i =>
+      `• ${i.name} (${i.tier}) — ${i.egg} — ${i.pack} × ${i.qty}` +
+      (i.toppings.length ? `
+  Toppings: ${i.toppings.join(', ')}` : '')
+    ).join('
+') + '
+
+' +
+    `💰 *Total: ₹${order.total}*
+` +
+    `💳 *Payment: ${order.payment_method.toUpperCase()}*
+` +
+    (order.special_notes ? `📝 *Notes:* ${order.special_notes}
+` : '') +
+    `
+⏰ ${fmtDate(order.created_at)}
+` +
+    `
+Reply to confirm: *CONFIRM ${order.order_number}*`
+  );
+}
+
+function buildCustomerMsg(order) {
+  return encodeURIComponent(
+    `✅ *Order Confirmed — ${order.order_number}*
+
+` +
+    `Hi ${order.customer_name}! 🍫
+
+` +
+    `Your NSDI ChocoCravings order has been placed successfully!
+
+` +
+    `🛒 *${order.items[0].name}* — ${order.items[0].pack}
+` +
+    `💰 *Total: ₹${order.total}*
+` +
+    `💳 Payment: ${order.payment_method.toUpperCase()}
+
+` +
+    `📍 Delivery to: ${order.delivery_address}, ${order.city}
+
+` +
+    `We'll WhatsApp you once your order is confirmed and ready! 🚀
+
+` +
+    `📞 Questions? Call us: +91 99721 41890
+` +
+    `📸 Instagram: @nsdi.chococravings
+
+` +
+    `_Happy to serve fresh!! — NSDI ChocoCravings_`
+  );
+}
+
+// ── PLACE ORDER (Supabase) ──
+async function placeOrder() {
+  // Validate
+  const name = document.getElementById('ck-name').value.trim();
+  const phone = document.getElementById('ck-phone').value.trim();
+  const address = document.getElementById('ck-address').value.trim();
+  const city = document.getElementById('ck-city').value.trim();
+  const email = document.getElementById('ck-email').value.trim();
+  const pin = document.getElementById('ck-pin').value.trim();
+  const notes = document.getElementById('ck-notes').value.trim();
+  const errEl = document.getElementById('ck-err');
+
+  if (!name || !phone || !address || !city) {
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+
+  // Show loader
+  const overlay = document.getElementById('loading-overlay');
+  overlay.classList.add('show');
+  document.getElementById('place-btn').disabled = true;
+
+  const orderNum = genOrderNum();
+  const orderData = {
+    order_number: orderNum,
+    customer_name: name,
+    customer_phone: phone.startsWith('+') ? phone : '+91' + phone.replace(/^0/,''),
+    customer_email: email || null,
+    delivery_address: address,
+    city, pincode: pin || null,
+    items: cartItems,
+    subtotal: cartItems.reduce((s,i) => s + i.base_price * i.qty, 0),
+    topping_total: topTotal * qty,
+    delivery_fee: 0,
+    total: currentOrderTotal,
+    payment_method: currentPayMethod,
+    egg_preference: egg,
+    special_notes: notes || null,
+    status: 'pending',
+    created_at: new Date().toISOString()
+  };
+
+  try {
+    // 1. Save to Supabase
+    const { data, error } = await db.from('orders').insert([orderData]).select().single();
+    if (error) throw error;
+
+    overlay.classList.remove('show');
+
+    // 2. Update success page
+    document.getElementById('succ-order-id').textContent = orderNum;
+    document.getElementById('succ-total').textContent = '₹' + currentOrderTotal;
+    document.getElementById('succ-name').textContent = name;
+    document.getElementById('succ-pay').textContent = currentPayMethod.toUpperCase();
+    document.getElementById('succ-time').textContent = fmtDate(orderData.created_at);
+
+    // 3. WhatsApp button — owner notification
+    const ownerWA = document.getElementById('succ-wa-btn');
+    ownerWA.onclick = () => {
+      // Notify owner
+      window.open(`https://wa.me/${NSDI_PHONE}?text=${buildOwnerMsg(orderData)}`, '_blank');
+      // Also open customer confirmation after 1s
+      setTimeout(() => {
+        const custPhone = phone.replace(/[^0-9]/g,'');
+        window.open(`https://wa.me/${custPhone}?text=${buildCustomerMsg(orderData)}`, '_blank');
+      }, 1000);
+    };
+
+    // 4. Show success page
+    showPage('success');
+
+  } catch (err) {
+    overlay.classList.remove('show');
+    document.getElementById('place-btn').disabled = false;
+
+    // Fallback — still show success with WhatsApp only if Supabase not configured
+    if (SUPABASE_URL.includes('YOUR_PROJECT_ID')) {
+      document.getElementById('succ-order-id').textContent = orderNum;
+      document.getElementById('succ-total').textContent = '₹' + currentOrderTotal;
+      document.getElementById('succ-name').textContent = name;
+      document.getElementById('succ-pay').textContent = currentPayMethod.toUpperCase();
+      document.getElementById('succ-time').textContent = fmtDate(new Date().toISOString());
+      document.getElementById('succ-wa-btn').onclick = () => {
+        window.open(`https://wa.me/${NSDI_PHONE}?text=${buildOwnerMsg({...orderData, created_at: new Date().toISOString()})}`, '_blank');
+      };
+      showPage('success');
+    } else {
+      alert('Order failed: ' + err.message + '\nPlease try again or call +91 99721 41890');
+    }
+  }
+}
+
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#6B2FCE;--p2:#8B44E8;--p3:#A855F7;--pl:#C084FC;--pg:rgba(107,47,206,.15);
+  --dark:#09010F;--d2:#110020;--d3:#1C003A;
+  --white:#FAF5FF;--off:#E9D5FF;--dim:#9F7ABA;--faint:#6B488A;
+  --green:#22C55E;--pink:#F472B6;--gold:#F59E0B;
+  --card:rgba(255,255,255,.04);--bdr:rgba(255,255,255,.07);--bdr2:rgba(107,47,206,.3);
+  --r:22px;--r2:16px;--r3:12px;
+}
+body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:28px 16px;gap:36px;flex-wrap:wrap}
+
+/* ── PHONE ── */
+.phone-wrap{display:flex;flex-direction:column;align-items:center;gap:12px}
+.plabel{font-size:10px;color:var(--faint);letter-spacing:3px;text-transform:uppercase;font-family:'DM Sans',sans-serif}
+.phone{width:390px;height:844px;background:var(--dark);border-radius:52px;overflow:hidden;
+  box-shadow:0 0 0 10px #1a1a1a,0 0 0 12px #272727,0 80px 120px rgba(107,47,206,.25),0 40px 80px rgba(0,0,0,.8);
+  position:relative;flex-shrink:0}
+.notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:116px;height:32px;background:var(--dark);border-radius:0 0 20px 20px;z-index:300}
+.screen{width:100%;height:100%;overflow:hidden;position:relative}
+
+/* ── PAGES ── */
+.page{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;transition:transform .42s cubic-bezier(.16,1,.3,1),opacity .3s;transform:translateX(100%);opacity:0;pointer-events:none}
+.page::-webkit-scrollbar{display:none}
+.page.active{transform:translateX(0);opacity:1;pointer-events:all}
+.page.out{transform:translateX(-28%);opacity:0}
+
+/* ── STATUS BAR ── */
+.sb{display:flex;justify-content:space-between;align-items:center;padding:14px 26px 0;font-size:11px;color:var(--dim);position:sticky;top:0;z-index:100;backdrop-filter:blur(20px)}
+
+/* ══════════════════════════════
+   HOME PAGE
+══════════════════════════════ */
+#page-home{background:var(--dark)}
+
+/* Grain texture overlay */
+#page-home::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.4}
+
+/* Mesh gradient bg */
+.mesh{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.mesh-blob{position:absolute;border-radius:50%;filter:blur(90px);mix-blend-mode:screen;animation:drift 12s ease-in-out infinite}
+.mb1{width:380px;height:380px;background:radial-gradient(circle,rgba(107,47,206,.35),transparent 70%);top:-100px;right:-80px;animation-delay:0s}
+.mb2{width:260px;height:260px;background:radial-gradient(circle,rgba(168,85,247,.25),transparent 70%);bottom:200px;left:-60px;animation-delay:-4s}
+.mb3{width:200px;height:200px;background:radial-gradient(circle,rgba(245,158,11,.15),transparent 70%);top:40%;right:-40px;animation-delay:-8s}
+@keyframes drift{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(-20px,30px) scale(1.08)}66%{transform:translate(15px,-20px) scale(.94)}}
+
+/* HEADER */
+.hdr{display:flex;justify-content:space-between;align-items:center;padding:20px 22px 0;position:relative;z-index:10}
+.logo-wrap .logo-eyebrow{font-size:9px;color:var(--p3);letter-spacing:4px;text-transform:uppercase;font-weight:600;margin-bottom:2px}
+.logo-wrap .logo-main{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:var(--white);line-height:1;letter-spacing:-.3px}
+.logo-wrap .logo-main span{color:var(--pl);font-style:italic}
+.logo-wrap .logo-sub{font-size:10px;color:var(--faint);font-weight:400;letter-spacing:.5px;margin-top:1px}
+.hdr-actions{display:flex;gap:9px}
+.hbtn{width:38px;height:38px;border-radius:13px;background:var(--card);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;transition:all .2s;position:relative}
+.hbtn:active{transform:scale(.9)}
+.dot-badge{position:absolute;top:-3px;right:-3px;width:16px;height:16px;border-radius:50%;background:var(--pink);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--dark)}
+
+/* GREETING */
+.greet{padding:16px 22px 6px;position:relative;z-index:10}
+.greet-sub{font-size:12px;color:var(--dim);margin-bottom:2px}
+.greet-main{font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--white);font-weight:600;line-height:1.1}
+.greet-main em{color:var(--pl);font-style:italic}
+
+/* LOCATION */
+.loc{display:flex;align-items:center;gap:6px;margin:8px 22px;background:var(--card);border:1px solid var(--bdr);border-radius:30px;padding:7px 14px;width:fit-content;cursor:pointer}
+.loc span{font-size:13px}
+.loc-city{font-size:12px;color:var(--white);font-weight:600}
+.loc-txt{font-size:11px;color:var(--dim)}
+.loc-chev{font-size:11px;color:var(--p3);margin-left:2px}
+
+/* SEARCH */
+.srch{margin:8px 22px;display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.05);border:1px solid var(--bdr);border-radius:16px;padding:12px 16px;transition:all .25s;position:relative;z-index:10}
+.srch:focus-within{border-color:var(--p);background:rgba(107,47,206,.1);box-shadow:0 0 0 3px rgba(107,47,206,.12)}
+.srch input{flex:1;background:none;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--white)}
+.srch input::placeholder{color:var(--faint)}
+.srch-icon{font-size:16px;color:var(--faint)}
+.srch-btn{width:32px;height:32px;border-radius:9px;background:var(--p);display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;flex-shrink:0}
+
+/* HERO CAROUSEL */
+.hero-wrap{padding:10px 22px;position:relative;z-index:10}
+.hero-card{border-radius:26px;padding:24px;position:relative;overflow:hidden;cursor:pointer;transition:transform .3s;min-height:168px}
+.hero-card:active{transform:scale(.985)}
+.hc-1{background:linear-gradient(135deg,#2D0060 0%,#6B2FCE 60%,#9B4FE8 100%)}
+.hc-2{background:linear-gradient(135deg,#1A0038 0%,#4A1090 60%,#7B3AC4 100%)}
+.hc-3{background:linear-gradient(135deg,#0D0020 0%,#2D0060 50%,#5A1090 100%)}
+.hc-noise{position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");mix-blend-mode:overlay;border-radius:26px}
+.hc-pill{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);color:#fff;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:5px 11px;border-radius:20px;margin-bottom:10px;position:relative;z-index:1}
+.hc-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:#fff;line-height:1.15;margin-bottom:5px;position:relative;z-index:1}
+.hc-sub{font-size:12px;color:rgba(255,255,255,.65);margin-bottom:16px;position:relative;z-index:1}
+.hc-cta{display:inline-flex;align-items:center;gap:6px;background:#fff;color:var(--p);font-size:11px;font-weight:700;padding:8px 16px;border-radius:20px;cursor:pointer;position:relative;z-index:1}
+.hc-emoji{position:absolute;right:18px;top:50%;transform:translateY(-50%);font-size:72px;filter:drop-shadow(0 12px 28px rgba(0,0,0,.35));animation:bob 3.5s ease-in-out infinite;z-index:1}
+@keyframes bob{0%,100%{transform:translateY(-50%) rotate(-4deg)}50%{transform:translateY(calc(-50% - 10px)) rotate(4deg)}}
+.hero-dots{display:flex;justify-content:center;gap:5px;margin-top:10px}
+.hdot{width:5px;height:5px;border-radius:3px;background:rgba(255,255,255,.18);transition:all .35s;cursor:pointer}
+.hdot.on{width:22px;background:var(--pl)}
+
+/* INFO CHIPS */
+.chips-row{display:flex;gap:7px;padding:0 22px 6px;overflow-x:auto;scrollbar-width:none}
+.chips-row::-webkit-scrollbar{display:none}
+.chip{display:flex;align-items:center;gap:5px;background:var(--card);border:1px solid var(--bdr);border-radius:20px;padding:6px 13px;flex-shrink:0;cursor:default}
+.chip em{font-size:13px;font-style:normal}
+.chip span{font-size:11px;color:var(--dim);white-space:nowrap}
+
+/* PROMO BANNERS */
+.promos{display:flex;gap:10px;padding:0 22px 4px;overflow-x:auto;scrollbar-width:none}
+.promos::-webkit-scrollbar{display:none}
+.promo{flex-shrink:0;min-width:240px;border-radius:18px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer;position:relative;overflow:hidden}
+.promo::after{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");mix-blend-mode:overlay}
+.promo-a{background:linear-gradient(110deg,#BE185D,#F472B6)}
+.promo-b{background:linear-gradient(110deg,#1D4ED8,#3B82F6)}
+.promo-txt{font-size:11px;color:rgba(255,255,255,.8);font-weight:500}
+.promo-big{font-family:'Bebas Neue',sans-serif;font-size:26px;color:#fff;line-height:1.1;letter-spacing:.5px}
+.promo-code{background:rgba(255,255,255,.22);padding:5px 11px;border-radius:8px;font-size:10px;color:#fff;font-weight:700;letter-spacing:2px;white-space:nowrap}
+
+/* SECTION HEADER */
+.sec{display:flex;justify-content:space-between;align-items:center;padding:16px 22px 10px}
+.sec-t{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--white);font-weight:700}
+.sec-l{font-size:11px;color:var(--p3);font-weight:600;cursor:pointer;padding:4px 10px;border:1px solid var(--bdr2);border-radius:8px}
+
+/* CATEGORIES */
+.cats{display:flex;gap:9px;padding:0 22px 4px;overflow-x:auto;scrollbar-width:none}
+.cats::-webkit-scrollbar{display:none}
+.cat{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--card);border:1px solid var(--bdr);border-radius:18px;padding:11px 14px;cursor:pointer;transition:all .22s;flex-shrink:0;min-width:68px}
+.cat.on{background:var(--p);border-color:var(--p);transform:translateY(-3px);box-shadow:0 8px 24px rgba(107,47,206,.4)}
+.cat-i{font-size:22px}
+.cat-l{font-size:10px;color:var(--white);font-weight:500;white-space:nowrap}
+
+/* PRODUCT GRID */
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:2px 22px 14px}
+.pcard{background:var(--card);border-radius:20px;overflow:hidden;cursor:pointer;transition:transform .3s,box-shadow .3s;border:1px solid var(--bdr)}
+.pcard:hover{transform:translateY(-5px);box-shadow:0 20px 50px rgba(107,47,206,.3)}
+.pcard:active{transform:scale(.97)}
+.pimg{width:100%;height:126px;display:flex;align-items:center;justify-content:center;font-size:54px;position:relative}
+.pi1{background:linear-gradient(135deg,#2D0060,#6B2FCE)}
+.pi2{background:linear-gradient(135deg,#1C0040,#4A1080)}
+.pi3{background:linear-gradient(135deg,#0D001A,#3A0870)}
+.pi4{background:linear-gradient(135deg,#1A0A2E,#5C1898)}
+.pi5{background:linear-gradient(135deg,#0A0018,#2E0658)}
+.pfav{position:absolute;top:9px;right:9px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.42);display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;backdrop-filter:blur(6px)}
+.tag-pill{position:absolute;bottom:8px;left:8px;background:rgba(34,197,94,.18);color:#22C55E;font-size:9px;font-weight:700;padding:3px 8px;border-radius:8px;border:1px solid rgba(34,197,94,.3)}
+.pinfo{padding:11px}
+.pname{font-size:13px;font-weight:600;color:var(--white);margin-bottom:2px;line-height:1.3}
+.pdesc{font-size:10px;color:var(--dim);margin-bottom:7px}
+.pfoot{display:flex;justify-content:space-between;align-items:center}
+.pprice{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:var(--pl)}
+.prating{font-size:10px;color:var(--gold);margin-bottom:4px}
+.abtn{width:28px;height:28px;border-radius:8px;background:var(--p);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:300;cursor:pointer;border:none;transition:all .2s;flex-shrink:0}
+.abtn:active{transform:scale(.88);background:var(--pl)}
+
+/* TRENDING SCROLL */
+.tscroll{display:flex;gap:12px;padding:2px 22px 14px;overflow-x:auto;scrollbar-width:none}
+.tscroll::-webkit-scrollbar{display:none}
+.tcard{flex-shrink:0;width:156px;background:var(--card);border-radius:20px;overflow:hidden;border:1px solid var(--bdr);cursor:pointer;transition:transform .25s}
+.tcard:active{transform:scale(.95)}
+.timg{width:100%;height:100px;display:flex;align-items:center;justify-content:center;font-size:42px}
+.ti1{background:linear-gradient(135deg,#2D0060,#5A10A0)}
+.ti2{background:linear-gradient(135deg,#1C0040,#4A1080)}
+.ti3{background:linear-gradient(135deg,#0D001A,#2E0058)}
+.ti4{background:linear-gradient(135deg,#1A0A2E,#481088)}
+.tinfo{padding:9px 11px}
+.tname{font-size:11px;font-weight:600;color:var(--white);line-height:1.3}
+.trat{font-size:10px;color:var(--gold);margin:2px 0}
+.tprice{font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:700;color:var(--p3)}
+
+/* REVIEWS */
+.rcard{margin:0 22px 12px;background:var(--card);border-radius:18px;padding:16px;border:1px solid var(--bdr);position:relative;overflow:hidden}
+.rcard::before{content:'"';position:absolute;top:-4px;right:14px;font-family:'Cormorant Garamond',serif;font-size:72px;color:rgba(107,47,206,.15);line-height:1}
+.rstars{font-size:13px;color:var(--gold);margin-bottom:6px}
+.rtxt{font-size:12px;color:var(--dim);font-style:italic;line-height:1.65;margin-bottom:11px}
+.ruser{display:flex;align-items:center;gap:9px}
+.ravatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px}
+.ra1{background:linear-gradient(135deg,var(--p),var(--pl))}
+.ra2{background:linear-gradient(135deg,#4A1080,#8B44E8)}
+.rname{font-size:12px;font-weight:600;color:var(--white)}
+.rloc{font-size:10px;color:var(--faint)}
+
+/* INSTAGRAM FOLLOW CARD */
+.ig-card{margin:0 22px 14px;background:linear-gradient(135deg,rgba(131,58,180,.2),rgba(253,29,29,.1),rgba(252,176,69,.1));border:1px solid rgba(131,58,180,.3);border-radius:18px;padding:16px;display:flex;align-items:center;gap:14px;cursor:pointer}
+.ig-icon{width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.ig-info .ig-handle{font-size:13px;font-weight:700;color:var(--white)}
+.ig-info .ig-sub{font-size:11px;color:var(--dim);margin-top:1px}
+.ig-follow{margin-left:auto;background:linear-gradient(135deg,#833ab4,#fd1d1d);color:#fff;font-size:11px;font-weight:700;padding:7px 14px;border-radius:10px;white-space:nowrap}
+
+/* BOTTOM NAV */
+.bnav{display:flex;background:rgba(9,1,15,.92);backdrop-filter:blur(24px);border-top:1px solid var(--bdr);padding:10px 0 16px;position:sticky;bottom:0;z-index:200}
+.ntab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 0;transition:transform .2s}
+.ntab:active{transform:scale(.9)}
+.nicon{font-size:20px;transition:transform .2s}
+.nlbl{font-size:10px;color:var(--faint);font-weight:500}
+.ntab.on .nlbl{color:var(--pl)}
+.ndot{width:4px;height:4px;border-radius:50%;background:transparent;margin:0 auto}
+.ntab.on .ndot{background:var(--pl)}
+
+/* ══════════════════════════════
+   EXPLORE PAGE
+══════════════════════════════ */
+#page-explore{background:var(--dark)}
+.exp-top{background:linear-gradient(160deg,var(--d3),var(--d2));padding:58px 22px 18px}
+.exp-title{font-family:'Cormorant Garamond',serif;font-size:30px;color:var(--white);font-weight:700;margin-bottom:3px}
+.exp-sub{font-size:12px;color:var(--dim);margin-bottom:14px}
+.exp-srch{display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.07);border:1px solid var(--bdr);border-radius:14px;padding:12px 16px}
+.exp-srch input{flex:1;background:none;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--white)}
+.exp-srch input::placeholder{color:var(--faint)}
+.ftags{display:flex;gap:7px;padding:12px 22px;overflow-x:auto;scrollbar-width:none}
+.ftags::-webkit-scrollbar{display:none}
+.ftag{padding:7px 14px;border-radius:20px;background:var(--card);border:1px solid var(--bdr);font-size:11px;color:var(--dim);cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0}
+.ftag.on{background:var(--p);border-color:var(--p);color:#fff}
+
+/* PRODUCT LIST */
+.plist{padding:0 22px;display:flex;flex-direction:column;gap:11px;padding-bottom:16px}
+.plcard{display:flex;gap:12px;background:var(--card);border-radius:18px;overflow:hidden;border:1px solid var(--bdr);cursor:pointer;transition:transform .2s,border-color .2s}
+.plcard:active{transform:scale(.985)}
+.plcard:hover{border-color:var(--bdr2)}
+.plimg{width:96px;height:96px;display:flex;align-items:center;justify-content:center;font-size:40px;flex-shrink:0}
+.plinfo{flex:1;padding:12px 12px 12px 0;display:flex;flex-direction:column;justify-content:space-between}
+.plname{font-size:13px;font-weight:600;color:var(--white);line-height:1.3}
+.pltag{font-size:10px;color:var(--green);font-weight:600;margin:2px 0}
+.pldesc{font-size:11px;color:var(--dim)}
+.plrat{font-size:11px;color:var(--gold)}
+.plfoot{display:flex;justify-content:space-between;align-items:center}
+.plprice{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:700;color:var(--pl)}
+
+/* ══════════════════════════════
+   DETAIL PAGE
+══════════════════════════════ */
+#page-detail{background:var(--dark)}
+.dhero{height:272px;display:flex;align-items:center;justify-content:center;font-size:108px;position:relative;background:linear-gradient(160deg,#2D0060,#6B2FCE,#A855F7)}
+.dhero::after{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");mix-blend-mode:overlay}
+.back{position:absolute;top:50px;left:18px;width:38px;height:38px;border-radius:12px;background:rgba(0,0,0,.38);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;border:1px solid rgba(255,255,255,.1);z-index:10}
+.dfav{position:absolute;top:50px;right:18px;width:38px;height:38px;border-radius:12px;background:rgba(0,0,0,.38);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;border:1px solid rgba(255,255,255,.1);z-index:10}
+.dbody{background:var(--dark);border-radius:28px 28px 0 0;margin-top:-22px;padding:22px 22px;position:relative;z-index:5}
+
+.dtag{display:inline-flex;align-items:center;gap:5px;background:rgba(34,197,94,.12);color:var(--green);font-size:10px;font-weight:700;padding:4px 11px;border-radius:20px;margin-bottom:11px;border:1px solid rgba(34,197,94,.25)}
+.dname{font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--white);font-weight:700;margin-bottom:3px;line-height:1.1}
+.dsub{font-size:12px;color:var(--dim);margin-bottom:12px}
+.drat-row{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.dstars{font-size:14px;color:var(--gold)}
+.drnum{font-size:13px;font-weight:700;color:var(--white)}
+.drcount{font-size:11px;color:var(--faint)}
+
+.dprice-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding:14px 16px;background:var(--card);border-radius:16px;border:1px solid var(--bdr)}
+.dprice{font-family:'Cormorant Garamond',serif;font-size:36px;font-weight:700;color:var(--pl);line-height:1}
+.dprice-sub{font-size:10px;color:var(--faint);margin-top:2px}
+.qty{display:flex;align-items:center;gap:12px}
+.qbtn{width:32px;height:32px;border-radius:10px;background:var(--p);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;cursor:pointer;transition:all .18s;border:none;user-select:none}
+.qbtn:active{transform:scale(.88)}
+.qnum{font-size:16px;font-weight:700;color:var(--white);min-width:22px;text-align:center}
+
+/* LABEL */
+.dlabel{font-size:13px;font-weight:600;color:var(--white);margin-bottom:9px;display:flex;align-items:center;gap:6px}
+.dlabel-badge{font-size:10px;color:var(--faint);font-weight:400}
+
+/* TIER TOGGLE */
+.tier-row{display:flex;gap:0;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:14px;padding:3px;margin-bottom:16px}
+.tbtn{flex:1;padding:9px 6px;border-radius:11px;text-align:center;font-size:11px;font-weight:600;color:var(--faint);cursor:pointer;transition:all .22s;line-height:1.4}
+.tbtn .ti{font-size:15px;display:block;margin-bottom:2px}
+.tbtn.on{background:var(--p);color:#fff;box-shadow:0 4px 16px rgba(107,47,206,.4)}
+
+/* EGG TOGGLE */
+.egg-row{display:flex;gap:8px;margin-bottom:16px}
+.ebtn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:12px;border:1.5px solid var(--bdr);background:var(--card);font-size:12px;font-weight:600;color:var(--faint);cursor:pointer;transition:all .22s}
+.ebtn.on.eg{border-color:var(--green);background:rgba(34,197,94,.1);color:var(--green)}
+.ebtn.on.ee{border-color:var(--pink);background:rgba(244,114,182,.1);color:var(--pink)}
+
+/* VARIANT LIST */
+.vlist{display:flex;flex-direction:column;gap:7px;margin-bottom:16px;max-height:210px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--p) transparent;padding-right:2px}
+.vrow{display:flex;align-items:center;justify-content:space-between;padding:10px 13px;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;cursor:pointer;transition:all .2s}
+.vrow.on{border-color:var(--p);background:rgba(107,47,206,.1)}
+.vrow:active{transform:scale(.985)}
+.vname{font-size:12px;font-weight:600;color:var(--white)}
+.vrow.on .vname{color:var(--pl)}
+.vtag{font-size:10px;color:var(--faint);margin-top:1px}
+.vchk{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;transition:all .2s}
+.vrow.on .vchk{background:var(--p);border-color:var(--p);color:#fff}
+
+/* PACK GRID */
+.packgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.pcrd{background:var(--card);border:1.5px solid var(--bdr);border-radius:14px;padding:11px 7px;text-align:center;cursor:pointer;transition:all .22s;position:relative;overflow:hidden}
+.pcrd.on{border-color:var(--p);box-shadow:0 0 0 1px var(--p),0 8px 20px rgba(107,47,206,.2)}
+.pcrd.on::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--p),var(--pl));opacity:.1}
+.pcrd:active{transform:scale(.94)}
+.pc-pcs{font-size:15px;font-weight:700;color:var(--white);position:relative}
+.pcrd.on .pc-pcs{color:var(--pl)}
+.pc-g{font-size:10px;color:var(--faint);margin:2px 0;position:relative}
+.pc-price{font-size:13px;font-weight:700;color:var(--p3);position:relative}
+.pcrd.on .pc-price{color:var(--gold)}
+.pc-badge{font-size:9px;color:var(--faint);position:relative}
+
+/* TOPPINGS */
+.toplist{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.trow{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--card);border:1.5px solid var(--bdr);border-radius:11px;cursor:pointer;transition:all .2s}
+.trow.on{border-color:var(--gold);background:rgba(245,158,11,.07)}
+.trow:active{transform:scale(.985)}
+.tl{display:flex;align-items:center;gap:9px}
+.tico{font-size:18px}
+.tname{font-size:12px;font-weight:600;color:var(--white)}
+.tdesc{font-size:10px;color:var(--faint)}
+.tr-right{display:flex;align-items:center;gap:7px}
+.tprc{font-size:12px;font-weight:700;color:var(--p3)}
+.trow.on .tprc{color:var(--gold)}
+.tchk{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;transition:all .2s}
+.trow.on .tchk{background:var(--gold);border-color:var(--gold);color:#000}
+
+/* TOPPINGS TOTAL */
+.ttotal{display:flex;justify-content:space-between;align-items:center;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:12px;padding:10px 14px;margin-bottom:16px}
+.ttl-lbl{font-size:12px;color:var(--dim)}
+.ttl-val{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:var(--gold)}
+
+/* CUSTOM CAKES */
+.custom-box{background:linear-gradient(135deg,rgba(107,47,206,.25),rgba(168,85,247,.15));border:1px solid rgba(107,47,206,.4);border-radius:18px;padding:16px;margin-bottom:16px;position:relative;overflow:hidden}
+.custom-box::before{content:'';position:absolute;top:-20px;right:-20px;width:100px;height:100px;background:radial-gradient(circle,rgba(168,85,247,.3),transparent 70%);pointer-events:none}
+.cb-title{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--white);font-weight:700;margin-bottom:5px}
+.cb-sub{font-size:11px;color:var(--dim);margin-bottom:12px;line-height:1.5}
+.cb-pills{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px}
+.cb-pill{background:rgba(255,255,255,.08);border-radius:7px;padding:4px 9px;font-size:10px;color:var(--off)}
+.cb-cta{display:inline-flex;align-items:center;gap:5px;background:var(--p);color:#fff;font-size:11px;font-weight:700;padding:8px 16px;border-radius:10px;cursor:pointer}
+
+/* ABOUT */
+.about-txt{font-size:12px;color:var(--dim);line-height:1.7;margin-bottom:14px}
+.ingr-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
+.ingr{display:flex;align-items:center;gap:4px;background:var(--card);border:1px solid var(--bdr);border-radius:9px;padding:5px 10px;font-size:11px;color:var(--dim)}
+
+/* CART BUTTON */
+.cart-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;border:none;border-radius:16px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:4px}
+.cart-btn:active{transform:scale(.97);opacity:.9}
+
+/* ══════════════════════════════
+   CART PAGE
+══════════════════════════════ */
+#page-cart{background:var(--dark)}
+.cart-hdr{display:flex;align-items:center;gap:12px;padding:58px 22px 16px;background:linear-gradient(160deg,var(--d3),var(--d2))}
+.cart-title{font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--white);font-weight:700}
+.cart-count{font-size:12px;color:var(--dim)}
+.citems{padding:0 22px;display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
+.citem{display:flex;gap:12px;background:var(--card);border-radius:16px;overflow:hidden;border:1px solid var(--bdr)}
+.cimg{width:88px;height:88px;display:flex;align-items:center;justify-content:center;font-size:38px;flex-shrink:0}
+.cii1{background:linear-gradient(135deg,#2D0060,#6B2FCE)}
+.cii2{background:linear-gradient(135deg,#1C0040,#4A1080)}
+.cii3{background:linear-gradient(135deg,#0D001A,#3A0870)}
+.cinfo{flex:1;padding:12px 12px 12px 0;display:flex;flex-direction:column;justify-content:space-between}
+.cname{font-size:13px;font-weight:600;color:var(--white)}
+.csize{font-size:11px;color:var(--dim);margin-top:2px}
+.cfoot{display:flex;justify-content:space-between;align-items:center}
+.cprice{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:700;color:var(--pl)}
+.cqty{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);border-radius:9px;padding:5px 10px}
+.cqbtn{font-size:16px;color:var(--p3);cursor:pointer;font-weight:700;width:20px;text-align:center}
+.cqnum{font-size:13px;font-weight:700;color:var(--white);min-width:16px;text-align:center}
+
+.promo-row{display:flex;align-items:center;gap:9px;margin:0 22px 12px;background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:11px 14px}
+.promo-in{flex:1;background:none;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--white)}
+.promo-in::placeholder{color:var(--faint)}
+.promo-apply{background:var(--p);color:#fff;font-size:11px;font-weight:700;padding:7px 14px;border-radius:9px;cursor:pointer;white-space:nowrap}
+
+.summary{margin:0 22px 12px;background:var(--card);border:1px solid var(--bdr);border-radius:18px;padding:16px}
+.srow{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+.slbl{font-size:13px;color:var(--dim)}
+.sval{font-size:13px;color:var(--white);font-weight:500}
+.sdiv{border:none;border-top:1px solid var(--bdr);margin:10px 0}
+.stlbl{font-size:14px;font-weight:700;color:var(--white)}
+.stval{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--pl)}
+
+.checkout-btn{width:calc(100% - 44px);margin:0 22px 10px;padding:16px;background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;border:none;border-radius:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+
+/* ══════════════════════════════
+   PROFILE PAGE
+══════════════════════════════ */
+#page-profile{background:var(--dark)}
+.prof-hero{padding:58px 22px 22px;background:linear-gradient(160deg,var(--d3),var(--dark));text-align:center}
+.pavatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--p),var(--pl));margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:32px;border:3px solid rgba(107,47,206,.3)}
+.pname{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--white);font-weight:700}
+.pemail{font-size:12px;color:var(--dim);margin-bottom:14px}
+.pstats{display:flex;justify-content:center;gap:14px}
+.pstat{background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:10px 18px;text-align:center}
+.pstat-n{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--pl)}
+.pstat-l{font-size:10px;color:var(--dim)}
+
+.lcard{margin:14px 22px 12px;background:linear-gradient(135deg,rgba(107,47,206,.4),rgba(168,85,247,.2));border:1px solid var(--bdr2);border-radius:18px;padding:16px}
+.lt{font-size:13px;font-weight:700;color:var(--white);margin-bottom:4px}
+.lpts{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:var(--pl)}
+.lpts span{font-size:14px;color:var(--dim)}
+.lbar{height:6px;background:rgba(255,255,255,.08);border-radius:3px;margin:8px 0 5px;overflow:hidden}
+.lbar-fill{height:100%;width:62%;background:linear-gradient(90deg,var(--p),var(--pl));border-radius:3px}
+.lsub{font-size:11px;color:var(--faint)}
+
+.msec{margin:0 22px 10px}
+.mgrp{font-size:11px;color:var(--faint);font-weight:600;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;margin-top:12px;padding-left:4px}
+.mitem{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--card);border-radius:14px;margin-bottom:7px;cursor:pointer;transition:all .2s;border:1px solid var(--bdr)}
+.mitem:active{transform:scale(.985)}
+.mico{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.mtxt{flex:1}
+.mtitle{font-size:13px;font-weight:600;color:var(--white)}
+.msub{font-size:11px;color:var(--faint)}
+.mbadge{background:rgba(107,47,206,.25);color:var(--pl);font-size:10px;font-weight:700;padding:3px 9px;border-radius:8px}
+.marrow{color:var(--faint);font-size:16px}
+
+/* ══ TOAST ══ */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(30px);background:var(--p);color:#fff;padding:11px 22px;border-radius:22px;font-size:13px;font-weight:600;opacity:0;transition:all .35s;pointer-events:none;z-index:9999;white-space:nowrap;box-shadow:0 8px 24px rgba(107,47,206,.5)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ══ CHECKOUT PAGE ══ */
+#page-checkout{background:var(--dark)}
+.ck-hdr{padding:52px 22px 18px;background:linear-gradient(160deg,var(--d3),var(--d2))}
+.ck-title{font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--white);font-weight:700}
+.ck-sub{font-size:12px;color:var(--dim);margin-top:2px}
+.ck-body{padding:14px 22px}
+.ck-section{margin-bottom:18px}
+.ck-label{font-size:12px;font-weight:700;color:var(--white);letter-spacing:.5px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.ck-field{width:100%;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;padding:13px 15px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--white);outline:none;transition:border-color .2s}
+.ck-field:focus{border-color:var(--p)}
+.ck-field::placeholder{color:var(--faint)}
+.ck-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.ck-field-wrap{margin-top:10px}
+.pay-opts{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
+.pay-opt{padding:12px;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;cursor:pointer;transition:all .2s;text-align:center}
+.pay-opt.on{border-color:var(--p);background:rgba(107,47,206,.12)}
+.pay-ico{font-size:22px;margin-bottom:4px}
+.pay-lbl{font-size:12px;font-weight:600;color:var(--white)}
+.pay-opt.on .pay-lbl{color:var(--pl)}
+.order-summary-box{background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:14px;margin-top:10px}
+.os-item{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--bdr)}
+.os-item:last-child{border:none;margin:0;padding:0}
+.os-name{font-size:13px;color:var(--white);font-weight:500}
+.os-desc{font-size:11px;color:var(--faint);margin-top:2px}
+.os-price{font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:700;color:var(--pl);white-space:nowrap}
+.os-total-row{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--bdr)}
+.os-total-lbl{font-size:14px;font-weight:700;color:var(--white)}
+.os-total-val{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:var(--pl)}
+.place-btn{width:100%;padding:17px;background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;border:none;border-radius:16px;cursor:pointer;transition:all .2s;margin-top:16px;display:flex;align-items:center;justify-content:center;gap:8px}
+.place-btn:active{transform:scale(.97)}
+.place-btn:disabled{opacity:.5;cursor:not-allowed}
+.ck-err{color:var(--pink);font-size:12px;margin-top:6px;display:none}
+
+/* ══ SUCCESS PAGE ══ */
+#page-success{background:var(--dark);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100%}
+.succ-wrap{padding:32px 22px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:16px;width:100%}
+.succ-anim{width:84px;height:84px;border-radius:50%;background:linear-gradient(135deg,var(--p),var(--pl));display:flex;align-items:center;justify-content:center;font-size:40px;animation:popIn .5s cubic-bezier(.17,.67,.38,1.4) both}
+@keyframes popIn{0%{transform:scale(0);opacity:0}100%{transform:scale(1);opacity:1}}
+.succ-title{font-family:'Cormorant Garamond',serif;font-size:30px;color:var(--white);font-weight:700}
+.succ-sub{font-size:13px;color:var(--dim);line-height:1.6;max-width:280px}
+.order-card{background:var(--card);border:1px solid var(--bdr2);border-radius:18px;padding:18px;width:100%;text-align:left}
+.oc-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.oc-lbl{font-size:12px;color:var(--faint)}
+.oc-val{font-size:13px;font-weight:600;color:var(--white)}
+.oc-id{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--pl)}
+.succ-wa-btn{width:100%;padding:15px;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;font-size:14px;font-weight:700;border:none;border-radius:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.succ-home-btn{width:100%;padding:14px;background:var(--card);border:1px solid var(--bdr);color:var(--white);font-size:14px;font-weight:600;border-radius:14px;cursor:pointer}
+.status-timeline{width:100%;text-align:left;background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:16px}
+.stl-title{font-size:13px;font-weight:700;color:var(--white);margin-bottom:12px}
+.stl-item{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px}
+.stl-item:last-child{margin:0}
+.stl-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.stl-dot.done{background:var(--green)}
+.stl-dot.active{background:var(--p);box-shadow:0 0 0 3px rgba(107,47,206,.3);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 3px rgba(107,47,206,.3)}50%{box-shadow:0 0 0 6px rgba(107,47,206,.1)}}
+.stl-dot.pending{background:var(--bdr);border:1.5px solid var(--faint)}
+.stl-lbl{font-size:12px;font-weight:600;color:var(--white)}
+.stl-time{font-size:10px;color:var(--faint)}
+
+/* ══ LOADING OVERLAY ══ */
+.loading-overlay{position:fixed;inset:0;background:rgba(9,1,15,.85);backdrop-filter:blur(8px);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;display:none}
+.loading-overlay.show{display:flex}
+.loader{width:48px;height:48px;border:3px solid var(--bdr);border-top-color:var(--p);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-txt{font-size:14px;color:var(--dim)}
+</style>
+</head>
+<body>
+
+<div class="mesh" aria-hidden="true">
+  <div class="mesh-blob mb1"></div>
+  <div class="mesh-blob mb2"></div>
+  <div class="mesh-blob mb3"></div>
+</div>
+
+<div class="phone-wrap">
+  <div class="plabel">Customer App</div>
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="screen">
+
+    <!-- ═══ HOME ═══ -->
+    <div class="page active" id="page-home">
+      <div class="sb"><span>9:41</span><span>●●● 100%</span></div>
+
+      <div class="hdr">
+        <div class="logo-wrap">
+          <div class="logo-eyebrow">NSDI ✦ Premium</div>
+          <div class="logo-main">Choco<span>Cravings</span></div>
+          <div class="logo-sub">Happy to serve fresh!!</div>
+        </div>
+        <div class="hdr-actions">
+          <div class="hbtn" onclick="showPage('explore')">🔍</div>
+          <div class="hbtn" onclick="showPage('checkout')">🛒<div class="dot-badge">3</div></div>
+        </div>
+      </div>
+
+      <div class="greet">
+        <div class="greet-sub">Good evening 👋</div>
+        <div class="greet-main">What's your <em>craving</em> today?</div>
+      </div>
+
+      <div class="loc">
+        <span>📍</span>
+        <div><div class="loc-city">Chennai, Tamil Nadu</div><div class="loc-txt">Delivering across TN</div></div>
+        <span class="loc-chev">▾</span>
+      </div>
+
+      <div class="srch">
+        <span class="srch-icon">🔍</span>
+        <input type="text" placeholder="Search brownies, cakes, toppings…">
+        <div class="srch-btn">⚙️</div>
+      </div>
+
+      <!-- HERO -->
+      <div class="hero-wrap">
+        <div class="hero-card hc-1" id="hero-card" onclick="showPage('detail')">
+          <div class="hc-noise"></div>
+          <div class="hc-pill" id="hc-badge">🔥 Best Seller</div>
+          <div class="hc-title" id="hc-title">Classic Fudge<br>Brownie</div>
+          <div class="hc-sub" id="hc-sub">Eggless 💚 · 4pcs ₹300 · 9pcs ₹590 · 16pcs ₹1170</div>
+          <div class="hc-cta">Order Now →</div>
+          <div class="hc-emoji" id="hc-emoji">🍫</div>
+        </div>
+        <div class="hero-dots">
+          <div class="hdot on" onclick="setHero(0)"></div>
+          <div class="hdot" onclick="setHero(1)"></div>
+          <div class="hdot" onclick="setHero(2)"></div>
+        </div>
+      </div>
+
+      <!-- CHIPS -->
+      <div class="chips-row">
+        <div class="chip"><em>🚚</em><span>Free delivery ₹499+</span></div>
+        <div class="chip"><em>💚</em><span>Eggless available</span></div>
+        <div class="chip"><em>🌿</em><span>No preservatives</span></div>
+        <div class="chip"><em>⏱</em><span>Fresh 4–5 days</span></div>
+        <div class="chip"><em>🎂</em><span>Custom cakes</span></div>
+        <div class="chip"><em>📞</em><span>+91 99721 41890</span></div>
+      </div>
+
+      <!-- PROMOS -->
+      <div class="promos">
+        <div class="promo promo-a">
+          <div><div class="promo-txt">First Order</div><div class="promo-big">20% OFF</div></div>
+          <div class="promo-code">CHOCO20</div>
+        </div>
+        <div class="promo promo-b">
+          <div><div class="promo-txt">Birthday Special</div><div class="promo-big">FREE CAKE</div></div>
+          <div class="promo-code">BDAY</div>
+        </div>
+      </div>
+
+      <!-- CATEGORIES -->
+      <div class="sec"><span class="sec-t">Categories</span><span class="sec-l" onclick="showPage('explore')">See all</span></div>
+      <div class="cats">
+        <div class="cat on" onclick="selCat(this)"><div class="cat-i">🌟</div><div class="cat-l">All</div></div>
+        <div class="cat" onclick="selCat(this)"><div class="cat-i">💚</div><div class="cat-l">Eggless</div></div>
+        <div class="cat" onclick="selCat(this)"><div class="cat-i">🌟</div><div class="cat-l">Couverture</div></div>
+        <div class="cat" onclick="selCat(this)"><div class="cat-i">🌿</div><div class="cat-l">Healthy</div></div>
+        <div class="cat" onclick="selCat(this)"><div class="cat-i">🍫</div><div class="cat-l">Classics</div></div>
+        <div class="cat" onclick="selCat(this)"><div class="cat-i">🎂</div><div class="cat-l">Custom</div></div>
+      </div>
+
+      <!-- FEATURED GRID -->
+      <div class="sec"><span class="sec-t">Featured</span><span class="sec-l" onclick="showPage('explore')">View all</span></div>
+      <div class="pgrid">
+        <div class="pcard" onclick="showPage('detail')">
+          <div class="pimg pi1">🍫<div class="pfav" onclick="e.stopPropagation();toggleFav(this)">❤️</div><div class="tag-pill">💚 Eggless</div></div>
+          <div class="pinfo">
+            <div class="prating">★★★★★ 4.9</div>
+            <div class="pname">Classic Fudge Brownie</div>
+            <div class="pdesc">Premium · 4pcs / 9pcs / 16pcs</div>
+            <div class="pfoot"><span class="pprice">₹300</span><button class="abtn" onclick="event.stopPropagation();doAddCart(this)">+</button></div>
+          </div>
+        </div>
+        <div class="pcard" onclick="showPage('detail')">
+          <div class="pimg pi2">🍫<div class="pfav" onclick="event.stopPropagation();toggleFav(this)">🤍</div><div class="tag-pill">💚 Eggless</div></div>
+          <div class="pinfo">
+            <div class="prating">★★★★★ 5.0</div>
+            <div class="pname">Triple Chocolate Brownie</div>
+            <div class="pdesc">Dark + Milk + White · 4pcs</div>
+            <div class="pfoot"><span class="pprice">₹380</span><button class="abtn" onclick="event.stopPropagation();doAddCart(this)">+</button></div>
+          </div>
+        </div>
+        <div class="pcard" onclick="showPage('detail')">
+          <div class="pimg pi3">🍯<div class="pfav" onclick="event.stopPropagation();toggleFav(this)">🤍</div><div class="tag-pill">💚 Eggless</div></div>
+          <div class="pinfo">
+            <div class="prating">★★★★★ 4.9</div>
+            <div class="pname">Nutella Brownie</div>
+            <div class="pdesc">Hazelnut choco spread · 4pcs</div>
+            <div class="pfoot"><span class="pprice">₹370</span><button class="abtn" onclick="event.stopPropagation();doAddCart(this)">+</button></div>
+          </div>
+        </div>
+        <div class="pcard" onclick="showPage('detail')">
+          <div class="pimg pi4">🌟<div class="pfav" onclick="event.stopPropagation();toggleFav(this)">🤍</div><div class="tag-pill">🌟 Premium</div></div>
+          <div class="pinfo">
+            <div class="prating">★★★★★ 5.0</div>
+            <div class="pname">Couverture Classic</div>
+            <div class="pdesc">Belgian chocolate · 4pcs</div>
+            <div class="pfoot"><span class="pprice">₹490</span><button class="abtn" onclick="event.stopPropagation();doAddCart(this)">+</button></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRENDING -->
+      <div class="sec"><span class="sec-t">Trending 🔥</span><span class="sec-l">More</span></div>
+      <div class="tscroll">
+        <div class="tcard" onclick="showPage('detail')"><div class="timg ti1">🥜</div><div class="tinfo"><div class="tname">Assorted Box</div><div class="trat">★★★★★</div><div class="tprice">₹400 · 4pcs</div></div></div>
+        <div class="tcard" onclick="showPage('detail')"><div class="timg ti2">🍪</div><div class="tinfo"><div class="tname">Biscoff Brownie</div><div class="trat">★★★★★</div><div class="tprice">₹390 · 4pcs</div></div></div>
+        <div class="tcard" onclick="showPage('detail')"><div class="timg ti3">🌾</div><div class="tinfo"><div class="tname">Ragi Brownie</div><div class="trat">★★★★☆</div><div class="tprice">₹390 · 4pcs</div></div></div>
+        <div class="tcard" onclick="showPage('detail')"><div class="timg ti4">✨</div><div class="tinfo"><div class="tname">Couverture Nutella</div><div class="trat">★★★★★</div><div class="tprice">₹550 · 4pcs</div></div></div>
+      </div>
+
+      <!-- REVIEWS -->
+      <div class="sec"><span class="sec-t">Customer Love 💬</span><span class="sec-l">All reviews</span></div>
+      <div class="rcard">
+        <div class="rstars">★★★★★</div>
+        <div class="rtxt">"Ordered the triple chocolate brownie for my daughter's birthday — arrived perfectly packed. Best homemade bakes in Tamil Nadu!"</div>
+        <div class="ruser"><div class="ravatar ra1">👩</div><div><div class="rname">Priya Krishnan</div><div class="rloc">Coimbatore · Verified ✓</div></div></div>
+      </div>
+      <div class="rcard">
+        <div class="rstars">★★★★★</div>
+        <div class="rtxt">"The Couverture Assorted Box for Diwali was a massive hit! Everyone loved the packaging and the brownies are absolutely divine 🍫"</div>
+        <div class="ruser"><div class="ravatar ra2">👨</div><div><div class="rname">Karthik S.</div><div class="rloc">Chennai · Verified ✓</div></div></div>
+      </div>
+
+      <!-- INSTAGRAM CARD -->
+      <div class="ig-card" onclick="window.open('https://www.instagram.com/nsdi.chococravings','_blank')">
+        <div class="ig-icon">📸</div>
+        <div class="ig-info">
+          <div class="ig-handle">@nsdi.chococravings</div>
+          <div class="ig-sub">Follow us for daily updates & offers!</div>
+        </div>
+        <div class="ig-follow">Follow</div>
+      </div>
+
+      <div style="height:8px"></div>
+      <div class="bnav">
+        <div class="ntab on" onclick="showPage('home')"><div class="nicon">🏠</div><div class="nlbl">Home</div><div class="ndot"></div></div>
+        <div class="ntab" onclick="showPage('explore')"><div class="nicon">🔍</div><div class="nlbl">Explore</div><div class="ndot"></div></div>
+        <div class="ntab" onclick="showPage('cart')"><div class="nicon">🛒</div><div class="nlbl">Cart</div><div class="ndot"></div></div>
+        <div class="ntab" onclick="showPage('home')"><div class="nicon">❤️</div><div class="nlbl">Saved</div><div class="ndot"></div></div>
+        <div class="ntab" onclick="showPage('profile')"><div class="nicon">👤</div><div class="nlbl">Profile</div><div class="ndot"></div></div>
+      </div>
+    </div><!-- /home -->
+
+    <!-- ═══ EXPLORE ═══ -->
+    <div class="page" id="page-explore">
+      <div class="exp-top">
+        <div class="exp-title">Explore All</div>
+        <div class="exp-sub">Premium handcrafted brownies · Eggless & egg variants</div>
+        <div class="exp-srch"><span style="font-size:17px;color:var(--faint)">🔍</span><input type="text" placeholder="Search products…"></div>
+      </div>
+      <div class="ftags">
+        <div class="ftag on" onclick="selTag(this)">All</div>
+        <div class="ftag" onclick="selTag(this)">💚 Eggless</div>
+        <div class="ftag" onclick="selTag(this)">❤️ With Egg</div>
+        <div class="ftag" onclick="selTag(this)">🌟 Couverture</div>
+        <div class="ftag" onclick="selTag(this)">🌿 Healthy</div>
+        <div class="ftag" onclick="selTag(this)">🍯 Nutella/Biscoff</div>
+        <div class="ftag" onclick="selTag(this)">🎂 Custom</div>
+      </div>
+      <div class="plist">
+        <div class="plcard" onclick="showPage('detail')">
+          <div class="plimg pi1">🍫</div>
+          <div class="plinfo">
+            <div><div class="plname">Classic Fudge Brownie</div><div class="pltag">💚 Eggless · Premium &amp; Couverture</div><div class="pldesc">Rich dark chocolate · Stays fresh 4–5 days</div><div class="plrat">★★★★★ 4.9 · 312 reviews</div></div>
+            <div class="plfoot"><span class="plprice">from ₹270</span><button class="abtn" onclick="event.stopPropagation();doAddCart(this)">+</button></div>
+          </div>
+        </div>
+        <div class="plcard" onclick="showPage('detail')">
+          <div class="plimg pi2">🍫</div>
+          <div class="plinfo">
+            <div><div class="plname">Double Chocolate Brownie</div><div class="pltag">💚 Eggless · Dark + Milk choco</div><div class="pldesc">Two-chocolate indulgence · 4/9/16 pcs</div><div class="plrat">★★★★★ 4.9 · 198 reviews</div></div>
+            <div class="plfoot"><span class="plprice">from ₹320</span><button class="abtn" onclick="event.stopPropagation();doAddCart(this)">+</button></div>
+          </div>
+        </div>
+        <div class="plcard" onclick="showPage('detail')">
+          <div class="plimg pi3">🍫</div>
+          <div class="plinfo">
+            <div><div class="plname">Triple Chocolate Brownie</div><div class="pltag">💚 Eggless · Dark+Milk+White</div><div class="pldesc">Triple layer chocolate heaven</div><div class="plrat">★★★★★ 5.0 · 245 reviews</div></div>
+            <div class="plfoot"><span class="plprice">from ₹330</span><button class="abtn" onclick="event.stopPropagation();doAddCart(this)">+</button></div>
+          </div>
+        </div>
+        <div class="plcard" onclick="showPage('detail')">
+          <div class="plimg pi4">🍯</div>
+          <div class="plinfo">
+            <div><div class="plname">Nutella Brownie</div><div class="pltag">💚 Eggless · Hazelnut chocolate</div><div class="pldesc">Creamy Nutella swirled inside</div><div class="plrat">★★★★★ 4.9 · 189 reviews</div></div>
+            <div class="plfoot"><span class="plprice">from ₹340</span><button class="abtn" onclick="event.stopPropagation();doAddCart(this)">+</button></div>
+          </div>
+        </div>
+        <div class="plcard" onclick="showPage('detail')">
+          <div class="plimg pi5">🍪</div>
+          <div class="plinfo">
+            <div><div class="plname">Biscoff Brownie</div><div class="pltag">💚 Eggless · Lotus Biscoff</div><div class="pldesc">Caramelised biscuit magic</div><div class="plrat">★★★★★ 4.8 · 156 reviews</div></div>
+            <div class="plfoot"><span class="plprice">from ₹360</span><button class="abtn" onclick="event.stopPropagation();doAddCart(this)">+</button></div>
+          </div>
+        </div>
+        <div class="plcard" onclick="showPage('detail')">
+          <div class="plimg pi1">🥜</div>
+          <div class="plinfo">
+            <div><div class="plname">Assorted Brownie Box</div><div class="pltag">💚 Eggless · Mix of all flavours</div><div class="pldesc">Dbl, Triple, Nuts, Nutella, Biscoff, Oreo, KitKat</div><div class="plrat">★★★★★ 5.0 · 287 reviews</div></div>
+            <div class="plfoot"><span class="plprice">from ₹370</span><button class="abtn" onclick="event.stopPropagation();doAddCart(this)">+</button></div>
+          </div>
+        </div>
+        <div class="plcard" onclick="showPage('detail')">
+          <div class="plimg pi2">🌾</div>
+          <div class="plinfo">
+            <div><div class="plname">Ragi Brownie 🌿</div><div class="pltag">💚 Eggless · Healthy · Finger millet</div><div class="pldesc">Nutritious finger millet base</div><div class="plrat">★★★★☆ 4.7 · 98 reviews</div></div>
+            <div class="plfoot"><span class="plprice">from ₹360</span><button class="abtn" onclick="event.stopPropagation();doAddCart(this)">+</button></div>
+          </div>
+        </div>
+        <div class="plcard" onclick="showPage('detail')">
+          <div class="plimg pi3">🌾</div>
+          <div class="plinfo">
+            <div><div class="plname">Black Rice Brownie 🌿</div><div class="pltag">💚 Eggless · Antioxidant-rich</div><div class="pldesc">Black rice — superfood brownie</div><div class="plrat">★★★★★ 4.8 · 76 reviews</div></div>
+            <div class="plfoot"><span class="plprice">from ₹395</span><button class="abtn" onclick="event.stopPropagation();doAddCart(this)">+</button></div>
+          </div>
+        </div>
+        <div class="plcard" onclick="showPage('detail')">
+          <div class="plimg pi4">🌟</div>
+          <div class="plinfo">
+            <div><div class="plname">Couverture Classic 🌟</div><div class="pltag">💚 Eggless · Belgian chocolate</div><div class="pldesc">Luxury Belgian couverture chocolate</div><div class="plrat">★★★★★ 5.0 · 134 reviews</div></div>
+            <div class="plfoot"><span class="plprice">from ₹450</span><button class="abtn" onclick="event.stopPropagation();doAddCart(this)">+</button></div>
+          </div>
+        </div>
+        <div class="plcard" onclick="showPage('detail')">
+          <div class="plimg pi5">🎂</div>
+          <div class="plinfo">
+            <div><div class="plname">Custom Brownie Creation</div><div class="pltag">🎨 Made to Order · Price varies</div><div class="pldesc">Slab · Tower · Layer · Anniversary · Birthday</div><div class="plrat">★★★★★ 5.0 · Made to order</div></div>
+            <div class="plfoot"><span class="plprice" style="font-size:13px;font-family:'DM Sans'">Custom</span><button class="abtn" onclick="event.stopPropagation();doAddCart(this)">+</button></div>
+          </div>
+        </div>
+      </div>
+      <div style="height:8px"></div>
+      <div class="bnav">
+        <div class="ntab" onclick="showPage('home')"><div class="nicon">🏠</div><div class="nlbl">Home</div><div class="ndot"></div></div>
+        <div class="ntab on"><div class="nicon">🔍</div><div class="nlbl">Explore</div><div class="ndot"></div></div>
+        <div class="ntab" onclick="showPage('cart')"><div class="nicon">🛒</div><div class="nlbl">Cart</div><div class="ndot"></div></div>
+        <div class="ntab" onclick="showPage('home')"><div class="nicon">❤️</div><div class="nlbl">Saved</div><div class="ndot"></div></div>
+        <div class="ntab" onclick="showPage('profile')"><div class="nicon">👤</div><div class="nlbl">Profile</div><div class="ndot"></div></div>
+      </div>
+    </div><!-- /explore -->
+
+    <!-- ═══ DETAIL ═══ -->
+    <div class="page" id="page-detail">
+      <div class="dhero">🍫
+        <div class="back" onclick="goBack()">←</div>
+        <div class="dfav" onclick="toggleFav(this)">🤍</div>
+      </div>
+      <div class="dbody">
+        <div class="dtag" id="d-egg-tag">✓ Eggless 💚 · Fresh Baked · No Preservatives</div>
+        <div class="dname" id="d-name">Classic Fudge Brownie</div>
+        <div class="dsub" id="d-sub">Premium chocolate · Stays fresh 4–5 days</div>
+        <div class="drat-row"><div class="dstars">★★★★★</div><div class="drnum">4.9</div><div class="drcount">· 312 reviews</div></div>
+        <div class="dprice-row">
+          <div><div class="dprice" id="d-price">₹300</div><div class="dprice-sub">base price</div></div>
+          <div class="qty">
+            <button class="qbtn" onclick="chgQty(-1)">−</button>
+            <div class="qnum" id="qty-n">1</div>
+            <button class="qbtn" onclick="chgQty(1)">+</button>
+          </div>
+        </div>
+
+        <!-- TIER -->
+        <div class="dlabel">Choose Tier</div>
+        <div class="tier-row">
+          <div class="tbtn on" onclick="selTier(this,'premium')"><span class="ti">🍫</span>Premium</div>
+          <div class="tbtn" onclick="selTier(this,'couverture')"><span class="ti">🌟</span>Couverture</div>
+        </div>
+
+        <!-- EGG -->
+        <div class="dlabel">Egg Preference</div>
+        <div class="egg-row">
+          <div class="ebtn eg on" onclick="selEgg(this,'eggless')">💚 Eggless</div>
+          <div class="ebtn ee" onclick="selEgg(this,'egg')">❤️ Contains Egg</div>
+        </div>
+
+        <!-- VARIANT -->
+        <div class="dlabel">Choose Variety <span class="dlabel-badge">(scroll)</span></div>
+        <div class="vlist" id="v-list">
+          <div class="vrow on" onclick="selVar(this,0)"><div><div class="vname">Classic Fudge Chocolate</div><div class="vtag">Rich dark chocolate goodness</div></div><div class="vchk">✓</div></div>
+          <div class="vrow" onclick="selVar(this,1)"><div><div class="vname">Double Chocolate</div><div class="vtag">Dark + Milk chocolate</div></div><div class="vchk"></div></div>
+          <div class="vrow" onclick="selVar(this,2)"><div><div class="vname">Triple Chocolate</div><div class="vtag">Dark + Milk + White</div></div><div class="vchk"></div></div>
+          <div class="vrow" onclick="selVar(this,3)"><div><div class="vname">Nutella Brownie</div><div class="vtag">🍯 Hazelnut chocolate spread</div></div><div class="vchk"></div></div>
+          <div class="vrow" onclick="selVar(this,4)"><div><div class="vname">Biscoff Brownie</div><div class="vtag">🍪 Lotus Biscoff swirl</div></div><div class="vchk"></div></div>
+          <div class="vrow" onclick="selVar(this,5)"><div><div class="vname">Nuts Brownie</div><div class="vtag">🥜 Premium roasted nuts</div></div><div class="vchk"></div></div>
+          <div class="vrow" onclick="selVar(this,6)"><div><div class="vname">Mixed Seeds Brownie</div><div class="vtag">🌿 Healthy seeds blend</div></div><div class="vchk"></div></div>
+          <div class="vrow" onclick="selVar(this,7)"><div><div class="vname">Seeds with Nuts</div><div class="vtag">🌱 Super seeds + nuts combo</div></div><div class="vchk"></div></div>
+          <div class="vrow" onclick="selVar(this,8)"><div><div class="vname">Walnut Brownie</div><div class="vtag">🌰 Crunchy California walnuts</div></div><div class="vchk"></div></div>
+          <div class="vrow" onclick="selVar(this,9)"><div><div class="vname">Hazelnut Brownie</div><div class="vtag">🌰 Roasted hazelnut delight</div></div><div class="vchk"></div></div>
+          <div class="vrow" onclick="selVar(this,10)"><div><div class="vname">Assorted Brownie</div><div class="vtag">Mix: Dbl·Triple·Nuts·Nutella·Biscoff·Oreo·KitKat</div></div><div class="vchk"></div></div>
+          <div class="vrow" onclick="selVar(this,11)"><div><div class="vname">Ragi Brownie 🌾</div><div class="vtag">Healthy finger millet base</div></div><div class="vchk"></div></div>
+          <div class="vrow" onclick="selVar(this,12)"><div><div class="vname">Wheat Brownie 🌾</div><div class="vtag">Wholesome whole wheat</div></div><div class="vchk"></div></div>
+          <div class="vrow" onclick="selVar(this,13)"><div><div class="vname">Black Rice Brownie 🌾</div><div class="vtag">Antioxidant-rich superfood</div></div><div class="vchk"></div></div>
+          <div class="vrow" onclick="selVar(this,14)"><div><div class="vname">Pearl Millet Brownie 🌾</div><div class="vtag">Kambu — nutritious &amp; hearty</div></div><div class="vchk"></div></div>
+        </div>
+
+        <!-- PACK SIZE -->
+        <div class="dlabel">Pack Size</div>
+        <div class="packgrid">
+          <div class="pcrd on" onclick="selPack(this,0)"><div class="pc-pcs">4 pcs</div><div class="pc-g">250g</div><div class="pc-price" id="pp0">₹300</div><div class="pc-badge">Taster 🎯</div></div>
+          <div class="pcrd" onclick="selPack(this,1)"><div class="pc-pcs">9 pcs</div><div class="pc-g">500g</div><div class="pc-price" id="pp1">₹590</div><div class="pc-badge">Popular 🔥</div></div>
+          <div class="pcrd" onclick="selPack(this,2)"><div class="pc-pcs">16 pcs</div><div class="pc-g">1 kg</div><div class="pc-price" id="pp2">₹1170</div><div class="pc-badge">Best Value 💎</div></div>
+        </div>
+
+        <!-- TOPPINGS -->
+        <div class="dlabel">Add Toppings (Ganache) <span class="dlabel-badge">Optional · add-on pricing</span></div>
+        <div class="toplist">
+          <div class="trow" onclick="togTop(this,60,120,240,'Milk Ganache')"><div class="tl"><div class="tico">🍫</div><div><div class="tname">Milk Chocolate Ganache</div><div class="tdesc">Creamy milk choco drizzle</div></div></div><div class="tr-right"><div class="tprc" data-p="60,120,240">+₹60</div><div class="tchk"></div></div></div>
+          <div class="trow" onclick="togTop(this,45,90,180,'Dark Ganache')"><div class="tl"><div class="tico">🍫</div><div><div class="tname">Dark Chocolate Ganache</div><div class="tdesc">Rich dark chocolate coating</div></div></div><div class="tr-right"><div class="tprc" data-p="45,90,180">+₹45</div><div class="tchk"></div></div></div>
+          <div class="trow" onclick="togTop(this,70,140,280,'White Ganache')"><div class="tl"><div class="tico">🥛</div><div><div class="tname">White Chocolate Ganache</div><div class="tdesc">Smooth white chocolate</div></div></div><div class="tr-right"><div class="tprc" data-p="70,140,280">+₹70</div><div class="tchk"></div></div></div>
+          <div class="trow" onclick="togTop(this,55,110,190,'Nutella Topping')"><div class="tl"><div class="tico">🍯</div><div><div class="tname">Nutella</div><div class="tdesc">Hazelnut chocolate spread</div></div></div><div class="tr-right"><div class="tprc" data-p="55,110,190">+₹55</div><div class="tchk"></div></div></div>
+          <div class="trow" onclick="togTop(this,40,80,165,'Biscoff Topping')"><div class="tl"><div class="tico">🍪</div><div><div class="tname">Biscoff</div><div class="tdesc">Lotus caramelised biscuit spread</div></div></div><div class="tr-right"><div class="tprc" data-p="40,80,165">+₹40</div><div class="tchk"></div></div></div>
+          <div class="trow" onclick="togTop(this,105,160,320,'Ganache+Nuts')"><div class="tl"><div class="tico">🥜</div><div><div class="tname">Ganache + Nuts</div><div class="tdesc">Ganache drizzle + roasted nuts</div></div></div><div class="tr-right"><div class="tprc" data-p="105,160,320">+₹105</div><div class="tchk"></div></div></div>
+          <div class="trow" onclick="togTop(this,75,120,240,'Ganache+Oreo')"><div class="tl"><div class="tico">🖤</div><div><div class="tname">Ganache + Oreo</div><div class="tdesc">Crushed Oreo on top</div></div></div><div class="tr-right"><div class="tprc" data-p="75,120,240">+₹75</div><div class="tchk"></div></div></div>
+          <div class="trow" onclick="togTop(this,65,140,250,'Nutella+Hazelnut')"><div class="tl"><div class="tico">🌰</div><div><div class="tname">Nutella + Hazelnut</div><div class="tdesc">Double hazelnut indulgence</div></div></div><div class="tr-right"><div class="tprc" data-p="65,140,250">+₹65</div><div class="tchk"></div></div></div>
+          <div class="trow" onclick="togTop(this,130,260,520,'Ferrero Rocher')"><div class="tl"><div class="tico">✨</div><div><div class="tname">Ferrero Rocher</div><div class="tdesc">Premium chocolate truffles on top</div></div></div><div class="tr-right"><div class="tprc" data-p="130,260,520">+₹130</div><div class="tchk"></div></div></div>
+        </div>
+        <div class="ttotal"><span class="ttl-lbl">Toppings total</span><span class="ttl-val" id="top-total">+₹0</span></div>
+
+        <!-- CUSTOM BOX -->
+        <div class="custom-box">
+          <div class="cb-title">🎂 Custom Brownie Creations</div>
+          <div class="cb-sub">Price varies by customization. Contact us to design your dream brownie creation!</div>
+          <div class="cb-pills">
+            <span class="cb-pill">🎂 Anniversary Slab</span>
+            <span class="cb-pill">🎉 Birthday Slab</span>
+            <span class="cb-pill">🤰 Pregnancy Slab</span>
+            <span class="cb-pill">🏰 Brownie Tower</span>
+            <span class="cb-pill">🎁 Brownie Layer</span>
+          </div>
+          <div class="cb-cta">📞 Enquire — +91 99721 41890</div>
+        </div>
+
+        <div class="dlabel">About NSDI Brownies</div>
+        <div class="about-txt">Every brownie is freshly baked in small batches — no preservatives, no artificial flavours. Eggless & egg variants available. Stays fresh 4–5 days. Delivered across Tamil Nadu. 🌿</div>
+        <div class="ingr-row">
+          <div class="ingr">🌿 No Preservatives</div>
+          <div class="ingr">🍫 Premium Choco</div>
+          <div class="ingr">💚 Eggless Option</div>
+          <div class="ingr">📦 Gift Ready</div>
+          <div class="ingr">⏱ 4–5 Days Fresh</div>
+          <div class="ingr">🚚 TN Delivery</div>
+        </div>
+
+        <button class="cart-btn" id="cart-cta" onclick="showPage('cart')">🛒 Add to Cart — ₹300</button>
+      </div>
+    </div><!-- /detail -->
+
+    <!-- ═══ CART ═══ -->
+    <div class="page" id="page-cart">
+      <div class="cart-hdr">
+        <div class="back" style="position:static;width:36px;height:36px" onclick="goBack()">←</div>
+        <div><div class="cart-title">My Cart</div><div class="cart-count">3 items</div></div>
+      </div>
+      <div class="citems">
+        <div class="citem"><div class="cimg cii1">🍫</div><div class="cinfo"><div class="cname">Classic Fudge Brownie</div><div class="csize">💚 Eggless · 9pcs · Premium</div><div class="cfoot"><span class="cprice">₹590</span><div class="cqty"><div class="cqbtn">−</div><div class="cqnum">2</div><div class="cqbtn">+</div></div></div></div></div>
+        <div class="citem"><div class="cimg cii2">🍯</div><div class="cinfo"><div class="cname">Nutella Brownie</div><div class="csize">💚 Eggless · 4pcs · + Dark Ganache</div><div class="cfoot"><span class="cprice">₹415</span><div class="cqty"><div class="cqbtn">−</div><div class="cqnum">1</div><div class="cqbtn">+</div></div></div></div></div>
+        <div class="citem"><div class="cimg cii3">🌟</div><div class="cinfo"><div class="cname">Couverture Triple Choco</div><div class="csize">💚 Eggless · 4pcs · Belgian</div><div class="cfoot"><span class="cprice">₹750</span><div class="cqty"><div class="cqbtn">−</div><div class="cqnum">1</div><div class="cqbtn">+</div></div></div></div></div>
+      </div>
+      <div class="promo-row"><span style="font-size:17px">🏷️</span><input class="promo-in" type="text" placeholder="Enter promo code (try CHOCO20)"><div class="promo-apply">Apply</div></div>
+      <div class="summary">
+        <div class="srow"><span class="slbl">Subtotal (4 items)</span><span class="sval">₹2,345</span></div>
+        <div class="srow"><span class="slbl">Delivery</span><span class="sval" style="color:var(--green)">FREE</span></div>
+        <div class="srow"><span class="slbl">Promo (CHOCO20)</span><span class="sval" style="color:var(--pink)">−₹469</span></div>
+        <hr class="sdiv">
+        <div class="srow"><span class="stlbl">Total</span><span class="stval">₹1,876</span></div>
+      </div>
+      <button class="checkout-btn" onclick="goToCheckout()">🎉 Proceed to Checkout — ₹1,876</button>
+      <div class="bnav">
+        <div class="ntab" onclick="showPage('home')"><div class="nicon">🏠</div><div class="nlbl">Home</div><div class="ndot"></div></div>
+        <div class="ntab" onclick="showPage('explore')"><div class="nicon">🔍</div><div class="nlbl">Explore</div><div class="ndot"></div></div>
+        <div class="ntab on"><div class="nicon">🛒</div><div class="nlbl">Cart</div><div class="ndot"></div></div>
+        <div class="ntab" onclick="showPage('home')"><div class="nicon">❤️</div><div class="nlbl">Saved</div><div class="ndot"></div></div>
+        <div class="ntab" onclick="showPage('profile')"><div class="nicon">👤</div><div class="nlbl">Profile</div><div class="ndot"></div></div>
+      </div>
+    </div><!-- /cart -->
+
+    <!-- ═══ PROFILE ═══ -->
+    <div class="page" id="page-profile">
+      <div class="prof-hero">
+        <div class="pavatar">👩</div>
+        <div class="pname">Priya Krishnan</div>
+        <div class="pemail">priya.k@gmail.com · Chennai</div>
+        <div class="pstats">
+          <div class="pstat"><div class="pstat-n">12</div><div class="pstat-l">Orders</div></div>
+          <div class="pstat"><div class="pstat-n">620</div><div class="pstat-l">Points</div></div>
+          <div class="pstat"><div class="pstat-n">5</div><div class="pstat-l">Reviews</div></div>
+        </div>
+      </div>
+      <div class="lcard">
+        <div class="lt">🥈 Silver Member</div>
+        <div class="lpts">620 <span>points</span></div>
+        <div class="lbar"><div class="lbar-fill"></div></div>
+        <div class="lsub">380 pts more to unlock 🥇 Gold membership</div>
+      </div>
+      <div class="msec">
+        <div class="mgrp">Account</div>
+        <div class="mitem"><div class="mico" style="background:rgba(107,47,206,.15)">📦</div><div class="mtxt"><div class="mtitle">My Orders</div><div class="msub">Track, reorder, review</div></div><span class="mbadge">1 Active</span><span class="marrow">›</span></div>
+        <div class="mitem"><div class="mico" style="background:rgba(244,114,182,.15)">❤️</div><div class="mtxt"><div class="mtitle">Saved Items</div><div class="msub">Your wishlist</div></div><span class="marrow">›</span></div>
+        <div class="mitem"><div class="mico" style="background:rgba(34,197,94,.15)">📍</div><div class="mtxt"><div class="mtitle">Delivery Addresses</div><div class="msub">3 saved addresses</div></div><span class="marrow">›</span></div>
+        <div class="mgrp">Preferences</div>
+        <div class="mitem"><div class="mico" style="background:rgba(107,47,206,.15)">🎂</div><div class="mtxt"><div class="mtitle">Custom Cake Orders</div><div class="msub">Design your dream creation</div></div><span class="marrow">›</span></div>
+        <div class="mitem"><div class="mico" style="background:rgba(107,47,206,.15)">💳</div><div class="mtxt"><div class="mtitle">Payment Methods</div><div class="msub">UPI, Cards, COD</div></div><span class="marrow">›</span></div>
+        <div class="mitem"><div class="mico" style="background:rgba(192,132,232,.1)">📸</div><div class="mtxt"><div class="mtitle">Follow on Instagram</div><div class="msub">@nsdi.chococravings</div></div><span class="marrow">›</span></div>
+        <div class="mitem"><div class="mico" style="background:rgba(255,100,100,.1)">🚪</div><div class="mtxt"><div class="mtitle">Sign Out</div><div class="msub"></div></div><span class="marrow">›</span></div>
+      </div>
+      <div style="height:10px"></div>
+      <div class="bnav">
+        <div class="ntab" onclick="showPage('home')"><div class="nicon">🏠</div><div class="nlbl">Home</div><div class="ndot"></div></div>
+        <div class="ntab" onclick="showPage('explore')"><div class="nicon">🔍</div><div class="nlbl">Explore</div><div class="ndot"></div></div>
+        <div class="ntab" onclick="showPage('cart')"><div class="nicon">🛒</div><div class="nlbl">Cart</div><div class="ndot"></div></div>
+        <div class="ntab" onclick="showPage('home')"><div class="nicon">❤️</div><div class="nlbl">Saved</div><div class="ndot"></div></div>
+        <div class="ntab on"><div class="nicon">👤</div><div class="nlbl">Profile</div><div class="ndot"></div></div>
+      </div>
+    </div><!-- /profile -->
+
+
+    <!-- ═══ CHECKOUT ═══ -->
+    <div class="page" id="page-checkout">
+      <div class="ck-hdr">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div class="back" style="position:static;width:36px;height:36px" onclick="goBack()">←</div>
+          <div>
+            <div class="ck-title">Checkout</div>
+            <div class="ck-sub">Complete your order · Delivery across Tamil Nadu</div>
+          </div>
+        </div>
+      </div>
+      <div class="ck-body">
+
+        <!-- DELIVERY INFO -->
+        <div class="ck-section">
+          <div class="ck-label">📍 Delivery Details</div>
+          <div class="ck-field-wrap">
+            <input class="ck-field" id="ck-name" type="text" placeholder="Your full name *" required>
+          </div>
+          <div class="ck-row">
+            <input class="ck-field" id="ck-phone" type="tel" placeholder="+91 phone *" required>
+            <input class="ck-field" id="ck-email" type="email" placeholder="Email (optional)">
+          </div>
+          <div class="ck-field-wrap">
+            <input class="ck-field" id="ck-address" type="text" placeholder="Door no, Street, Area *" required>
+          </div>
+          <div class="ck-row">
+            <input class="ck-field" id="ck-city" type="text" placeholder="City *" required>
+            <input class="ck-field" id="ck-pin" type="text" placeholder="Pincode">
+          </div>
+          <div class="ck-field-wrap">
+            <textarea class="ck-field" id="ck-notes" rows="2" placeholder="Special instructions (optional)…" style="resize:none"></textarea>
+          </div>
+        </div>
+
+        <!-- PAYMENT -->
+        <div class="ck-section">
+          <div class="ck-label">💳 Payment Method</div>
+          <div class="pay-opts">
+            <div class="pay-opt on" onclick="selPay(this,'cod')"><div class="pay-ico">💵</div><div class="pay-lbl">Cash on Delivery</div></div>
+            <div class="pay-opt" onclick="selPay(this,'upi')"><div class="pay-ico">📱</div><div class="pay-lbl">UPI / GPay</div></div>
+            <div class="pay-opt" onclick="selPay(this,'card')"><div class="pay-ico">💳</div><div class="pay-lbl">Card</div></div>
+            <div class="pay-opt" onclick="selPay(this,'netbanking')"><div class="pay-ico">🏦</div><div class="pay-lbl">Net Banking</div></div>
+          </div>
+        </div>
+
+        <!-- ORDER SUMMARY -->
+        <div class="ck-section">
+          <div class="ck-label">🧾 Order Summary</div>
+          <div class="order-summary-box" id="ck-summary">
+            <div class="os-item">
+              <div><div class="os-name" id="ck-item-name">Classic Fudge Brownie</div><div class="os-desc" id="ck-item-desc">💚 Eggless · Premium · 4pcs · Qty: 1</div></div>
+              <div class="os-price" id="ck-item-price">₹300</div>
+            </div>
+          </div>
+          <div class="os-total-row">
+            <div class="os-total-lbl">Total to Pay</div>
+            <div class="os-total-val" id="ck-total">₹300</div>
+          </div>
+        </div>
+
+        <div class="ck-err" id="ck-err">⚠️ Please fill all required fields</div>
+        <button class="place-btn" id="place-btn" onclick="placeOrder()">
+          🎉 Place Order
+        </button>
+      </div>
+      <div style="height:20px"></div>
+    </div><!-- /checkout -->
+
+    <!-- ═══ SUCCESS ═══ -->
+    <div class="page" id="page-success">
+      <div class="succ-wrap">
+        <div class="succ-anim">✓</div>
+        <div class="succ-title">Order Placed! 🎉</div>
+        <div class="succ-sub">Your brownies are being prepared fresh! You'll receive a WhatsApp confirmation shortly.</div>
+
+        <div class="order-card">
+          <div class="oc-row">
+            <div>
+              <div class="oc-lbl">Order ID</div>
+              <div class="oc-id" id="succ-order-id">CC-000001</div>
+            </div>
+            <div style="text-align:right">
+              <div class="oc-lbl">Total Paid</div>
+              <div class="oc-val" id="succ-total">₹300</div>
+            </div>
+          </div>
+          <div class="oc-row" style="margin:0">
+            <div><div class="oc-lbl">Customer</div><div class="oc-val" id="succ-name">—</div></div>
+            <div style="text-align:right"><div class="oc-lbl">Payment</div><div class="oc-val" id="succ-pay">COD</div></div>
+          </div>
+        </div>
+
+        <div class="status-timeline">
+          <div class="stl-title">📦 Live Tracking</div>
+          <div class="stl-item"><div class="stl-dot done"></div><div><div class="stl-lbl">Order Placed</div><div class="stl-time" id="succ-time">—</div></div></div>
+          <div class="stl-item"><div class="stl-dot active"></div><div><div class="stl-lbl">Confirmed by NSDI</div><div class="stl-time">Usually within 15 min</div></div></div>
+          <div class="stl-item"><div class="stl-dot pending"></div><div><div class="stl-lbl">Baking in Progress 🍫</div><div class="stl-time">Fresh baked for you</div></div></div>
+          <div class="stl-item"><div class="stl-dot pending"></div><div><div class="stl-lbl">Out for Delivery 🚚</div><div class="stl-time">—</div></div></div>
+          <div class="stl-item"><div class="stl-dot pending"></div><div><div class="stl-lbl">Delivered ✓</div><div class="stl-time">—</div></div></div>
+        </div>
+
+        <button class="succ-wa-btn" id="succ-wa-btn">📲 Get WhatsApp Confirmation</button>
+        <button class="succ-home-btn" onclick="showPage('home')">← Back to Home</button>
+      </div>
+    </div><!-- /success -->
+
+    <!-- LOADING OVERLAY -->
+    <div class="loading-overlay" id="loading-overlay">
+      <div class="loader"></div>
+      <div class="loading-txt">Placing your order…</div>
+    </div>
+
+    </div><!-- /screen -->
+  </div><!-- /phone -->
+  <div class="toast" id="toast">✓ Added to cart!</div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+//  SUPABASE CONFIG — replace with your keys
+//  Get from: supabase.com → Project → Settings → API
+// ══════════════════════════════════════════════
+const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
+const SUPABASE_ANON_KEY = 'YOUR_ANON_PUBLIC_KEY';
+
+// Init Supabase client
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// NSDI WhatsApp number (receives order notifications)
+const NSDI_PHONE = '919972141890';
+
+// ── REAL PRICE DATA ──
+
+const P = {
+  premium:{
+    eggless:[[300,590,1170],[350,740,1350],[380,760,1440],[370,700,1370],[390,730,1420],[380,710,1440],[410,760,1470],[430,780,1490],[380,740,1410],[410,820,1590],[400,760,1440],[390,780,1510],[380,750,1490],[430,800,1590],[410,760,1470]],
+    egg:[[270,530,1020],[320,610,1200],[330,680,1290],[340,630,1220],[360,650,1270],[340,650,1290],[370,690,1320],[390,710,1340],[350,670,1260],[380,740,1440],[370,680,1290],[360,695,1390],[350,680,1340],[395,740,1440],[370,730,1420]]
+  },
+  couverture:{
+    eggless:[[490,940,1840],[620,1240,2440],[750,1290,2540],[550,1090,2140],[570,1140,2240],[560,1130,2060],[619,1160,2280],[640,1200,2360],[580,1120,2200],[590,1180,2320],[630,1260,2480],[485,1030,1990],[510,1020,2000],[545,1040,2049],[619,1160,2280]],
+    egg:[[450,860,1690],[580,1160,2290],[710,1210,2390],[510,1010,1990],[530,1060,2090],[520,970,1910],[540,1080,2130],[560,1120,2210],[520,1040,2050],[550,1100,2170],[590,1180,2330],[475,950,1840],[470,940,1850],[505,960,1890],[465,930,1830]]
+  }
+};
+
+let prevPage='home', qty=1, tier='premium', egg='eggless', varIdx=0, packIdx=0;
+let topAdds={}, topTotal=0;
+
+function getPrice(){ return P[tier][egg][varIdx][packIdx]; }
+
+function refreshPrices(){
+  const base=getPrice();
+  document.getElementById('d-price').textContent='₹'+base;
+  document.getElementById('cart-cta').textContent='🛒 Add to Cart — ₹'+((base+topTotal)*qty);
+  ['pp0','pp1','pp2'].forEach((id,i)=>{ const el=document.getElementById(id); if(el) el.textContent='₹'+P[tier][egg][varIdx][i]; });
+  document.querySelectorAll('.tprc').forEach(el=>{
+    const ps=el.dataset.p.split(',').map(Number);
+    el.textContent='+₹'+(ps[packIdx]||ps[0]);
+  });
+}
+
+function selTier(el,t){
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on'); tier=t;
+  resetToppings(); refreshPrices();
+}
+function selEgg(el,e){
+  document.querySelectorAll('.ebtn').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on'); egg=e;
+  const tag=document.getElementById('d-egg-tag');
+  if(tag) tag.textContent=e==='eggless'?'✓ Eggless 💚 · Fresh Baked · No Preservatives':'✓ Contains Egg ❤️ · Fresh Baked · No Preservatives';
+  refreshPrices();
+}
+function selVar(el,i){
+  document.querySelectorAll('.vrow').forEach(r=>{r.classList.remove('on');r.querySelector('.vchk').textContent='';});
+  el.classList.add('on'); el.querySelector('.vchk').textContent='✓'; varIdx=i;
+  resetToppings(); refreshPrices();
+}
+function selPack(el,i){
+  document.querySelectorAll('.pcrd').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on'); packIdx=i;
+  resetToppings(); refreshPrices();
+}
+function togTop(el,p4,p9,p16,name){
+  const prices=[p4,p9,p16]; const price=prices[packIdx];
+  const on=el.classList.toggle('on');
+  const chk=el.querySelector('.tchk');
+  if(on){chk.textContent='✓';topAdds[name]=price;}
+  else{chk.textContent='';delete topAdds[name];}
+  topTotal=Object.values(topAdds).reduce((s,v)=>s+v,0);
+  document.getElementById('top-total').textContent='+₹'+topTotal;
+  const base=getPrice();
+  document.getElementById('cart-cta').textContent='🛒 Add to Cart — ₹'+((base+topTotal)*qty);
+}
+function resetToppings(){
+  topAdds={}; topTotal=0;
+  document.querySelectorAll('.trow').forEach(r=>{r.classList.remove('on');r.querySelector('.tchk').textContent='';});
+  const tt=document.getElementById('top-total'); if(tt) tt.textContent='+₹0';
+}
+function chgQty(d){
+  qty=Math.max(1,qty+d);
+  document.getElementById('qty-n').textContent=qty;
+  document.getElementById('cart-cta').textContent='🛒 Add to Cart — ₹'+((getPrice()+topTotal)*qty);
+}
+
+// ── HEROES ──
+const heroes=[
+  {bg:'hc-1',emoji:'🍫',badge:'🔥 Best Seller',title:'Classic Fudge<br>Brownie',sub:'Eggless 💚 · 4pcs ₹300 · 9pcs ₹590 · 16pcs ₹1170'},
+  {bg:'hc-2',emoji:'🌟',badge:'⭐ Premium Tier',title:'Couverture<br>Chocolate Brownie',sub:'Belgian choco · Eggless 💚 · From ₹490 for 4pcs'},
+  {bg:'hc-3',emoji:'🎂',badge:'🎨 Made to Order',title:'Custom Brownie<br>Creations',sub:'Slab · Tower · Layer · Birthday · Anniversary'},
+];
+let hi=0;
+function setHero(i){
+  const card=document.getElementById('hero-card');
+  const h=heroes[i];
+  card.className='hero-card '+h.bg;
+  document.getElementById('hc-emoji').textContent=h.emoji;
+  document.getElementById('hc-badge').textContent=h.badge;
+  document.getElementById('hc-title').innerHTML=h.title;
+  document.getElementById('hc-sub').textContent=h.sub;
+  document.querySelectorAll('.hdot').forEach((d,j)=>d.classList.toggle('on',j===i));
+}
+setInterval(()=>{hi=(hi+1)%3;setHero(hi);},4200);
+
+// ── NAV ──
+function showPage(name){
+  const cur=document.querySelector('.page.active');
+  if(cur){prevPage=cur.id.replace('page-','');cur.classList.remove('active');cur.classList.add('out');setTimeout(()=>cur.classList.remove('out'),420);}
+  const nxt=document.getElementById('page-'+name);
+  if(nxt){nxt.classList.add('active');nxt.scrollTop=0;}
+}
+function goBack(){ showPage(prevPage||'home'); }
+function toggleFav(el){ el.textContent=el.textContent==='🤍'?'❤️':'🤍'; }
+function selCat(el){ document.querySelectorAll('.cat').forEach(c=>c.classList.remove('on')); el.classList.add('on'); }
+function selTag(el){ document.querySelectorAll('.ftag').forEach(t=>t.classList.remove('on')); el.classList.add('on'); }
+
+let tTimer;
+function doAddCart(btn){
+  const o=btn.textContent; btn.textContent='✓'; btn.style.background='var(--green)';
+  setTimeout(()=>{btn.textContent=o;btn.style.background='';},1100);
+  const t=document.getElementById('toast'); clearTimeout(tTimer);
+  t.classList.add('show'); tTimer=setTimeout(()=>t.classList.remove('show'),2000);
+}
+
+// ── ORDER STATE ──
+let cartItems = [];
+let currentPayMethod = 'cod';
+let currentOrderTotal = 0;
+
+// ── CHECKOUT HELPERS ──
+function goToCheckout() {
+  // Build cart from current selection
+  const name = (['Classic Fudge','Double Choco','Triple Choco','Nutella','Biscoff',
+    'Nuts','Mixed Seeds','Seeds+Nuts','Walnut','Hazelnut','Assorted',
+    'Ragi','Wheat','Black Rice','Pearl Millet'])[varIdx] + ' Brownie';
+  const packLabel = ['4pcs (250g)','9pcs (500g)','16pcs (1kg)'][packIdx];
+  const base = getPrice();
+  const grand = (base + topTotal) * qty;
+  currentOrderTotal = grand;
+
+  // Collect selected toppings
+  const tops = Object.keys(topAdds).join(', ') || 'None';
+
+  // Update checkout summary
+  document.getElementById('ck-item-name').textContent = name;
+  document.getElementById('ck-item-desc').textContent =
+    `${egg==='eggless'?'💚 Eggless':'❤️ With Egg'} · ${tier==='couverture'?'🌟 Couverture':'Premium'} · ${packLabel} · Qty: ${qty}` +
+    (tops !== 'None' ? ` · Toppings: ${tops}` : '');
+  document.getElementById('ck-item-price').textContent = '₹' + grand;
+  document.getElementById('ck-total').textContent = '₹' + grand;
+
+  // Store cart for order
+  cartItems = [{
+    name, tier, egg,
+    pack: packLabel, qty,
+    base_price: base,
+    toppings: Object.keys(topAdds),
+    topping_price: topTotal,
+    line_total: grand
+  }];
+
+  showPage('checkout');
+}
+
+function selPay(el, method) {
+  document.querySelectorAll('.pay-opt').forEach(o => o.classList.remove('on'));
+  el.classList.add('on');
+  currentPayMethod = method;
+}
+
+// ── GENERATE ORDER NUMBER ──
+function genOrderNum() {
+  const ts = Date.now().toString().slice(-6);
+  const rand = Math.floor(Math.random() * 100).toString().padStart(2,'0');
+  return 'CC-' + ts + rand;
+}
+
+// ── FORMAT DATE ──
+function fmtDate(d) {
+  return new Date(d).toLocaleString('en-IN', {
+    day:'2-digit', month:'short', year:'numeric',
+    hour:'2-digit', minute:'2-digit'
+  });
+}
+
+// ── WHATSAPP MESSAGE BUILDERS ──
+function buildOwnerMsg(order) {
+  return encodeURIComponent(
+    `🔔 *NEW ORDER — ${order.order_number}*
+
+` +
+    `👤 *Customer:* ${order.customer_name}
+` +
+    `📞 *Phone:* ${order.customer_phone}
+` +
+    `📍 *Address:* ${order.delivery_address}, ${order.city} ${order.pincode || ''}
+
+` +
+    `🛒 *Items:*
+` +
+    order.items.map(i =>
+      `• ${i.name} (${i.tier}) — ${i.egg} — ${i.pack} × ${i.qty}` +
+      (i.toppings.length ? `
+  Toppings: ${i.toppings.join(', ')}` : '')
+    ).join('
+') + '
+
+' +
+    `💰 *Total: ₹${order.total}*
+` +
+    `💳 *Payment: ${order.payment_method.toUpperCase()}*
+` +
+    (order.special_notes ? `📝 *Notes:* ${order.special_notes}
+` : '') +
+    `
+⏰ ${fmtDate(order.created_at)}
+` +
+    `
+Reply to confirm: *CONFIRM ${order.order_number}*`
+  );
+}
+
+function buildCustomerMsg(order) {
+  return encodeURIComponent(
+    `✅ *Order Confirmed — ${order.order_number}*
+
+` +
+    `Hi ${order.customer_name}! 🍫
+
+` +
+    `Your NSDI ChocoCravings order has been placed successfully!
+
+` +
+    `🛒 *${order.items[0].name}* — ${order.items[0].pack}
+` +
+    `💰 *Total: ₹${order.total}*
+` +
+    `💳 Payment: ${order.payment_method.toUpperCase()}
+
+` +
+    `📍 Delivery to: ${order.delivery_address}, ${order.city}
+
+` +
+    `We'll WhatsApp you once your order is confirmed and ready! 🚀
+
+` +
+    `📞 Questions? Call us: +91 99721 41890
+` +
+    `📸 Instagram: @nsdi.chococravings
+
+` +
+    `_Happy to serve fresh!! — NSDI ChocoCravings_`
+  );
+}
+
+// ── PLACE ORDER (Supabase) ──
+async function placeOrder() {
+  // Validate
+  const name = document.getElementById('ck-name').value.trim();
+  const phone = document.getElementById('ck-phone').value.trim();
+  const address = document.getElementById('ck-address').value.trim();
+  const city = document.getElementById('ck-city').value.trim();
+  const email = document.getElementById('ck-email').value.trim();
+  const pin = document.getElementById('ck-pin').value.trim();
+  const notes = document.getElementById('ck-notes').value.trim();
+  const errEl = document.getElementById('ck-err');
+
+  if (!name || !phone || !address || !city) {
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+
+  // Show loader
+  const overlay = document.getElementById('loading-overlay');
+  overlay.classList.add('show');
+  document.getElementById('place-btn').disabled = true;
+
+  const orderNum = genOrderNum();
+  const orderData = {
+    order_number: orderNum,
+    customer_name: name,
+    customer_phone: phone.startsWith('+') ? phone : '+91' + phone.replace(/^0/,''),
+    customer_email: email || null,
+    delivery_address: address,
+    city, pincode: pin || null,
+    items: cartItems,
+    subtotal: cartItems.reduce((s,i) => s + i.base_price * i.qty, 0),
+    topping_total: topTotal * qty,
+    delivery_fee: 0,
+    total: currentOrderTotal,
+    payment_method: currentPayMethod,
+    egg_preference: egg,
+    special_notes: notes || null,
+    status: 'pending',
+    created_at: new Date().toISOString()
+  };
+
+  try {
+    // 1. Save to Supabase
+    const { data, error } = await db.from('orders').insert([orderData]).select().single();
+    if (error) throw error;
+
+    overlay.classList.remove('show');
+
+    // 2. Update success page
+    document.getElementById('succ-order-id').textContent = orderNum;
+    document.getElementById('succ-total').textContent = '₹' + currentOrderTotal;
+    document.getElementById('succ-name').textContent = name;
+    document.getElementById('succ-pay').textContent = currentPayMethod.toUpperCase();
+    document.getElementById('succ-time').textContent = fmtDate(orderData.created_at);
+
+    // 3. WhatsApp button — owner notification
+    const ownerWA = document.getElementById('succ-wa-btn');
+    ownerWA.onclick = () => {
+      // Notify owner
+      window.open(`https://wa.me/${NSDI_PHONE}?text=${buildOwnerMsg(orderData)}`, '_blank');
+      // Also open customer confirmation after 1s
+      setTimeout(() => {
+        const custPhone = phone.replace(/[^0-9]/g,'');
+        window.open(`https://wa.me/${custPhone}?text=${buildCustomerMsg(orderData)}`, '_blank');
+      }, 1000);
+    };
+
+    // 4. Show success page
+    showPage('success');
+
+  } catch (err) {
+    overlay.classList.remove('show');
+    document.getElementById('place-btn').disabled = false;
+
+    // Fallback — still show success with WhatsApp only if Supabase not configured
+    if (SUPABASE_URL.includes('YOUR_PROJECT_ID')) {
+      document.getElementById('succ-order-id').textContent = orderNum;
+      document.getElementById('succ-total').textContent = '₹' + currentOrderTotal;
+      document.getElementById('succ-name').textContent = name;
+      document.getElementById('succ-pay').textContent = currentPayMethod.toUpperCase();
+      document.getElementById('succ-time').textContent = fmtDate(new Date().toISOString());
+      document.getElementById('succ-wa-btn').onclick = () => {
+        window.open(`https://wa.me/${NSDI_PHONE}?text=${buildOwnerMsg({...orderData, created_at: new Date().toISOString()})}`, '_blank');
+      };
+      showPage('success');
+    } else {
+      alert('Order failed: ' + err.message + '\nPlease try again or call +91 99721 41890');
+    }
+  }
+}
+
+</script>
+</body>
+</html>
