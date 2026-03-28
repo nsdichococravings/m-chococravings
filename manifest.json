@@ -2,7 +2,7 @@
   "name": "NSDI ChocoCravings",
   "short_name": "ChocoCravings",
   "description": "Handcrafted brownies & cakes delivered fresh across Tamil Nadu",
-  "start_url": "/index.html",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
