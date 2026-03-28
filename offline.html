@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NSDI ChocoCravings — Offline</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:#07000f;font-family:'Segoe UI',sans-serif;
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:24px;
+}
+.card{
+  max-width:340px;width:100%;text-align:center;
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:28px;padding:40px 28px;
+}
+.icon{font-size:64px;margin-bottom:20px;animation:bob 3s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+h1{font-size:22px;color:#F5EEFF;margin-bottom:8px}
+h1 span{color:#C084E8}
+p{font-size:14px;color:#9a78c0;line-height:1.7;margin-bottom:28px}
+.brand{font-size:11px;color:#4a2870;letter-spacing:2px;text-transform:uppercase;margin-bottom:24px}
+button{
+  width:100%;padding:15px;
+  background:linear-gradient(135deg,#8B2FC9,#C084E8);
+  color:#07000f;font-size:14px;font-weight:700;
+  border:none;border-radius:16px;cursor:pointer;
+  margin-bottom:12px;
+}
+.wa-btn{
+  width:100%;padding:14px;
+  background:linear-gradient(135deg,#25D366,#128C7E);
+  color:#fff;font-size:13px;font-weight:700;
+  border:none;border-radius:16px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="icon">🍫</div>
+  <div class="brand">NSDI ✦ ChocoCravings</div>
+  <h1>You're <span>Offline</span></h1>
+  <p>Looks like you lost your internet connection. Please check your network and try again.</p>
+  <p style="font-size:12px;color:#4a2870;margin-bottom:24px">Your cart and saved items are safe — they'll be here when you're back online.</p>
+  <button onclick="window.location.reload()">🔄 Try Again</button>
+  <button class="wa-btn" onclick="window.open('https://wa.me/919973141898','_blank')">
+    📲 WhatsApp Us Instead
+  </button>
+</div>
+</body>
+</html>
