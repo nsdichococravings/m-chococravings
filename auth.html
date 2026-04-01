@@ -8,11 +8,11 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --dark:#07000f;--deep:#0f0020;--brown:#2d0055;
-  --caramel:#8B2FC9;--gold:#C084E8;--amber:#B56FE8;
-  --cream:#F5EEFF;--muted:#9a78c0;--dim:#4a2870;
-  --green:#4caf7d;--pink:#ff6b8a;--blue:#4a90d9;--purple:#8B2FC9;
-  --card:rgba(255,255,255,.05);--border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.15);
+  --dark:#fcfcfc;--deep:#fcfcfc;--brown:#fcfcfc;
+  --caramel:#6e0977;--gold:#6e0977;--amber:#6e0977;
+  --cream:#000000;--muted:#520758;--dim:#fcfcfc;
+  --green:#6e0977;--pink:#6e0977;--blue:#6e0977;--purple:#6e0977;
+  --card:rgba(19, 1, 1, 0.993);--border:rgb(8, 0, 0);--border2:rgb(15, 1, 1);
 }
 
 body{
@@ -45,7 +45,7 @@ body{
 
 /* ── SPLASH ── */
 #pg-splash{
-  background:linear-gradient(160deg,#1a0038 0%,#0f0022 50%,#07000f 100%);
+  background:linear-gradient(160deg,#fcfcfc 0%,#fcfcfc 50%,#fcfcfc 100%);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   position:relative;overflow:hidden;
 }
@@ -68,7 +68,7 @@ body{
 }
 @keyframes iconBob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-8px) rotate(3deg)}}
 
-.splash-tag{font-size:11px;color:var(--caramel);letter-spacing:4px;text-transform:uppercase;font-weight:600;margin-bottom:8px}
+.splash-tag{font-size: 20px;    color: var(--caramel);    letter-spacing: 6px;    text-transform: uppercase;    font-weight: 900;    margin-bottom: 8px;}
 .splash-name{font-family:'Playfair Display',serif;font-size:36px;font-weight:900;color:var(--gold);line-height:1;text-shadow:0 0 50px rgba(192,132,232,.5)}
 .splash-name em{color:var(--cream);font-style:italic}
 .splash-sub{font-size:13px;color:var(--muted);margin-top:10px;line-height:1.6;max-width:240px;text-align:center}
@@ -99,10 +99,10 @@ body{
 /* ── AUTH SHARED ── */
 .auth-bg{
   min-height:100%;
-  background:linear-gradient(170deg,#140028 0%,#0d0020 40%,var(--dark) 100%);
+  background:linear-gradient(170deg,#c1a8da 0%,#dbdadd 40%,var(--dark) 100%);
   position:relative;overflow:hidden;
 }
-.auth-wave{position:absolute;top:0;left:0;right:0;height:340px;background:linear-gradient(160deg,#2d0055,#110020);clip-path:ellipse(120% 100% at 50% 0%);z-index:0}
+.auth-wave{position:absolute;top:0;left:0;right:0;height:340px;background:linear-gradient(160deg,#fcfcfc,#fcfcfc);clip-path:ellipse(120% 100% at 50% 0%);z-index:0}
 .auth-orb{position:absolute;border-radius:50%;filter:blur(70px);pointer-events:none;z-index:1}
 .ao1{width:250px;height:250px;background:rgba(139,47,201,.25);top:-50px;right:-60px;animation:pulse 5s ease-in-out infinite}
 .ao2{width:160px;height:160px;background:rgba(192,132,232,.15);top:150px;left:-40px;animation:pulse 7s ease-in-out infinite reverse}
@@ -307,7 +307,7 @@ body{
 <body>
 
 <!-- ─────────── PANEL: FEATURE INFO ─────────── -->
-<div style="max-width:340px;padding:40px 10px;color:var(--cream)">
+<!--<div style="max-width:340px;padding:40px 10px;color:var(--cream)">
   <div style="font-size:10px;color:var(--caramel);letter-spacing:3px;text-transform:uppercase;margin-bottom:8px">Auth System</div>
   <div style="font-family:'Playfair Display',serif;font-size:36px;font-weight:900;color:var(--gold);line-height:1.1;margin-bottom:16px">Customer<br><em style="color:var(--cream)">Login &</em><br>Signup</div>
   <p style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:28px">Every customer gets a <strong style="color:var(--cream)">unique ChocoCravings ID</strong> (CC-XXXXXX) linked to their profile — enabling rich personalization, loyalty tracking, and business analytics.</p>
@@ -345,15 +345,12 @@ body{
       <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Cities</div>
     </div>
   </div>
-</div>
+</div>-->
 
 <!-- ─────────── PHONE ─────────── -->
 <div class="phone-wrap">
-  <div class="phone-label">Tap to interact → try signing up!</div>
   <div class="phone">
-    <div class="notch"></div>
     <div class="screen">
-
       <!-- ══════ SPLASH ══════ -->
       <div class="page active" id="pg-splash">
         <div class="splash-orb so1"></div>
@@ -361,7 +358,7 @@ body{
         <div class="splash-orb so3"></div>
         <div class="splash-logo">
           <div class="splash-icon">🍫</div>
-          <div class="splash-tag">NSDI ✦ Premium</div>
+          <div class="splash-tag">NSDI</div>
           <div class="splash-name">Choco<em>Cravings</em></div>
           <div class="splash-sub">Handcrafted brownies & cakes delivered fresh across Tamil Nadu</div>
         </div>
@@ -371,9 +368,9 @@ body{
           <div class="sf-item"><span class="sf-emoji">🎂</span><span class="sf-label">Custom Cakes</span></div>
         </div>
         <div class="splash-btns">
-          <button class="btn-primary" onclick="showPage('pg-signup')">🍫 Create Account</button>
+          <button class="btn-primary" onclick="showPage('pg-signup')">Create Account</button>
           <button class="btn-secondary" onclick="showPage('pg-login')">Sign In to your account</button>
-          <button class="btn-ghost" onclick="showPage('pg-dashboard')">👀 Preview Dashboard</button>
+          <!--<button class="btn-ghost" onclick="showPage('pg-dashboard')">👀 Preview Dashboard</button> -->
         </div>
       </div>
 
@@ -385,8 +382,6 @@ body{
           <div class="auth-orb ao2"></div>
           <div class="statusbar" style="position:relative;z-index:20">
             <span style="cursor:pointer;font-size:18px" onclick="showPage('pg-splash')">←</span>
-            <span>9:41</span>
-            <span>🔋</span>
           </div>
           <div class="auth-header">
             <div class="auth-icon">🍫</div>
@@ -438,8 +433,6 @@ body{
           <div class="auth-orb ao2"></div>
           <div class="statusbar" style="position:relative;z-index:20">
             <span style="cursor:pointer;font-size:18px" onclick="showPage('pg-splash')">←</span>
-            <span>9:41</span>
-            <span>🔋</span>
           </div>
           <div class="auth-header">
             <div class="auth-icon">✨</div>
@@ -548,7 +541,7 @@ body{
               <div class="terms-text">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>. I consent to receive order updates & exclusive offers via WhatsApp/SMS.</div>
             </div>
 
-            <button class="btn-primary" style="width:100%;margin-bottom:16px" onclick="doSignup()">🍫 Create My Account</button>
+            <button class="btn-primary" style="width:100%;margin-bottom:16px" onclick="doSignup()">Create My Account</button>
 
             <div class="auth-divider"><div class="ad-line"></div><span class="ad-text">or sign up with</span><div class="ad-line"></div></div>
             <!--
@@ -563,35 +556,9 @@ body{
         </div>
       </div>
 
-      <!-- ══════ SUCCESS ══════ -->
-      <div class="page" id="pg-success">
-        <div class="success-content">
-          <div class="success-icon">🎉</div>
-          <div class="success-title">Welcome to <span>ChocoCravings!</span></div>
-          <div class="success-sub">Your account is ready. Here's your unique Customer ID — keep it safe!</div>
-          <div class="customer-id-card">
-            <div class="cid-label">Your ChocoCravings ID</div>
-            <div class="cid-value" id="cid-display">CC-849273</div>
-            <div class="cid-name" id="cid-name">Priya Krishnan</div>
-            <div class="cid-city" id="cid-city">📍 Chennai, Tamil Nadu</div>
-            <div class="cid-copy" onclick="copyID()">📋 Copy</div>
-          </div>
-          <div style="font-size:13px;color:var(--muted);margin-bottom:16px;text-align:center;line-height:1.6;max-width:280px">
-            🎁 <strong style="color:var(--cream)">₹50 welcome credit</strong> has been added to your wallet! Use code <strong style="color:var(--gold)">WELCOME50</strong> on your first order.
-          </div>
-          <div class="stats-preview">
-            <div class="sp-card"><div class="sp-num">₹50</div><div class="sp-lbl">Wallet</div></div>
-            <div class="sp-card"><div class="sp-num">0</div><div class="sp-lbl">Orders</div></div>
-            <div class="sp-card"><div class="sp-num">0</div><div class="sp-lbl">Points</div></div>
-          </div>
-          <button class="btn-primary" style="width:100%;margin-bottom:12px" onclick="showPage('pg-dashboard')">🍫 Start Exploring →</button>
-          <button class="btn-ghost" onclick="showPage('pg-splash')">← Back to Home</button>
-        </div>
-      </div>
-
+      
       <!-- ══════ CUSTOMER DASHBOARD ══════ -->
       <div class="page" id="pg-dashboard">
-        <div class="statusbar"><span>9:41</span><span>🔋</span></div>
         <div class="dash-header">
           <div class="dash-back" onclick="showPage('pg-splash')">←</div>
           <div class="dash-profile">
@@ -603,7 +570,7 @@ body{
             </div>
           </div>
         </div>
-
+        <!--
         <div class="loyalty-banner">
           <div class="lb-bg"></div>
           <div class="lb-tier">🥈 Silver Member</div>
@@ -611,7 +578,7 @@ body{
           <div class="lb-points">620 <span>pts</span></div>
           <div class="lb-bar-bg"><div class="lb-bar-fill" style="width:62%"></div></div>
           <div class="lb-sub">380 pts more to reach Gold 🥇</div>
-        </div>
+        </div> -->
 
         <div class="dash-stats">
           <div class="ds-card"><div class="ds-icon">📦</div><div class="ds-num">12</div><div class="ds-lbl">Orders</div></div>
@@ -863,7 +830,7 @@ function generateID() {
 }
 
 // ── SAVE CUSTOMER ──
-asyn
+//asyn
 
 
 
@@ -896,7 +863,7 @@ async function doSignup() {
     if (authErr) {
       const msg = authErr.message.includes('already') ? 'Email already registered. Please sign in.' : authErr.message;
       toast(msg, true);
-      if (btn) { btn.disabled = false; btn.textContent = '🍫 Create My Account'; }
+      if (btn) { btn.disabled = false; btn.textContent = 'Create My Account'; }
       return;
     }
 
@@ -904,7 +871,7 @@ async function doSignup() {
     const { data: signInData, error: signInErr } = await db.auth.signInWithPassword({ email, password: pw });
     if (signInErr) {
       toast('Account created! Please sign in.', false);
-      if (btn) { btn.disabled = false; btn.textContent = '🍫 Create My Account'; }
+      if (btn) { btn.disabled = false; btn.textContent = 'Create My Account'; }
       showPage('pg-login');
       return;
     }
@@ -973,7 +940,7 @@ async function doSignup() {
 
   } catch(err) {
     toast(err.message || 'Signup failed', true);
-    if (btn) { btn.disabled = false; btn.textContent = '🍫 Create My Account'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Create My Account'; }
   }
 }
 
@@ -1012,7 +979,7 @@ async function doLogin() {
 
     // Load profile
     const { data: cust } = await db.from('customers')
-      .select('id, name, phone, email, city, customer_code, is_admin')
+      .select('id, name, phone, email, city, customer_code, is_admin,egg_preference')
       .eq('email', email).single();
 
     const sessionUser = {
@@ -1023,12 +990,14 @@ async function doLogin() {
       db_id:   cust?.id    || null,
       id:      cust?.customer_code || null,
       auth_id: data.user.id,
-      is_admin: cust?.is_admin || false
+      is_admin: cust?.is_admin || false,
+      egg_preference: cust?.egg_preference || 'egg'
     };
     localStorage.setItem('cc_user', JSON.stringify(sessionUser));
 
     toast('✓ Welcome back, ' + sessionUser.name + '! 🍫');
     setTimeout(() => window.location.href = 'index.html', 800);
+    //loadProfileData(); // Optional: Preload profile data for dashboard
 
   } catch(err) {
     toast(err.message || 'Login failed', true);

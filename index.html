@@ -21,7 +21,7 @@ function goToCheckout() {
   var totalAmt = cartItems.reduce(function(s, i) {
     return s + (i.base_price || 0) * (i.qty || i.quantity || 1) + (i.topping_price || 0);
   }, 0);
-  currentOrderTotal = totalAmt;
+  currentOrderTotal = appliedPromo ? totalAmt - appliedPromo.discount : totalAmt;
 
   // Show first item name + count in summary header
   var firstName = cartItems[0].product_name || cartItems[0].product_name || 'Brownie';
@@ -294,8 +294,8 @@ async function placeOrder() {
     } else {
       renderTrackingSteps('pending', []);
     }
-    // Clear cart after successful order
     cartItems = [];
+    localStorage.removeItem('cc_cart');
     renderCart();
 
     // 3. WhatsApp button — owner notification
@@ -327,7 +327,7 @@ async function placeOrder() {
       document.getElementById('succ-wa-btn').onclick = () => {
         window.open(`https://wa.me/${NSDI_PHONE}?text=${buildOwnerMsg({...orderData, created_at: new Date().toISOString()})}`, '_blank');
       };
-      showPage('success');
+      showPage('success');hero-dots
     } else {
       alert('Order failed: ' + err.message + `\nPlease try again or call ${NSDI_PHONE}`);
     }
@@ -339,11 +339,11 @@ async function placeOrder() {
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --p:#6B2FCE;--p2:#8B44E8;--p3:#A855F7;--pl:#C084FC;--pg:rgba(107,47,206,.15);
-  --dark:#09010F;--d2:#110020;--d3:#1C003A;
-  --white:#FAF5FF;--off:#E9D5FF;--dim:#9F7ABA;--faint:#6B488A;
-  --green:#22C55E;--pink:#F472B6;--gold:#F59E0B;
-  --card:rgba(255,255,255,.04);--bdr:rgba(255,255,255,.07);--bdr2:rgba(107,47,206,.3);
+  --p:#6e0977;--p2:#6e0977;--p3:#6e0977;--pl:#6e0977;--pg:rgba(107,47,206,.15);
+  --dark:#fcfcfc;--d2:#fcfcfc;--d3:#fcfcfc;
+  --white:#1a1a1a;--off:#565458;--dim:#07000c;--faint:#050008;
+  --green:#6e0977;--pink:#F472B6;--gold:#F59E0B;
+  --card:rgba(247, 243, 243, 0.979);--bdr:rgba(7, 0, 0, 0.966);--bdr2:rgba(62, 59, 68, 0.3);
   --r:22px;--r2:16px;--r3:12px;
 }
 body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:28px 16px;gap:36px;flex-wrap:wrap}
@@ -384,7 +384,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 
 /* HEADER */
 .hdr{display:flex;justify-content:space-between;align-items:center;padding:20px 22px 0;position:relative;z-index:10}
-.logo-wrap .logo-eyebrow{font-size:9px;color:var(--p3);letter-spacing:4px;text-transform:uppercase;font-weight:600;margin-bottom:2px}
+.logo-wrap .logo-eyebrow{font-size:5px;color:var(--p3);letter-spacing:4px;text-transform:uppercase;font-weight:600;margin-bottom:2px}
 .logo-wrap .logo-main{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:var(--white);line-height:1;letter-spacing:-.3px}
 .logo-wrap .logo-main span{color:var(--pl);font-style:italic}
 .logo-wrap .logo-sub{font-size:10px;color:var(--faint);font-weight:400;letter-spacing:.5px;margin-top:1px}
@@ -418,8 +418,8 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 .hero-wrap{padding:10px 22px;position:relative;z-index:10}
 .hero-card{border-radius:26px;padding:24px;position:relative;overflow:hidden;cursor:pointer;transition:transform .3s;min-height:168px}
 .hero-card:active{transform:scale(.985)}
-.hc-1{background:linear-gradient(135deg,#2D0060 0%,#6B2FCE 60%,#9B4FE8 100%)}
-.hc-2{background:linear-gradient(135deg,#1A0038 0%,#4A1090 60%,#7B3AC4 100%)}
+.hc-1{background:linear-gradient(135deg,#2D0060 0%,#6e0977 60%,#6e0977 100%)}
+.hc-2{background:linear-gradient(135deg,#1A0038 0%,#6e0977 60%,#6e0977 100%)}
 .hc-3{background:linear-gradient(135deg,#0D0020 0%,#2D0060 50%,#5A1090 100%)}
 .hc-noise{position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");mix-blend-mode:overlay;border-radius:26px}
 .hc-pill{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);color:#fff;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:5px 11px;border-radius:20px;margin-bottom:10px;position:relative;z-index:1}
@@ -469,12 +469,12 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 .pcard:hover{transform:translateY(-5px);box-shadow:0 20px 50px var(--card-glow,rgba(107,47,206,.3));border-color:var(--bdr2)}
 .pcard:active{transform:scale(.97)}
 .pimg{width:100%;height:126px;display:flex;align-items:center;justify-content:center;font-size:54px;position:relative}
-.pi1{background:var(--pi1,linear-gradient(135deg,#2D0060,#6B2FCE))}
-.pi2{background:var(--pi2,linear-gradient(135deg,#1C0040,#4A1080))}
-.pi3{background:var(--pi3,linear-gradient(135deg,#0D001A,#3A0870))}
-.pi4{background:var(--pi4,linear-gradient(135deg,#1A0A2E,#5C1898))}
-.pi5{background:var(--pi5,linear-gradient(135deg,#0A0018,#2E0658))}
-.pfav{position:absolute;top:9px;right:9px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.42);display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;backdrop-filter:blur(6px)}
+.pi1{background:var(--pi1,linear-gradient(135deg,#2D0060,#e752db))}
+.pi2{background:var(--pi2,linear-gradient(135deg,#1C0040,#e752db))}
+.pi3{background:var(--pi3,linear-gradient(135deg,#0D001A,#e752db))}
+.pi4{background:var(--pi4,linear-gradient(135deg,#1A0A2E,#e752db))}
+.pi5{background:var(--pi5,linear-gradient(135deg,#0A0018,#e752db))}
+/*.pfav{position:absolute;top:9px;right:9px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.42);display:flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;backdrop-filter:blur(6px)}*/
 .tag-pill{position:absolute;bottom:8px;left:8px;background:rgba(34,197,94,.18);color:#22C55E;font-size:9px;font-weight:700;padding:3px 8px;border-radius:8px;border:1px solid rgba(34,197,94,.3)}
 .pinfo{padding:11px}
 .pname{font-size:13px;font-weight:600;color:var(--white);margin-bottom:2px;line-height:1.3}
@@ -491,10 +491,10 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 .tcard{flex-shrink:0;width:156px;background:var(--card);border-radius:20px;overflow:hidden;border:1px solid var(--bdr);cursor:pointer;transition:transform .25s}
 .tcard:active{transform:scale(.95)}
 .timg{width:100%;height:100px;display:flex;align-items:center;justify-content:center;font-size:42px}
-.ti1{background:linear-gradient(135deg,#2D0060,#5A10A0)}
-.ti2{background:linear-gradient(135deg,#1C0040,#4A1080)}
-.ti3{background:linear-gradient(135deg,#0D001A,#2E0058)}
-.ti4{background:linear-gradient(135deg,#1A0A2E,#481088)}
+.ti1{background:linear-gradient(135deg,#2D0060,#e018d6)}
+.ti2{background:linear-gradient(135deg,#1C0040,#e018d6)}
+.ti3{background:linear-gradient(135deg,#0D001A,#e018d6)}
+.ti4{background:linear-gradient(135deg,#1A0A2E,#e018d6)}
 .tinfo{padding:9px 11px}
 .tname{font-size:11px;font-weight:600;color:var(--white);line-height:1.3}
 .trat{font-size:10px;color:var(--gold);margin:2px 0}
@@ -521,7 +521,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 .ig-follow{margin-left:auto;background:linear-gradient(135deg,#833ab4,#fd1d1d);color:#fff;font-size:11px;font-weight:700;padding:7px 14px;border-radius:10px;white-space:nowrap}
 
 /* BOTTOM NAV */
-.bnav{display:flex;background:rgba(9,1,15,.92);backdrop-filter:blur(24px);border-top:1px solid var(--bdr);padding:10px 0 16px;position:sticky;bottom:0;z-index:200}
+.bnav{display:flex;background:rgba(255, 255, 255, 255);backdrop-filter:blur(24px);border-top:1px solid var(--bdr);padding:10px 0 16px;position:sticky;bottom:0;z-index:200}
 .ntab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 0;transition:transform .2s}
 .ntab:active{transform:scale(.9)}
 .nicon{font-size:20px;transition:transform .2s}
@@ -563,7 +563,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
    DETAIL PAGE
 ══════════════════════════════ */
 #page-detail{background:var(--dark)}
-.dhero{height:272px;display:flex;align-items:center;justify-content:center;font-size:108px;position:relative;background:linear-gradient(160deg,#2D0060,#6B2FCE,#A855F7)}
+.dhero{height:272px;display:flex;align-items:center;justify-content:center;font-size:108px;position:relative;background:linear-gradient(160deg,#fcfcfc,#f0d4f0,#fcfcfc)}
 .dhero::after{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");mix-blend-mode:overlay}
 .back{position:absolute;top:50px;left:18px;width:38px;height:38px;border-radius:12px;background:rgba(0,0,0,.38);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;border:1px solid rgba(255,255,255,.1);z-index:10}
 .dfav{position:absolute;top:50px;right:18px;width:38px;height:38px;border-radius:12px;background:rgba(0,0,0,.38);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;border:1px solid rgba(255,255,255,.1);z-index:10}
@@ -839,19 +839,15 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 </div>
 
 <div class="phone-wrap">
-  <div class="plabel">Customer App</div>
   <div class="phone">
-    <div class="notch"></div>
     <div class="screen">
 
     <!-- ═══ HOME ═══ -->
     <div class="page active" id="page-home">
-      <div class="sb"><span>9:41</span><span>●●● 100%</span></div>
-
       <div class="hdr">
         <div class="logo-wrap">
-          <div class="logo-eyebrow">NSDI ✦ Premium</div>
-          <div class="logo-main">Choco<span>Cravings</span></div>
+          <div class="logo-eyebrow">Guilt-free desserts</div>
+          <div class="logo-main">NSDI Choco<span>Cravings</span></div>
           <div class="logo-sub">Happy to serve fresh!!</div>
         </div>
         <!--
@@ -863,7 +859,6 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
       </div>
 
       <div class="greet">
-        <div class="greet-sub">Good evening 👋</div>
         <div class="greet-main">What's your <em>craving</em> today?</div>
       </div>
       <!--
@@ -881,7 +876,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         <div class="srch-btn" onclick="showPage('explore')">🔍</div>
       </div> -->
       <!-- CUSTOM SLAB HERO BANNER -->
-      <div class="hero-card hc-1" id="hero-card" onclick="showPage('custom-order')" style="margin:0 22px 16px;background:linear-gradient(135deg,#2D0060,#6B2FCE,#8B44E8);border-radius:18px;padding:18px;cursor:pointer;position:relative;overflow:hidden">
+      <div class="hero-card hc-1" id="hero-card" onclick="showPage('custom-order')" style="margin:0 22px 16px;background:linear-gradient(135deg,#2D0060,#9605b3,#9c0ca1);border-radius:18px;padding:18px;cursor:pointer;position:relative;overflow:hidden">
         <div style="position:absolute;top:-20px;right:-20px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.06)"></div>
         <div style="position:absolute;bottom:-10px;left:30px;width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.04)"></div>
         <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">New · Design Yours</div>
@@ -892,11 +887,12 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
           <div style="font-size:11px;color:rgba(255,255,255,.5)">From ₹900/kg · Book 7 days ahead</div>
         </div>
       </div>
+      <!--
       <div class="hero-dots">
           <div class="hdot on" onclick="setHero(0)"></div>
           <div class="hdot" onclick="setHero(1)"></div>
           <div class="hdot" onclick="setHero(2)"></div>
-      </div>
+      </div> -->
       <!-- HERO -->
       <!--<div class="hero-wrap">
         <div class="hero-card hc-1" id="hero-card" onclick="showPage('detail')">
@@ -939,8 +935,9 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 
       <!-- CATEGORIES -->
       
-
+<!--
       <div class="sec"><span class="sec-t">Shop by Category</span></div>
+      
       <div class="cats">
         <div class="cat on" onclick="selCat(this)"><div class="cat-i">🌟</div><div class="cat-l">All</div></div>
         <div class="cat" onclick="selCat(this)"><div class="cat-i">💚</div><div class="cat-l">Eggless</div></div>
@@ -948,13 +945,13 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         <div class="cat" onclick="selCat(this)"><div class="cat-i">🌿</div><div class="cat-l">Healthy</div></div>
         <div class="cat" onclick="selCat(this)"><div class="cat-i">🍫</div><div class="cat-l">Classics</div></div>
         <div class="cat" onclick="selCat(this)"><div class="cat-i">🎂</div><div class="cat-l">Custom</div></div>
-      </div>
+      </div> -->
 
       <!-- FEATURED GRID -->
       <div class="sec"><span class="sec-t">Featured</span><span class="sec-l" onclick="showPage('explore')">View all</span></div>
       <div class="pgrid">
         <div class="pcard" data-name="Classic Fudge Brownie" data-tier="premium" data-egg="eggless" data-varidx="0" data-price="300" data-sku="PREM-EL-CLASSIC" data-cat="eggless classic" data-pack="4pcs (250g)" onclick="showPage('detail')">
-          <div class="pimg pi1">🍫<div class="pfav" onclick="e.stopPropagation();toggleFav(this)">❤️</div><div class="tag-pill">💚 Eggless</div></div>
+          <div class="pimg pi1">🍫<div class="pfav" onclick="e.stopPropagation();toggleFav(this)"></div><div class="tag-pill">💚 Eggless</div></div>
           <div class="pinfo">
             <div class="prating">★★★★★ 4.9</div>
             <div class="pname">Classic Fudge Brownie</div>
@@ -963,7 +960,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
           </div>
         </div>
         <div class="pcard" data-name="Triple Choco Brownie" data-tier="premium" data-egg="eggless" data-varidx="2" data-price="380" data-sku="PREM-EL-TRIPLE" data-cat="eggless classic" data-pack="4pcs (250g)" onclick="showPage('detail')">
-          <div class="pimg pi2">🍫<div class="pfav" onclick="event.stopPropagation();toggleFav(this)">🤍</div><div class="tag-pill">💚 Eggless</div></div>
+          <div class="pimg pi2">🍫<div class="pfav" onclick="event.stopPropagation();toggleFav(this)"></div><div class="tag-pill">💚 Eggless</div></div>
           <div class="pinfo">
             <div class="prating">★★★★★ 5.0</div>
             <div class="pname">Triple Chocolate Brownie</div>
@@ -972,7 +969,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
           </div>
         </div>
         <div class="pcard" data-name="Nutella Brownie" data-tier="premium" data-egg="eggless" data-varidx="3" data-price="370" data-sku="PREM-EL-NUTELLA" data-cat="eggless classic nutella" data-pack="4pcs (250g)" onclick="showPage('detail')">
-          <div class="pimg pi3">🍯<div class="pfav" onclick="event.stopPropagation();toggleFav(this)">🤍</div><div class="tag-pill">💚 Eggless</div></div>
+          <div class="pimg pi3">🍯<div class="pfav" onclick="event.stopPropagation();toggleFav(this)"></div><div class="tag-pill">💚 Eggless</div></div>
           <div class="pinfo">
             <div class="prating">★★★★★ 4.9</div>
             <div class="pname">Nutella Brownie</div>
@@ -981,7 +978,45 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
           </div>
         </div>
         <div class="pcard" data-name="Couverture Classic Brownie" data-tier="couverture" data-egg="eggless" data-varidx="0" data-price="490" data-sku="COUV-EL-CLASSIC" data-cat="eggless couverture" data-pack="4pcs (250g)" onclick="showPage('detail')">
-          <div class="pimg pi4">🌟<div class="pfav" onclick="event.stopPropagation();toggleFav(this)">🤍</div><div class="tag-pill">🌟 Premium</div></div>
+          <div class="pimg pi4">🌟<div class="pfav" onclick="event.stopPropagation();toggleFav(this)"></div><div class="tag-pill">🌟 Premium</div></div>
+          <div class="pinfo">
+            <div class="prating">★★★★★ 5.0</div>
+            <div class="pname">Couverture Classic</div>
+            <div class="pdesc">Belgian chocolate · 4pcs</div>
+            <div class="pfoot"><span class="pprice">₹490</span><button class="abtn" onclick="event.stopPropagation();quickAddCart(this)">+</button></div>
+          </div>
+        </div>
+      </div>
+      <div class="pgrid">
+        <div class="pcard" data-name="Classic Fudge Brownie" data-tier="premium" data-egg="egg" data-varidx="0" data-price="300" data-sku="PREM-EL-CLASSIC" data-cat="eggless classic" data-pack="4pcs (250g)" onclick="showPage('detail')">
+          <div class="pimg pi1">🍫<div class="pfav" onclick="e.stopPropagation();toggleFav(this)"></div><div class="tag-pill">❤️ Egg</div></div>
+          <div class="pinfo">
+            <div class="prating">★★★★★ 4.9</div>
+            <div class="pname">Classic Fudge Brownie</div>
+            <div class="pdesc">Premium · 4pcs / 9pcs / 16pcs</div>
+            <div class="pfoot"><span class="pprice">₹300</span><button class="abtn" onclick="event.stopPropagation();quickAddCart(this)">+</button></div>
+          </div>
+        </div>
+        <div class="pcard" data-name="Triple Choco Brownie" data-tier="premium" data-egg="egg" data-varidx="2" data-price="380" data-sku="PREM-EL-TRIPLE" data-cat="eggless classic" data-pack="4pcs (250g)" onclick="showPage('detail')">
+          <div class="pimg pi2">🍫<div class="pfav" onclick="event.stopPropagation();toggleFav(this)"></div><div class="tag-pill">❤️ Egg</div></div>
+          <div class="pinfo">
+            <div class="prating">★★★★★ 5.0</div>
+            <div class="pname">Triple Chocolate Brownie</div>
+            <div class="pdesc">Dark + Milk + White · 4pcs</div>
+            <div class="pfoot"><span class="pprice">₹380</span><button class="abtn" onclick="event.stopPropagation();quickAddCart(this)">+</button></div>
+          </div>
+        </div>
+        <div class="pcard" data-name="Nutella Brownie" data-tier="premium" data-egg="egg" data-varidx="3" data-price="370" data-sku="PREM-EL-NUTELLA" data-cat="eggless classic nutella" data-pack="4pcs (250g)" onclick="showPage('detail')">
+          <div class="pimg pi3">🍯<div class="pfav" onclick="event.stopPropagation();toggleFav(this)"></div><div class="tag-pill">❤️ Egg</div></div>
+          <div class="pinfo">
+            <div class="prating">★★★★★ 4.9</div>
+            <div class="pname">Nutella Brownie</div>
+            <div class="pdesc">Hazelnut choco spread · 4pcs</div>
+            <div class="pfoot"><span class="pprice">₹370</span><button class="abtn" onclick="event.stopPropagation();quickAddCart(this)">+</button></div>
+          </div>
+        </div>
+        <div class="pcard" data-name="Couverture Classic Brownie" data-tier="couverture" data-egg="egg" data-varidx="0" data-price="490" data-sku="COUV-EL-CLASSIC" data-cat="eggless couverture" data-pack="4pcs (250g)" onclick="showPage('detail')">
+          <div class="pimg pi4">🌟<div class="pfav" onclick="event.stopPropagation();toggleFav(this)"></div><div class="tag-pill">🌟 Premium</div></div>
           <div class="pinfo">
             <div class="prating">★★★★★ 5.0</div>
             <div class="pname">Couverture Classic</div>
@@ -1019,6 +1054,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
       </div> -->
 
       <!-- INSTAGRAM CARD -->
+       <!--
       <div class="ig-card" onclick="window.open('https://www.instagram.com/nsdi.chococravings','_blank')">
         <div class="ig-icon">📸</div>
         <div class="ig-info">
@@ -1026,7 +1062,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
           <div class="ig-sub">Follow us for daily updates & offers!</div>
         </div>
         <div class="ig-follow">Follow</div>
-      </div>
+      </div> -->
 
       <div style="height:8px"></div>
       <div class="bnav">
@@ -1146,7 +1182,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
     <div class="page" id="page-detail">
       <div class="dhero">🍫
         <div class="back" onclick="goBack()">←</div>
-        <div class="dfav" onclick="toggleFav(this)">🤍</div>
+        <!--<div class="dfav" onclick="toggleFav(this)">🤍</div>-->
       </div>
       <div class="dbody">
         <!-- SECTION JUMP TABS -->
@@ -1233,6 +1269,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         <div class="ttotal"><span class="ttl-lbl">Toppings total</span><span class="ttl-val" id="top-total">+₹0</span></div>
 
         <!-- CUSTOM BOX -->
+         <!--
         <div class="custom-box">
           <div class="cb-title">🎂 Custom Brownie Creations</div>
           <div class="cb-sub">Price varies by customization. Contact us to design your dream brownie creation!</div>
@@ -1244,7 +1281,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
             <span class="cb-pill">🎁 Brownie Layer</span>
           </div>
           <div class="cb-cta" href="tel:+918973141898">📞 Enquire — +91 89731 41898</div>
-        </div>
+        </div> -->
 
         <div class="dlabel">About NSDI Brownies</div>
         <div class="about-txt">Every brownie is freshly baked in small batches — no preservatives, no artificial flavours. Eggless & egg variants available. Stays fresh 4–5 days. Delivered across Tamil Nadu. 🌿</div>
@@ -1608,7 +1645,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 
         <!-- WHATSAPP + HOME BUTTONS -->
         <button class="succ-wa-btn" id="succ-wa-btn" style="margin-top:4px">📲 Send WhatsApp Confirmation</button>
-        <button class="succ-home-btn" onclick="showPage('home');cartItems=[];renderCart();" style="margin-bottom:20px">🏠 Continue Shopping</button>
+        <button class="succ-home-btn" onclick="showPage('home');cartItems=[];localStorage.removeItem('cc_cart');renderCart();" style="margin-bottom:20px">🏠 Continue Shopping</button>
       </div>
     </div><!-- /success -->
 
@@ -1658,7 +1695,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
     <!-- ═══ CUSTOM ORDER ═══ -->
     <div class="page" id="page-custom-order">
       <!-- Header -->
-      <div style="background:linear-gradient(160deg,#0D002A,#2D0060,#1C003A);padding:52px 22px 20px">
+      <div style="padding:52px 22px 20px">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
           <div class="back" style="position:static;width:36px;height:36px" onclick="goBack()">←</div>
           <div>
@@ -1667,38 +1704,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
           </div>
         </div>
 
-        <!-- LIVE PREVIEW CARD -->
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:16px;margin-bottom:14px">
-          <div style="font-size:10px;font-weight:700;color:var(--faint);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px">Your Brownie Preview</div>
-          <div style="display:flex;gap:14px;align-items:center">
-            <!-- SVG brownie shape preview -->
-            <div style="flex-shrink:0">
-              <canvas id="brownie-canvas" width="100" height="100" style="border-radius:12px"></canvas>
-            </div>
-            <!-- Details -->
-            <div style="flex:1;display:flex;flex-direction:column;gap:5px">
-              <div style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:700;color:var(--white)" id="prev-title">Birthday Brownie Slab</div>
-              <div style="display:flex;flex-wrap:wrap;gap:5px" id="prev-tags">
-                <span style="font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(107,47,206,.2);color:var(--pl)">Rectangle</span>
-                <span style="font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(255,255,255,.07);color:var(--dim)">Floral</span>
-                <span style="font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(34,197,94,.12);color:#4ADE80">💚 Eggless</span>
-              </div>
-              <div style="font-size:11px;color:var(--dim)" id="prev-serves">Serves 6–8 people</div>
-              <div style="font-size:11px;color:var(--gold)" id="prev-price">Est. ₹600 – ₹900</div>
-            </div>
-          </div>
-          <!-- Similarity hint -->
-          <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06)">
-            <div style="font-size:10px;color:var(--faint);margin-bottom:6px;letter-spacing:.5px">YOUR BROWNIE WILL LOOK SIMILAR TO</div>
-            <div style="display:flex;gap:8px;overflow-x:auto;scrollbar-width:none" id="prev-similar">
-              <!-- filled by JS -->
-            </div>
-          </div>
-        </div>
-
-        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:11px 14px;font-size:11px;color:var(--dim);line-height:1.7">
-          ⏰ Book at least <strong style="color:var(--white)">7 days in advance</strong> · We'll confirm via WhatsApp
-        </div>
+        
       </div>
 
       <div style="padding:18px 22px;display:flex;flex-direction:column;gap:20px;padding-bottom:30px">
@@ -1716,15 +1722,6 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
             <div class="cust-chip" data-group="occasion" data-val="Baby Shower" onclick="selChip(this,'occasion')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
               <div style="font-size:20px;margin-bottom:4px">👶</div><div style="font-size:11px;font-weight:600;color:var(--dim)">Baby Shower</div>
             </div>
-            <div class="cust-chip" data-group="occasion" data-val="Graduation" onclick="selChip(this,'occasion')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
-              <div style="font-size:20px;margin-bottom:4px">🎓</div><div style="font-size:11px;font-weight:600;color:var(--dim)">Graduation</div>
-            </div>
-            <div class="cust-chip" data-group="occasion" data-val="Corporate" onclick="selChip(this,'occasion')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
-              <div style="font-size:20px;margin-bottom:4px">💼</div><div style="font-size:11px;font-weight:600;color:var(--dim)">Corporate</div>
-            </div>
-            <div class="cust-chip" data-group="occasion" data-val="Other" onclick="selChip(this,'occasion')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
-              <div style="font-size:20px;margin-bottom:4px">✨</div><div style="font-size:11px;font-weight:600;color:var(--dim)">Other</div>
-            </div>
           </div>
         </div>
 
@@ -1732,9 +1729,6 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         <div>
           <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Shape</div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">
-            <div class="cust-chip on" data-group="shape" data-val="Rectangle" onclick="selChip(this,'shape')" style="padding:10px 4px;border-radius:12px;background:rgba(107,47,206,.15);border:1.5px solid var(--p);text-align:center;cursor:pointer">
-              <div style="font-size:18px;margin-bottom:3px">▬</div><div style="font-size:10px;font-weight:600;color:var(--pl)">Rectangle</div>
-            </div>
             <div class="cust-chip" data-group="shape" data-val="Square" onclick="selChip(this,'shape')" style="padding:10px 4px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
               <div style="font-size:18px;margin-bottom:3px">■</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Square</div>
             </div>
@@ -1752,7 +1746,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
           <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Theme</div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
             <div class="cust-chip on" data-group="theme" data-val="Floral" onclick="selChip(this,'theme')" style="padding:10px 6px;border-radius:12px;background:rgba(107,47,206,.15);border:1.5px solid var(--p);text-align:center;cursor:pointer">
-              <div style="font-size:20px;margin-bottom:4px">🌸</div><div style="font-size:11px;font-weight:600;color:var(--pl)">Floral</div>
+              <div style="font-size:20px;margin-bottom:4px">🌸</div><div style="font-size:11px;font-weight:600;color:var(--pl)">Fairy</div>
             </div>
             <div class="cust-chip" data-group="theme" data-val="Jungle" onclick="selChip(this,'theme')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
               <div style="font-size:20px;margin-bottom:4px">🌿</div><div style="font-size:11px;font-weight:600;color:var(--dim)">Jungle</div>
@@ -1761,17 +1755,15 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
               <div style="font-size:20px;margin-bottom:4px">🦸</div><div style="font-size:11px;font-weight:600;color:var(--dim)">Avengers</div>
             </div>
             <div class="cust-chip" data-group="theme" data-val="Princess" onclick="selChip(this,'theme')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
-              <div style="font-size:20px;margin-bottom:4px">👑</div><div style="font-size:11px;font-weight:600;color:var(--dim)">Princess</div>
+              <div style="font-size:20px;margin-bottom:4px">👑</div><div style="font-size:11px;font-weight:600;color:var(--dim)">Prince/Princess</div>
             </div>
             <div class="cust-chip" data-group="theme" data-val="Galaxy" onclick="selChip(this,'theme')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
               <div style="font-size:20px;margin-bottom:4px">🌌</div><div style="font-size:11px;font-weight:600;color:var(--dim)">Galaxy</div>
             </div>
+            <!--
             <div class="cust-chip" data-group="theme" data-val="Minimalist" onclick="selChip(this,'theme')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
               <div style="font-size:20px;margin-bottom:4px">◾</div><div style="font-size:11px;font-weight:600;color:var(--dim)">Minimal</div>
-            </div>
-            <div class="cust-chip" data-group="theme" data-val="Retro" onclick="selChip(this,'theme')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
-              <div style="font-size:20px;margin-bottom:4px">📺</div><div style="font-size:11px;font-weight:600;color:var(--dim)">Retro</div>
-            </div>
+            </div>-->
             <div class="cust-chip" data-group="theme" data-val="Sports" onclick="selChip(this,'theme')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
               <div style="font-size:20px;margin-bottom:4px">⚽</div><div style="font-size:11px;font-weight:600;color:var(--dim)">Sports</div>
             </div>
@@ -1894,18 +1886,18 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
           <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Add-ons & Extras</div>
           <div style="font-size:11px;color:var(--faint);margin-bottom:12px">Choose decorative elements for your slab</div>
 
-          <!-- Fox Ball -->
+          <!-- Faux Ball -->
           <div style="margin-bottom:14px">
-            <div style="font-size:12px;font-weight:600;color:var(--white);margin-bottom:8px">🦊 Fox Ball Design</div>
+            <div style="font-size:12px;font-weight:600;color:var(--white);margin-bottom:8px">🟡 Faux Ball Design</div>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-              <div class="cust-chip" data-group="foxball" data-val="None" onclick="selChip(this,'foxball')" style="padding:10px 6px;border-radius:12px;background:rgba(107,47,206,.15);border:1.5px solid var(--p);text-align:center;cursor:pointer">
+              <div class="cust-chip" data-group="Fauxball" data-val="None" onclick="selChip(this,'Fauxball')" style="padding:10px 6px;border-radius:12px;background:rgba(107,47,206,.15);border:1.5px solid var(--p);text-align:center;cursor:pointer">
                 <div style="font-size:18px;margin-bottom:3px">✕</div><div style="font-size:10px;font-weight:600;color:var(--pl)">None</div>
               </div>
-              <div class="cust-chip" data-group="foxball" data-val="Fox Ball – 1 Corner" onclick="selChip(this,'foxball')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
-                <div style="font-size:18px;margin-bottom:3px">🦊</div><div style="font-size:10px;font-weight:600;color:var(--dim)">1 Corner</div>
+              <div class="cust-chip" data-group="Fauxball" data-val="Faux Ball – 1 Corner" onclick="selChip(this,'Fauxball')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+                <div style="font-size:18px;margin-bottom:3px">🟡</div><div style="font-size:10px;font-weight:600;color:var(--dim)">1 Corner</div>
               </div>
-              <div class="cust-chip" data-group="foxball" data-val="Fox Balls – 4 Corners" onclick="selChip(this,'foxball')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
-                <div style="font-size:18px;margin-bottom:3px">🦊🦊</div><div style="font-size:10px;font-weight:600;color:var(--dim)">4 Corners</div>
+              <div class="cust-chip" data-group="Fauxball" data-val="Faux Balls – 4 Corners" onclick="selChip(this,'Fauxball')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+                <div style="font-size:18px;margin-bottom:3px">🟡</div><div style="font-size:10px;font-weight:600;color:var(--dim)">4 Corners</div>
               </div>
             </div>
           </div>
@@ -1921,7 +1913,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
                 <div style="font-size:18px;margin-bottom:3px">🦋</div><div style="font-size:10px;font-weight:600;color:var(--dim)">1 Butterfly</div>
               </div>
               <div class="cust-chip" data-group="butterfly" data-val="3 Butterflies" onclick="selChip(this,'butterfly')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
-                <div style="font-size:18px;margin-bottom:3px">🦋🦋🦋</div><div style="font-size:10px;font-weight:600;color:var(--dim)">3 Butterflies</div>
+                <div style="font-size:18px;margin-bottom:3px">🦋</div><div style="font-size:10px;font-weight:600;color:var(--dim)">3 Butterflies</div>
               </div>
             </div>
           </div>
@@ -1986,13 +1978,46 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
           <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Special Instructions <span style="color:var(--dim);font-weight:400;text-transform:none;letter-spacing:0">optional</span></div>
           <textarea id="custom-notes" rows="3" placeholder="Any specific colours, design details, allergens, or reference images..." style="width:100%;background:rgba(255,255,255,.06);border:1.5px solid var(--bdr);border-radius:12px;padding:13px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;resize:none"></textarea>
         </div>
+        <!-- LIVE PREVIEW CARD -->
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:16px;margin-bottom:14px">
+          <div style="font-size:10px;font-weight:700;color:var(--faint);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px">Your Brownie Preview</div>
+          <div style="display:flex;gap:14px;align-items:center">
+            <!-- SVG brownie shape preview -->
+            <div style="flex-shrink:0">
+              <canvas id="brownie-canvas" width="100" height="100" style="border-radius:12px"></canvas>
+            </div>
+            <!-- Details -->
+            <div style="flex:1;display:flex;flex-direction:column;gap:5px">
+              <div style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:700;color:var(--white)" id="prev-title">Birthday Brownie Slab</div>
+              <div style="display:flex;flex-wrap:wrap;gap:5px" id="prev-tags">
+                <span style="font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(107,47,206,.2);color:var(--pl)">Rectangle</span>
+                <span style="font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(255,255,255,.07);color:var(--dim)">Floral</span>
+                <span style="font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(34,197,94,.12);color:#4ADE80">💚 Eggless</span>
+              </div>
+              <div style="font-size:11px;color:var(--dim)" id="prev-serves">Serves 6–8 people</div>
+              <div style="font-size:11px;color:var(--gold)" id="prev-price">Est. ₹600 – ₹900</div>
+            </div>
+          </div>
+          <!-- Similarity hint -->
+          <!--
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06)">
+            <div style="font-size:10px;color:var(--faint);margin-bottom:6px;letter-spacing:.5px">YOUR BROWNIE WILL LOOK SIMILAR TO</div>
+            <div style="display:flex;gap:8px;overflow-x:auto;scrollbar-width:none" id="prev-similar">
+              
+            </div>
+          </div> -->
+        </div>
+
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:11px 14px;font-size:11px;color:var(--dim);line-height:1.7">
+          ⏰ Book at least <strong style="color:var(--white)">7 days in advance</strong> · We'll confirm via WhatsApp
+        </div>
 
         <!-- SUBMIT -->
         <div style="background:rgba(107,47,206,.08);border:1px solid rgba(107,47,206,.2);border-radius:14px;padding:13px 14px;font-size:11px;color:var(--dim);line-height:1.7;margin-bottom:4px">
           🎂 Custom orders are quoted individually · We'll WhatsApp you a price within 2 hrs of enquiry
         </div>
         <button id="custom-submit-btn" onclick="submitCustomOrder()" style="width:100%;padding:16px;background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;border:none;border-radius:16px;cursor:pointer">
-          📲 Send Enquiry via WhatsApp
+          📲 Submit
         </button>
       </div>
     </div><!-- /custom-order -->
@@ -2162,6 +2187,7 @@ function updateProfileUI() {
   el = document.getElementById('prof-avatar'); if(el) el.textContent = '👤';
   el = document.getElementById('prof-name');   if(el) el.textContent = name;
   el = document.getElementById('prof-phone');  if(el) el.textContent = phone + city;
+  loadProfileData();
 }
 
 async function loadProfileData() {
@@ -2179,8 +2205,9 @@ async function loadProfileData() {
     var el;
     el = document.getElementById('prof-name');   if(el) el.textContent = cust.name || currentUser.name;
     el = document.getElementById('prof-phone');  if(el) el.textContent = (cust.phone||'') + (cust.city ? ' · '+cust.city : '');
-    el = document.getElementById('prof-egg');    if(el) el.textContent = cust.egg_preference === 'egg' ? '🥚 With Egg' : cust.egg_preference === 'both' ? '🍫 Both' : '💚 Eggless';
-
+    var eggPref = cust.egg_preference || (currentUser && currentUser.egg_preference) || 'egg';
+    el = document.getElementById('prof-egg');
+    if (el) el.textContent = eggPref === 'egg' ? '❤️ With Egg' : eggPref === 'both' ? '🍫 Both' : '💚 Eggless';
     // Stats
     var pts   = cust.loyalty_points  || 0;
     var orders = cust.total_orders   || 0;
@@ -2227,7 +2254,10 @@ async function loadProfileData() {
 
   } catch(e) { console.warn('loadProfileData:', e.message); }
   // Always re-check admin status after profile loads
+  applyEggPreferenceFilter(eggPref);
   await checkAndShowAdminTab();
+  
+  
 }
 
 async function checkAndShowAdminTab() {
@@ -2259,6 +2289,7 @@ async function checkAndShowAdminTab() {
     } else {
       console.log('ℹ️ Not admin — tab hidden');
     }
+    
   } catch(e) {
     console.warn('Admin check error:', e.message);
   }
@@ -2424,7 +2455,7 @@ async function loadAndShowAddresses() {
 
 // ── APP THEMES ──
 var THEMES = {
-  purple:   { name:'Purple',    p:'#6B2FCE', p2:'#8B44E8', p3:'#A855F7', pl:'#C084FC', pg:'rgba(107,47,206,.15)', dark:'#09010F', d2:'#110020', d3:'#1C003A', dim:'#9F7ABA', faint:'#6B488A', bdr2:'rgba(107,47,206,.3)', off:'#E9D5FF' },
+  /*purple:   { name:'Purple',    p:'#6B2FCE', p2:'#8B44E8', p3:'#A855F7', pl:'#C084FC', pg:'rgba(107,47,206,.15)', dark:'#09010F', d2:'#110020', d3:'#1C003A', dim:'#9F7ABA', faint:'#6B488A', bdr2:'rgba(107,47,206,.3)', off:'#E9D5FF' },
   rose:     { name:'Rose',      p:'#E11D48', p2:'#F43F5E', p3:'#FB7185', pl:'#FDA4AF', pg:'rgba(225,29,72,.15)',  dark:'#0F0008', d2:'#1A000D', d3:'#280015', dim:'#C08090', faint:'#7A3048', bdr2:'rgba(225,29,72,.3)',  off:'#FFE4E6' },
   ocean:    { name:'Ocean',     p:'#0369A1', p2:'#0EA5E9', p3:'#38BDF8', pl:'#7DD3FC', pg:'rgba(3,105,161,.15)',  dark:'#00080F', d2:'#001220', d3:'#00183A', dim:'#7AA0BA', faint:'#3A6A8A', bdr2:'rgba(3,105,161,.3)',  off:'#E0F2FE' },
   forest:   { name:'Forest',    p:'#15803D', p2:'#16A34A', p3:'#22C55E', pl:'#4ADE80', pg:'rgba(21,128,61,.15)',  dark:'#00080A', d2:'#001508', d3:'#001A0A', dim:'#7ABA90', faint:'#3A6A4A', bdr2:'rgba(21,128,61,.3)',  off:'#DCFCE7' },
@@ -2433,7 +2464,8 @@ var THEMES = {
   midnight: { name:'Midnight',  p:'#334155', p2:'#475569', p3:'#64748B', pl:'#94A3B8', pg:'rgba(51,65,85,.2)',    dark:'#020609', d2:'#050D14', d3:'#081420', dim:'#8090A8', faint:'#485A70', bdr2:'rgba(51,65,85,.4)',   off:'#F1F5F9' },
   choco:    { name:'Chocolate', p:'#78350F', p2:'#92400E', p3:'#D97706', pl:'#FBBF24', pg:'rgba(120,53,15,.2)',   dark:'#0A0400', d2:'#150800', d3:'#200C00', dim:'#B08060', faint:'#6A4020', bdr2:'rgba(120,53,15,.4)',  off:'#FDE68A' },
   candy:    { name:'Candy',     p:'#DB2777', p2:'#A855F7', p3:'#C084FC', pl:'#E879F9', pg:'rgba(219,39,119,.15)', dark:'#0F0008', d2:'#180010', d3:'#220018', dim:'#C070A0', faint:'#7A3060', bdr2:'rgba(219,39,119,.3)', off:'#FDF4FF' },
-};
+*/
+  };
 
 var currentTheme = 'purple';
 
@@ -2547,9 +2579,11 @@ function closeThemePicker() {
 })();
 
 function openEggPrefSheet() {
-  var saved = null;
-  try { saved = JSON.parse(localStorage.getItem('cc_user')); } catch(e){}
-  var current = (saved && saved.egg_preference) || 'eggless';
+  var current = (currentUser && currentUser.egg_preference) || 'egg';
+  try {
+    var saved = JSON.parse(localStorage.getItem('cc_user'));
+    if (saved && saved.egg_preference) current = saved.egg_preference;
+  } catch(e){}
   updateEggPrefUI(current);
   document.getElementById('egg-sheet-overlay').style.display = 'block';
   document.getElementById('egg-pref-sheet').style.display = 'block';
@@ -2600,11 +2634,16 @@ async function setEggPref(pref) {
   if (el) el.textContent = labels[pref] || pref;
 
   showToast('Preference saved! ✅');
-  setTimeout(closeEggPrefSheet, 800);
+  applyEggPreferenceFilter(pref);
+  setTimeout(function() {
+    closeEggPrefSheet();
+    // Re-run loadProfileData so prof-egg label refreshes from updated Supabase data
+    setTimeout(loadProfileData, 200);
+  }, 800);
 }
 
 // ── CUSTOM ORDER ──
-var customSelections = { occasion:'Birthday', shape:'Rectangle', theme:'Floral', serves:'1 kg', flavour:'Classic Dark Chocolate', egg:'Eggless', layers:'1', foxball:'None', butterfly:'None', topper:'None', acrylicStyle:'Clear' };
+var customSelections = { occasion:'Birthday', shape:'Rectangle', theme:'Floral', serves:'1 kg', flavour:'Classic Dark Chocolate', egg:'Eggless', layers:'1', Fauxball:'None', butterfly:'None', topper:'None', acrylicStyle:'Clear' };
 
 function selTopperChip(el, val) {
   document.querySelectorAll('.cust-chip[data-group="topper"]').forEach(function(c) {
@@ -2683,7 +2722,7 @@ var TOPPER_ADDON = {
 };
 
 // Decoration add-ons
-var FOXBALL_ADDON = { 'None': 0, 'Fox Ball – 1 Corner': 80, 'Fox Balls – 4 Corners': 200 };
+var FauxBALL_ADDON = { 'None': 0, 'Faux Ball – 1 Corner': 80, 'Faux Balls – 4 Corners': 200 };
 var BUTTERFLY_ADDON = { 'None': 0, '1 Butterfly': 40, '3 Butterflies': 110 };
 
 function calcKg(serves) {
@@ -2848,16 +2887,16 @@ function updateBrowniePreview() {
     var srv    = customSelections.serves || '1 kg';
     var layers = customSelections.layers || '1';
     var topper = customSelections.topper || 'None';
-    var fox    = customSelections.foxball    || 'None';
+    var Faux    = customSelections.Fauxball    || 'None';
     var butter = customSelections.butterfly  || 'None';
     var kg     = calcKg(srv);
 
     var base = (PRICE_MAP[egg2] || PRICE_MAP['Eggless'])[srv] || [900,1300];
     var layerAdd   = (LAYER_ADDON[layers]   || 0) * kg;
     var topperAdd  = TOPPER_ADDON[topper]   || 0;
-    var foxAdd     = FOXBALL_ADDON[fox]     || 0;
+    var FauxAdd     = FauxBALL_ADDON[Faux]     || 0;
     var butterAdd  = BUTTERFLY_ADDON[butter]|| 0;
-    var extra      = layerAdd + topperAdd + foxAdd + butterAdd;
+    var extra      = layerAdd + topperAdd + FauxAdd + butterAdd;
 
     var lo = Math.round(base[0] + extra);
     var hi = Math.round(base[1] + extra);
@@ -2866,7 +2905,7 @@ function updateBrowniePreview() {
     var parts = [];
     if (layerAdd)  parts.push((layers==='2'?'Double':'Triple')+' layer +₹'+Math.round(layerAdd));
     if (topperAdd) parts.push('Topper +₹'+topperAdd);
-    if (foxAdd)    parts.push('Fox ball +₹'+foxAdd);
+    if (FauxAdd)    parts.push('Faux ball +₹'+FauxAdd);
     if (butterAdd) parts.push('Butterfly +₹'+butterAdd);
 
     priceEl.innerHTML = 'Est. <strong style="color:var(--gold)">₹'+lo+' – ₹'+hi+'</strong>'
@@ -2905,6 +2944,14 @@ function validateCustomDate(inp) {
 }
 
 async function submitCustomOrder() {
+
+  // Require login to submit
+  if (!currentUser || !currentUser.db_id) {
+    showToast('Please sign in to submit your order 🍫');
+    setTimeout(function(){ window.location.href = 'auth.html'; }, 1200);
+    return;
+  }
+  
   // Check if editing existing order
   if (window._editingOrderId) {
     await updateCustomOrder();
@@ -2954,11 +3001,11 @@ async function submitCustomOrder() {
   var srv     = customSelections.serves || '1 kg';
   var layers  = customSelections.layers || '1';
   var topper  = customSelections.topper || 'None';
-  var fox     = customSelections.foxball    || 'None';
+  var Faux     = customSelections.Fauxball    || 'None';
   var butter  = customSelections.butterfly  || 'None';
   var kg      = calcKg(srv);
   var base    = (PRICE_MAP[egg2] || PRICE_MAP['Eggless'])[srv] || [900,1300];
-  var extra   = (LAYER_ADDON[layers]||0)*kg + (TOPPER_ADDON[topper]||0) + (FOXBALL_ADDON[fox]||0) + (BUTTERFLY_ADDON[butter]||0);
+  var extra   = (LAYER_ADDON[layers]||0)*kg + (TOPPER_ADDON[topper]||0) + (FauxBALL_ADDON[Faux]||0) + (BUTTERFLY_ADDON[butter]||0);
   var estTotal = Math.round((base[0]+base[1])/2 + extra);
 
   // Build detailed custom config JSON
@@ -2971,7 +3018,7 @@ async function submitCustomOrder() {
     layers:        {'1':'Single','2':'Double','3':'Triple'}[layers] + ' layer',
     flavour:       customSelections.flavour,
     egg:           egg2,
-    foxball:       fox !== 'None' ? fox : null,
+    Fauxball:       Faux !== 'None' ? Faux : null,
     butterfly:     butter !== 'None' ? butter : null,
     topper:        topper !== 'None' ? topper + (customSelections.acrylicStyle && topper === 'Acrylic Topper' ? ' (' + customSelections.acrylicStyle + ')' : '') : null,
     topper_name:   topName || null,
@@ -3019,7 +3066,7 @@ async function submitCustomOrder() {
       layers:          {'1':'Single','2':'Double','3':'Triple'}[customSelections.layers] + ' layer',
       flavour:         customSelections.flavour,
       egg_preference:  egg2,
-      fox_ball:        customSelections.foxball !== 'None' ? customSelections.foxball : null,
+      Faux_ball:        customSelections.Fauxball !== 'None' ? customSelections.Fauxball : null,
       butterfly:       customSelections.butterfly !== 'None' ? customSelections.butterfly : null,
       topper_type:     customSelections.topper !== 'None' ? customSelections.topper : null,
       topper_style:    customSelections.topper === 'Acrylic Topper' ? customSelections.acrylicStyle : null,
@@ -3054,7 +3101,7 @@ async function submitCustomOrder() {
       + '🥚 Egg: ' + egg2 + '\n'
       + '📅 Delivery: ' + dateStr + '\n'
       + (msgVal   ? '✍️ Brownie Msg: ' + msgVal + '\n' : '')
-      + (fox  !== 'None' ? '🦊 Fox Ball: ' + fox + '\n' : '')
+      + (Faux  !== 'None' ? '🟡 Faux Ball: ' + Faux + '\n' : '')
       + (butter !== 'None' ? '🦋 Butterfly: ' + butter + '\n' : '')
       + (topper !== 'None' ? '✨ Topper: ' + customConfig.topper + (topName ? ' — "'+topName+'"' : '') + '\n' : '')
       + (notesVal ? '📝 Notes: ' + notesVal + '\n' : '')
@@ -3092,11 +3139,11 @@ async function updateCustomOrder() {
   var srv    = customSelections.serves || '1 kg';
   var layers = customSelections.layers || '1';
   var topper = customSelections.topper || 'None';
-  var fox    = customSelections.foxball    || 'None';
+  var Faux    = customSelections.Fauxball    || 'None';
   var butter = customSelections.butterfly  || 'None';
   var kg     = calcKg(srv);
   var base   = (PRICE_MAP[egg2] || PRICE_MAP['Eggless'])[srv] || [900,1300];
-  var extra  = (LAYER_ADDON[layers]||0)*kg + (TOPPER_ADDON[topper]||0) + (FOXBALL_ADDON[fox]||0) + (BUTTERFLY_ADDON[butter]||0);
+  var extra  = (LAYER_ADDON[layers]||0)*kg + (TOPPER_ADDON[topper]||0) + (FauxBALL_ADDON[Faux]||0) + (BUTTERFLY_ADDON[butter]||0);
 
   var customRow = {
     occasion:        customSelections.occasion,
@@ -3106,7 +3153,7 @@ async function updateCustomOrder() {
     layers:          {'1':'Single','2':'Double','3':'Triple'}[layers] + ' layer',
     flavour:         customSelections.flavour,
     egg_preference:  egg2,
-    fox_ball:        fox !== 'None' ? fox : null,
+    Faux_ball:        Faux !== 'None' ? Faux : null,
     butterfly:       butter !== 'None' ? butter : null,
     topper_type:     topper !== 'None' ? topper : null,
     topper_style:    customSelections.topper === 'Acrylic Topper' ? customSelections.acrylicStyle : null,
@@ -3358,7 +3405,7 @@ function doLogin() {
     localStorage.setItem('cc_user', JSON.stringify(currentUser));
     updateProfileUI();
     showToast('Welcome back, ' + user.name + '! 🍫');
-    showPage('profile');
+    showPage('profile');    
   } else {
     errEl.style.display = 'block';
     errEl.textContent = '⚠️ Phone or password incorrect';
@@ -3706,7 +3753,7 @@ function updateCartDots() {
 function renderCart() {
   // Always update dots — even if cart page is not visible
   updateCartDots();
-
+  try { localStorage.setItem('cc_cart', JSON.stringify(cartItems)); } catch(e) {}
   var list = document.getElementById('cart-items-list');
   var empty = document.getElementById('cart-empty');
   var countLbl = document.getElementById('cart-count-lbl');
@@ -3993,6 +4040,182 @@ function applyListFilter(filter) {
   });
 }
 
+// ── PROMO CODES (Supabase) ──
+var appliedPromo = null;
+
+async function applyPromo() {
+  var input = document.getElementById('promo-input');
+  var code  = input ? input.value.trim().toUpperCase() : '';
+  if (!code) { showToast('Please enter a promo code'); return; }
+
+  const { data: offer, error } = await db
+    .from('offers')
+    .select('*')
+    .eq('code', code)
+    .eq('is_active', true)
+    .single();
+
+  if (error || !offer) {
+    showToast('❌ Invalid promo code');
+    if (input) { input.style.borderColor = 'var(--pink)'; setTimeout(function(){ input.style.borderColor = ''; }, 2000); }
+    return;
+  }
+
+  var now = new Date();
+  if (offer.valid_from && new Date(offer.valid_from) > now) { showToast('❌ This offer is not active yet'); return; }
+  if (offer.valid_until && new Date(offer.valid_until) < now) { showToast('❌ This offer has expired'); return; }
+  if (offer.usage_limit && offer.total_used >= offer.usage_limit) { showToast('❌ This offer has reached its usage limit'); return; }
+
+  if (offer.applicable_to !== 'all') {
+    if (!currentUser || !currentUser.db_id) {
+      showToast('Please sign in to use this offer');
+      setTimeout(function(){ window.location.href = 'auth.html'; }, 1200);
+      return;
+    }
+    if (offer.applicable_to === 'new_customers') {
+      const { data: cust } = await db.from('customers').select('total_orders').eq('id', currentUser.db_id).single();
+      if (cust && cust.total_orders > 0) { showToast('❌ This offer is for new customers only'); return; }
+    }
+    if (offer.applicable_to === 'loyalty_gold' || offer.applicable_to === 'loyalty_platinum') {
+      const { data: cust } = await db.from('customers').select('loyalty_tier').eq('id', currentUser.db_id).single();
+      var reqTier = offer.applicable_to === 'loyalty_gold' ? 'gold' : 'platinum';
+      if (!cust || cust.loyalty_tier !== reqTier) { showToast('❌ This offer is for ' + reqTier + ' members only'); return; }
+    }
+    if (offer.usage_per_user && currentUser && currentUser.db_id) {
+      const { data: usageRows } = await db.from('orders').select('id').eq('customer_id', currentUser.db_id).eq('promo_code', code);
+      if (usageRows && usageRows.length >= offer.usage_per_user) { showToast('❌ You have already used this offer'); return; }
+    }
+  }
+
+  var subtotal = cartItems.reduce(function(s, i) {
+    return s + (i.base_price || 0) * (i.qty || 1) + (i.topping_price || 0);
+  }, 0);
+
+  if (subtotal === 0) { showToast('Add items to cart first!'); return; }
+  if (offer.min_order_value && subtotal < offer.min_order_value) {
+    showToast('❌ Minimum order of ₹' + offer.min_order_value + ' required'); return;
+  }
+
+  var discount = 0;
+  if (offer.type === 'percentage') {
+    discount = Math.round(subtotal * offer.discount_value / 100);
+    if (offer.max_discount) discount = Math.min(discount, offer.max_discount);
+  } else if (offer.type === 'flat_amount') {
+    discount = Math.min(offer.discount_value, subtotal);
+  } else if (offer.type === 'free_delivery') {
+    showToast('✅ Free delivery applied! ' + (offer.emoji || '🚚')); return;
+  }
+
+  discount = Math.round(discount);
+  appliedPromo = { code: code, discount: discount, offerId: offer.id, label: offer.name };
+  currentOrderTotal = subtotal - discount;
+
+  var promoRow  = document.getElementById('promo-row-display');
+  var promoLbl  = document.getElementById('promo-lbl');
+  var promoDisc = document.getElementById('promo-disc');
+  var totalEl   = document.getElementById('cart-total-display');
+  var checkoutBtn = document.getElementById('checkout-btn');
+
+  if (promoRow)  promoRow.style.display  = 'flex';
+  if (promoLbl)  promoLbl.textContent    = (offer.emoji || '🏷️') + ' ' + code;
+  if (promoDisc) promoDisc.textContent   = '−₹' + discount;
+  if (totalEl)   totalEl.textContent     = '₹' + currentOrderTotal;
+  if (checkoutBtn) checkoutBtn.textContent = '🎉 Proceed to Checkout — ₹' + currentOrderTotal;
+
+  if (input) { input.style.borderColor = 'var(--green)'; input.disabled = true; }
+
+  var applyBtn = document.querySelector('.promo-apply');
+  if (applyBtn) {
+    applyBtn.textContent      = 'Remove';
+    applyBtn.style.background = 'rgba(244,114,182,.2)';
+    applyBtn.style.color      = 'var(--pink)';
+    applyBtn.onclick          = removePromo;
+  }
+
+  showToast('✅ ' + (offer.emoji || '') + ' ' + offer.name + ' applied! −₹' + discount);
+}
+
+function removePromo() {
+  appliedPromo = null;
+  var input = document.getElementById('promo-input');
+  if (input) { input.value = ''; input.disabled = false; input.style.borderColor = ''; }
+
+  var promoRow = document.getElementById('promo-row-display');
+  if (promoRow) promoRow.style.display = 'none';
+
+  var applyBtn = document.querySelector('.promo-apply');
+  if (applyBtn) {
+    applyBtn.textContent      = 'Apply';
+    applyBtn.style.background = '';
+    applyBtn.style.color      = '';
+    applyBtn.onclick          = applyPromo;
+  }
+
+  renderCart();
+  showToast('Promo code removed');
+}
+
+// ── EGG PREFERENCE FILTER ──
+function applyEggPreferenceFilter(forcePref) {
+  var pref = forcePref || 'both';
+  if (!forcePref) {
+    try {
+      var saved = JSON.parse(localStorage.getItem('cc_user'));
+      pref = (saved && saved.egg_preference) || (currentUser && currentUser.egg_preference) || 'both';
+    } catch(e) {}
+  }
+  if (pref === 'both') return; // show everything, no filtering needed
+
+  // ── Home featured grid (.pcard) ──
+  document.querySelectorAll('.pcard').forEach(function(card) {
+    var cardEgg = (card.getAttribute('data-egg') || 'eggless').toLowerCase();
+    // pref is 'eggless' or 'egg'
+    // data-egg is 'eggless' or 'egg'
+    var show = pref === 'eggless' ? cardEgg === 'eggless' : cardEgg === 'egg';
+    card.style.display = show ? '' : 'none';
+  });
+
+  // Show empty state if all hidden
+  var visible = Array.from(document.querySelectorAll('.pcard')).filter(function(c){ return c.style.display !== 'none'; }).length;
+  var emptyEl = document.getElementById('pgrid-empty');
+  if (emptyEl) emptyEl.style.display = visible === 0 ? 'block' : 'none';
+
+  // ── Explore list (.plcard) ──
+  document.querySelectorAll('.plcard').forEach(function(card) {
+    var cardEgg = (card.getAttribute('data-egg') || 'eggless').toLowerCase();
+    var show = pref === 'eggless' ? cardEgg === 'eggless' : cardEgg === 'egg';
+    card.style.display = show ? '' : 'none';
+
+    // Also update the egg label text inside the card
+    var pltag = card.querySelector('.pltag');
+    if (pltag && show) {
+      var base = pltag.getAttribute('data-base') || pltag.innerHTML.split('·').slice(1).join('·').trim();
+      if (!pltag.getAttribute('data-base')) pltag.setAttribute('data-base', base);
+      pltag.innerHTML = pref === 'eggless'
+        ? '💚 Eggless · ' + pltag.getAttribute('data-base')
+        : '❤️ With Egg · ' + pltag.getAttribute('data-base');
+    }
+  });
+
+  // ── Detail page egg button — pre-select based on preference ──
+  if (pref !== 'both') {
+    var targetEgg = pref === 'eggless' ? 'eggless' : 'egg';
+    document.querySelectorAll('.ebtn').forEach(function(btn) {
+      btn.classList.remove('on');
+    });
+    var matchBtn = document.querySelector('.ebtn.' + (pref === 'eggless' ? 'eg' : 'ee'));
+    if (matchBtn) {
+      matchBtn.classList.add('on');
+      egg = targetEgg; // update global egg variable
+      refreshPrices();
+    }
+  }
+
+  // Show a subtle toast so user knows filter is active
+  if (pref === 'eggless') showToast('💚 Showing eggless products');
+  else if (pref === 'egg') showToast('❤️ Showing egg products');
+}
+
 let tTimer;
 
 // ── QUICK ADD from cards (featured/explore) ──
@@ -4116,7 +4339,7 @@ function doAddCart(btn){
 }
 
 // ── ORDER STATE ──
-let cartItems = [];
+let cartItems = (function(){ try{ var s=localStorage.getItem('cc_cart'); return s?JSON.parse(s):[]; }catch(e){return[];} })();
 let currentPayMethod = 'cod';
 let currentOrderTotal = 0;
 
@@ -4124,6 +4347,11 @@ let currentOrderTotal = 0;
 function goToCheckout() {
   if (!cartItems || cartItems.length === 0) {
     alert('Your cart is empty! Add brownies first.');
+    return;
+  }
+  if (!currentUser || !currentUser.db_id) {
+    showToast('Please sign in to place your order 🍫');
+    setTimeout(function(){ window.location.href = 'auth.html'; }, 1200);
     return;
   }
 
@@ -4379,6 +4607,7 @@ async function placeOrder() {
     }
     // Clear cart after successful order
     cartItems = [];
+    localStorage.removeItem('cc_cart'); // ← clear storage too
     renderCart();
 
     // 3. WhatsApp button — owner notification
