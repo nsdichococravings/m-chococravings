@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ChocoCravings">
+<meta name="mobile-web-app-capable" content="yes">
 <title>NSDI ChocoCravings</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
 // // ── ORDER STATE ──
@@ -332,6 +336,15 @@ async function placeOrder() {
       alert('Order failed: ' + err.message + `\nPlease try again or call ${NSDI_PHONE}`);
     }
   }
+}
+
+// ── PWA SERVICE WORKER ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js')
+      .then(function(reg) { console.log('SW registered:', reg.scope); })
+      .catch(function(err) { console.log('SW failed:', err); });
+  });
 }
 
 </script>
@@ -828,6 +841,41 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 .loader{width:48px;height:48px;border:3px solid var(--bdr);border-top-color:var(--p);border-radius:50%;animation:spin 0.8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-txt{font-size:14px;color:var(--dim)}
+
+/* ── PWA FULL SCREEN ON REAL DEVICE ── */
+@media (max-width: 480px) {
+  body {
+    padding: 0 !important;
+    gap: 0 !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    background: var(--dark) !important;
+  }
+  .phone-wrap {
+    width: 100% !important;
+  }
+  .phone {
+    width: 100vw !important;
+    width: 100dvw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  .notch { display: none !important; }
+  .mesh { display: none !important; }
+}
+
+/* ── SAFE AREA (iPhone home bar) ── */
+.bnav {
+  padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+}
+
+/* ── STATUS BAR SAFE AREA (notch) ── */
+.page {
+  padding-top: env(safe-area-inset-top);
+}
+
 </style>
 </head>
 <body>
