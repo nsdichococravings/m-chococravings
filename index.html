@@ -2,11 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ChocoCravings">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+
 <title>NSDI ChocoCravings</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
 // // ── ORDER STATE ──
@@ -22,25 +23,33 @@ function goToCheckout() {
   }
 
   // Build checkout summary from ALL cart items
-  var totalAmt = cartItems.reduce(function(s, i) {
-    return s + (i.base_price || 0) * (i.qty || i.quantity || 1) + (i.topping_price || 0);
-  }, 0);
-  currentOrderTotal = appliedPromo ? totalAmt - appliedPromo.discount : totalAmt;
+  var totalAmt = cartItems.reduce(function(s, i) {var totalAmt = cartItems.reduce(function(s, i) {
+  return s + (i.base_price || 0) * (i.qty || i.quantity || 1) + (i.topping_price || 0);
+}, 0);
 
-  // Show first item name + count in summary header
-  var firstName = cartItems[0].product_name || cartItems[0].product_name || 'Brownie';
-  var extraCount = cartItems.length > 1 ? ' + ' + (cartItems.length - 1) + ' more' : '';
-  var firstDesc = (cartItems[0].egg === 'eggless' ? '💚 Eggless' : '❤️ With Egg') +
-    ' · ' + (cartItems[0].pack || cartItems[0].pack_label || '4pcs') +
-    ' · ' + (cartItems[0].tier === 'couverture' ? 'Couverture' : 'Premium');
+// Apply promo discount if active
+var discountedTotal = appliedPromo ? totalAmt - appliedPromo.discount : totalAmt;
+currentOrderTotal = discountedTotal;
 
-  // Update checkout summary
-  document.getElementById('ck-item-name').textContent = firstName + extraCount;
-  document.getElementById('ck-item-desc').textContent = firstDesc;
-  document.getElementById('ck-item-price').textContent = '₹' + totalAmt;
+document.getElementById('ck-item-name').textContent = firstName + extraCount;
+document.getElementById('ck-item-desc').textContent = firstDesc;
+document.getElementById('ck-item-price').textContent = '₹' + totalAmt;
+
+// Show discounted total with promo line if applied
+if (appliedPromo) {
+  document.getElementById('ck-total').textContent = '₹' + discountedTotal;
+  // Add promo row to summary if not already there
+  var summaryBox = document.getElementById('ck-summary');
+  if (summaryBox && !document.getElementById('ck-promo-row')) {
+    summaryBox.insertAdjacentHTML('beforeend',
+      '<div id="ck-promo-row" class="os-item" style="border-bottom:none">'
+      + '<div><div class="os-name" style="color:var(--green)">🏷️ Promo — ' + appliedPromo.code + '</div></div>'
+      + '<div class="os-price" style="color:var(--green)">−₹' + appliedPromo.discount + '</div>'
+      + '</div>'
+    );
+  }
+} else {
   document.getElementById('ck-total').textContent = '₹' + totalAmt;
-
-  showPage('checkout');
 }
 
 function selCartPay(el, method) {
@@ -354,9 +363,9 @@ if ('serviceWorker' in navigator) {
 :root{
   --p:#6e0977;--p2:#6e0977;--p3:#6e0977;--pl:#6e0977;--pg:rgba(107,47,206,.15);
   --dark:#fcfcfc;--d2:#fcfcfc;--d3:#fcfcfc;
-  --white:#1a1a1a;--off:#565458;--dim:#07000c;--faint:#050008;
-  --green:#6e0977;--pink:#F472B6;--gold:#F59E0B;
-  --card:rgba(247, 243, 243, 0.979);--bdr:rgba(7, 0, 0, 0.966);--bdr2:rgba(62, 59, 68, 0.3);
+  --white:#65246b;--off:#565458;--dim:#c01d7c;--faint:#6e036e;
+  --green:#8b1996;--pink:#F472B6;--gold:#c9a633;
+  --card:rgba(247, 243, 243, 0.979);--bdr:rgba(144, 35, 148, 0.966);--bdr2:rgba(62, 59, 68, 0.3);
   --r:22px;--r2:16px;--r3:12px;
 }
 body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:28px 16px;gap:36px;flex-wrap:wrap}
@@ -371,7 +380,8 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 .screen{width:100%;height:100%;overflow:hidden;position:relative}
 
 /* ── PAGES ── */
-.page{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;transition:transform .42s cubic-bezier(.16,1,.3,1),opacity .3s;transform:translateX(100%);opacity:0;pointer-events:none}
+/*.page{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;transition:transform .42s cubic-bezier(.16,1,.3,1),opacity .3s;transform:translateX(100%);opacity:0;pointer-events:none} */
+.page{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;transition:transform .42s cubic-bezier(.16,1,.3,1),opacity .3s;transform:translateX(100%);opacity:0;pointer-events:none;padding-bottom:calc(72px + env(safe-area-inset-bottom))}
 .page::-webkit-scrollbar{display:none}
 .page.active{transform:translateX(0);opacity:1;pointer-events:all}
 .page.out{transform:translateX(-28%);opacity:0}
@@ -397,19 +407,58 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 
 /* HEADER */
 .hdr{display:flex;justify-content:space-between;align-items:center;padding:20px 22px 0;position:relative;z-index:10}
-.logo-wrap .logo-eyebrow{font-size:5px;color:var(--p3);letter-spacing:4px;text-transform:uppercase;font-weight:600;margin-bottom:2px}
-.logo-wrap .logo-main{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:var(--white);line-height:1;letter-spacing:-.3px}
+/*
+.logo-wrap .logo-eyebrow{font-size:8px;color:var(--p3);letter-spacing:4px;text-transform:uppercase;font-weight:600;margin-bottom:2px}
+.logo-wrap .logo-main{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;color:var(--white);line-height:1;letter-spacing:-.3px}
 .logo-wrap .logo-main span{color:var(--pl);font-style:italic}
-.logo-wrap .logo-sub{font-size:10px;color:var(--faint);font-weight:400;letter-spacing:.5px;margin-top:1px}
+.logo-wrap .logo-sub{font-size:12px;color:var(--faint);font-weight:400;letter-spacing:.5px;margin-top:1px}
+*/
+.logo-wrap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  height: 60px;
+  width: 100%;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--bdr);
+  backdrop-filter: blur(24px);
+}
+.logo-wrap img {
+  height: 50px;
+  object-fit: contain;
+}
+.logo-spacer { width: 40px; }
+.menu-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 6px;
+  transition: all 0.2s;
+}
+.menu-btn:active {
+  transform: scale(0.88);
+  opacity: 0.7;
+}
+
 .hdr-actions{display:flex;gap:9px}
 .hbtn{width:38px;height:38px;border-radius:13px;background:var(--card);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;transition:all .2s;position:relative}
 .hbtn:active{transform:scale(.9)}
 .dot-badge{position:absolute;top:-3px;right:-3px;width:16px;height:16px;border-radius:50%;background:var(--pink);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--dark)}
 
 /* GREETING */
-.greet{padding:16px 22px 6px;position:relative;z-index:10}
+.greet{padding:40px 22px 6px;position:relative;z-index:10}
 .greet-sub{font-size:12px;color:var(--dim);margin-bottom:2px}
-.greet-main{font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--white);font-weight:600;line-height:1.1}
+.greet-main{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--white);font-weight:600;line-height:1.1}
 .greet-main em{color:var(--pl);font-style:italic}
 
 /* LOCATION */
@@ -534,7 +583,8 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 .ig-follow{margin-left:auto;background:linear-gradient(135deg,#833ab4,#fd1d1d);color:#fff;font-size:11px;font-weight:700;padding:7px 14px;border-radius:10px;white-space:nowrap}
 
 /* BOTTOM NAV */
-.bnav{display:flex;background:rgba(255, 255, 255, 255);backdrop-filter:blur(24px);border-top:1px solid var(--bdr);padding:10px 0 16px;position:sticky;bottom:0;z-index:200}
+.bnav{display:flex;background:rgba(255,255,255,.97);backdrop-filter:blur(24px);border-top:1px solid var(--bdr);padding:10px 0 16px;position:fixed;bottom:0;left:0;right:0;z-index:200;padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+/*.bnav{display:flex;background:rgba(255, 255, 255, 255);backdrop-filter:blur(24px);border-top:1px solid var(--bdr);padding:10px 0 16px;position:sticky;bottom:0;z-index:200} */
 .ntab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 0;transition:transform .2s}
 .ntab:active{transform:scale(.9)}
 .nicon{font-size:20px;transition:transform .2s}
@@ -578,7 +628,30 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 #page-detail{background:var(--dark)}
 .dhero{height:272px;display:flex;align-items:center;justify-content:center;font-size:108px;position:relative;background:linear-gradient(160deg,#fcfcfc,#f0d4f0,#fcfcfc)}
 .dhero::after{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.07'/%3E%3C/svg%3E");mix-blend-mode:overlay}
-.back{position:absolute;top:50px;left:18px;width:38px;height:38px;border-radius:12px;background:rgba(0,0,0,.38);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;border:1px solid rgba(255,255,255,.1);z-index:10}
+.back {
+  position: absolute;
+  top: 50px;
+  left: 18px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(110,9,119,0.85), rgba(156,12,161,0.7));
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.25);
+  z-index: 10;
+  box-shadow: 0 4px 20px rgba(110,9,119,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+  transition: all 0.2s cubic-bezier(.16,1,.3,1);
+}
+
+.back:active {
+  transform: scale(0.88);
+  box-shadow: 0 2px 10px rgba(110,9,119,0.3);
+}
 .dfav{position:absolute;top:50px;right:18px;width:38px;height:38px;border-radius:12px;background:rgba(0,0,0,.38);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;border:1px solid rgba(255,255,255,.1);z-index:10}
 .dbody{background:var(--dark);border-radius:28px 28px 0 0;margin-top:-22px;padding:22px 22px;position:relative;z-index:5}
 
@@ -842,18 +915,15 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-txt{font-size:14px;color:var(--dim)}
 
-/* ── PWA FULL SCREEN ON REAL DEVICE ── */
+/* ── PWA MOBILE FULL SCREEN ── */
 @media (max-width: 480px) {
   body {
     padding: 0 !important;
     gap: 0 !important;
     align-items: stretch !important;
     justify-content: flex-start !important;
-    background: var(--dark) !important;
   }
-  .phone-wrap {
-    width: 100% !important;
-  }
+  .phone-wrap { width: 100% !important; }
   .phone {
     width: 100vw !important;
     width: 100dvw !important;
@@ -863,7 +933,45 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
     box-shadow: none !important;
   }
   .notch { display: none !important; }
-  .mesh { display: none !important; }
+  .mesh { pointer-events: none; }
+
+  /* Top safe area for notch/dynamic island */
+  
+  .prof-hero, .exp-top, .cart-hdr,
+  .ck-hdr, #page-success > div:first-child,
+  #page-custom-order > div:first-child,
+  #page-orders > div:first-child,
+  #page-addresses > div:first-child {
+    padding-top: calc(52px + env(safe-area-inset-top)) !important;
+  }
+
+  /* Safe area top padding for all page headers */
+.hdr { padding-top: calc(20px + env(safe-area-inset-top)); }
+.prof-hero { padding-top: calc(58px + env(safe-area-inset-top)); }
+.exp-top { padding-top: calc(58px + env(safe-area-inset-top)); }
+.cart-hdr { padding-top: calc(58px + env(safe-area-inset-top)); }
+.ck-hdr { padding-top: calc(52px + env(safe-area-inset-top)); }
+
+/* These use inline padding-top so override with important on mobile */
+@media (max-width: 480px) {
+  #page-orders > div:first-child,
+  #page-addresses > div:first-child,
+  #page-custom-order > div:first-child,
+  #page-success > div:first-child {
+    padding-top: calc(52px + env(safe-area-inset-top)) !important;
+  }
+  /* Fix back button position on detail page */
+  .back { top: calc(50px + env(safe-area-inset-top)); }
+  .dfav { top: calc(50px + env(safe-area-inset-top)); }
+}
+
+/* Toast above nav */
+.toast {
+  bottom: calc(90px + env(safe-area-inset-bottom));
+}
+  /* Nav label always visible */
+  .nlbl { font-size: 10px !important; }
+  .bnav { width: 100vw !important; }
 }
 
 /* ── SAFE AREA (iPhone home bar) ── */
@@ -873,9 +981,54 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 
 /* ── STATUS BAR SAFE AREA (notch) ── */
 .page {
-  padding-top: env(safe-area-inset-top);
+  padding-top: calc(60px + env(safe-area-inset-top));
 }
-
+#cart-badge {
+  transition: transform .2s cubic-bezier(.17,.67,.38,1.4);
+}
+#cart-badge.bump {
+  transform: scale(1.4);
+}
+.cart-badge-pill {
+  display: none;
+  position: absolute;
+  top: -7px;
+  right: -9px;
+  min-width: 17px;
+  height: 17px;
+  border-radius: 9px;
+  background: var(--pink);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid var(--dark);
+  font-family: 'DM Sans', sans-serif;
+  line-height: 1;
+  transition: transform .2s cubic-bezier(.17,.67,.38,1.4);
+  pointer-events: none;
+}
+.cart-badge-pill.visible {
+  display: flex;
+}
+.cart-badge-pill.bump {
+  transform: scale(1.4);
+}
+/* Prevent layout shift on profile load */
+#prof-orders, #prof-points, #prof-spent,
+#prof-pts-num, #prof-tier-lbl, #prof-tier-sub,
+#prof-orders-sub, #prof-addr-sub, #prof-egg {
+  min-height: 1em;
+  transition: none;
+}
+.prof-hero {
+  min-height: 200px;
+}
+.lcard {
+  min-height: 100px;
+}
 </style>
 </head>
 <body>
@@ -889,22 +1042,35 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 <div class="phone-wrap">
   <div class="phone">
     <div class="screen">
-
+     <!-- FIXED HEADER — outside all pages -->
+    <div class="logo-wrap">
+      <div class="logo-spacer"></div>
+      <img src="E:\m-chococravings\m-chococravings\SourceCode_Bkp\src\logo\Original_on_transparent.png"     alt="NSDI ChocoCravings"     style="height: 50px; object-fit: contain;"  />
+      
+      <button class="menu-btn" onclick="toggleHamburgerMenu()">
+        <svg width="22" height="16" viewBox="0 0 22 16" fill="none">
+          <rect width="22" height="2.5" rx="1.25" fill="#6e0977"/>
+          <rect y="6.5" width="16" height="2.5" rx="1.25" fill="#9c0ca1"/>
+          <rect y="13" width="10" height="2.5" rx="1.25" fill="#c84fd0"/>
+        </svg>
+      </button>
+    </div>
     <!-- ═══ HOME ═══ -->
     <div class="page active" id="page-home">
-      <div class="hdr">
-        <div class="logo-wrap">
+     <!-- <div class="hdr">
+         <!--
           <div class="logo-eyebrow">Guilt-free desserts</div>
           <div class="logo-main">NSDI Choco<span>Cravings</span></div>
           <div class="logo-sub">Happy to serve fresh!!</div>
-        </div>
+        -->
+        
         <!--
         <div class="hdr-actions">
           <div class="hbtn" onclick="showPage('explore')">🔍</div>
           <div class="hbtn" onclick="showPage('cart')">🛒<div class="dot-badge" id="cart-dot-badge" style="display:none">0</div></div>
         </div>
-      -->
-      </div>
+      
+      </div>-->
 
       <div class="greet">
         <div class="greet-main">What's your <em>craving</em> today?</div>
@@ -931,8 +1097,10 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:4px">Custom Brownie Slab 🎂</div>
         <div style="font-size:12px;color:rgba(255,255,255,.7);margin-bottom:12px">Birthday · Anniversary · Corporate · Any occasion</div>
         <div style="display:flex;gap:8px;align-items:center">
-          <div style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;color:#fff">Build Your Creation →</div>
-          <div style="font-size:11px;color:rgba(255,255,255,.5)">From ₹900/kg · Book 7 days ahead</div>
+          <div style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;color:#fff">Build Your Creation</div>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M6 3L11 8L6 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
         </div>
       </div>
       <!--
@@ -995,87 +1163,8 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         <div class="cat" onclick="selCat(this)"><div class="cat-i">🎂</div><div class="cat-l">Custom</div></div>
       </div> -->
 
-      <!-- FEATURED GRID -->
-      <div class="sec"><span class="sec-t">Featured</span><span class="sec-l" onclick="showPage('explore')">View all</span></div>
-      <div class="pgrid">
-        <div class="pcard" data-name="Classic Fudge Brownie" data-tier="premium" data-egg="eggless" data-varidx="0" data-price="300" data-sku="PREM-EL-CLASSIC" data-cat="eggless classic" data-pack="4pcs (250g)" onclick="showPage('detail')">
-          <div class="pimg pi1">🍫<div class="pfav" onclick="e.stopPropagation();toggleFav(this)"></div><div class="tag-pill">💚 Eggless</div></div>
-          <div class="pinfo">
-            <div class="prating">★★★★★ 4.9</div>
-            <div class="pname">Classic Fudge Brownie</div>
-            <div class="pdesc">Premium · 4pcs / 9pcs / 16pcs</div>
-            <div class="pfoot"><span class="pprice">₹300</span><button class="abtn" onclick="event.stopPropagation();quickAddCart(this)">+</button></div>
-          </div>
-        </div>
-        <div class="pcard" data-name="Triple Choco Brownie" data-tier="premium" data-egg="eggless" data-varidx="2" data-price="380" data-sku="PREM-EL-TRIPLE" data-cat="eggless classic" data-pack="4pcs (250g)" onclick="showPage('detail')">
-          <div class="pimg pi2">🍫<div class="pfav" onclick="event.stopPropagation();toggleFav(this)"></div><div class="tag-pill">💚 Eggless</div></div>
-          <div class="pinfo">
-            <div class="prating">★★★★★ 5.0</div>
-            <div class="pname">Triple Chocolate Brownie</div>
-            <div class="pdesc">Dark + Milk + White · 4pcs</div>
-            <div class="pfoot"><span class="pprice">₹380</span><button class="abtn" onclick="event.stopPropagation();quickAddCart(this)">+</button></div>
-          </div>
-        </div>
-        <div class="pcard" data-name="Nutella Brownie" data-tier="premium" data-egg="eggless" data-varidx="3" data-price="370" data-sku="PREM-EL-NUTELLA" data-cat="eggless classic nutella" data-pack="4pcs (250g)" onclick="showPage('detail')">
-          <div class="pimg pi3">🍯<div class="pfav" onclick="event.stopPropagation();toggleFav(this)"></div><div class="tag-pill">💚 Eggless</div></div>
-          <div class="pinfo">
-            <div class="prating">★★★★★ 4.9</div>
-            <div class="pname">Nutella Brownie</div>
-            <div class="pdesc">Hazelnut choco spread · 4pcs</div>
-            <div class="pfoot"><span class="pprice">₹370</span><button class="abtn" onclick="event.stopPropagation();quickAddCart(this)">+</button></div>
-          </div>
-        </div>
-        <div class="pcard" data-name="Couverture Classic Brownie" data-tier="couverture" data-egg="eggless" data-varidx="0" data-price="490" data-sku="COUV-EL-CLASSIC" data-cat="eggless couverture" data-pack="4pcs (250g)" onclick="showPage('detail')">
-          <div class="pimg pi4">🌟<div class="pfav" onclick="event.stopPropagation();toggleFav(this)"></div><div class="tag-pill">🌟 Premium</div></div>
-          <div class="pinfo">
-            <div class="prating">★★★★★ 5.0</div>
-            <div class="pname">Couverture Classic</div>
-            <div class="pdesc">Belgian chocolate · 4pcs</div>
-            <div class="pfoot"><span class="pprice">₹490</span><button class="abtn" onclick="event.stopPropagation();quickAddCart(this)">+</button></div>
-          </div>
-        </div>
-      </div>
-      <div class="pgrid">
-        <div class="pcard" data-name="Classic Fudge Brownie" data-tier="premium" data-egg="egg" data-varidx="0" data-price="300" data-sku="PREM-EL-CLASSIC" data-cat="eggless classic" data-pack="4pcs (250g)" onclick="showPage('detail')">
-          <div class="pimg pi1">🍫<div class="pfav" onclick="e.stopPropagation();toggleFav(this)"></div><div class="tag-pill">❤️ Egg</div></div>
-          <div class="pinfo">
-            <div class="prating">★★★★★ 4.9</div>
-            <div class="pname">Classic Fudge Brownie</div>
-            <div class="pdesc">Premium · 4pcs / 9pcs / 16pcs</div>
-            <div class="pfoot"><span class="pprice">₹300</span><button class="abtn" onclick="event.stopPropagation();quickAddCart(this)">+</button></div>
-          </div>
-        </div>
-        <div class="pcard" data-name="Triple Choco Brownie" data-tier="premium" data-egg="egg" data-varidx="2" data-price="380" data-sku="PREM-EL-TRIPLE" data-cat="eggless classic" data-pack="4pcs (250g)" onclick="showPage('detail')">
-          <div class="pimg pi2">🍫<div class="pfav" onclick="event.stopPropagation();toggleFav(this)"></div><div class="tag-pill">❤️ Egg</div></div>
-          <div class="pinfo">
-            <div class="prating">★★★★★ 5.0</div>
-            <div class="pname">Triple Chocolate Brownie</div>
-            <div class="pdesc">Dark + Milk + White · 4pcs</div>
-            <div class="pfoot"><span class="pprice">₹380</span><button class="abtn" onclick="event.stopPropagation();quickAddCart(this)">+</button></div>
-          </div>
-        </div>
-        <div class="pcard" data-name="Nutella Brownie" data-tier="premium" data-egg="egg" data-varidx="3" data-price="370" data-sku="PREM-EL-NUTELLA" data-cat="eggless classic nutella" data-pack="4pcs (250g)" onclick="showPage('detail')">
-          <div class="pimg pi3">🍯<div class="pfav" onclick="event.stopPropagation();toggleFav(this)"></div><div class="tag-pill">❤️ Egg</div></div>
-          <div class="pinfo">
-            <div class="prating">★★★★★ 4.9</div>
-            <div class="pname">Nutella Brownie</div>
-            <div class="pdesc">Hazelnut choco spread · 4pcs</div>
-            <div class="pfoot"><span class="pprice">₹370</span><button class="abtn" onclick="event.stopPropagation();quickAddCart(this)">+</button></div>
-          </div>
-        </div>
-        <div class="pcard" data-name="Couverture Classic Brownie" data-tier="couverture" data-egg="egg" data-varidx="0" data-price="490" data-sku="COUV-EL-CLASSIC" data-cat="eggless couverture" data-pack="4pcs (250g)" onclick="showPage('detail')">
-          <div class="pimg pi4">🌟<div class="pfav" onclick="event.stopPropagation();toggleFav(this)"></div><div class="tag-pill">🌟 Premium</div></div>
-          <div class="pinfo">
-            <div class="prating">★★★★★ 5.0</div>
-            <div class="pname">Couverture Classic</div>
-            <div class="pdesc">Belgian chocolate · 4pcs</div>
-            <div class="pfoot"><span class="pprice">₹490</span><button class="abtn" onclick="event.stopPropagation();quickAddCart(this)">+</button></div>
-          </div>
-        </div>
-      </div>
-      <div id="pgrid-empty" style="display:none;text-align:center;padding:20px 22px 8px">
-        <div style="font-size:13px;color:var(--dim)">No featured items in this category</div>
-        <div onclick="showPage('explore')" style="display:inline-block;margin-top:8px;font-size:12px;color:var(--p3);font-weight:600;cursor:pointer;border:1px solid var(--bdr2);border-radius:8px;padding:5px 14px">Browse all in Explore →</div>
+      <div class="plist" id="explore-list">
+        <!-- loaded dynamically -->
       </div>
 
       <!-- TRENDING -->
@@ -1116,16 +1205,27 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
       <div class="bnav">
         <div class="ntab on" onclick="showPage('home')"><div class="nicon">🏠</div><div class="nlbl">Home</div><div class="ndot"></div></div>
         <!--<div class="ntab" onclick="showPage('explore')"><div class="nicon">🔍</div><div class="nlbl">Explore</div><div class="ndot"></div></div> -->
-        <div class="ntab" onclick="showPage('cart')"><div class="nicon">🛒</div><div class="nlbl">Cart</div><div class="ndot cart-ndot"></div></div>
+        <div class="ntab" id="nav-cart" onclick="showPage('cart')">
+          <div class="nicon-wrap" style="position:relative;display:inline-flex;align-items:center;justify-content:center">
+            <span style="font-size:20px">🛒</span>
+            <span id="cart-badge" class="cart-badge-pill"></span>
+          </div>
+          <div class="nlbl">Cart</div>
+        </div>
         <!--<div class="ntab" onclick="showPage('home')"><div class="nicon">❤️</div><div class="nlbl">Saved</div><div class="ndot"></div></div>-->
         <div class="ntab" onclick="checkAuth()"><div class="nicon">👤</div><div class="nlbl">Profile</div><div class="ndot"></div></div>
-        <div class="ntab ntab-admin" onclick="openAdminPanel()"><div class="nicon">⚙️</div><div class="nlbl" style="color:var(--pl)">Admin</div><div class="ndot"></div></div>
+        <!--<div class="ntab ntab-admin" onclick="openAdminPanel()"><div class="nicon">⚙️</div><div class="nlbl" style="color:var(--pl)">Admin</div><div class="ndot"></div></div>-->
       </div>
     </div><!-- /home -->
 
     <!-- ═══ EXPLORE ═══ -->
     <div class="page" id="page-explore">
-      <div class="exp-top">
+      <div class="exp-top"  style="position:relative;">
+        <div class="back" onclick="goBack()" style="top:16px;left:16px;">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
           <div>
             <div class="exp-title">Explore All</div>
@@ -1222,19 +1322,24 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         <div class="ntab" onclick="showPage('cart')"><div class="nicon">🛒</div><div class="nlbl">Cart</div><div class="ndot cart-ndot"></div></div>
         <!--<div class="ntab" onclick="showPage('home')"><div class="nicon">❤️</div><div class="nlbl">Saved</div><div class="ndot"></div></div> -->
         <div class="ntab" onclick="checkAuth()"><div class="nicon">👤</div><div class="nlbl">Profile</div><div class="ndot"></div></div>
-        <div class="ntab ntab-admin" onclick="openAdminPanel()"><div class="nicon">⚙️</div><div class="nlbl" style="color:var(--pl)">Admin</div><div class="ndot"></div></div>
+        <!--<div class="ntab ntab-admin" onclick="openAdminPanel()"><div class="nicon">⚙️</div><div class="nlbl" style="color:var(--pl)">Admin</div><div class="ndot"></div></div>-->
       </div>
     </div><!-- /explore -->
 
     <!-- ═══ DETAIL ═══ -->
     <div class="page" id="page-detail">
-      <div class="dhero">🍫
-        <div class="back" onclick="goBack()">←</div>
+      <div class="dhero">
+        <img src="E:\m-chococravings\m-chococravings\SourceCode_Bkp\src\logo\diya.jpeg" alt="NSDI ChocoCravings Brownie" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;"/>
+        <div class="back" onclick="goBack()">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
         <!--<div class="dfav" onclick="toggleFav(this)">🤍</div>-->
       </div>
       <div class="dbody">
         <!-- SECTION JUMP TABS -->
-        <div style="display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;margin-bottom:16px;padding-bottom:2px">
+       <!-- <div style="display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;margin-bottom:16px;padding-bottom:2px">
           <div onclick="document.getElementById('sec-tier').scrollIntoView({behavior:'smooth',block:'start'})"
                style="flex-shrink:0;padding:6px 13px;border-radius:20px;background:var(--card);border:1px solid var(--bdr);font-size:11px;color:var(--dim);cursor:pointer;white-space:nowrap">🍫 Tier</div>
           <div onclick="document.getElementById('sec-egg').scrollIntoView({behavior:'smooth',block:'start'})"
@@ -1246,7 +1351,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
           <div onclick="document.getElementById('toppings-anchor').scrollIntoView({behavior:'smooth',block:'start'})"
                style="flex-shrink:0;padding:6px 13px;border-radius:20px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);font-size:11px;color:var(--gold);cursor:pointer;white-space:nowrap">🍯 Toppings</div>
         </div>
-        <div class="dtag" id="d-egg-tag">✓ Eggless 💚 · Fresh Baked · No Preservatives</div>
+        <div class="dtag" id="d-egg-tag">✓ Eggless 💚 · Fresh Baked · No Preservatives</div> -->
         <div class="dname" id="d-name">Classic Fudge Brownie</div>
         <div class="dsub" id="d-sub">Premium chocolate · Stays fresh 4–5 days</div>
         <div class="drat-row"><div class="dstars">★★★★★</div><div class="drnum">4.9</div><div class="drcount">· 312 reviews</div></div>
@@ -1333,15 +1438,6 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 
         <div class="dlabel">About NSDI Brownies</div>
         <div class="about-txt">Every brownie is freshly baked in small batches — no preservatives, no artificial flavours. Eggless & egg variants available. Stays fresh 4–5 days. Delivered across Tamil Nadu. 🌿</div>
-        <div class="ingr-row">
-          <div class="ingr">🌿 No Preservatives</div>
-          <div class="ingr">🍫 Premium Choco</div>
-          <div class="ingr">💚 Eggless Option</div>
-          <div class="ingr">📦 Gift Ready</div>
-          <div class="ingr">⏱ 4–5 Days Fresh</div>
-          <div class="ingr">🚚 TN Delivery</div>
-        </div>
-
         <button class="cart-btn" id="cart-cta" onclick="doAddCart(this)">🛒 Add to Cart — ₹300</button>
       </div>
     </div><!-- /detail -->
@@ -1349,7 +1445,11 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
     <!-- ═══ CART ═══ -->
     <div class="page" id="page-cart">
       <div class="cart-hdr">
-        <div class="back" style="position:static;width:36px;height:36px" onclick="goBack()">←</div>
+        <div class="back" style="position:static;width:36px;height:36px" onclick="goBack()">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </div>
         <div><div class="cart-title">My Cart</div><div class="cart-count" id="cart-count-lbl">0 items</div></div>
       </div>
       <div class="citems" id="cart-items-list">
@@ -1403,13 +1503,18 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         <div class="ntab on"><div class="nicon">🛒</div><div class="nlbl">Cart</div><div class="ndot"></div></div>
         <!--<div class="ntab" onclick="showPage('home')"><div class="nicon">❤️</div><div class="nlbl">Saved</div><div class="ndot"></div></div>-->
         <div class="ntab" onclick="checkAuth()"><div class="nicon">👤</div><div class="nlbl">Profile</div><div class="ndot"></div></div>
-        <div class="ntab ntab-admin" onclick="openAdminPanel()"><div class="nicon">⚙️</div><div class="nlbl" style="color:var(--pl)">Admin</div><div class="ndot"></div></div>
+        <!--<div class="ntab ntab-admin" onclick="openAdminPanel()"><div class="nicon">⚙️</div><div class="nlbl" style="color:var(--pl)">Admin</div><div class="ndot"></div></div>-->
       </div>
     </div><!-- /cart -->
 
     <!-- ═══ PROFILE ═══ -->
     <div class="page" id="page-profile">
-      <div class="prof-hero">
+      <div class="prof-hero" style="position:relative;">
+        <div class="back" onclick="showPage('home')" style="top:16px;left:16px;">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
         <div class="pavatar" id="prof-avatar">👤</div>
         <div class="pname" id="prof-name">Guest</div>
         <div class="pemail" id="prof-phone">Not signed in</div>
@@ -1468,7 +1573,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         <div class="ntab" onclick="showPage('cart')"><div class="nicon">🛒</div><div class="nlbl">Cart</div><div class="ndot cart-ndot"></div></div>
         <!--<div class="ntab" onclick="showPage('home')"><div class="nicon">❤️</div><div class="nlbl">Saved</div><div class="ndot"></div></div>-->
         <div class="ntab on"><div class="nicon">👤</div><div class="nlbl">Profile</div><div class="ndot"></div></div>
-        <div class="ntab ntab-admin" onclick="openAdminPanel()"><div class="nicon">⚙️</div><div class="nlbl" style="color:var(--pl)">Admin</div><div class="ndot"></div></div>
+        <!--<div class="ntab ntab-admin" onclick="openAdminPanel()"><div class="nicon">⚙️</div><div class="nlbl" style="color:var(--pl)">Admin</div><div class="ndot"></div></div>-->
       </div>
     </div><!-- /profile -->
 
@@ -1476,7 +1581,11 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
     <div class="page" id="page-orders">
       <div style="background:linear-gradient(160deg,var(--d3),var(--d2));padding:52px 22px 18px">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
-          <div class="back" style="position:static;width:36px;height:36px" onclick="showPage('profile')">←</div>
+          <div class="back" style="position:static;width:36px;height:36px" onclick="showPage('profile')">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
           <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--white)">My Orders</div>
         </div>
       </div>
@@ -1490,7 +1599,11 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
     <div class="page" id="page-addresses">
       <div style="background:linear-gradient(160deg,var(--d3),var(--d2));padding:52px 22px 18px">
         <div style="display:flex;align-items:center;gap:12px">
-          <div class="back" style="position:static;width:36px;height:36px" onclick="showPage('profile')">←</div>
+          <div class="back" style="position:static;width:36px;height:36px" onclick="showPage('profile')">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
           <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--white)">Delivery Addresses</div>
         </div>
       </div>
@@ -1530,7 +1643,11 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
     <div class="page" id="page-checkout">
       <div class="ck-hdr">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-          <div class="back" style="position:static;width:36px;height:36px" onclick="goBack()">←</div>
+          <div class="back" style="position:static;width:36px;height:36px" onclick="goBack()">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
           <div>
             <div class="ck-title">Checkout</div>
             <div class="ck-sub">Complete your order · Delivery across Tamil Nadu</div>
@@ -1681,7 +1798,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 
         <!-- LIVE TRACKING -->
         <div style="background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:16px" id="tracking-card">
-          <div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:16px">🗺️ Live Tracking</div>
+          <div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:16px">Live Tracking</div>
           <div id="tracking-steps"></div>
         </div>
 
@@ -1698,12 +1815,30 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
     </div><!-- /success -->
 
     <!-- ═══ ADMIN PANEL OVERLAY ═══ -->
-    <div id="admin-overlay" style="display:none;position:absolute;inset:0;z-index:500;background:var(--dark)">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:rgba(9,1,15,.98);border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:10">
-        <div style="font-size:13px;font-weight:700;color:var(--pl);letter-spacing:.5px">⚙️ ADMIN</div>
-        <div onclick="closeAdminPanel()" style="width:28px;height:28px;border-radius:8px;background:var(--card);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:var(--dim)">✕</div>
+    <div id="admin-overlay" style="display:none;position:absolute;inset:0;z-index:1100;background:var(--dark)">
+  <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(252,252,252,0.98);border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:10;backdrop-filter:blur(24px)">
+    
+        <!-- Back to App button -->
+        <div onclick="closeAdminPanel()" style="display:flex;align-items:center;gap:7px;padding:7px 14px;background:linear-gradient(135deg,#6e0977,#9c0ca1);border-radius:20px;cursor:pointer;flex-shrink:0;box-shadow:0 3px 10px rgba(110,9,119,.3)">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M9 2L4 7L9 12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <span style="font-size:12px;font-weight:700;color:#fff">Back to App</span>
+        </div>
+
+        <!-- Title -->
+        <div style="flex:1;text-align:center;font-size:13px;font-weight:700;color:var(--pl);letter-spacing:.5px">⚙️ Admin Panel</div>
+
+        <!-- Refresh button -->
+        <div onclick="document.getElementById('admin-iframe').src=document.getElementById('admin-iframe').src" style="width:34px;height:34px;border-radius:10px;background:var(--card);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
+          <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+            <path d="M13 7.5A5.5 5.5 0 112.5 4.5" stroke="#6e0977" stroke-width="1.8" stroke-linecap="round"/>
+            <path d="M2 2v3h3" stroke="#6e0977" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
       </div>
-      <iframe id="admin-iframe" src="" style="width:100%;height:calc(100% - 44px);border:none" allow="clipboard-write"></iframe>
+      <iframe id="admin-iframe" src="" style="width:100%;height:calc(100% - 54px);border:none" allow="clipboard-write"></iframe>
     </div>
 
     <!-- EGG PREFERENCE SHEET -->
@@ -1745,7 +1880,11 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
       <!-- Header -->
       <div style="padding:52px 22px 20px">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-          <div class="back" style="position:static;width:36px;height:36px" onclick="goBack()">←</div>
+          <div class="back" style="position:static;width:36px;height:36px" onclick="goBack()">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
           <div>
             <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--white)">Custom Brownie 🎂</div>
             <div style="font-size:11px;color:var(--dim);margin-top:2px">Build your dream creation</div>
@@ -2071,6 +2210,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
     </div><!-- /custom-order -->
 
     <!-- THEME PICKER SHEET -->
+     
     <div id="theme-overlay" onclick="closeThemePicker()" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.6);z-index:400;backdrop-filter:blur(4px)"></div>
     <div id="theme-sheet" style="display:none;position:absolute;bottom:0;left:0;right:0;background:var(--d2);border-radius:22px 22px 0 0;border-top:1px solid var(--bdr2);z-index:401;padding:0 0 28px">
       <div style="width:40px;height:4px;border-radius:2px;background:var(--faint);margin:14px auto 20px"></div>
@@ -2088,7 +2228,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
           <div style="font-size:11px;font-weight:700;color:var(--pl)">Purple ✓</div>
           <div style="font-size:9px;color:var(--faint);margin-top:2px">Default</div>
         </div>
-
+        <!--
         <div class="theme-card" onclick="applyTheme('rose')" id="tc-rose" style="border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;border:1.5px solid rgba(255,255,255,.08);background:var(--card)">
           <div style="display:flex;justify-content:center;gap:4px;margin-bottom:8px">
             <div style="width:14px;height:14px;border-radius:50%;background:#E11D48"></div>
@@ -2168,18 +2308,98 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
           <div style="font-size:11px;font-weight:700;color:var(--white)">Candy</div>
           <div style="font-size:9px;color:var(--faint);margin-top:2px">Pink & purple</div>
         </div>
-
+        -->
       </div>
       <div style="padding:0 16px">
         <div onclick="closeThemePicker()" style="padding:14px;text-align:center;font-size:13px;font-weight:600;color:var(--dim);cursor:pointer;border-top:1px solid var(--bdr);border-radius:12px">Cancel</div>
       </div>
     </div>
+    <!-- HAMBURGER MENU OVERLAY -->
+    <div id="hamburger-overlay" onclick="closeHamburgerMenu()" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.4);z-index:1200;backdrop-filter:blur(4px)"></div>
+    <div id="hamburger-menu" style="display:none;position:absolute;top:65px;right:12px;background:var(--d2);border:1px solid var(--bdr);border-radius:16px;z-index:1300;min-width:210px;padding:8px;box-shadow:0 8px 32px rgba(0,0,0,.4)">
+      <!-- Live Tracking item — always visible -->
+      <div onclick="openLiveTracking();closeHamburgerMenu()" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;cursor:pointer;background:rgba(110,9,119,.08);border:1px solid rgba(110,9,119,.15);margin-bottom:6px">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--white)">Live Tracking</div>
+          <div style="font-size:11px;color:var(--dim)">Track your active orders</div>
+        </div>
+        <div id="tracking-badge" style="display:none;background:var(--pink);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:auto">●</div>
+      </div>
+      <div id="hamburger-admin-item" style="padding:12px 14px;border-radius:12px;cursor:pointer;align-items:center;gap:12px;background:rgba(107,47,206,.1);border:1px solid rgba(107,47,206,.2)" onclick="openAdminPanel();closeHamburgerMenu()">
+        <span style="font-size:20px">⚙️</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--pl)">Admin Panel</div>
+          <div style="font-size:11px;color:var(--dim)">Manage orders & products</div>
+        </div>
+      </div>
+    </div>
+    <!-- ═══ LIVE TRACKING PAGE ═══ -->
+    <div class="page" id="page-tracking">
+      <div style="background:linear-gradient(160deg,var(--d3),var(--d2));padding:52px 22px 18px;position:relative">
+        <div class="back" onclick="goBack()" style="top:16px;left:16px;">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div style="font-family:'Playfair Display', serif;font-size:24px;font-weight:700;color:var(--white);margin-bottom:4px">Live Tracking</div>
+        <div style="font-size:12px;color:var(--dim)">Status of your active orders</div>
+      </div>
+
+      <div id="tracking-orders-list" style="padding:16px 22px;display:flex;flex-direction:column;gap:12px">
+        <div style="text-align:center;padding:40px 20px;color:var(--dim)">Loading...</div>
+      </div>
+
+  <!-- Order Tracking Detail Sheet -->
+    <div id="tracking-detail-overlay" onclick="closeTrackingDetail()" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:600;backdrop-filter:blur(4px)"></div>
+    <div id="tracking-detail-sheet" style="display:none;position:absolute;bottom:0;left:0;right:0;background:var(--d2);border-radius:22px 22px 0 0;border-top:1px solid var(--bdr2);z-index:601;padding:0 0 32px;max-height:85%;overflow-y:auto">
+      <div style="width:40px;height:4px;border-radius:2px;background:var(--faint);margin:14px auto 6px"></div>
+      
+      <!-- Sheet Header -->
+      <div style="padding:12px 22px 16px;border-bottom:1px solid var(--bdr)">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:var(--white)" id="td-order-num">CC-000001</div>
+            <div style="font-size:11px;color:var(--dim);margin-top:2px" id="td-order-date">—</div>
+          </div>
+          <div id="td-status-badge" style="font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;background:rgba(107,47,206,.15);color:var(--pl)">Pending</div>
+        </div>
+        <div style="margin-top:10px;padding:10px 12px;background:var(--card);border-radius:12px;border:1px solid var(--bdr)">
+          <div style="font-size:12px;font-weight:600;color:var(--white)" id="td-item-name">—</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+            <div style="font-size:11px;color:var(--dim)" id="td-item-desc">—</div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:700;color:var(--pl)" id="td-total">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tracking Timeline -->
+      <div style="padding:18px 22px">
+        <div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:16px">Order Journey</div>
+        <div id="td-tracking-steps"></div>
+      </div>
+
+      <!-- Delivery estimate -->
+      <div id="td-delivery-info" style="margin:0 22px;background:rgba(107,47,206,.08);border:1px solid rgba(107,47,206,.2);border-radius:14px;padding:12px 14px">
+        <div style="font-size:11px;font-weight:700;color:var(--pl);margin-bottom:4px">🚚 Expected Delivery</div>
+        <div style="font-size:11px;color:var(--dim)" id="td-delivery-est">24 hrs – 3 days from confirmation</div>
+      </div>
+
+      <!-- WhatsApp contact -->
+      <div style="padding:16px 22px 0">
+        <div onclick="window.open('https://wa.me/+918973141898','_blank')" style="width:100%;padding:13px;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;font-size:13px;font-weight:700;border-radius:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+          📲 Contact on WhatsApp
+        </div>
+      </div>
+    </div>
+  </div>
 
     <!-- LOADING OVERLAY -->
     <div class="loading-overlay" id="loading-overlay">
       <div class="loader"></div>
       <div class="loading-txt">Placing your order…</div>
     </div>
+
+    
 
     </div><!-- /screen -->
   </div><!-- /phone -->
@@ -2203,9 +2423,8 @@ async function checkAuth() {
       try { saved = JSON.parse(localStorage.getItem('cc_user')); } catch(e){}
       if (saved && (saved.name || saved.email)) {
         currentUser = saved;
-        updateProfileUI();
+        //updateProfileUI();
         showPage('profile');
-        setTimeout(loadProfileData, 200);
         return;
       }
       // Session valid but no local cache — re-fetch profile
@@ -2217,7 +2436,7 @@ async function checkAuth() {
         currentUser = { name: cust.name, phone: cust.phone, email: cust.email, city: cust.city, db_id: cust.id };
         localStorage.setItem('cc_user', JSON.stringify(currentUser));
         updateProfileUI();
-        showPage('profile');
+        //showPage('profile');
         return;
       }
     }
@@ -2227,6 +2446,7 @@ async function checkAuth() {
 }
 
 function updateProfileUI() {
+  loadProfileData();
   if (!currentUser) return;
   var name  = currentUser.name  || 'Customer';
   var phone = currentUser.phone || '';
@@ -2235,11 +2455,13 @@ function updateProfileUI() {
   el = document.getElementById('prof-avatar'); if(el) el.textContent = '👤';
   el = document.getElementById('prof-name');   if(el) el.textContent = name;
   el = document.getElementById('prof-phone');  if(el) el.textContent = phone + city;
-  loadProfileData();
+  
 }
 
+var _profileLoading = false;
 async function loadProfileData() {
   if (!currentUser || !currentUser.db_id) return;
+  _profileLoading = true;
   try {
     // ── Load customer stats from customers table ──
     const { data: cust } = await db.from('customers')
@@ -2304,16 +2526,14 @@ async function loadProfileData() {
   // Always re-check admin status after profile loads
   applyEggPreferenceFilter(eggPref);
   await checkAndShowAdminTab();
-  
+    _profileLoading = false;
   
 }
 
 async function checkAndShowAdminTab() {
-  // Always hide first — ensure non-admins never see the tab
-  document.querySelectorAll('.ntab-admin').forEach(function(t) {
-    t.style.display = 'none';
-    t.style.setProperty('display', 'none', 'important');
-  });
+  // Always hide admin menu item first
+  var adminItem = document.getElementById('hamburger-admin-item');
+  if (adminItem) adminItem.style.display = 'none';
   currentUser.is_admin = false;
 
   if (!currentUser || !currentUser.db_id) return;
@@ -2328,16 +2548,12 @@ async function checkAndShowAdminTab() {
     if (error || !cust) return;
 
     if (cust.is_admin === true) {
-      document.querySelectorAll('.ntab-admin').forEach(function(t) {
-        t.style.removeProperty('display');
-        t.style.display = 'flex';
-      });
+      if (adminItem) adminItem.style.display = 'flex';
       currentUser.is_admin = true;
-      console.log('✅ Admin tab enabled for', cust.name);
+      console.log('✅ Admin menu enabled for', cust.name);
     } else {
-      console.log('ℹ️ Not admin — tab hidden');
+      console.log('ℹ️ Not admin — menu item hidden');
     }
-    
   } catch(e) {
     console.warn('Admin check error:', e.message);
   }
@@ -2392,6 +2608,23 @@ async function loadAndShowOrders() {
       + '</div>'
       + '</div>';
   }).join('');
+}
+
+function toggleHamburgerMenu() {
+  var menu = document.getElementById('hamburger-menu');
+  var overlay = document.getElementById('hamburger-overlay');
+  var isOpen = menu.style.display !== 'none' && menu.style.display !== '';
+  if (isOpen) {
+    menu.style.display = 'none';
+    overlay.style.display = 'none';
+  } else {
+    menu.style.display = 'block';
+    overlay.style.display = 'block';
+  }
+}
+function closeHamburgerMenu() {
+  document.getElementById('hamburger-menu').style.display = 'none';
+  document.getElementById('hamburger-overlay').style.display = 'none';
 }
 
 // ── CUSTOMER EDIT CUSTOM ORDER ──
@@ -2633,6 +2866,7 @@ function openEggPrefSheet() {
     if (saved && saved.egg_preference) current = saved.egg_preference;
   } catch(e){}
   updateEggPrefUI(current);
+  updateCartDots(); // ← show badge on first load if cart has items
   document.getElementById('egg-sheet-overlay').style.display = 'block';
   document.getElementById('egg-pref-sheet').style.display = 'block';
 }
@@ -3596,14 +3830,22 @@ let topAdds={}, topTotal=0;
 function getPrice(){ return P[tier][egg][varIdx][packIdx]; }
 
 function refreshPrices(){
-  const base=getPrice();
-  document.getElementById('d-price').textContent='₹'+base;
-  document.getElementById('cart-cta').textContent='🛒 Add to Cart — ₹'+((base+topTotal)*qty);
-  ['pp0','pp1','pp2'].forEach((id,i)=>{ const el=document.getElementById(id); if(el) el.textContent='₹'+P[tier][egg][varIdx][i]; });
-  document.querySelectorAll('.tprc').forEach(el=>{
-    const ps=el.dataset.p.split(',').map(Number);
-    el.textContent='+₹'+(ps[packIdx]||ps[0]);
-  });
+  // Try to get price from P table first, fallback to Supabase
+  try {
+    const base = getPrice();
+    document.getElementById('d-price').textContent = '₹' + base;
+    document.getElementById('cart-cta').textContent = '🛒 Add to Cart — ₹' + ((base + topTotal) * qty);
+    ['pp0','pp1','pp2'].forEach((id,i) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '₹' + P[tier][egg][varIdx][i];
+    });
+    document.querySelectorAll('.tprc').forEach(el => {
+      const ps = el.dataset.p.split(',').map(Number);
+      el.textContent = '+₹' + (ps[packIdx] || ps[0]);
+    });
+  } catch(e) {
+    console.warn('refreshPrices:', e.message);
+  }
 }
 
 function selTier(el,t){
@@ -3665,6 +3907,13 @@ function setHero(i){
 }
 setInterval(()=>{hi=(hi+1)%3;setHero(hi);},4200);
 
+// ── Run badge on DOM ready ──
+document.addEventListener('DOMContentLoaded', function() {
+  updateCartDots();
+});
+// Fallback if DOMContentLoaded already fired
+setTimeout(updateCartDots, 100);
+
 // Restore session on load — Supabase session + localStorage cache
 (async function(){
   try {
@@ -3676,6 +3925,24 @@ setInterval(()=>{hi=(hi+1)%3;setHero(hi);},4200);
     }
   } catch(e){}
 })();
+// Load products dynamically
+loadProducts();
+debugProducts();
+
+// Check for active orders badge
+setTimeout(async function() {
+  if (currentUser && currentUser.db_id) {
+    var { data } = await db.from('orders')
+      .select('id')
+      .eq('customer_id', currentUser.db_id)
+      .not('status', 'in', '("delivered","cancelled")');
+    var badge = document.getElementById('tracking-badge');
+    if (badge && data && data.length > 0) {
+      badge.style.display = 'block';
+      badge.textContent = data.length;
+    }
+  }
+}, 1000);
 
 // ── NAV ──
 // ── ORDER STATUS STAGES ──
@@ -3786,16 +4053,29 @@ async function loadOrderTracking(orderId, currentStatus) {
 }
 
 function updateCartDots() {
-  var totalQty = cartItems.reduce(function(s,i){ return s + (i.qty || i.quantity || 1); }, 0);
-  var dotBadge = document.getElementById('cart-dot-badge');
-  var ndots = document.querySelectorAll('.cart-ndot');
-  if (totalQty > 0) {
-    if (dotBadge) { dotBadge.textContent = totalQty; dotBadge.style.display = 'flex'; }
-    ndots.forEach(function(d){ d.textContent = totalQty; d.style.display = 'flex'; });
-  } else {
-    if (dotBadge) dotBadge.style.display = 'none';
-    ndots.forEach(function(d){ d.textContent = ''; d.style.display = 'none'; });
+  var totalQty = 0;
+  try {
+    totalQty = cartItems.reduce(function(s,i){ return s + (i.qty || i.quantity || 1); }, 0);
+  } catch(e) { totalQty = 0; }
+
+  var badge = document.getElementById('cart-badge');
+  if (badge) {
+    if (totalQty > 0) {
+      badge.textContent = totalQty > 99 ? '99+' : totalQty;
+      badge.classList.add('visible');
+    } else {
+      badge.classList.remove('visible');
+      badge.textContent = '';
+    }
   }
+
+  // legacy
+  var dotBadge = document.getElementById('cart-dot-badge');
+  if (dotBadge) {
+    dotBadge.textContent = totalQty;
+    dotBadge.style.display = totalQty > 0 ? 'flex' : 'none';
+  }
+  document.querySelectorAll('.cart-ndot').forEach(function(d){ d.style.display = 'none'; });
 }
 
 function renderCart() {
@@ -3882,9 +4162,12 @@ function changeQty(idx, delta) {
 }
 
 function showPage(name){
-  if (name === 'profile') {
-    // Load fresh data from Supabase whenever profile is opened
-    setTimeout(loadProfileData, 100);
+    if (name === 'profile') {
+    var now = Date.now();
+    if (!window._profileLastLoaded || (now - window._profileLastLoaded) > 30000) {
+      window._profileLastLoaded = now;
+      setTimeout(loadProfileData, 450); // wait for slide animation to finish
+    }
   }
   if (name === 'custom-order') {
     setTimeout(updateBrowniePreview, 100);
@@ -3905,6 +4188,7 @@ function showPage(name){
       document.querySelectorAll('.plcard').forEach(function(c){ c.style.display = ''; });
     }
   }
+  updateCartDots();   // ← always refresh badge on every page change
   const cur=document.querySelector('.page.active');
   if(cur){prevPage=cur.id.replace('page-','');cur.classList.remove('active');cur.classList.add('out');setTimeout(()=>cur.classList.remove('out'),420);}
   const nxt=document.getElementById('page-'+name);
@@ -4260,8 +4544,8 @@ function applyEggPreferenceFilter(forcePref) {
   }
 
   // Show a subtle toast so user knows filter is active
-  if (pref === 'eggless') showToast('💚 Showing eggless products');
-  else if (pref === 'egg') showToast('❤️ Showing egg products');
+  //if (pref === 'eggless') showToast('💚 Showing eggless products');
+  //else if (pref === 'egg') showToast('❤️ Showing egg products');
 }
 
 let tTimer;
@@ -4278,7 +4562,8 @@ function quickAddCart(btn) {
   }
   if (!data || !data.name) {
     // Fallback to doAddCart if no data attrs found
-    doAddCart(btn); return;
+    doAddCart(btn); 
+    return;
   }
 
   var name    = data.name;
@@ -4314,6 +4599,8 @@ function quickAddCart(btn) {
   }
 
   renderCart();
+  var b = document.getElementById('cart-badge');
+  if (b) { b.classList.add('bump'); setTimeout(function(){ b.classList.remove('bump'); }, 200); }
 
   // Animate button
   var o = btn.textContent;
@@ -4372,6 +4659,12 @@ function doAddCart(btn){
 
   // Update dots
   renderCart();
+  // Bump animation on badge
+  var badge = document.getElementById('cart-badge');
+  if (badge) {
+    badge.classList.add('bump');
+    setTimeout(function(){ badge.classList.remove('bump'); }, 200);
+  }
 
   // Animate button
   var o = btn.textContent;
@@ -4407,7 +4700,9 @@ function goToCheckout() {
   var totalAmt = cartItems.reduce(function(s, i) {
     return s + (i.base_price || 0) * (i.qty || i.quantity || 1) + (i.topping_price || 0);
   }, 0);
-  currentOrderTotal = totalAmt;
+  
+  var discountedTotal = appliedPromo ? totalAmt - appliedPromo.discount : totalAmt;
+  currentOrderTotal = discountedTotal;
 
   // Show first item name + count in summary header
   var firstName = cartItems[0].name || cartItems[0].product_name || 'Brownie';
@@ -4419,7 +4714,22 @@ function goToCheckout() {
   document.getElementById('ck-item-name').textContent = firstName + extraCount;
   document.getElementById('ck-item-desc').textContent = firstDesc;
   document.getElementById('ck-item-price').textContent = '₹' + totalAmt;
-  document.getElementById('ck-total').textContent = '₹' + totalAmt;
+  document.getElementById('ck-total').textContent = '₹' + discountedTotal;
+
+  // Show promo line in checkout summary
+  var existingPromoRow = document.getElementById('ck-promo-row');
+  if (existingPromoRow) existingPromoRow.remove();
+  if (appliedPromo) {
+    var summaryBox = document.getElementById('ck-summary');
+    if (summaryBox) {
+      summaryBox.insertAdjacentHTML('beforeend',
+        '<div id="ck-promo-row" class="os-item" style="border-top:1px solid var(--bdr);border-bottom:none;margin-top:8px;padding-top:8px">'
+        + '<div><div class="os-name" style="color:var(--green)">🏷️ ' + appliedPromo.code + ' applied</div></div>'
+        + '<div class="os-price" style="color:var(--green)">−₹' + appliedPromo.discount + '</div>'
+        + '</div>'
+      );
+    }
+  }
 
   showPage('checkout');
 }
@@ -4692,6 +5002,348 @@ async function placeOrder() {
       alert('Order failed: ' + err.message + `\nPlease try again or call ${NSDI_PHONE}`);
     }
   }
+}
+
+async function openLiveTracking() {
+  showPage('tracking');
+  var listEl = document.getElementById('tracking-orders-list');
+  if (!listEl) return;
+
+  if (!currentUser || !currentUser.db_id) {
+    listEl.innerHTML = '<div style="text-align:center;padding:40px 20px"><div style="font-size:40px;margin-bottom:12px">🔒</div><div style="font-size:14px;font-weight:600;color:var(--white)">Please sign in</div><div style="font-size:12px;color:var(--dim);margin-top:6px">Sign in to track your orders</div></div>';
+    return;
+  }
+
+  listEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--dim)">Loading orders...</div>';
+
+  var { data: orders, error } = await db.from('orders')
+    .select('id,order_number,status,total,payment_method,created_at,order_items(product_name,quantity,pack_label,egg_type)')
+    .eq('customer_id', currentUser.db_id)
+    .not('status', 'in', '("delivered","cancelled")')
+    .order('created_at', { ascending: false });
+
+  if (error || !orders || orders.length === 0) {
+    listEl.innerHTML = '<div style="text-align:center;padding:40px 20px"><div style="font-size:48px;margin-bottom:12px">✅</div><div style="font-size:14px;font-weight:600;color:var(--white)">No active orders</div><div style="font-size:12px;color:var(--dim);margin-top:6px">All your orders have been delivered!</div><div onclick="showPage(\'explore\')" style="margin-top:16px;display:inline-block;padding:10px 20px;background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer">Order Now 🍫</div></div>';
+    return;
+  }
+
+  // Update badge
+  var badge = document.getElementById('tracking-badge');
+  if (badge && orders.length > 0) { badge.style.display = 'block'; badge.textContent = orders.length; }
+
+  var statusColors = {
+    pending:'rgba(255,180,0,.15)', confirmed:'rgba(107,47,206,.15)',
+    baking:'rgba(255,140,0,.15)', packed:'rgba(34,197,94,.15)',
+    out_for_delivery:'rgba(59,130,246,.15)', ready_for_baking:'rgba(255,140,0,.1)',
+    ready_to_dispatch:'rgba(34,197,94,.1)', shipped:'rgba(59,130,246,.15)'
+  };
+  var statusLabels = {
+    pending:'⏳ Pending', confirmed:'✅ Confirmed', baking:'🍫 Baking',
+    packed:'📦 Packed', out_for_delivery:'🚚 Out for Delivery',
+    ready_for_baking:'🍫 Ready to Bake', ready_to_dispatch:'📦 Ready to Dispatch',
+    shipped:'🚚 Shipped'
+  };
+  var statusProgress = {
+    pending:1, confirmed:2, ready_for_baking:3, baking:4,
+    ready_to_dispatch:5, packed:5, shipped:6, out_for_delivery:6
+  };
+
+  listEl.innerHTML = orders.map(function(o) {
+    var items = o.order_items || [];
+    var itemName = items.length > 0 ? items[0].product_name : 'Order';
+    var itemDesc = items.length > 0 ? (items[0].egg_type === 'eggless' ? '💚 Eggless' : '❤️ Egg') + ' · ' + (items[0].pack_label || '4pcs') : '';
+    if (items.length > 1) itemDesc += ' +' + (items.length-1) + ' more';
+    var statusBg  = statusColors[o.status]  || 'rgba(255,255,255,.05)';
+    var statusLbl = statusLabels[o.status]  || o.status;
+    var progress  = statusProgress[o.status] || 1;
+    var pct = Math.round((progress / 6) * 100);
+    var date = o.created_at ? new Date(o.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short'}) : '';
+
+    return '<div onclick="openTrackingDetail(\'' + o.id + '\',\'' + o.order_number + '\',\'' + o.status + '\',\'' + o.total + '\',\'' + date + '\',\'' + itemName.replace(/'/g,"\\'") + '\',\'' + itemDesc.replace(/'/g,"\\'") + '\')" style="background:var(--card);border:1px solid var(--bdr);border-radius:18px;padding:16px;cursor:pointer;transition:all .2s" >'
+      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">'
+      + '<div>'
+      + '<div style="font-size:13px;font-weight:700;color:var(--pl)">' + o.order_number + '</div>'
+      + '<div style="font-size:11px;color:var(--dim);margin-top:2px">' + date + '</div>'
+      + '</div>'
+      + '<div style="font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;background:' + statusBg + ';color:var(--white)">' + statusLbl + '</div>'
+      + '</div>'
+      + '<div style="font-size:12px;font-weight:600;color:var(--white);margin-bottom:3px">' + itemName + '</div>'
+      + '<div style="font-size:11px;color:var(--dim);margin-bottom:12px">' + itemDesc + '</div>'
+      // Progress bar
+      + '<div style="height:4px;background:rgba(0,0,0,.08);border-radius:2px;overflow:hidden;margin-bottom:6px">'
+      + '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,var(--p),var(--pl));border-radius:2px;transition:width .5s"></div>'
+      + '</div>'
+      + '<div style="display:flex;justify-content:space-between">'
+      + '<span style="font-size:10px;color:var(--faint)">Placed</span>'
+      + '<span style="font-size:10px;color:var(--faint)">Delivered</span>'
+      + '</div>'
+      + '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center">'
+      + '<span style="font-size:11px;color:var(--dim)">₹' + o.total + ' · ' + (o.payment_method||'').toUpperCase() + '</span>'
+      + '<span style="font-size:11px;font-weight:700;color:var(--pl)">View Details →</span>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+async function openTrackingDetail(orderId, orderNum, status, total, date, itemName, itemDesc) {
+  document.getElementById('td-order-num').textContent = orderNum;
+  document.getElementById('td-order-date').textContent = 'Placed on ' + date;
+  document.getElementById('td-total').textContent = '₹' + total;
+  document.getElementById('td-item-name').textContent = itemName;
+  document.getElementById('td-item-desc').textContent = itemDesc;
+
+  var statusLabels = {
+    pending:'⏳ Pending', confirmed:'✅ Confirmed', baking:'🍫 Baking',
+    packed:'📦 Packed', out_for_delivery:'🚚 Out for Delivery',
+    ready_for_baking:'🍫 Ready to Bake', ready_to_dispatch:'📦 Ready to Dispatch',
+    shipped:'🚚 Shipped'
+  };
+  document.getElementById('td-status-badge').textContent = statusLabels[status] || status;
+
+  // Load tracking steps
+  document.getElementById('td-tracking-steps').innerHTML = '<div style="text-align:center;padding:20px;color:var(--dim)">Loading...</div>';
+
+  try {
+    var { data: history } = await db
+      .from('order_status_history')
+      .select('to_status,from_status,created_at,note')
+      .eq('order_id', orderId)
+      .order('created_at', { ascending: true });
+
+    // Render into sheet
+    var stepsEl = document.getElementById('td-tracking-steps');
+    if (stepsEl) {
+      var tempEl = document.createElement('div');
+      tempEl.id = 'tracking-steps';
+      stepsEl.innerHTML = '';
+      stepsEl.appendChild(tempEl);
+      renderTrackingSteps(status, history || []);
+      stepsEl.innerHTML = tempEl.innerHTML;
+    }
+  } catch(e) {
+    document.getElementById('td-tracking-steps').innerHTML = '<div style="color:var(--dim);font-size:12px">Could not load tracking</div>';
+  }
+
+  document.getElementById('tracking-detail-overlay').style.display = 'block';
+  document.getElementById('tracking-detail-sheet').style.display = 'block';
+}
+
+function closeTrackingDetail() {
+  document.getElementById('tracking-detail-overlay').style.display = 'none';
+  document.getElementById('tracking-detail-sheet').style.display = 'none';
+}
+
+function openDetail(el) {
+  var data = el.dataset;
+  
+  // Set tier
+  var t = data.tier || 'premium';
+  tier = t;
+  document.querySelectorAll('.tbtn').forEach(function(b){ b.classList.remove('on'); });
+  var tierBtn = document.querySelector('.tbtn[onclick*="' + t + '"]');
+  if (tierBtn) tierBtn.classList.add('on');
+
+  // Set egg
+  var e = data.egg || 'eggless';
+  egg = e;
+  document.querySelectorAll('.ebtn').forEach(function(b){ b.classList.remove('on'); });
+  var eggBtn = document.querySelector('.ebtn.' + (e === 'eggless' ? 'eg' : 'ee'));
+  if (eggBtn) eggBtn.classList.add('on');
+  var tag = document.getElementById('d-egg-tag');
+  if (tag) tag.textContent = e === 'eggless' ? '✓ Eggless 💚 · Fresh Baked · No Preservatives' : '✓ Contains Egg ❤️ · Fresh Baked · No Preservatives';
+
+  // Set variant
+  var vi = parseInt(data.varidx) || 0;
+  varIdx = vi;
+  document.querySelectorAll('.vrow').forEach(function(r){ r.classList.remove('on'); r.querySelector('.vchk').textContent = ''; });
+  var vrows = document.querySelectorAll('.vrow');
+  if (vrows[vi]) { vrows[vi].classList.add('on'); vrows[vi].querySelector('.vchk').textContent = '✓'; }
+
+  // Set name and description
+  var nameEl = document.getElementById('d-name');
+  if (nameEl) nameEl.textContent = data.name || 'Brownie';
+
+  // Reset pack to first
+  packIdx = 0;
+  document.querySelectorAll('.pcrd').forEach(function(c){ c.classList.remove('on'); });
+  var firstPack = document.querySelector('.pcrd');
+  if (firstPack) firstPack.classList.add('on');
+
+  // Reset qty
+  qty = 1;
+  var qtyEl = document.getElementById('qty-n');
+  if (qtyEl) qtyEl.textContent = '1';
+
+  // Reset toppings
+  resetToppings();
+
+  // Refresh prices
+  refreshPrices();
+
+  showPage('detail');
+}
+
+async function loadProducts() {
+  try {
+    // Load products with their variants
+    var { data: products, error } = await db
+      .from('products')
+      .select('id, name, sku, tier, egg_type, category, description, is_featured, product_variants(id, pack_label, weight_grams, price)')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
+
+    if (error || !products) {
+      console.warn('Products load error:', error);
+      return;
+    }
+
+    renderFeaturedGrid(products);
+    renderExploreList(products);
+
+  } catch(e) {
+    console.warn('loadProducts:', e.message);
+  }
+}
+
+function getLowestPrice(variants) {
+  if (!variants || variants.length === 0) return 0;
+  return Math.min.apply(null, variants.map(function(v){ return v.price || 0; }));
+}
+
+function getEmojiForProduct(name) {
+  var n = (name || '').toLowerCase();
+  if (n.includes('nutella') || n.includes('hazelnut')) return '🍯';
+  if (n.includes('biscoff')) return '🍪';
+  if (n.includes('ragi') || n.includes('wheat') || n.includes('millet') || n.includes('rice')) return '🌾';
+  if (n.includes('nuts') || n.includes('walnut')) return '🥜';
+  if (n.includes('couverture')) return '🌟';
+  if (n.includes('custom')) return '🎂';
+  return '🍫';
+}
+
+function getPiClass(index) {
+  var classes = ['pi1','pi2','pi3','pi4','pi5'];
+  return classes[index % classes.length];
+}
+
+function renderFeaturedGrid(products) {
+  var grid = document.getElementById('featured-grid');
+  if (!grid) return;
+
+  var featured = products.filter(function(p){ return p.is_featured; });
+  if (featured.length === 0) featured = products.slice(0, 8);
+
+  if (featured.length === 0) {
+    document.getElementById('pgrid-empty').style.display = 'block';
+    return;
+  }
+
+  grid.innerHTML = featured.map(function(p, i) {
+    var price = getLowestPrice(p.product_variants);
+    var emoji = getEmojiForProduct(p.name);
+    var piClass = getPiClass(i);
+    var eggLabel = p.egg_type === 'eggless' ? '💚 Eggless' : '❤️ Egg';
+    var tierLabel = p.tier === 'couverture' ? '🌟 Premium' : eggLabel;
+    var rating = p.rating || 4.9;
+    var pack = p.product_variants && p.product_variants.length > 0 ? p.product_variants[0].pack_label : '4pcs';
+    var varIdx = getVariantIndex(p.sku);
+
+    return '<div class="pcard"'
+      + ' data-name="' + p.name + '"'
+      + ' data-tier="' + (p.tier || 'premium') + '"'
+      + ' data-egg="' + (p.egg_type || 'eggless') + '"'
+      + ' data-varidx="' + varIdx + '"'
+      + ' data-price="' + price + '"'
+      + ' data-sku="' + (p.sku || '') + '"'
+      + ' data-cat="' + (p.category || '') + '"'
+      + ' data-pack="' + pack + '"'
+      + ' onclick="openDetail(this)">'
+      + '<div class="pimg ' + piClass + '">' + emoji
+      + '<div class="tag-pill">' + tierLabel + '</div>'
+      + '</div>'
+      + '<div class="pinfo">'
+      + '<div class="prating">★★★★★ ' + rating + '</div>'
+      + '<div class="pname">' + p.name + '</div>'
+      + '<div class="pdesc">' + (p.description || '') + '</div>'
+      + '<div class="pfoot">'
+      + '<span class="pprice">₹' + price + '</span>'
+      + '<button class="abtn" onclick="event.stopPropagation();quickAddCart(this)">+</button>'
+      + '</div>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+function renderExploreList(products) {
+  var list = document.getElementById('explore-list');
+  if (!list) return;
+
+  if (products.length === 0) {
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--dim)">No products found</div>';
+    return;
+  }
+
+  list.innerHTML = products.map(function(p, i) {
+    var price = getLowestPrice(p.product_variants);
+    var emoji = getEmojiForProduct(p.name);
+    var piClass = getPiClass(i);
+    var eggLabel = p.egg_type === 'eggless' ? '💚 Eggless' : '❤️ Egg';
+    var tierLabel = p.tier === 'couverture' ? 'Couverture' : 'Premium';
+    var rating = p.rating || 4.9;
+    var reviews = p.review_count || 0;
+    var pack = p.product_variants && p.product_variants.length > 0 ? p.product_variants[0].pack_label : '4pcs';
+    var varIdx = getVariantIndex(p.sku);
+    var tags = (p.category || '') + ' ' + (p.egg_type || '') + ' ' + (p.tier || '');
+
+    return '<div class="plcard"'
+      + ' data-tags="' + tags.trim() + '"'
+      + ' data-name="' + p.name + '"'
+      + ' data-tier="' + (p.tier || 'premium') + '"'
+      + ' data-egg="' + (p.egg_type || 'eggless') + '"'
+      + ' data-varidx="' + varIdx + '"'
+      + ' data-price="' + price + '"'
+      + ' data-sku="' + (p.sku || '') + '"'
+      + ' data-pack="' + pack + '"'
+      + ' onclick="openDetail(this)">'
+      + '<div class="plimg ' + piClass + '">' + emoji + '</div>'
+      + '<div class="plinfo">'
+      + '<div>'
+      + '<div class="plname">' + p.name + '</div>'
+      + '<div class="pltag">' + eggLabel + ' · ' + tierLabel + '</div>'
+      + '<div class="pldesc">' + (p.description || '') + '</div>'
+      + '<div class="plrat">★★★★★ ' + rating + (reviews ? ' · ' + reviews + ' reviews' : '') + '</div>'
+      + '</div>'
+      + '<div class="plfoot">'
+      + '<span class="plprice">from ₹' + price + '</span>'
+      + '<button class="abtn" onclick="event.stopPropagation();quickAddCart(this)">+</button>'
+      + '</div>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+function getVariantIndex(sku) {
+  var varMap = {
+    'CLASSIC':0,'DOUBLE':1,'TRIPLE':2,'NUTELLA':3,'BISCOFF':4,
+    'NUTS':5,'SEEDS':6,'SEEDNUTS':7,'WALNUT':8,'HAZEL':9,
+    'ASSORTED':10,'RAGI':11,'WHEAT':12,'BLACKRICE':13,'MILLET':14
+  };
+  if (!sku) return 0;
+  var parts = sku.split('-');
+  var varCode = parts[parts.length - 1];
+  return varMap[varCode] !== undefined ? varMap[varCode] : 0;
+}
+
+async function debugProducts() {
+  // Test products table alone
+  var { data: p, error: pe } = await db.from('products').select('*').limit(1);
+  if (pe) { console.error('products error:', pe.message); }
+  else { console.log('products columns:', Object.keys(p[0])); console.log('products row:', p[0]); }
+
+  // Test variants table alone  
+  var { data: v, error: ve } = await db.from('product_variants').select('*').limit(1);
+  if (ve) { console.error('variants error:', ve.message); }
+  else { console.log('variants columns:', Object.keys(v[0])); console.log('variants row:', v[0]); }
 }
 
 </script>
