@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.netlify.chococravings.twa",
+      "sha256_cert_fingerprints": [
+        "2D:DC:1E:6A:BB:E4:A4:FE:4C:9E:8B:59:81:29:90:20:3C:66:2D:98:E7:3A:39:13:39:4C:8B:2B:B0:DD:4A:EE"
+      ]
+    }
+  }
+]
