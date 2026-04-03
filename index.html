@@ -456,7 +456,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 .dot-badge{position:absolute;top:-3px;right:-3px;width:16px;height:16px;border-radius:50%;background:var(--pink);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;border:2px solid var(--dark)}
 
 /* GREETING */
-.greet{padding:40px 22px 6px;position:relative;z-index:10}
+.greet{padding:8px 22px 6px;position:relative;z-index:10}
 .greet-sub{font-size:12px;color:var(--dim);margin-bottom:2px}
 .greet-main{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--white);font-weight:600;line-height:1.1}
 .greet-main em{color:var(--pl);font-style:italic}
@@ -583,7 +583,20 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 .ig-follow{margin-left:auto;background:linear-gradient(135deg,#833ab4,#fd1d1d);color:#fff;font-size:11px;font-weight:700;padding:7px 14px;border-radius:10px;white-space:nowrap}
 
 /* BOTTOM NAV */
-.bnav{display:flex;background:rgba(255,255,255,.97);backdrop-filter:blur(24px);border-top:1px solid var(--bdr);padding:10px 0 16px;position:fixed;bottom:0;left:0;right:0;z-index:200;padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+.bnav {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  display: flex;
+  background: rgba(255,255,255,.97);
+  backdrop-filter: blur(24px);
+  border-top: 1px solid var(--bdr);
+  padding: 10px 0;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
+}
+/*.bnav{display:flex;background:rgba(255,255,255,.97);backdrop-filter:blur(24px);border-top:1px solid var(--bdr);padding:10px 0 16px;position:fixed;bottom:0;left:0;right:0;z-index:200;padding-bottom:calc(10px + env(safe-area-inset-bottom))} */
 /*.bnav{display:flex;background:rgba(255, 255, 255, 255);backdrop-filter:blur(24px);border-top:1px solid var(--bdr);padding:10px 0 16px;position:sticky;bottom:0;z-index:200} */
 .ntab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:4px 0;transition:transform .2s}
 .ntab:active{transform:scale(.9)}
@@ -753,7 +766,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
    CART PAGE
 ══════════════════════════════ */
 #page-cart{background:var(--dark)}
-.cart-hdr{display:flex;align-items:center;gap:12px;padding:58px 22px 16px;background:linear-gradient(160deg,var(--d3),var(--d2))}
+.cart-hdr{display:flex;align-items:center;gap:12px;padding:16px 22px 16px;background:linear-gradient(160deg,var(--d3),var(--d2))}
 .cart-title{font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--white);font-weight:700}
 .cart-count{font-size:12px;color:var(--dim)}
 .citems{padding:0 22px;display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
@@ -790,7 +803,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
    PROFILE PAGE
 ══════════════════════════════ */
 #page-profile{background:var(--dark)}
-.prof-hero{padding:58px 22px 22px;background:linear-gradient(160deg,var(--d3),var(--dark));text-align:center}
+.prof-hero{padding:6px 22px 22px;background:linear-gradient(160deg,var(--d3),var(--dark));text-align:center}
 .pavatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--p),var(--pl));margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:32px;border:3px solid rgba(107,47,206,.3)}
 .pname{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--white);font-weight:700}
 .pemail{font-size:12px;color:var(--dim);margin-bottom:14px}
@@ -913,7 +926,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 .loading-overlay.show{display:flex}
 .loader{width:48px;height:48px;border:3px solid var(--bdr);border-top-color:var(--p);border-radius:50%;animation:spin 0.8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-.loading-txt{font-size:14px;color:var(--dim)}
+.loading-txt{font-size:14px;color:var(--dim); font-family: 'Cormorant Garamond', serif;font-size: 18px;font-weight: 600;letter-spacing: 0.5px;}
 
 /* ── PWA MOBILE FULL SCREEN ── */
 @media (max-width: 480px) {
@@ -971,13 +984,8 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 }
   /* Nav label always visible */
   .nlbl { font-size: 10px !important; }
-  .bnav { width: 100vw !important; }
 }
 
-/* ── SAFE AREA (iPhone home bar) ── */
-.bnav {
-  padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important;
-}
 
 /* ── STATUS BAR SAFE AREA (notch) ── */
 .page {
@@ -1055,6 +1063,21 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         </svg>
       </button>
     </div>
+    <div class="bnav" id="main-bnav">
+      <div class="ntab on" id="nav-home" onclick="setNav('home');showPage('home')">
+        <div class="nicon">🏠</div><div class="nlbl">Home</div><div class="ndot"></div>
+      </div>
+      <div class="ntab" id="nav-cart" onclick="setNav('cart');showPage('cart')">
+        <div class="nicon-wrap" style="position:relative;display:inline-flex;align-items:center;justify-content:center">
+          <span style="font-size:20px">🛒</span>
+          <span id="cart-badge" class="cart-badge-pill"></span>
+        </div>
+        <div class="nlbl">Cart</div>
+      </div>
+      <div class="ntab" id="nav-profile" onclick="setNav('profile');checkAuth()">
+        <div class="nicon">👤</div><div class="nlbl">Profile</div><div class="ndot"></div>
+      </div>
+    </div>
     <!-- ═══ HOME ═══ -->
     <div class="page active" id="page-home">
      <!-- <div class="hdr">
@@ -1095,7 +1118,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         <div style="position:absolute;bottom:-10px;left:30px;width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.04)"></div>
         <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">New · Design Yours</div>
         <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:4px">Custom Brownie Slab 🎂</div>
-        <div style="font-size:12px;color:rgba(255,255,255,.7);margin-bottom:12px">Birthday · Anniversary · Corporate · Any occasion</div>
+        <div style="font-size:12px;color:rgba(255,255,255,.7);margin-bottom:12px">Birthday · Anniversary · Any occasion</div>
         <div style="display:flex;gap:8px;align-items:center">
           <div style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;color:#fff">Build Your Creation</div>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -1163,8 +1186,13 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         <div class="cat" onclick="selCat(this)"><div class="cat-i">🎂</div><div class="cat-l">Custom</div></div>
       </div> -->
 
-      <div class="plist" id="explore-list">
+      <!-- FEATURED SECTION -->
+      <div class="sec"><span class="sec-t">Featured</span><span class="sec-l" onclick="showPage('explore')">View all</span></div>
+      <div id="featured-grid" class="pgrid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:2px 22px 14px;">
         <!-- loaded dynamically -->
+      </div>
+      <div id="pgrid-empty" style="display:none;text-align:center;padding:20px 22px 8px">
+        <div style="font-size:13px;color:var(--dim)">No featured items</div>
       </div>
 
       <!-- TRENDING -->
@@ -1201,21 +1229,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         <div class="ig-follow">Follow</div>
       </div> -->
 
-      <div style="height:8px"></div>
-      <div class="bnav">
-        <div class="ntab on" onclick="showPage('home')"><div class="nicon">🏠</div><div class="nlbl">Home</div><div class="ndot"></div></div>
-        <!--<div class="ntab" onclick="showPage('explore')"><div class="nicon">🔍</div><div class="nlbl">Explore</div><div class="ndot"></div></div> -->
-        <div class="ntab" id="nav-cart" onclick="showPage('cart')">
-          <div class="nicon-wrap" style="position:relative;display:inline-flex;align-items:center;justify-content:center">
-            <span style="font-size:20px">🛒</span>
-            <span id="cart-badge" class="cart-badge-pill"></span>
-          </div>
-          <div class="nlbl">Cart</div>
-        </div>
-        <!--<div class="ntab" onclick="showPage('home')"><div class="nicon">❤️</div><div class="nlbl">Saved</div><div class="ndot"></div></div>-->
-        <div class="ntab" onclick="checkAuth()"><div class="nicon">👤</div><div class="nlbl">Profile</div><div class="ndot"></div></div>
-        <!--<div class="ntab ntab-admin" onclick="openAdminPanel()"><div class="nicon">⚙️</div><div class="nlbl" style="color:var(--pl)">Admin</div><div class="ndot"></div></div>-->
-      </div>
+      
     </div><!-- /home -->
 
     <!-- ═══ EXPLORE ═══ -->
@@ -1316,14 +1330,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         </div>
       </div>
       <div style="height:8px"></div>
-      <div class="bnav">
-        <div class="ntab" onclick="showPage('home')"><div class="nicon">🏠</div><div class="nlbl">Home</div><div class="ndot"></div></div>
-        <!-- <div class="ntab on"><div class="nicon">🔍</div><div class="nlbl">Explore</div><div class="ndot"></div></div> -->
-        <div class="ntab" onclick="showPage('cart')"><div class="nicon">🛒</div><div class="nlbl">Cart</div><div class="ndot cart-ndot"></div></div>
-        <!--<div class="ntab" onclick="showPage('home')"><div class="nicon">❤️</div><div class="nlbl">Saved</div><div class="ndot"></div></div> -->
-        <div class="ntab" onclick="checkAuth()"><div class="nicon">👤</div><div class="nlbl">Profile</div><div class="ndot"></div></div>
-        <!--<div class="ntab ntab-admin" onclick="openAdminPanel()"><div class="nicon">⚙️</div><div class="nlbl" style="color:var(--pl)">Admin</div><div class="ndot"></div></div>-->
-      </div>
+      
     </div><!-- /explore -->
 
     <!-- ═══ DETAIL ═══ -->
@@ -1497,14 +1504,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         </div>
       </div>
       <button class="checkout-btn" id="checkout-btn" onclick="goToCheckout()" disabled style="opacity:0.5">🎉 Proceed to Checkout — ₹0</button>
-      <div class="bnav">
-        <div class="ntab" onclick="showPage('home')"><div class="nicon">🏠</div><div class="nlbl">Home</div><div class="ndot"></div></div>
-        <!--<div class="ntab" onclick="showPage('explore')"><div class="nicon">🔍</div><div class="nlbl">Explore</div><div class="ndot"></div></div>-->
-        <div class="ntab on"><div class="nicon">🛒</div><div class="nlbl">Cart</div><div class="ndot"></div></div>
-        <!--<div class="ntab" onclick="showPage('home')"><div class="nicon">❤️</div><div class="nlbl">Saved</div><div class="ndot"></div></div>-->
-        <div class="ntab" onclick="checkAuth()"><div class="nicon">👤</div><div class="nlbl">Profile</div><div class="ndot"></div></div>
-        <!--<div class="ntab ntab-admin" onclick="openAdminPanel()"><div class="nicon">⚙️</div><div class="nlbl" style="color:var(--pl)">Admin</div><div class="ndot"></div></div>-->
-      </div>
+      
     </div><!-- /cart -->
 
     <!-- ═══ PROFILE ═══ -->
@@ -1544,10 +1544,14 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
           <span class="marrow">›</span>
         </div>
         <div class="mgrp">Preferences</div>
-        <div class="mitem" onclick="openEggPrefSheet()" style="cursor:pointer">
+        <div class="mitem" id="egg-pref-item" style="cursor:not-allowed;opacity:0.6;">
           <div class="mico" style="background:rgba(107,47,206,.15)">🥚</div>
-          <div class="mtxt"><div class="mtitle">Egg Preference</div><div class="msub" id="prof-egg">💚 Eggless</div></div>
-          <span class="marrow">›</span>
+          <div class="mtxt">
+            <div class="mtitle">Egg Preference</div>
+            <div class="msub" id="prof-egg">💚 Eggless</div>
+            <div style="font-size:10px;color:var(--faint);margin-top:2px">Set during signup · Cannot be changed</div>
+          </div>
+          <span style="font-size:11px;color:var(--faint)">🔒</span>
         </div>
         <div class="mitem" onclick="window.open('https://instagram.com/nsdi.chococravings','_blank')">
           <div class="mico" style="background:rgba(192,132,232,.1)">📸</div>
@@ -1567,14 +1571,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         </div>
       </div>
       <div style="height:10px"></div>
-      <div class="bnav">
-        <div class="ntab" onclick="showPage('home')"><div class="nicon">🏠</div><div class="nlbl">Home</div><div class="ndot"></div></div>
-        <!--<div class="ntab" onclick="showPage('explore')"><div class="nicon">🔍</div><div class="nlbl">Explore</div><div class="ndot"></div></div> -->
-        <div class="ntab" onclick="showPage('cart')"><div class="nicon">🛒</div><div class="nlbl">Cart</div><div class="ndot cart-ndot"></div></div>
-        <!--<div class="ntab" onclick="showPage('home')"><div class="nicon">❤️</div><div class="nlbl">Saved</div><div class="ndot"></div></div>-->
-        <div class="ntab on"><div class="nicon">👤</div><div class="nlbl">Profile</div><div class="ndot"></div></div>
-        <!--<div class="ntab ntab-admin" onclick="openAdminPanel()"><div class="nicon">⚙️</div><div class="nlbl" style="color:var(--pl)">Admin</div><div class="ndot"></div></div>-->
-      </div>
+      
     </div><!-- /profile -->
 
     <!-- ═══ MY ORDERS ═══ -->
@@ -2394,9 +2391,9 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
   </div>
 
     <!-- LOADING OVERLAY -->
-    <div class="loading-overlay" id="loading-overlay">
+    <div class="loading-overlay" id="loading-overlay" style="display:flex;">
       <div class="loader"></div>
-      <div class="loading-txt">Placing your order…</div>
+      <div class="loading-txt">Loading…</div>
     </div>
 
     
@@ -2475,7 +2472,7 @@ async function loadProfileData() {
     var el;
     el = document.getElementById('prof-name');   if(el) el.textContent = cust.name || currentUser.name;
     el = document.getElementById('prof-phone');  if(el) el.textContent = (cust.phone||'') + (cust.city ? ' · '+cust.city : '');
-    var eggPref = cust.egg_preference || (currentUser && currentUser.egg_preference) || 'egg';
+    var eggPref = cust.egg_preference || (currentUser && currentUser.egg_preference) || 'Both';
     el = document.getElementById('prof-egg');
     if (el) el.textContent = eggPref === 'egg' ? '❤️ With Egg' : eggPref === 'both' ? '🍫 Both' : '💚 Eggless';
     // Stats
@@ -2515,6 +2512,11 @@ async function loadProfileData() {
     el = document.getElementById('prof-active-badge');
     if (el) { el.textContent = activeCount + ' Active'; el.style.display = activeCount > 0 ? 'inline' : 'none'; }
 
+
+    if (eggPref && eggPref !== 'both') applyEggPreferenceFilter(eggPref);
+      await checkAndShowAdminTab();
+    
+
     // Addresses sub-label
     var { data: addrs } = await db.from('customer_addresses')
       .select('id', { count:'exact' })
@@ -2523,11 +2525,8 @@ async function loadProfileData() {
     if (el) el.textContent = addrs ? addrs.length + ' saved address' + (addrs.length !== 1 ? 'es' : '') : 'No addresses yet';
 
   } catch(e) { console.warn('loadProfileData:', e.message); }
-  // Always re-check admin status after profile loads
-  applyEggPreferenceFilter(eggPref);
-  await checkAndShowAdminTab();
-    _profileLoading = false;
-  
+  // Always re-check admin status after profile loads  
+  _profileLoading = false; 
 }
 
 async function checkAndShowAdminTab() {
@@ -2860,7 +2859,7 @@ function closeThemePicker() {
 })();
 
 function openEggPrefSheet() {
-  var current = (currentUser && currentUser.egg_preference) || 'egg';
+  var current = (currentUser && currentUser.egg_preference) || 'Both';
   try {
     var saved = JSON.parse(localStorage.getItem('cc_user'));
     if (saved && saved.egg_preference) current = saved.egg_preference;
@@ -4162,6 +4161,7 @@ function changeQty(idx, delta) {
 }
 
 function showPage(name){
+    setNav(name);
     if (name === 'profile') {
     var now = Date.now();
     if (!window._profileLastLoaded || (now - window._profileLastLoaded) > 30000) {
@@ -4490,62 +4490,43 @@ function removePromo() {
 // ── EGG PREFERENCE FILTER ──
 function applyEggPreferenceFilter(forcePref) {
   var pref = forcePref || 'both';
-  if (!forcePref) {
-    try {
-      var saved = JSON.parse(localStorage.getItem('cc_user'));
-      pref = (saved && saved.egg_preference) || (currentUser && currentUser.egg_preference) || 'both';
-    } catch(e) {}
+if (!forcePref) {
+  try {
+    var saved = JSON.parse(localStorage.getItem('cc_user'));
+    pref = (saved && saved.egg_preference) || (currentUser && currentUser.egg_preference) || 'both';
+  } catch(e) {}
+}
+
+
+if (!pref || pref === 'both') return;
+
+// Show all cards regardless — same product available in both variants
+// Just update the egg label text and default selection
+document.querySelectorAll('.pcard, .plcard').forEach(function(card) {
+  card.style.display = '';
+});
+
+// Hide empty state
+var emptyEl = document.getElementById('pgrid-empty');
+if (emptyEl) emptyEl.style.display = 'none';
+
+// Update label text on plcards
+document.querySelectorAll('.plcard').forEach(function(card) {
+  var pltag = card.querySelector('.pltag');
+  if (!pltag) return;
+  if (!pltag.getAttribute('data-base')) {
+    pltag.setAttribute('data-base', pltag.innerHTML.split('·').slice(1).join('·').trim());
   }
-  if (pref === 'both') return; // show everything, no filtering needed
+  pltag.innerHTML = pref === 'eggless'
+    ? '💚 Eggless · ' + pltag.getAttribute('data-base')
+    : '❤️ With Egg · ' + pltag.getAttribute('data-base');
+});
 
-  // ── Home featured grid (.pcard) ──
-  document.querySelectorAll('.pcard').forEach(function(card) {
-    var cardEgg = (card.getAttribute('data-egg') || 'eggless').toLowerCase();
-    // pref is 'eggless' or 'egg'
-    // data-egg is 'eggless' or 'egg'
-    var show = pref === 'eggless' ? cardEgg === 'eggless' : cardEgg === 'egg';
-    card.style.display = show ? '' : 'none';
-  });
-
-  // Show empty state if all hidden
-  var visible = Array.from(document.querySelectorAll('.pcard')).filter(function(c){ return c.style.display !== 'none'; }).length;
-  var emptyEl = document.getElementById('pgrid-empty');
-  if (emptyEl) emptyEl.style.display = visible === 0 ? 'block' : 'none';
-
-  // ── Explore list (.plcard) ──
-  document.querySelectorAll('.plcard').forEach(function(card) {
-    var cardEgg = (card.getAttribute('data-egg') || 'eggless').toLowerCase();
-    var show = pref === 'eggless' ? cardEgg === 'eggless' : cardEgg === 'egg';
-    card.style.display = show ? '' : 'none';
-
-    // Also update the egg label text inside the card
-    var pltag = card.querySelector('.pltag');
-    if (pltag && show) {
-      var base = pltag.getAttribute('data-base') || pltag.innerHTML.split('·').slice(1).join('·').trim();
-      if (!pltag.getAttribute('data-base')) pltag.setAttribute('data-base', base);
-      pltag.innerHTML = pref === 'eggless'
-        ? '💚 Eggless · ' + pltag.getAttribute('data-base')
-        : '❤️ With Egg · ' + pltag.getAttribute('data-base');
-    }
-  });
-
-  // ── Detail page egg button — pre-select based on preference ──
-  if (pref !== 'both') {
-    var targetEgg = pref === 'eggless' ? 'eggless' : 'egg';
-    document.querySelectorAll('.ebtn').forEach(function(btn) {
-      btn.classList.remove('on');
-    });
-    var matchBtn = document.querySelector('.ebtn.' + (pref === 'eggless' ? 'eg' : 'ee'));
-    if (matchBtn) {
-      matchBtn.classList.add('on');
-      egg = targetEgg; // update global egg variable
-      refreshPrices();
-    }
-  }
-
-  // Show a subtle toast so user knows filter is active
-  //if (pref === 'eggless') showToast('💚 Showing eggless products');
-  //else if (pref === 'egg') showToast('❤️ Showing egg products');
+// Pre-select egg button on detail page
+var targetEgg = pref === 'eggless' ? 'eggless' : 'egg';
+document.querySelectorAll('.ebtn').forEach(function(btn){ btn.classList.remove('on'); });
+var matchBtn = document.querySelector('.ebtn.' + (pref === 'eggless' ? 'eg' : 'ee'));
+if (matchBtn) { matchBtn.classList.add('on'); egg = targetEgg; refreshPrices(); }
 }
 
 let tTimer;
@@ -5189,21 +5170,27 @@ async function loadProducts() {
     var { data: products, error } = await db
       .from('products')
       .select('id, name, sku, tier, egg_type, category, description, is_featured, product_variants(id, pack_label, weight_grams, price)')
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true });
+      .eq('is_active', true);
 
-    if (error || !products) {
+      if (error || !products) {
       console.warn('Products load error:', error);
+      var overlay = document.getElementById('loading-overlay');
+      if (overlay) overlay.style.display = 'none';
       return;
     }
 
     renderFeaturedGrid(products);
     renderExploreList(products);
 
-  } catch(e) {
-    console.warn('loadProducts:', e.message);
-  }
-}
+    // Hide loading overlay
+    var overlay = document.getElementById('loading-overlay');
+    if (overlay) overlay.classList.remove('show');
+    overlay.style.display = 'none';
+
+      } catch(e) {
+        console.warn('loadProducts:', e.message);
+      }
+    }
 
 function getLowestPrice(variants) {
   if (!variants || variants.length === 0) return 0;
@@ -5259,7 +5246,6 @@ function renderFeaturedGrid(products) {
       + ' data-pack="' + pack + '"'
       + ' onclick="openDetail(this)">'
       + '<div class="pimg ' + piClass + '">' + emoji
-      + '<div class="tag-pill">' + tierLabel + '</div>'
       + '</div>'
       + '<div class="pinfo">'
       + '<div class="prating">★★★★★ ' + rating + '</div>'
@@ -5345,7 +5331,11 @@ async function debugProducts() {
   if (ve) { console.error('variants error:', ve.message); }
   else { console.log('variants columns:', Object.keys(v[0])); console.log('variants row:', v[0]); }
 }
-
+function setNav(name) {
+  document.querySelectorAll('.ntab').forEach(function(t){ t.classList.remove('on'); });
+  var el = document.getElementById('nav-' + name);
+  if (el) el.classList.add('on');
+}
 </script>
 </body>
 </html>
