@@ -302,6 +302,26 @@ body{
 
 /* ── STATUSBAR ── */
 .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 28px 0;font-size:12px;color:var(--muted)}
+@media (max-width: 480px) {
+  body {
+    padding: 0 !important;
+    gap: 0 !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+  }
+  .phone-wrap {
+    width: 100% !important;
+  }
+  .phone {
+    width: 100vw !important;
+    width: 100dvw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  .notch { display: none !important; }
+}
 </style>
 </head>
 <body>
@@ -357,7 +377,8 @@ body{
         <div class="splash-orb so2"></div>
         <div class="splash-orb so3"></div>
         <div class="splash-logo">
-          <div class="splash-icon">🍫</div>
+          <div class="splash-icon"><img src="E:\m-chococravings\m-chococravings\SourceCode_Bkp\src\logo\Original_on_transparent.png"     alt="NSDI ChocoCravings"     style="height: 50px; object-fit: contain;"  />
+      </div>
           <div class="splash-tag">NSDI</div>
           <div class="splash-name">Choco<em>Cravings</em></div>
           <div class="splash-sub">Handcrafted brownies & cakes delivered fresh across Tamil Nadu</div>
