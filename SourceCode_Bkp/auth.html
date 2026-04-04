@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NSDI ChocoCravings — Login & Signup</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -181,11 +182,6 @@ body{
 .ad-line{flex:1;height:1px;background:var(--border)}
 .ad-text{font-size:12px;color:var(--dim)}
 
-/* SOCIAL */
-.social-row{display:flex;gap:12px;margin-bottom:20px}
-.social-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:14px;padding:13px;cursor:pointer;transition:all .2s;font-size:13px;color:var(--cream);font-weight:500}
-.social-btn:hover{border-color:var(--border2);background:rgba(255,255,255,.08)}
-
 /* SUCCESS / WELCOME */
 #pg-success{background:linear-gradient(160deg,#0a0025 0%,#08001a 40%,var(--dark) 100%)}
 .success-content{
@@ -285,7 +281,6 @@ body{
 .pref-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .2s}
 .pref-card:hover{border-color:var(--caramel)}
 .pc-icon{font-size:22px}
-.pc-info{}
 .pc-title{font-size:13px;font-weight:600;color:var(--cream)}
 .pc-sub{font-size:11px;color:var(--muted);margin-top:1px}
 
@@ -302,6 +297,18 @@ body{
 
 /* ── STATUSBAR ── */
 .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 28px 0;font-size:12px;color:var(--muted)}
+
+/* ── FORGOT PAGE INFO BOX ── */
+.info-box{
+  background:rgba(139,47,201,.08);border:1px solid rgba(139,47,201,.2);
+  border-radius:14px;padding:14px 16px;margin-bottom:20px;
+  font-size:12px;color:var(--muted);line-height:1.6;
+}
+
+/* ── RESEND TIMER ── */
+#forgot-resend-row{text-align:center;margin-top:12px;font-size:12px;color:var(--muted)}
+#forgot-resend-btn{color:var(--caramel);font-weight:700;cursor:pointer;background:none;border:none;font-family:'Sora',sans-serif;font-size:12px}
+#forgot-resend-btn:disabled{color:var(--dim);cursor:default}
 </style>
 </head>
 <body>
@@ -311,40 +318,6 @@ body{
   <div style="font-size:10px;color:var(--caramel);letter-spacing:3px;text-transform:uppercase;margin-bottom:8px">Auth System</div>
   <div style="font-family:'Playfair Display',serif;font-size:36px;font-weight:900;color:var(--gold);line-height:1.1;margin-bottom:16px">Customer<br><em style="color:var(--cream)">Login &</em><br>Signup</div>
   <p style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:28px">Every customer gets a <strong style="color:var(--cream)">unique ChocoCravings ID</strong> (CC-XXXXXX) linked to their profile — enabling rich personalization, loyalty tracking, and business analytics.</p>
- <!--
-  <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:32px">
-    <div style="display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px">
-      <span style="font-size:22px;flex-shrink:0">🪪</span>
-      <div><strong style="display:block;color:var(--cream);font-size:14px;margin-bottom:2px">Unique Customer ID</strong><span style="font-size:12px;color:var(--muted)">Format: CC-XXXXXX — auto-generated at signup, permanent and tied to all orders</span></div>
-    </div>
-    <div style="display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px">
-      <span style="font-size:22px;flex-shrink:0">📊</span>
-      <div><strong style="display:block;color:var(--cream);font-size:14px;margin-bottom:2px">Sales Intelligence</strong><span style="font-size:12px;color:var(--muted)">Track orders per city, repeat purchase rate, average spend, favourite products</span></div>
-    </div>
-    <div style="display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px">
-      <span style="font-size:22px;flex-shrink:0">🎯</span>
-      <div><strong style="display:block;color:var(--cream);font-size:14px;margin-bottom:2px">Personalised Experience</strong><span style="font-size:12px;color:var(--muted)">Birthday offers, city-specific deals, loyalty tier upgrades (Bronze → Silver → Gold)</span></div>
-    </div>
-    <div style="display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:14px 16px">
-      <span style="font-size:22px;flex-shrink:0">🔐</span>
-      <div><strong style="display:block;color:var(--cream);font-size:14px;margin-bottom:2px">Secure Auth Flow</strong><span style="font-size:12px;color:var(--muted)">Password strength meter, OTP via phone, Google/Apple sign-in, persistent session</span></div>
-    </div>
-  </div>
-
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
-    <div style="text-align:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px">
-      <div style="font-family:'Playfair Display',serif;font-size:26px;color:var(--gold);font-weight:900">892</div>
-      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Customers</div>
-    </div>
-    <div style="text-align:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px">
-      <div style="font-family:'Playfair Display',serif;font-size:26px;color:var(--gold);font-weight:900">68%</div>
-      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Retention</div>
-    </div>
-    <div style="text-align:center;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:14px">
-      <div style="font-family:'Playfair Display',serif;font-size:26px;color:var(--gold);font-weight:900">38</div>
-      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Cities</div>
-    </div>
-  </div>-->
 </div>
 
 <!-- ─────────── PHONE ─────────── -->
@@ -373,7 +346,6 @@ body{
         <div class="splash-btns">
           <button class="btn-primary" onclick="showPage('pg-signup')">🍫 Create Account</button>
           <button class="btn-secondary" onclick="showPage('pg-login')">Sign In to your account</button>
-         <!-- <button class="btn-ghost" onclick="showPage('pg-dashboard')">👀 Preview Dashboard</button> -->
         </div>
       </div>
 
@@ -385,8 +357,7 @@ body{
           <div class="auth-orb ao2"></div>
           <div class="statusbar" style="position:relative;z-index:20">
             <span style="cursor:pointer;font-size:18px" onclick="showPage('pg-splash')">←</span>
-            <span>9:41</span>
-            <span>🔋</span>
+            <span>9:41</span><span>🔋</span>
           </div>
           <div class="auth-header">
             <div class="auth-icon">🍫</div>
@@ -399,10 +370,10 @@ body{
           </div>
           <div class="auth-form">
             <div class="field-group">
-              <label class="field-label">Phone Number or Email</label>
+              <label class="field-label">Email Address</label>
               <div class="field-wrap">
-                <span class="field-icon">📱</span>
-                <input class="field-input" id="login-id" type="text" placeholder="Enter phone or email">
+                <span class="field-icon">✉️</span>
+                <input class="field-input" id="login-email" type="email" placeholder="yourname@gmail.com">
               </div>
             </div>
             <div class="field-group">
@@ -414,15 +385,11 @@ body{
               </div>
             </div>
             <div style="display:flex;justify-content:flex-end;margin-bottom:20px">
-              <span style="font-size:12px;color:var(--caramel);cursor:pointer;font-weight:600">Forgot Password?</span>
+              <!-- ↓ wired to pg-forgot -->
+              <span style="font-size:12px;color:var(--caramel);cursor:pointer;font-weight:600" onclick="showPage('pg-forgot')">Forgot Password?</span>
             </div>
             <button class="btn-primary" style="width:100%;margin-bottom:16px" onclick="doLogin()">Sign In →</button>
-            <div class="auth-divider"><div class="ad-line"></div><span class="ad-text">or continue with</span><div class="ad-line"></div></div>
-            <!--
-            <div class="social-row">
-              <div class="social-btn" onclick="doSocialLogin('Google')">🌐 Google</div>
-              <div class="social-btn" onclick="doSocialLogin('Phone OTP')">📲 OTP</div>
-            </div>-->
+            <div class="auth-divider"><div class="ad-line"></div><span class="ad-text">or</span><div class="ad-line"></div></div>
             <div style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:30px">
               New here? <span style="color:var(--caramel);font-weight:700;cursor:pointer" onclick="showPage('pg-signup')">Create account →</span>
             </div>
@@ -438,8 +405,7 @@ body{
           <div class="auth-orb ao2"></div>
           <div class="statusbar" style="position:relative;z-index:20">
             <span style="cursor:pointer;font-size:18px" onclick="showPage('pg-splash')">←</span>
-            <span>9:41</span>
-            <span>🔋</span>
+            <span>9:41</span><span>🔋</span>
           </div>
           <div class="auth-header">
             <div class="auth-icon">✨</div>
@@ -452,7 +418,6 @@ body{
           </div>
           <div class="auth-form">
 
-            <!-- NAME -->
             <div class="field-group">
               <label class="field-label">Full Name</label>
               <div class="field-wrap">
@@ -461,17 +426,15 @@ body{
               </div>
             </div>
 
-            <!-- PHONE -->
             <div class="field-group">
               <label class="field-label">Mobile Number</label>
               <div class="field-wrap" style="position:relative">
                 <span class="field-icon">📱</span>
                 <span class="phone-prefix">+91</span>
-                <input class="field-input phone-field" id="su-phone" type="tel" maxlength="10" placeholder="10-digit number">
+                <input class="field-input phone-field" id="su-phone" type="tel" maxlength="10" placeholder="10-digit number" oninput="this.value=this.value.replace(/\D/g,'')">
               </div>
             </div>
 
-            <!-- EMAIL -->
             <div class="field-group">
               <label class="field-label">Email Address</label>
               <div class="field-wrap">
@@ -480,7 +443,6 @@ body{
               </div>
             </div>
 
-            <!-- CITY -->
             <div class="field-group">
               <label class="field-label">City</label>
               <div class="field-wrap">
@@ -496,7 +458,6 @@ body{
               </div>
             </div>
 
-            <!-- DOB -->
             <div class="field-group">
               <label class="field-label">Date of Birth <span style="font-weight:400;color:var(--dim)">(for birthday surprises 🎂)</span></label>
               <div class="dob-row">
@@ -506,7 +467,6 @@ body{
               </div>
             </div>
 
-            <!-- GENDER -->
             <div class="field-group">
               <label class="field-label">Gender</label>
               <div class="gender-chips">
@@ -516,7 +476,6 @@ body{
               </div>
             </div>
 
-            <!-- PASSWORD -->
             <div class="field-group">
               <label class="field-label">Create Password</label>
               <div class="field-wrap">
@@ -525,15 +484,12 @@ body{
                 <span class="field-toggle" onclick="togglePw('su-pw',this)">👁️</span>
               </div>
               <div class="pw-strength" id="pw-bars">
-                <div class="ps-bar" id="pb1"></div>
-                <div class="ps-bar" id="pb2"></div>
-                <div class="ps-bar" id="pb3"></div>
-                <div class="ps-bar" id="pb4"></div>
+                <div class="ps-bar" id="pb1"></div><div class="ps-bar" id="pb2"></div>
+                <div class="ps-bar" id="pb3"></div><div class="ps-bar" id="pb4"></div>
               </div>
               <div class="pw-label" id="pw-label">Enter a password</div>
             </div>
 
-            <!-- REFERRAL -->
             <div class="field-group">
               <label class="field-label">Referral Code <span style="font-weight:400;color:var(--dim)">(optional)</span></label>
               <div class="field-wrap">
@@ -542,22 +498,47 @@ body{
               </div>
             </div>
 
-            <!-- TERMS -->
             <div class="terms-row">
               <div class="terms-check" id="terms-check" onclick="toggleTerms()"></div>
               <div class="terms-text">I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>. I consent to receive order updates & exclusive offers via WhatsApp/SMS.</div>
             </div>
 
             <button class="btn-primary" style="width:100%;margin-bottom:16px" onclick="doSignup()">🍫 Create My Account</button>
-            <!--
-            <div class="auth-divider"><div class="ad-line"></div><span class="ad-text">or sign up with</span><div class="ad-line"></div></div>
-            <div class="social-row">
-              <div class="social-btn" onclick="doSocialLogin('Google')">🌐 Google</div>
-              <div class="social-btn" onclick="doSocialLogin('WhatsApp OTP')">💬 WhatsApp</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════ FORGOT PASSWORD ══════ -->
+      <div class="page" id="pg-forgot">
+        <div class="auth-bg">
+          <div class="auth-wave"></div>
+          <div class="auth-orb ao1"></div>
+          <div class="auth-orb ao2"></div>
+          <div class="statusbar" style="position:relative;z-index:20">
+            <span style="cursor:pointer;font-size:18px" onclick="showPage('pg-login')">←</span>
+            <span>9:41</span><span>🔋</span>
+          </div>
+          <div class="auth-header">
+            <div class="auth-icon">🔑</div>
+            <div class="auth-title">Reset <span>Password</span></div>
+            <div class="auth-sub">We'll send a reset link to your email</div>
+          </div>
+          <div class="auth-form" style="margin-top:8px">
+            <div class="field-group">
+              <label class="field-label">Email Address</label>
+              <div class="field-wrap">
+                <span class="field-icon">✉️</span>
+                <input class="field-input" id="forgot-email" type="email" placeholder="yourname@gmail.com">
+              </div>
             </div>
-            <div style="text-align:center;font-size:13px;color:var(--muted);margin-bottom:30px">
-              Already have an account? <span style="color:var(--caramel);font-weight:700;cursor:pointer" onclick="showPage('pg-login')">Sign in →</span>
-            </div>-->
+            <div class="info-box">
+              🔗 A password reset link will be sent to this email. Click the link to set a new password. Link expires in <strong style="color:var(--cream)">1 hour</strong>.
+            </div>
+            <button class="btn-primary" style="width:100%" onclick="doForgot()">Send Reset Link →</button>
+            <div id="forgot-resend-row" style="display:none">
+              Didn't receive it? <button id="forgot-resend-btn" onclick="doForgot(true)" disabled>Resend in <span id="forgot-timer">60</span>s</button>
+            </div>
+            <button class="btn-ghost" style="width:100%;margin-top:12px" onclick="showPage('pg-login')">← Back to Sign In</button>
           </div>
         </div>
       </div>
@@ -602,7 +583,6 @@ body{
             </div>
           </div>
         </div>
-
         <div class="loyalty-banner">
           <div class="lb-bg"></div>
           <div class="lb-tier">🥈 Silver Member</div>
@@ -611,59 +591,38 @@ body{
           <div class="lb-bar-bg"><div class="lb-bar-fill" style="width:62%"></div></div>
           <div class="lb-sub">380 pts more to reach Gold 🥇</div>
         </div>
-
         <div class="dash-stats">
           <div class="ds-card"><div class="ds-icon">📦</div><div class="ds-num">12</div><div class="ds-lbl">Orders</div></div>
           <div class="ds-card"><div class="ds-icon">💰</div><div class="ds-num">₹4.8K</div><div class="ds-lbl">Spent</div></div>
           <div class="ds-card"><div class="ds-icon">❤️</div><div class="ds-num">5</div><div class="ds-lbl">Saved</div></div>
         </div>
-
         <div class="dash-section">
           <div class="ds-title">Recent Orders</div>
           <div class="order-history">
             <div class="oh-item">
               <div class="oh-img ohi1">🍫</div>
-              <div class="oh-info">
-                <div class="oh-name">Classic Fudge Brownie</div>
-                <div class="oh-detail">#CC-1094 · 6 pcs · Dark</div>
-              </div>
-              <div class="oh-right">
-                <div class="oh-price">₹249</div>
-                <div class="oh-status ohs-done">Delivered</div>
-              </div>
+              <div class="oh-info"><div class="oh-name">Classic Fudge Brownie</div><div class="oh-detail">#CC-1094 · 6 pcs · Dark</div></div>
+              <div class="oh-right"><div class="oh-price">₹249</div><div class="oh-status ohs-done">Delivered</div></div>
             </div>
             <div class="oh-item">
               <div class="oh-img ohi2">🎂</div>
-              <div class="oh-info">
-                <div class="oh-name">Choco Dream Cake</div>
-                <div class="oh-detail">#CC-1087 · 1kg · Truffle</div>
-              </div>
-              <div class="oh-right">
-                <div class="oh-price">₹649</div>
-                <div class="oh-status ohs-done">Delivered</div>
-              </div>
+              <div class="oh-info"><div class="oh-name">Choco Dream Cake</div><div class="oh-detail">#CC-1087 · 1kg · Truffle</div></div>
+              <div class="oh-right"><div class="oh-price">₹649</div><div class="oh-status ohs-done">Delivered</div></div>
             </div>
             <div class="oh-item">
               <div class="oh-img ohi3">🌟</div>
-              <div class="oh-info">
-                <div class="oh-name">Gold Gift Box</div>
-                <div class="oh-detail">#CC-1102 · 12 pcs</div>
-              </div>
-              <div class="oh-right">
-                <div class="oh-price">₹599</div>
-                <div class="oh-status ohs-new">In Transit</div>
-              </div>
+              <div class="oh-info"><div class="oh-name">Gold Gift Box</div><div class="oh-detail">#CC-1102 · 12 pcs</div></div>
+              <div class="oh-right"><div class="oh-price">₹599</div><div class="oh-status ohs-new">In Transit</div></div>
             </div>
           </div>
         </div>
-
         <div class="dash-section" style="margin-top:8px">
           <div class="ds-title">My Preferences</div>
           <div class="prefs-row">
-            <div class="pref-card"><span class="pc-icon">🍫</span><div class="pc-info"><div class="pc-title">Fav Flavour</div><div class="pc-sub">Dark Chocolate</div></div></div>
-            <div class="pref-card"><span class="pc-icon">📍</span><div class="pc-info"><div class="pc-title">Saved Address</div><div class="pc-sub">3 addresses</div></div></div>
-            <div class="pref-card"><span class="pc-icon">💳</span><div class="pc-info"><div class="pc-title">Payment</div><div class="pc-sub">GPay linked</div></div></div>
-            <div class="pref-card"><span class="pc-icon">🔔</span><div class="pc-info"><div class="pc-title">Alerts</div><div class="pc-sub">WhatsApp ON</div></div></div>
+            <div class="pref-card"><span class="pc-icon">🍫</span><div><div class="pc-title">Fav Flavour</div><div class="pc-sub">Dark Chocolate</div></div></div>
+            <div class="pref-card"><span class="pc-icon">📍</span><div><div class="pc-title">Saved Address</div><div class="pc-sub">3 addresses</div></div></div>
+            <div class="pref-card"><span class="pc-icon">💳</span><div><div class="pc-title">Payment</div><div class="pc-sub">GPay linked</div></div></div>
+            <div class="pref-card"><span class="pc-icon">🔔</span><div><div class="pc-title">Alerts</div><div class="pc-sub">WhatsApp ON</div></div></div>
           </div>
         </div>
         <div style="height:30px"></div>
@@ -675,6 +634,13 @@ body{
 </div><!-- /phone-wrap -->
 
 <script>
+// ══════════════════════════════════════════
+// SUPABASE INIT — replace with your values
+// ══════════════════════════════════════════
+const SUPABASE_URL  = 'https://yjbfditboewwpgyqzryd.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqYmZkaXRib2V3d3BneXF6cnlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNTgwNjcsImV4cCI6MjA4ODczNDA2N30.08Tvq71w2DBeWZrZb-IaiKfoI-2P_1MPJygzSPiRq24';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
 // ── PAGE NAV ──
 function showPage(id) {
   const cur = document.querySelector('.page.active');
@@ -719,7 +685,7 @@ function toggleTerms() {
 function checkStrength(pw) {
   const bars = ['pb1','pb2','pb3','pb4'];
   const lbl = document.getElementById('pw-label');
-  bars.forEach(b=>{ const el=document.getElementById(b); el.className='ps-bar'; });
+  bars.forEach(b=>{ document.getElementById(b).className='ps-bar'; });
   let score = 0;
   if (pw.length>=8) score++;
   if (/[A-Z]/.test(pw)) score++;
@@ -732,28 +698,14 @@ function checkStrength(pw) {
   lbl.style.color = score<=1?'var(--pink)':score<=2?'var(--amber)':'var(--green)';
 }
 
-// ── GENERATE UNIQUE ID ──
+// ── GENERATE CC ID ──
 function generateID() {
-  const rand = Math.floor(100000 + Math.random() * 900000);
-  return 'CC-' + rand;
+  return 'CC-' + Math.floor(100000 + Math.random() * 900000);
 }
 
-// ── SAVE CUSTOMER ──
-async function saveCustomer(data) {
-  try {
-    await window.storage.set('customer:' + data.id, JSON.stringify(data));
-    await window.storage.set('customer-index:' + data.phone, data.id);
-  } catch(e) { console.log('Storage:', e); }
-}
-
-async function loadCustomer(id) {
-  try {
-    const r = await window.storage.get('customer:' + id);
-    return r ? JSON.parse(r.value) : null;
-  } catch(e) { return null; }
-}
-
-// ── SIGNUP ──
+// ════════════════════════════════
+// SIGNUP
+// ════════════════════════════════
 async function doSignup() {
   const name  = document.getElementById('su-name').value.trim();
   const phone = document.getElementById('su-phone').value.trim();
@@ -761,84 +713,153 @@ async function doSignup() {
   const city  = document.getElementById('su-city').value;
   const pw    = document.getElementById('su-pw').value;
 
-  if (!name)  { toast('Please enter your name', true); return; }
-  if (phone.length!==10) { toast('Enter a valid 10-digit number', true); return; }
+  // ── Validations first ──
+  if (!name)                         { toast('Please enter your name', true); return; }
+  if (!/^\d{10}$/.test(phone))       { toast('Enter a valid 10-digit number', true); return; }
   if (!email || !email.includes('@')) { toast('Enter a valid email', true); return; }
-  if (!city)  { toast('Please select your city', true); return; }
-  if (pw.length<8) { toast('Password must be 8+ characters', true); return; }
-  if (!termsAccepted) { toast('Please accept the Terms & Conditions', true); return; }
+  if (!city)                         { toast('Please select your city', true); return; }
+  if (pw.length < 8)                 { toast('Password must be 8+ characters', true); return; }
+  if (!termsAccepted)                { toast('Please accept the Terms & Conditions', true); return; }
+
+  // ── Check if mobile already registered ──
+  const { data: existing } = await supabase
+    .from('customers')
+    .select('id')
+    .eq('phone', phone)
+    .maybeSingle();
+
+  if (existing) {
+    toast('📵 Mobile number already registered. Please sign in.', true);
+    return;
+  }
 
   const dd = document.getElementById('su-dd').value;
   const mm = document.getElementById('su-mm').value;
   const yy = document.getElementById('su-yy').value;
   const gender = document.querySelector('.g-chip.on')?.textContent || '';
+  const ccId = generateID();
 
-  const id = generateID();
-  const customer = {
-    id, name, phone, email, city, gender,
-    dob: `${dd}/${mm}/${yy}`,
-    createdAt: new Date().toISOString(),
-    orders: 0, totalSpent: 0, points: 0,
-    tier: 'Bronze', wallet: 50,
-    favourites: [], addresses: []
-  };
+  // ── Supabase auth.signUp (email is the auth key) ──
+  const { data, error } = await supabase.auth.signUp({ email, password: pw });
+  if (error) { toast(error.message, true); return; }
 
-  await saveCustomer(customer);
+  // ── Insert into customers with phone + cc_id ──
+  const { error: dbErr } = await supabase.from('customers').insert({
+    id:         data.user.id,
+    cc_id:      ccId,
+    name,
+    phone,
+    email,
+    city,
+    gender,
+    dob:        yy && mm && dd ? `${yy}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}` : null,
+    wallet:     50,
+    points:     0,
+    tier:       'Bronze'
+  });
+  if (dbErr) { toast(dbErr.message, true); return; }
 
-  // Update success page
-  document.getElementById('cid-display').textContent = id;
+  // ── Update UI ──
+  document.getElementById('cid-display').textContent = ccId;
   document.getElementById('cid-name').textContent = name;
   document.getElementById('cid-city').textContent = '📍 ' + city + ', Tamil Nadu';
   document.getElementById('dash-name-display').textContent = name;
-  document.getElementById('dash-id-display').textContent = id;
+  document.getElementById('dash-id-display').textContent = ccId;
   document.getElementById('dash-city-display').textContent = '📍 ' + city;
-
-  // Store current session
-  try { await window.storage.set('current-session', id); } catch(e){}
 
   toast('✓ Account created successfully!');
   setTimeout(()=>showPage('pg-success'), 500);
 }
 
-// ── LOGIN ──
+// ════════════════════════════════
+// LOGIN
+// ════════════════════════════════
 async function doLogin() {
-  const loginId = document.getElementById('login-id').value.trim();
-  const pw = document.getElementById('login-pw').value;
-  if (!loginId) { toast('Enter phone or email', true); return; }
-  if (!pw) { toast('Enter your password', true); return; }
-  // Simulate login for demo
+  const email = document.getElementById('login-email').value.trim();
+  const pw    = document.getElementById('login-pw').value;
+
+  if (!email) { toast('Enter your email', true); return; }
+  if (!pw)    { toast('Enter your password', true); return; }
+
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password: pw });
+  if (error) { toast('Invalid email or password', true); return; }
+
+  // ── Fetch customer record ──
+  const { data: cust } = await supabase
+    .from('customers')
+    .select('cc_id, name, city')
+    .eq('id', data.user.id)
+    .single();
+
+  if (cust) {
+    document.getElementById('dash-name-display').textContent = cust.name;
+    document.getElementById('dash-id-display').textContent = cust.cc_id;
+    document.getElementById('dash-city-display').textContent = '📍 ' + cust.city;
+  }
+
   toast('✓ Signed in successfully!');
   setTimeout(()=>showPage('pg-dashboard'), 600);
 }
 
-// ── SOCIAL LOGIN ──
-function doSocialLogin(provider) {
-  toast('Connecting with ' + provider + '...');
-  setTimeout(()=>{ toast('✓ Signed in via ' + provider + '!'); setTimeout(()=>showPage('pg-dashboard'),600); },1200);
+// ════════════════════════════════
+// FORGOT PASSWORD
+// ════════════════════════════════
+let forgotTimerInterval;
+
+async function doForgot(isResend = false) {
+  const email = document.getElementById('forgot-email').value.trim();
+  if (!email || !email.includes('@')) { toast('Enter a valid email address', true); return; }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: 'https://chococravings.netlify.app/reset-password.html'
+  });
+
+  if (error) { toast(error.message, true); return; }
+
+  toast('✓ Reset link sent! Check your inbox.');
+
+  // ── Show resend row with 60s countdown ──
+  const resendRow = document.getElementById('forgot-resend-row');
+  const resendBtn = document.getElementById('forgot-resend-btn');
+  const timerSpan = document.getElementById('forgot-timer');
+  resendRow.style.display = 'block';
+  resendBtn.disabled = true;
+  let secs = 60;
+  timerSpan.textContent = secs;
+  clearInterval(forgotTimerInterval);
+  forgotTimerInterval = setInterval(() => {
+    secs--;
+    timerSpan.textContent = secs;
+    if (secs <= 0) {
+      clearInterval(forgotTimerInterval);
+      resendBtn.disabled = false;
+      resendBtn.textContent = 'Resend link';
+    }
+  }, 1000);
 }
 
 // ── COPY ID ──
 async function copyID() {
   const id = document.getElementById('cid-display').textContent;
-  try {
-    await navigator.clipboard.writeText(id);
-    toast('📋 Customer ID copied!');
-  } catch(e) { toast('ID: ' + id); }
+  try { await navigator.clipboard.writeText(id); toast('📋 Customer ID copied!'); }
+  catch(e) { toast('ID: ' + id); }
 }
 
 // ── AUTO-RESTORE SESSION ──
 (async function init() {
-  try {
-    const s = await window.storage.get('current-session');
-    if (s && s.value) {
-      const cust = await loadCustomer(s.value);
-      if (cust) {
-        document.getElementById('dash-name-display').textContent = cust.name;
-        document.getElementById('dash-id-display').textContent = cust.id;
-        document.getElementById('dash-city-display').textContent = '📍 ' + cust.city;
-      }
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    const { data: cust } = await supabase
+      .from('customers')
+      .select('cc_id, name, city')
+      .eq('id', session.user.id)
+      .single();
+    if (cust) {
+      document.getElementById('dash-name-display').textContent = cust.name;
+      document.getElementById('dash-id-display').textContent = cust.cc_id;
+      document.getElementById('dash-city-display').textContent = '📍 ' + cust.city;
     }
-  } catch(e) {}
+  }
 })();
 </script>
 </body>
