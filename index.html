@@ -1987,13 +1987,17 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
     <!-- ═══ LIVE TRACKING PAGE ═══ -->
     <div class="page" id="page-tracking">
       <div style="background:linear-gradient(160deg,var(--d3),var(--d2));padding:52px 22px 18px;position:relative">
-        <div class="back" onclick="goBack()" style="top:16px;left:16px;">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+          <div class="back" style="position:static;width:36px;height:36px;flex-shrink:0" onclick="goBack()">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:var(--white);margin-bottom:2px">Live Tracking</div>
+            <div style="font-size:12px;color:var(--dim)">Status of your active orders</div>
+          </div>
         </div>
-        <div style="font-family:'Playfair Display', serif;font-size:24px;font-weight:700;color:var(--white);margin-bottom:4px">Live Tracking</div>
-        <div style="font-size:12px;color:var(--dim)">Status of your active orders</div>
       </div>
 
       <div id="tracking-orders-list" style="padding:16px 22px;display:flex;flex-direction:column;gap:12px">
@@ -2049,7 +2053,19 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
       <div class="loader"></div>
       <div class="loading-txt">Loading…</div>
     </div>
-
+    <!-- ═══ CUSTOM ORDER DETAIL SHEET ═══ -->
+    <div id="cod-overlay" onclick="closeCustomOrderDetail()" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.6);z-index:600;backdrop-filter:blur(4px)"></div>
+    <div id="cod-sheet" style="display:none;position:absolute;bottom:0;left:0;right:0;background:var(--d2);border-radius:22px 22px 0 0;border-top:1px solid var(--bdr2);z-index:601;padding:0 0 32px;max-height:88%;overflow-y:auto">
+      <div style="width:40px;height:4px;border-radius:2px;background:var(--faint);margin:14px auto 6px"></div>
+      <div style="padding:12px 22px 16px;border-bottom:1px solid var(--bdr)">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:var(--white)">🎂 Custom Order</div>
+          <div id="cod-status" style="font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;background:rgba(107,47,206,.15);color:var(--pl)">Pending</div>
+        </div>
+        <div id="cod-order-num" style="font-size:12px;color:var(--dim);margin-top:3px"></div>
+      </div>
+      <div id="cod-body" style="padding:16px 22px;display:flex;flex-direction:column;gap:10px"></div>
+    </div>
     
 
     </div><!-- /screen -->
@@ -2249,7 +2265,17 @@ async function loadAndShowOrders() {
     var statusBg  = statusColors[o.status]  || 'rgba(255,255,255,.05)';
     var statusLbl = statusLabels[o.status]  || o.status;
     var date = o.created_at ? new Date(o.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) : '';
-    return '<div style="background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:14px">'
+    var customBtn = '';
+if (o.is_custom) {
+  var co = Array.isArray(o.custom_orders) ? o.custom_orders[0] : o.custom_orders;
+  if (co) {
+    var coJson = JSON.stringify(co).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    customBtn = '<div onclick="showCustomOrderDetail(\'' + o.order_number + '\',\'' + o.status + '\',JSON.parse(this.getAttribute(\'data-co\')))" data-co="' + coJson + '" '
+      + 'style="margin-top:10px;padding:9px;background:rgba(107,47,206,.1);border:1px solid rgba(107,47,206,.25);border-radius:10px;'
+      + 'font-size:12px;font-weight:700;color:var(--pl);text-align:center;cursor:pointer">🎂 View Custom Order Details</div>';
+  }
+}
+return '<div style="background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:14px">'
       + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
       + '<div style="font-size:13px;font-weight:700;color:var(--pl)">' + (o.order_number||'#'+o.id.slice(0,6)) + '</div>'
       + '<div style="font-size:12px;font-weight:700;color:var(--white)">₹' + o.total + '</div>'
@@ -2259,6 +2285,7 @@ async function loadAndShowOrders() {
       + '<div style="font-size:11px;color:var(--dim)">' + date + ' · ' + (o.payment_method||'').toUpperCase() + '</div>'
       + '<div style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;background:' + statusBg + ';color:var(--white)">' + statusLbl + '</div>'
       + '</div>'
+      + customBtn
       + '</div>';
   }).join('');
 }
@@ -3577,6 +3604,14 @@ setTimeout(updateCartDots, 100);
       setTimeout(checkAndShowAdminTab, 500);
     }
   } catch(e){}
+  // ── Restore last visited page ──
+  try {
+    var lastPage = localStorage.getItem('cc_last_page');
+    var skipRestore = ['checkout', 'success', 'login']; // don't restore these
+    if (lastPage && !skipRestore.includes(lastPage)) {
+      setTimeout(function() { showPage(lastPage); }, 100);
+    }
+  } catch(e) {}
 })();
 // Load products dynamically
 loadProducts();
@@ -3816,6 +3851,7 @@ function changeQty(idx, delta) {
 
 function showPage(name){
     setNav(name);
+     try { localStorage.setItem('cc_last_page', name); } catch(e) {}
     if (name === 'profile') {
     var now = Date.now();
     if (!window._profileLastLoaded || (now - window._profileLastLoaded) > 30000) {
@@ -4604,19 +4640,30 @@ async function placeOrder() {
     renderCart();
 
     // 3. WhatsApp button — owner notification
-    const ownerWA = document.getElementById('succ-wa-btn');
-    ownerWA.onclick = () => {
-      // Notify owner
-      window.open(`https://wa.me/${NSDI_PHONE}?text=${buildOwnerMsg(orderData)}`, '_blank');
-      // Also open customer confirmation after 1s
-      setTimeout(() => {
-        const custPhone = phone.replace(/[^0-9]/g,'');
-        window.open(`https://wa.me/${custPhone}?text=${buildCustomerMsg(orderData)}`, '_blank');
-      }, 1000);
-    };
+    // 3. Auto-send WhatsApp to owner immediately
+window.open(`https://wa.me/${NSDI_PHONE}?text=${buildOwnerMsg(orderData)}`, '_blank');
 
-    // 4. Show success page
-    showPage('success');
+// Auto-send WhatsApp confirmation to customer after 1.5s
+setTimeout(() => {
+  const custPhone = phone.replace(/[^0-9]/g,'');
+  if (custPhone.length >= 10) {
+    window.open(`https://wa.me/${custPhone}?text=${buildCustomerMsg(orderData)}`, '_blank');
+  }
+}, 1500);
+
+// Keep button as fallback (in case browser blocked popups)
+const ownerWA = document.getElementById('succ-wa-btn');
+ownerWA.textContent = '📲 Resend WhatsApp Confirmation';
+ownerWA.onclick = () => {
+  window.open(`https://wa.me/${NSDI_PHONE}?text=${buildOwnerMsg(orderData)}`, '_blank');
+  setTimeout(() => {
+    const custPhone = phone.replace(/[^0-9]/g,'');
+    window.open(`https://wa.me/${custPhone}?text=${buildCustomerMsg(orderData)}`, '_blank');
+  }, 1000);
+};
+
+// 4. Show success page
+showPage('success');
 
   } catch (err) {
     overlay.classList.remove('show');
@@ -4998,6 +5045,64 @@ if ('serviceWorker' in navigator) {
       .catch(function(err) { console.log('SW failed:', err); });
   });
 }
+
+function showCustomOrderDetail(orderNum, status, co) {
+  document.getElementById('cod-order-num').textContent = orderNum;
+
+  var statusLabels = {
+    pending:'⏳ Pending', confirmed:'✅ Confirmed', baking:'🍫 Baking',
+    packed:'📦 Packed', out_for_delivery:'🚚 Out for Delivery',
+    delivered:'🎉 Delivered', cancelled:'❌ Cancelled'
+  };
+  document.getElementById('cod-status').textContent = statusLabels[status] || status;
+
+  var rows = [
+    ['🎉 Occasion',      co.occasion],
+    ['▬  Shape',         co.shape],
+    ['🎨 Theme',         co.theme],
+    ['⚖️ Weight',        co.weight_kg],
+    ['🍰 Layers',        co.layers],
+    ['🍫 Flavour',       co.flavour],
+    ['🥚 Egg',           co.egg_preference],
+    ['🟡 Faux Ball',     co.faux_ball   || co.Faux_ball   || '—'],
+    ['🦋 Butterfly',     co.butterfly   || '—'],
+    ['✨ Topper',        co.topper_type ? co.topper_type + (co.topper_style ? ' · ' + co.topper_style : '') : '—'],
+    ['📝 Name on Topper',co.topper_name || '—'],
+    ['💬 Brownie Message', co.brownie_message || '—'],
+    ['📅 Delivery Date', co.delivery_date ? new Date(co.delivery_date).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}) : '—'],
+    ['📋 Special Notes', co.special_notes || '—'],
+  ];
+
+  var priceRow = '';
+  if (co.est_price_lo && co.est_price_hi) {
+    priceRow = '<div style="background:rgba(107,47,206,.1);border:1px solid rgba(107,47,206,.25);border-radius:14px;padding:14px 16px;margin-bottom:4px">'
+      + '<div style="font-size:11px;color:var(--dim);margin-bottom:4px">Estimated Price</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:26px;font-weight:700;color:var(--gold)">₹' + co.est_price_lo + ' – ₹' + co.est_price_hi + '</div>'
+      + '<div style="font-size:11px;color:var(--faint);margin-top:3px">Final price confirmed via WhatsApp</div>'
+      + '</div>';
+  }
+
+  var html = priceRow + rows.filter(function(r){ return r[1] && r[1] !== '—'; }).map(function(r) {
+    return '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:10px 14px;background:var(--card);border:1px solid var(--bdr);border-radius:12px">'
+      + '<div style="font-size:12px;color:var(--dim);flex-shrink:0;margin-right:12px">' + r[0] + '</div>'
+      + '<div style="font-size:12px;font-weight:600;color:var(--white);text-align:right">' + r[1] + '</div>'
+      + '</div>';
+  }).join('');
+
+  html += '<div onclick="window.open(\'https://wa.me/+918973141898\',\'_blank\')" '
+    + 'style="padding:14px;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;font-size:13px;font-weight:700;border-radius:14px;cursor:pointer;text-align:center;margin-top:4px">'
+    + '📲 Contact us on WhatsApp</div>';
+
+  document.getElementById('cod-body').innerHTML = html;
+  document.getElementById('cod-overlay').style.display = 'block';
+  document.getElementById('cod-sheet').style.display   = 'block';
+}
+
+function closeCustomOrderDetail() {
+  document.getElementById('cod-overlay').style.display = 'none';
+  document.getElementById('cod-sheet').style.display   = 'none';
+}
+
 </script>
 </body>
 </html>
