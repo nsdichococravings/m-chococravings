@@ -9,7 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 
 <title>NSDI ChocoCravings</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"> </script>
 // // ── ORDER STATE ──
 // let cartItems = [];
 // let currentPayMethod = 'cod';
@@ -2391,7 +2391,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
   </div>
 
     <!-- LOADING OVERLAY -->
-    <div class="loading-overlay" id="loading-overlay" style="display:flex;">
+    <div class="loading-overlay" id="loading-overlay">
       <div class="loader"></div>
       <div class="loading-txt">Loading…</div>
     </div>
@@ -5335,6 +5335,14 @@ function setNav(name) {
   document.querySelectorAll('.ntab').forEach(function(t){ t.classList.remove('on'); });
   var el = document.getElementById('nav-' + name);
   if (el) el.classList.add('on');
+}
+// ── PWA SERVICE WORKER ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js')
+      .then(function(reg) { console.log('SW registered:', reg.scope); })
+      .catch(function(err) { console.log('SW failed:', err); });
+  });
 }
 </script>
 </body>
