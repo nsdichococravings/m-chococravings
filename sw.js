@@ -51,6 +51,11 @@ self.addEventListener('fetch', function(event) {
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
 
+  // ── CRITICAL: Never intercept reset-password page ──
+  // Supabase recovery tokens in the URL hash must be handled
+  // natively by the browser — SW interception causes auto-login redirect
+  if (url.pathname.includes('reset-password')) return;
+
   // For HTML pages — network first, fallback to cache, then offline page
   if (event.request.headers.get('accept').includes('text/html')) {
     event.respondWith(
