@@ -1879,87 +1879,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
           <div style="font-size:11px;font-weight:700;color:var(--pl)">Purple ✓</div>
           <div style="font-size:9px;color:var(--faint);margin-top:2px">Default</div>
         </div>
-        <!--
-        <div class="theme-card" onclick="applyTheme('rose')" id="tc-rose" style="border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;border:1.5px solid rgba(255,255,255,.08);background:var(--card)">
-          <div style="display:flex;justify-content:center;gap:4px;margin-bottom:8px">
-            <div style="width:14px;height:14px;border-radius:50%;background:#E11D48"></div>
-            <div style="width:14px;height:14px;border-radius:50%;background:#FB7185"></div>
-            <div style="width:14px;height:14px;border-radius:50%;background:#FFE4E6"></div>
-          </div>
-          <div style="font-size:11px;font-weight:700;color:var(--white)">Rose</div>
-          <div style="font-size:9px;color:var(--faint);margin-top:2px">Warm pink</div>
-        </div>
-
-        <div class="theme-card" onclick="applyTheme('ocean')" id="tc-ocean" style="border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;border:1.5px solid rgba(255,255,255,.08);background:var(--card)">
-          <div style="display:flex;justify-content:center;gap:4px;margin-bottom:8px">
-            <div style="width:14px;height:14px;border-radius:50%;background:#0369A1"></div>
-            <div style="width:14px;height:14px;border-radius:50%;background:#38BDF8"></div>
-            <div style="width:14px;height:14px;border-radius:50%;background:#E0F2FE"></div>
-          </div>
-          <div style="font-size:11px;font-weight:700;color:var(--white)">Ocean</div>
-          <div style="font-size:9px;color:var(--faint);margin-top:2px">Deep blue</div>
-        </div>
-
-        <div class="theme-card" onclick="applyTheme('forest')" id="tc-forest" style="border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;border:1.5px solid rgba(255,255,255,.08);background:var(--card)">
-          <div style="display:flex;justify-content:center;gap:4px;margin-bottom:8px">
-            <div style="width:14px;height:14px;border-radius:50%;background:#15803D"></div>
-            <div style="width:14px;height:14px;border-radius:50%;background:#4ADE80"></div>
-            <div style="width:14px;height:14px;border-radius:50%;background:#DCFCE7"></div>
-          </div>
-          <div style="font-size:11px;font-weight:700;color:var(--white)">Forest</div>
-          <div style="font-size:9px;color:var(--faint);margin-top:2px">Nature green</div>
-        </div>
-
-        <div class="theme-card" onclick="applyTheme('sunset')" id="tc-sunset" style="border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;border:1.5px solid rgba(255,255,255,.08);background:var(--card)">
-          <div style="display:flex;justify-content:center;gap:4px;margin-bottom:8px">
-            <div style="width:14px;height:14px;border-radius:50%;background:#EA580C"></div>
-            <div style="width:14px;height:14px;border-radius:50%;background:#FB923C"></div>
-            <div style="width:14px;height:14px;border-radius:50%;background:#FFEDD5"></div>
-          </div>
-          <div style="font-size:11px;font-weight:700;color:var(--white)">Sunset</div>
-          <div style="font-size:9px;color:var(--faint);margin-top:2px">Warm orange</div>
-        </div>
-
-        <div class="theme-card" onclick="applyTheme('gold')" id="tc-gold" style="border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;border:1.5px solid rgba(255,255,255,.08);background:var(--card)">
-          <div style="display:flex;justify-content:center;gap:4px;margin-bottom:8px">
-            <div style="width:14px;height:14px;border-radius:50%;background:#B45309"></div>
-            <div style="width:14px;height:14px;border-radius:50%;background:#FBBF24"></div>
-            <div style="width:14px;height:14px;border-radius:50%;background:#FEF9C3"></div>
-          </div>
-          <div style="font-size:11px;font-weight:700;color:var(--white)">Gold</div>
-          <div style="font-size:9px;color:var(--faint);margin-top:2px">Premium amber</div>
-        </div>
-
-        <div class="theme-card" onclick="applyTheme('midnight')" id="tc-midnight" style="border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;border:1.5px solid rgba(255,255,255,.08);background:var(--card)">
-          <div style="display:flex;justify-content:center;gap:4px;margin-bottom:8px">
-            <div style="width:14px;height:14px;border-radius:50%;background:#334155"></div>
-            <div style="width:14px;height:14px;border-radius:50%;background:#94A3B8"></div>
-            <div style="width:14px;height:14px;border-radius:50%;background:#F1F5F9"></div>
-          </div>
-          <div style="font-size:11px;font-weight:700;color:var(--white)">Midnight</div>
-          <div style="font-size:9px;color:var(--faint);margin-top:2px">Steel blue</div>
-        </div>
-
-        <div class="theme-card" onclick="applyTheme('choco')" id="tc-choco" style="border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;border:1.5px solid rgba(255,255,255,.08);background:var(--card)">
-          <div style="display:flex;justify-content:center;gap:4px;margin-bottom:8px">
-            <div style="width:14px;height:14px;border-radius:50%;background:#78350F"></div>
-            <div style="width:14px;height:14px;border-radius:50%;background:#D97706"></div>
-            <div style="width:14px;height:14px;border-radius:50%;background:#FDE68A"></div>
-          </div>
-          <div style="font-size:11px;font-weight:700;color:var(--white)">Chocolate</div>
-          <div style="font-size:9px;color:var(--faint);margin-top:2px">Rich brownie</div>
-        </div>
-
-        <div class="theme-card" onclick="applyTheme('candy')" id="tc-candy" style="border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;border:1.5px solid rgba(255,255,255,.08);background:var(--card)">
-          <div style="display:flex;justify-content:center;gap:4px;margin-bottom:8px">
-            <div style="width:14px;height:14px;border-radius:50%;background:#DB2777"></div>
-            <div style="width:14px;height:14px;border-radius:50%;background:#A855F7"></div>
-            <div style="width:14px;height:14px;border-radius:50%;background:#FDF4FF"></div>
-          </div>
-          <div style="font-size:11px;font-weight:700;color:var(--white)">Candy</div>
-          <div style="font-size:9px;color:var(--faint);margin-top:2px">Pink & purple</div>
-        </div>
-        -->
+        
       </div>
       <div style="padding:0 16px">
         <div onclick="closeThemePicker()" style="padding:14px;text-align:center;font-size:13px;font-weight:600;color:var(--dim);cursor:pointer;border-top:1px solid var(--bdr);border-radius:12px">Cancel</div>
@@ -2003,21 +1923,31 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
       <div id="tracking-orders-list" style="padding:16px 22px;display:flex;flex-direction:column;gap:12px">
         <div style="text-align:center;padding:40px 20px;color:var(--dim)">Loading...</div>
       </div>
+  </div>
 
-  <!-- Order Tracking Detail Sheet -->
-    <div id="tracking-detail-overlay" onclick="closeTrackingDetail()" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:600;backdrop-filter:blur(4px)"></div>
-    <div id="tracking-detail-sheet" style="display:none;position:absolute;bottom:0;left:0;right:0;background:var(--d2);border-radius:22px 22px 0 0;border-top:1px solid var(--bdr2);z-index:601;padding:0 0 32px;max-height:85%;overflow-y:auto">
+    <!-- LOADING OVERLAY -->
+    <div class="loading-overlay" id="loading-overlay">
+      <div class="loader"></div>
+      <div class="loading-txt">Loading…</div>
+    </div>
+    
+    <!-- TRACKING DETAIL SHEET -->
+<div id="tracking-detail-overlay" onclick="closeTrackingDetail()"
+  style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,.65);z-index:2000;backdrop-filter:blur(4px)"></div>
+
+    <div id="tracking-detail-sheet"
+      style="display:none;position:absolute;bottom:0;left:0;right:0;
+      background:var(--d2);border-radius:22px 22px 0 0;
+      border-top:1px solid var(--bdr2);z-index:2001;
+      padding:0 0 32px;max-height:85%;overflow-y:auto">
       <div style="width:40px;height:4px;border-radius:2px;background:var(--faint);margin:14px auto 6px"></div>
-      
-      <!-- Sheet Header -->
       <div style="padding:12px 22px 16px;border-bottom:1px solid var(--bdr)">
         <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:var(--white)" id="td-order-num">CC-000001</div>
-            <div style="font-size:11px;color:var(--dim);margin-top:2px" id="td-order-date">—</div>
-          </div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:var(--white)" id="td-order-num">—</div>
           <div id="td-status-badge" style="font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;background:rgba(107,47,206,.15);color:var(--pl)">Pending</div>
         </div>
+        <div style="font-size:11px;color:var(--dim);margin-top:2px" id="td-order-date">—</div>
         <div style="margin-top:10px;padding:10px 12px;background:var(--card);border-radius:12px;border:1px solid var(--bdr)">
           <div style="font-size:12px;font-weight:600;color:var(--white)" id="td-item-name">—</div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
@@ -2026,36 +1956,33 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
           </div>
         </div>
       </div>
-
-      <!-- Tracking Timeline -->
       <div style="padding:18px 22px">
         <div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:16px">Order Journey</div>
         <div id="td-tracking-steps"></div>
       </div>
-
-      <!-- Delivery estimate -->
       <div id="td-delivery-info" style="margin:0 22px;background:rgba(107,47,206,.08);border:1px solid rgba(107,47,206,.2);border-radius:14px;padding:12px 14px">
         <div style="font-size:11px;font-weight:700;color:var(--pl);margin-bottom:4px">🚚 Expected Delivery</div>
         <div style="font-size:11px;color:var(--dim)" id="td-delivery-est">24 hrs – 3 days from confirmation</div>
       </div>
-
-      <!-- WhatsApp contact -->
       <div style="padding:16px 22px 0">
-        <div onclick="window.open('https://wa.me/+918973141898','_blank')" style="width:100%;padding:13px;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;font-size:13px;font-weight:700;border-radius:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+        <div onclick="window.open('https://wa.me/+918973141898','_blank')"
+          style="width:100%;padding:13px;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;
+          font-size:13px;font-weight:700;border-radius:14px;cursor:pointer;
+          display:flex;align-items:center;justify-content:center;gap:8px">
           📲 Contact on WhatsApp
         </div>
       </div>
     </div>
-  </div>
+    <!-- CUSTOM ORDER DETAIL SHEET -->
+    <div id="cod-overlay" onclick="closeCustomOrderDetail()"
+      style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;
+      background:rgba(0,0,0,.65);z-index:2000;backdrop-filter:blur(4px)"></div>
 
-    <!-- LOADING OVERLAY -->
-    <div class="loading-overlay" id="loading-overlay">
-      <div class="loader"></div>
-      <div class="loading-txt">Loading…</div>
-    </div>
-    <!-- ═══ CUSTOM ORDER DETAIL SHEET ═══ -->
-    <div id="cod-overlay" onclick="closeCustomOrderDetail()" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.6);z-index:600;backdrop-filter:blur(4px)"></div>
-    <div id="cod-sheet" style="display:none;position:absolute;bottom:0;left:0;right:0;background:var(--d2);border-radius:22px 22px 0 0;border-top:1px solid var(--bdr2);z-index:601;padding:0 0 32px;max-height:88%;overflow-y:auto">
+    <div id="cod-sheet"
+      style="display:none;position:absolute;bottom:0;left:0;right:0;
+      background:var(--d2);border-radius:22px 22px 0 0;
+      border-top:1px solid var(--bdr2);z-index:2001;
+      padding:0 0 32px;max-height:88%;overflow-y:auto">
       <div style="width:40px;height:4px;border-radius:2px;background:var(--faint);margin:14px auto 6px"></div>
       <div style="padding:12px 22px 16px;border-bottom:1px solid var(--bdr)">
         <div style="display:flex;justify-content:space-between;align-items:center">
@@ -2066,7 +1993,6 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
       </div>
       <div id="cod-body" style="padding:16px 22px;display:flex;flex-direction:column;gap:10px"></div>
     </div>
-    
 
     </div><!-- /screen -->
   </div><!-- /phone -->
@@ -2109,7 +2035,7 @@ async function checkAuth() {
     }
   } catch(e) {}
   // No valid session — go to login
-  window.location.href = 'auth.html';
+  window.location.href = 'index.html';
 }
 
 function updateProfileUI() {
@@ -2265,16 +2191,18 @@ async function loadAndShowOrders() {
     var statusBg  = statusColors[o.status]  || 'rgba(255,255,255,.05)';
     var statusLbl = statusLabels[o.status]  || o.status;
     var date = o.created_at ? new Date(o.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) : '';
+    // Store custom order data in memory — avoids JSON escaping issues in HTML attributes
+    if (!window._coData) window._coData = {};
     var customBtn = '';
-if (o.is_custom) {
-  var co = Array.isArray(o.custom_orders) ? o.custom_orders[0] : o.custom_orders;
-  if (co) {
-    var coJson = JSON.stringify(co).replace(/'/g, "\\'").replace(/"/g, '&quot;');
-    customBtn = '<div onclick="showCustomOrderDetail(\'' + o.order_number + '\',\'' + o.status + '\',JSON.parse(this.getAttribute(\'data-co\')))" data-co="' + coJson + '" '
-      + 'style="margin-top:10px;padding:9px;background:rgba(107,47,206,.1);border:1px solid rgba(107,47,206,.25);border-radius:10px;'
-      + 'font-size:12px;font-weight:700;color:var(--pl);text-align:center;cursor:pointer">🎂 View Custom Order Details</div>';
-  }
-}
+    if (o.is_custom) {
+      var co = Array.isArray(o.custom_orders) ? o.custom_orders[0] : o.custom_orders;
+      if (co) {
+        window._coData[o.order_number] = co;
+        customBtn = '<div onclick="showCustomOrderDetail(\'' + o.order_number + '\',\'' + o.status + '\')" '
+          + 'style="margin-top:10px;padding:9px;background:rgba(107,47,206,.1);border:1px solid rgba(107,47,206,.25);border-radius:10px;'
+          + 'font-size:12px;font-weight:700;color:var(--pl);text-align:center;cursor:pointer">🎂 View Custom Order Details</div>';
+      }
+    }
 return '<div style="background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:14px">'
       + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
       + '<div style="font-size:13px;font-weight:700;color:var(--pl)">' + (o.order_number||'#'+o.id.slice(0,6)) + '</div>'
@@ -3596,18 +3524,44 @@ setTimeout(updateCartDots, 100);
 
 // Restore session on load — Supabase session + localStorage cache
 (async function(){
+  // ── Auth gate — must be logged in to use the app ──
   try {
-    var saved = JSON.parse(localStorage.getItem('cc_user'));
+    const { data: { session } } = await db.auth.getSession();
+    if (!session) {
+      window.location.href = 'auth.html';
+      return;
+    }
+    // Session valid — load user from cache or fetch fresh
+    var saved = null;
+    try { saved = JSON.parse(localStorage.getItem('cc_user')); } catch(e){}
     if (saved && (saved.name || saved.email)) {
       currentUser = saved;
-      updateProfileUI();
-      setTimeout(checkAndShowAdminTab, 500);
+    } else {
+      // Fetch from customers table
+      const { data: cust } = await db.from('customers')
+        .select('id, name, phone, email, city')
+        .eq('email', session.user.email)
+        .single();
+      if (cust) {
+        currentUser = { name: cust.name, phone: cust.phone, email: cust.email, city: cust.city, db_id: cust.id };
+        localStorage.setItem('cc_user', JSON.stringify(currentUser));
+      } else {
+        // No customer record — send back to signup
+        window.location.href = 'auth.html';
+        return;
+      }
     }
-  } catch(e){}
+    updateProfileUI();
+    setTimeout(checkAndShowAdminTab, 500);
+  } catch(e) {
+    window.location.href = 'auth.html';
+    return;
+  }
+
   // ── Restore last visited page ──
   try {
     var lastPage = localStorage.getItem('cc_last_page');
-    var skipRestore = ['checkout', 'success', 'login']; // don't restore these
+    var skipRestore = ['checkout', 'success', 'login'];
     if (lastPage && !skipRestore.includes(lastPage)) {
       setTimeout(function() { showPage(lastPage); }, 100);
     }
@@ -4806,13 +4760,22 @@ async function openTrackingDetail(orderId, orderNum, status, total, date, itemNa
     document.getElementById('td-tracking-steps').innerHTML = '<div style="color:var(--dim);font-size:12px">Could not load tracking</div>';
   }
 
+  // Scroll tracking page to top before showing overlay
+  var pg = document.getElementById('page-tracking');
+  if (pg) {
+    pg.scrollTop = 0;
+    pg.style.overflow = 'hidden';
+  }
   document.getElementById('tracking-detail-overlay').style.display = 'block';
-  document.getElementById('tracking-detail-sheet').style.display = 'block';
+  document.getElementById('tracking-detail-sheet').style.display   = 'block';
 }
 
 function closeTrackingDetail() {
   document.getElementById('tracking-detail-overlay').style.display = 'none';
-  document.getElementById('tracking-detail-sheet').style.display = 'none';
+  document.getElementById('tracking-detail-sheet').style.display   = 'none';
+  // Restore background scroll
+  var pg = document.getElementById('page-tracking');
+  if (pg) pg.style.overflow = '';
 }
 
 function openDetail(el) {
@@ -5046,7 +5009,12 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-function showCustomOrderDetail(orderNum, status, co) {
+function showCustomOrderDetail(orderNum, status) {
+  var co = (window._coData && window._coData[orderNum]) || {};
+  if (!co || Object.keys(co).length === 0) {
+    showToast('Custom order details not available');
+    return;
+  }
   document.getElementById('cod-order-num').textContent = orderNum;
 
   var statusLabels = {
