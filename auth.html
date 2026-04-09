@@ -864,11 +864,20 @@ async function doSignup() {
   const pw    = document.getElementById('su-pw').value;
 
   if (!name)               { toast('Please enter your name', true); return; }
-  if (phone.length !== 10) { toast('Enter a valid 10-digit number', true); return; }
+  if (!/^\d{10}$/.test(phone)) { toast('Enter a valid 10-digit number', true); return; }
   if (!email.includes('@')) { toast('Enter a valid email', true); return; }
   if (!city)               { toast('Please select your city', true); return; }
   if (pw.length < 8)       { toast('Password must be 8+ characters', true); return; }
   if (!termsAccepted)      { toast('Please accept Terms & Conditions', true); return; }
+
+    const { data: phoneExists } = await db.rpc('check_phone_exists', { 
+    p_phone: '+91' + phone 
+  });
+
+  if (phoneExists) {
+    toast('📵 This mobile number is already registered. Please sign in.', true);
+    return;
+  }
 
   const dd     = document.getElementById('su-dd').value;
   const mm     = document.getElementById('su-mm').value;
@@ -947,17 +956,22 @@ async function doSignup() {
       is_admin: false
     }));
 
-    // STEP 5: Update success page
+        // STEP 5: Save and redirect to app
     const displayCode = cust?.customer_code || custCode;
-    document.getElementById('cid-display').textContent = displayCode;
-    document.getElementById('cid-name').textContent    = name;
-    document.getElementById('cid-city').textContent    = '📍 ' + city + ', Tamil Nadu';
-    document.getElementById('dash-name-display').textContent = name;
-    document.getElementById('dash-id-display').textContent   = displayCode;
-    document.getElementById('dash-city-display').textContent = '📍 ' + city;
+
+    // Safe DOM updates — only if elements exist
+    const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    setEl('cid-display',       displayCode);
+    setEl('cid-name',          name);
+    setEl('cid-city',          '📍 ' + city + ', Tamil Nadu');
+    setEl('dash-name-display', name);
+    setEl('dash-id-display',   displayCode);
+    setEl('dash-city-display', '📍 ' + city);
 
     toast('✓ Welcome to ChocoCravings, ' + name + '! 🍫');
-    setTimeout(() => showPage('pg-success'), 500);
+
+    // Redirect to app after short delay
+    setTimeout(() => window.location.href = 'index.html', 1200);
 
   } catch(err) {
     toast(err.message || 'Signup failed', true);

@@ -3806,6 +3806,7 @@ function changeQty(idx, delta) {
 function showPage(name){
     setNav(name);
      try { localStorage.setItem('cc_last_page', name); } catch(e) {}
+      history.pushState({ page: name }, '', '#' + name);  
     if (name === 'profile') {
     var now = Date.now();
     if (!window._profileLastLoaded || (now - window._profileLastLoaded) > 30000) {
@@ -4193,8 +4194,22 @@ function quickAddCart(btn) {
 
   var name    = data.name;
   var tier2   = data.tier   || 'premium';
-  var egg2    = data.egg    || 'eggless';
-  var price2  = parseInt(data.price) || 300;
+  // Use user's egg preference, fallback to product default
+  var savedPref = null;
+  try { 
+    var u = JSON.parse(localStorage.getItem('cc_user'));
+    savedPref = u && u.egg_preference && u.egg_preference !== 'both' ? u.egg_preference : null;
+  } catch(e) {}
+  var egg2 = savedPref || data.egg || 'eggless';
+  // Get correct price from P table based on actual egg type being added
+  var price2 = 300;
+  try {
+    var variantIdx = parseInt(data.varidx) || 0;
+    var packIdx2   = 0; // default 4pcs
+    price2 = P[data.tier || 'premium'][egg2][variantIdx][packIdx2] || parseInt(data.price) || 300;
+  } catch(e) {
+    price2 = parseInt(data.price) || 300;
+  }
   var sku2    = data.sku    || '';
   var pack2   = data.pack   || '4pcs (250g)';
 
@@ -4242,22 +4257,41 @@ function quickAddCart(btn) {
 }
 
 function doAddCart(btn){
+  // Apply user egg preference
+  var savedPref = null;
+  try {
+    var u = JSON.parse(localStorage.getItem('cc_user'));
+    savedPref = u && u.egg_preference && u.egg_preference !== 'both' ? u.egg_preference : null;
+  } catch(e) {}
+  if (savedPref) egg = savedPref;
+
   // Build the item from current selections
   var varNames = ['Classic Fudge','Double Choco','Triple Choco','Nutella','Biscoff',
     'Nuts','Mixed Seeds','Seeds+Nuts','Walnut','Hazelnut','Assorted',
     'Ragi','Wheat','Black Rice','Pearl Millet'];
+  
   var packLabels = ['4pcs (250g)','9pcs (500g)','16pcs (1kg)'];
   var name = varNames[varIdx] + ' Brownie';
   var packLabel = packLabels[packIdx];
-  var base = getPrice();
-  var grand = (base + topTotal) * qty;
+  
 
   // Build SKU
   var varCodes = ['CLASSIC','DOUBLE','TRIPLE','NUTELLA','BISCOFF','NUTS','SEEDS','SEEDNUTS','WALNUT','HAZEL','ASSORTED','RAGI','WHEAT','BLACKRICE','MILLET'];
   var skuPrefix = tier === 'couverture' ? 'COUV' : 'PREM';
-  var eggCode   = egg  === 'eggless'    ? 'EL'   : 'EG';
-  var sku = skuPrefix + '-' + eggCode + '-' + varCodes[varIdx];
+    // Read directly from the currently selected button — not the variable
+  // This respects manual toggles even if applyEggPreferenceFilter() ran
+  var selectedEggBtn = document.querySelector('.ebtn.on');
+  var currentEgg = selectedEggBtn 
+  ? (selectedEggBtn.classList.contains('eg') ? 'eggless' : 'egg')
+  : egg;
 
+  // ── Sync egg variable BEFORE getPrice() so price matches selection ──
+  egg = currentEgg;
+
+  var eggCode = currentEgg === 'eggless' ? 'EL' : 'EG';
+  var sku = skuPrefix + '-' + eggCode + '-' + varCodes[varIdx];
+  var base = getPrice();
+  var grand = (base + topTotal) * qty;
   // Check if same item already in cart — just increase qty
   var existing = cartItems.find(function(i){
     return i.sku === sku && (i.pack || i.pack_label) === packLabel;
@@ -4268,8 +4302,8 @@ function doAddCart(btn){
     cartItems.push({
       product_name: name,
       tier: tier,
-      egg: egg,
-      egg_type: egg,
+      egg: currentEgg,
+      egg_type: currentEgg,
       pack: packLabel,
       pack_label: packLabel,
       qty: qty,
@@ -4831,10 +4865,19 @@ function openDetail(el) {
 async function loadProducts() {
   try {
     // Load products with their variants
-    var { data: products, error } = await db
-      .from('products')
-      .select('id, name, sku, tier, egg_type, category, description, is_featured, product_variants(id, pack_label, weight_grams, price)')
-      .eq('is_active', true);
+          var userPref = getUserEggPref(); // 'eggless', 'egg', or null
+
+      var query = db
+        .from('products')
+        .select('id, name, sku, tier, egg_type, category, description, is_featured, product_variants(id, pack_label, weight_grams, price)')
+        .eq('is_active', true);
+
+      // Filter by user egg preference
+      if (userPref) {
+        query = query.eq('egg_type', userPref);
+      }
+
+      var { data: products, error } = await query;
 
       if (error || !products) {
       console.warn('Products load error:', error);
@@ -4893,10 +4936,14 @@ function renderFeaturedGrid(products) {
     var price = getLowestPrice(p.product_variants);
     var emoji = getEmojiForProduct(p.name);
     var piClass = getPiClass(i);
-    var eggLabel = p.egg_type === 'eggless' ? '💚 Eggless' : '❤️ Egg';
+    var userPref = getUserEggPref();
+    var eggLabel = (userPref || p.egg_type) === 'eggless' ? '💚 Eggless' : '❤️ With Egg';
     var tierLabel = p.tier === 'couverture' ? '🌟 Premium' : eggLabel;
     var rating = p.rating || 4.9;
-    var pack = p.product_variants && p.product_variants.length > 0 ? p.product_variants[0].pack_label : '4pcs';
+    // Sort variants by price ascending to get smallest pack first
+    var sortedVariants = (p.product_variants || []).slice().sort(function(a,b){ return (a.price||0) - (b.price||0); });
+    var pack = sortedVariants.length > 0 ? sortedVariants[0].pack_label : '4pcs';
+    var price = sortedVariants.length > 0 ? sortedVariants[0].price : 0;
     var varIdx = getVariantIndex(p.sku);
 
     return '<div class="pcard"'
@@ -4937,11 +4984,13 @@ function renderExploreList(products) {
     var price = getLowestPrice(p.product_variants);
     var emoji = getEmojiForProduct(p.name);
     var piClass = getPiClass(i);
-    var eggLabel = p.egg_type === 'eggless' ? '💚 Eggless' : '❤️ Egg';
+    var userPref = getUserEggPref();
+    var eggLabel = (userPref || p.egg_type) === 'eggless' ? '💚 Eggless' : '❤️ With Egg';
     var tierLabel = p.tier === 'couverture' ? 'Couverture' : 'Premium';
     var rating = p.rating || 4.9;
     var reviews = p.review_count || 0;
-    var pack = p.product_variants && p.product_variants.length > 0 ? p.product_variants[0].pack_label : '4pcs';
+    var sortedVariants = (p.product_variants || []).slice().sort(function(a,b){ return (a.price||0) - (b.price||0); });
+    var pack = sortedVariants.length > 0 ? sortedVariants[0].pack_label : '4pcs';
     var varIdx = getVariantIndex(p.sku);
     var tags = (p.category || '') + ' ' + (p.egg_type || '') + ' ' + (p.tier || '');
 
@@ -4949,7 +4998,7 @@ function renderExploreList(products) {
       + ' data-tags="' + tags.trim() + '"'
       + ' data-name="' + p.name + '"'
       + ' data-tier="' + (p.tier || 'premium') + '"'
-      + ' data-egg="' + (p.egg_type || 'eggless') + '"'
+      + ' data-egg="' + (getUserEggPref() || p.egg_type || 'eggless')  + '"'
       + ' data-varidx="' + varIdx + '"'
       + ' data-price="' + price + '"'
       + ' data-sku="' + (p.sku || '') + '"'
@@ -5070,6 +5119,32 @@ function closeCustomOrderDetail() {
   document.getElementById('cod-overlay').style.display = 'none';
   document.getElementById('cod-sheet').style.display   = 'none';
 }
+
+// ── Handle mobile back button ──
+window.addEventListener('popstate', function(e) {
+  var page = (e.state && e.state.page) || 'home';
+  // Don't use showPage() here — it would push another history entry
+  setNav(page);
+  try { localStorage.setItem('cc_last_page', page); } catch(e2) {}
+  var cur = document.querySelector('.page.active');
+  if (cur) { cur.classList.remove('active'); cur.classList.add('out'); setTimeout(function(){ cur.classList.remove('out'); }, 420); }
+  var nxt = document.getElementById('page-' + page);
+  if (nxt) { nxt.classList.add('active'); nxt.scrollTop = 0; }
+  if (page === 'cart') renderCart();
+  // Close any open sheets
+  closeTrackingDetail();
+  closeCustomOrderDetail();
+});
+
+function getUserEggPref() {
+  try {
+    var u = JSON.parse(localStorage.getItem('cc_user'));
+    return (u && u.egg_preference && u.egg_preference !== 'both') ? u.egg_preference : null;
+  } catch(e) { return null; }
+}
+// Push initial history entry on load so first back press goes home not exit
+history.replaceState({ page: 'home' }, '', '#home');
+
 
 </script>
 </body>
