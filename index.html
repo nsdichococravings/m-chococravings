@@ -3561,9 +3561,23 @@ setTimeout(updateCartDots, 100);
   // ── Restore last visited page ──
   try {
     var lastPage = localStorage.getItem('cc_last_page');
-    var skipRestore = ['checkout', 'success', 'login'];
+    var skipRestore = ['checkout', 'success', 'login','profile'];
     if (lastPage && !skipRestore.includes(lastPage)) {
-      setTimeout(function() { showPage(lastPage); }, 100);
+      // Remove active from home immediately
+    var homeEl = document.getElementById('page-home');
+    if (homeEl) { homeEl.classList.remove('active'); }
+    // Activate target page directly without animation
+    var targetEl = document.getElementById('page-' + lastPage);
+
+     if (targetEl) {
+      targetEl.style.transition = 'none'; // skip animation on restore
+      targetEl.classList.add('active');
+      targetEl.scrollTop = 0;
+      setTimeout(function(){ targetEl.style.transition = ''; }, 50); // re-enable after
+    }
+    setNav(lastPage);
+    if (lastPage === 'cart') renderCart();
+
     }
   } catch(e) {}
 })();
