@@ -204,7 +204,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 /* TRENDING SCROLL */
 .tscroll{display:flex;gap:12px;padding:2px 0 14px 22px;overflow-x:auto;scrollbar-width:none}
 .tscroll::-webkit-scrollbar{display:none}
-.tcard{flex-shrink:0;width:156px;background:var(--card);border-radius:20px;overflow:hidden;border:1px solid var(--bdr);cursor:pointer;transition:transform .25s}
+.tcard{flex-shrink:0;width:150px;background:var(--card);border-radius:20px;overflow:hidden;border:1px solid var(--bdr);cursor:pointer;transition:transform .25s}
 .tcard:active{transform:scale(.95)}
 .timg{width:100%;height:100px;display:flex;align-items:center;justify-content:center;font-size:42px}
 .ti1{background:linear-gradient(135deg,#2D0060,#e018d6)}
@@ -264,14 +264,14 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
    EXPLORE PAGE
 ══════════════════════════════ */
 #page-explore{background:var(--dark)}
-.exp-top{background:linear-gradient(160deg,var(--d3),var(--d2));padding:58px 22px 18px}
+.exp-top{background:linear-gradient(160deg,var(--d3),var(--d2));padding:4px 22px 18px}
 .exp-title{font-family:'Cormorant Garamond',serif;font-size:30px;color:var(--white);font-weight:700;margin-bottom:3px}
 .exp-sub{font-size:12px;color:var(--dim);margin-bottom:14px}
 .exp-srch{display:flex;align-items:center;gap:9px;background:rgba(255,255,255,.07);border:1px solid var(--bdr);border-radius:14px;padding:12px 16px}
 .exp-srch input{flex:1;background:none;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--white)}
 .exp-srch input::placeholder{color:var(--faint)}
-.ftags{display:flex;flex-wrap:wrap;gap:8px;padding:14px 22px 10px 22px}
-.ftag{padding:8px 16px;border-radius:22px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);font-size:12px;font-weight:500;color:var(--white);cursor:pointer;transition:all .22s;white-space:nowrap;flex-shrink:0;display:flex;align-items:center;gap:5px}
+.ftags{display:flex;gap:8px;padding:10px 22px;overflow-x:auto;scrollbar-width:none;flex-shrink:0}
+.ftag{padding:8px 10px;border-radius:22px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);font-size:12px;font-weight:500;color:var(--white);cursor:pointer;transition:all .22s;white-space:nowrap;flex-shrink:0;display:flex;align-items:center;gap:5px}
 .ftag:active{transform:scale(.94)}
 .ftag.on{background:var(--p);border-color:var(--p);color:#fff;box-shadow:0 4px 14px rgba(107,47,206,.4)}
 
@@ -768,48 +768,43 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
           onfocus="showPage('explore');setTimeout(function(){var e=document.getElementById('explore-search');if(e){e.focus();}},450)">
         <div class="srch-btn" onclick="showPage('explore')">🔍</div>
       </div> -->
-      <!-- ═══ HOME HERO — LUXURY EDITORIAL ═══ -->
+      <!-- ═══ HOME HERO — PHOTO EDITION ═══ -->
       <div style="margin:0 16px 20px;position:relative">
 
-        <!-- MAIN HERO CARD -->
-        <div onclick="showPage('custom-order')" style="position:relative;border-radius:26px;overflow:hidden;cursor:pointer;min-height:200px;background:linear-gradient(145deg,#0d001a 0%,#2a0045 35%,#5c0872 65%,#8b0f96 100%)">
+        <div onclick="showPage('custom-order')" style="position:relative;border-radius:26px;overflow:hidden;cursor:pointer;height:220px">
 
-          <!-- Animated mesh blobs -->
-          <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none">
-            <div style="position:absolute;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(180,50,255,.25),transparent 65%);top:-80px;right:-60px;animation:hmBlob 7s ease-in-out infinite"></div>
-            <div style="position:absolute;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(255,100,220,.15),transparent 65%);bottom:-40px;left:-20px;animation:hmBlob 9s ease-in-out infinite reverse 2s"></div>
-            <div style="position:absolute;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(255,200,80,.1),transparent 65%);top:40%;left:35%;animation:hmBlob 6s ease-in-out infinite 1s"></div>
-          </div>
+          <!-- Real photo background -->
+          <img src="https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/diya.jpeg"
+            style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top">
 
-          <!-- Grain texture -->
-          <div style="position:absolute;inset:0;opacity:.06;background-image:url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E');pointer-events:none"></div>
+          <!-- Dark gradient overlay for text readability -->
+          <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(10,0,25,.85) 0%,rgba(60,5,80,.7) 50%,rgba(0,0,0,.2) 100%)"></div>
 
-          <!-- Diagonal shimmer line -->
-          <div style="position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.05) 50%,transparent 60%);animation:hmShimmer 4s ease-in-out infinite 1s;pointer-events:none"></div>
+          <!-- Shimmer sweep -->
+          <div style="position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.06) 50%,transparent 60%);animation:hmShimmer 5s ease-in-out infinite;pointer-events:none"></div>
 
-          <!-- Floating emojis -->
-          <div style="position:absolute;right:20px;top:18px;font-size:52px;animation:hmFloat 3.5s ease-in-out infinite;filter:drop-shadow(0 12px 24px rgba(0,0,0,.5));pointer-events:none">🎂</div>
-          <div style="position:absolute;right:72px;top:14px;font-size:20px;animation:hmFloat 4.5s ease-in-out infinite 1s;opacity:.6;pointer-events:none">✨</div>
-          <div style="position:absolute;right:24px;bottom:52px;font-size:18px;animation:hmFloat 5s ease-in-out infinite .5s;opacity:.5;pointer-events:none">🍫</div>
+          <!-- Grain -->
+          <div style="position:absolute;inset:0;opacity:.05;background-image:url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E');pointer-events:none"></div>
 
           <!-- Content -->
-          <div style="position:relative;z-index:2;padding:22px 20px 20px">
+          <div style="position:relative;z-index:2;padding:22px 20px 20px;height:100%;display:flex;flex-direction:column;justify-content:flex-end">
+
             <!-- Live badge -->
-            <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.1);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:4px 11px;margin-bottom:12px">
+            <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.12);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:4px 11px;margin-bottom:10px;width:fit-content">
               <span style="width:5px;height:5px;border-radius:50%;background:#ff9de2;display:inline-block;box-shadow:0 0 6px #ff9de2;animation:hmPulse 1.5s infinite"></span>
-              <span style="font-size:9px;font-weight:700;color:rgba(255,255,255,.85);letter-spacing:2px;text-transform:uppercase">New · Design Yours</span>
+              <span style="font-size:9px;font-weight:700;color:rgba(255,255,255,.9);letter-spacing:2px;text-transform:uppercase">New · Design Yours</span>
             </div>
 
             <!-- Headline -->
-            <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;color:#fff;line-height:1.1;margin-bottom:5px;letter-spacing:-.5px">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:#fff;line-height:1.1;margin-bottom:5px;letter-spacing:-.5px;text-shadow:0 2px 12px rgba(0,0,0,.4)">
               Custom Brownie<br>
               <span style="font-style:italic;background:linear-gradient(90deg,#f9c8ff,#ffb3f0,#ffd6b0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Slab & Cakes</span>
             </div>
 
-            <div style="font-size:11px;color:rgba(255,255,255,.6);margin-bottom:16px;letter-spacing:.3px">Birthday · Anniversary · Any occasion</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:14px;letter-spacing:.3px">Birthday · Anniversary · Any occasion</div>
 
-            <!-- CTA button -->
-            <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.92);border-radius:22px;padding:9px 18px;backdrop-filter:blur(8px)">
+            <!-- CTA -->
+            <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.92);border-radius:22px;padding:9px 18px;width:fit-content;backdrop-filter:blur(8px)">
               <span style="font-size:12px;font-weight:800;color:#5c0872;letter-spacing:.3px">Build Your Creation</span>
               <div style="width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#8b0f96,#5c0872);display:flex;align-items:center;justify-content:center">
                 <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2L7 5L3 8" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -818,7 +813,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
           </div>
         </div>
 
-        <!-- FLOATING STATS ROW — below hero, overlapping slightly -->
+        <!-- STATS ROW -->
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px">
           <div style="background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:12px 10px;text-align:center;position:relative;overflow:hidden">
             <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--p),var(--pl))"></div>
@@ -975,15 +970,15 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
     <!-- ═══ EXPLORE ═══ -->
     <div class="page" id="page-explore">
       <div class="exp-top"  style="position:relative;">
-        <div class="back" onclick="goBack()" style="top:16px;left:16px;">
+        <!--<div class="back" onclick="goBack()" style="top:16px;left:16px;">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-        </div>
+        </div>-->
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
           <div>
             <div class="exp-title">Explore</div>
-            <div class="exp-sub" style="margin-bottom:12px">Premium handcrafted brownies · Eggless &amp; egg variants</div>
+            <div class="exp-sub" style="margin-bottom:12px">Premium Handcrafted Brownies</div>
           </div>
         </div>
         <div class="exp-srch"><span style="font-size:17px;color:var(--faint)">🔍</span><input id="explore-search" type="text" placeholder="Search products…" oninput="searchProducts(this.value)"><span id="search-clear" style="font-size:16px;color:var(--faint);cursor:pointer;display:none" onclick="clearSearch()">✕</span></div>
@@ -993,82 +988,9 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         <div class="ftag" onclick="selTag(this)">💚 Eggless</div>
         <div class="ftag" onclick="selTag(this)">❤️ With Egg</div>
         <div class="ftag" onclick="selTag(this)">🌟 Couverture</div>
-        <div class="ftag" onclick="selTag(this)">🌿 Healthy</div>
-        <div class="ftag" onclick="selTag(this)">🍯 Nutella</div>
-        <div class="ftag" onclick="selTag(this)">🎂 Custom</div>
       </div>
       <div class="plist"  id="explore-list"></div>
-        <div class="plcard" data-tags="eggless couverture classic" data-name="Classic Fudge Brownie" data-tier="premium" data-egg="eggless" data-varidx="0" data-price="270" data-sku="PREM-EL-CLASSIC" data-pack="4pcs (250g)" onclick="showPage('detail')">
-          <div class="plimg pi1">🍫</div>
-          <div class="plinfo">
-            <div><div class="plname">Classic Fudge Brownie</div><div class="pltag" data-tag="eggless couverture classic">💚 Eggless · Premium &amp; Couverture</div><div class="pldesc">Rich dark chocolate · Stays fresh 4–5 days</div><div class="plrat">★★★★★ 4.9 · 312 reviews</div></div>
-            <div class="plfoot"><span class="plprice">from ₹270</span><button class="abtn" onclick="event.stopPropagation();quickAddCart(this)">+</button></div>
-          </div>
-        </div>
-        <div class="plcard" data-tags="eggless classic" data-name="Double Choco Brownie" data-tier="premium" data-egg="eggless" data-varidx="1" data-price="320" data-sku="PREM-EL-DOUBLE" data-pack="4pcs (250g)" onclick="showPage('detail')">
-          <div class="plimg pi2">🍫</div>
-          <div class="plinfo">
-            <div><div class="plname">Double Chocolate Brownie</div><div class="pltag" data-tag="eggless classic">💚 Eggless · Dark + Milk choco</div><div class="pldesc">Two-chocolate indulgence · 4/9/16 pcs</div><div class="plrat">★★★★★ 4.9 · 198 reviews</div></div>
-            <div class="plfoot"><span class="plprice">from ₹320</span><button class="abtn" onclick="event.stopPropagation();quickAddCart(this)">+</button></div>
-          </div>
-        </div>
-        <div class="plcard" data-tags="eggless classic" data-name="Triple Choco Brownie" data-tier="premium" data-egg="eggless" data-varidx="2" data-price="330" data-sku="PREM-EL-TRIPLE" data-pack="4pcs (250g)" onclick="showPage('detail')">
-          <div class="plimg pi3">🍫</div>
-          <div class="plinfo">
-            <div><div class="plname">Triple Chocolate Brownie</div><div class="pltag" data-tag="eggless classic">💚 Eggless · Dark+Milk+White</div><div class="pldesc">Triple layer chocolate heaven</div><div class="plrat">★★★★★ 5.0 · 245 reviews</div></div>
-            <div class="plfoot"><span class="plprice">from ₹330</span><button class="abtn" onclick="event.stopPropagation();quickAddCart(this)">+</button></div>
-          </div>
-        </div>
-        <div class="plcard" data-tags="eggless nutella" data-name="Nutella Brownie" data-tier="premium" data-egg="eggless" data-varidx="3" data-price="340" data-sku="PREM-EL-NUTELLA" data-pack="4pcs (250g)" onclick="showPage('detail')">
-          <div class="plimg pi4">🍯</div>
-          <div class="plinfo">
-            <div><div class="plname">Nutella Brownie</div><div class="pltag" data-tag="eggless nutella">💚 Eggless · Hazelnut chocolate</div><div class="pldesc">Creamy Nutella swirled inside</div><div class="plrat">★★★★★ 4.9 · 189 reviews</div></div>
-            <div class="plfoot"><span class="plprice">from ₹340</span><button class="abtn" onclick="event.stopPropagation();quickAddCart(this)">+</button></div>
-          </div>
-        </div>
-        <div class="plcard" data-tags="eggless nutella" data-name="Biscoff Brownie" data-tier="premium" data-egg="eggless" data-varidx="4" data-price="360" data-sku="PREM-EL-BISCOFF" data-pack="4pcs (250g)" onclick="showPage('detail')">
-          <div class="plimg pi5">🍪</div>
-          <div class="plinfo">
-            <div><div class="plname">Biscoff Brownie</div><div class="pltag" data-tag="eggless nutella">💚 Eggless · Lotus Biscoff</div><div class="pldesc">Caramelised biscuit magic</div><div class="plrat">★★★★★ 4.8 · 156 reviews</div></div>
-            <div class="plfoot"><span class="plprice">from ₹360</span><button class="abtn" onclick="event.stopPropagation();quickAddCart(this)">+</button></div>
-          </div>
-        </div>
-        <div class="plcard" data-tags="eggless classic" data-name="Assorted Brownie" data-tier="premium" data-egg="eggless" data-varidx="10" data-price="370" data-sku="PREM-EL-ASSORTED" data-pack="4pcs (250g)" onclick="showPage('detail')">
-          <div class="plimg pi1">🥜</div>
-          <div class="plinfo">
-            <div><div class="plname">Assorted Brownie Box</div><div class="pltag" data-tag="eggless classic">💚 Eggless · Mix of all flavours</div><div class="pldesc">Dbl, Triple, Nuts, Nutella, Biscoff, Oreo, KitKat</div><div class="plrat">★★★★★ 5.0 · 287 reviews</div></div>
-            <div class="plfoot"><span class="plprice">from ₹370</span><button class="abtn" onclick="event.stopPropagation();quickAddCart(this)">+</button></div>
-          </div>
-        </div>
-        <div class="plcard" data-tags="eggless healthy" data-name="Ragi Brownie" data-tier="premium" data-egg="eggless" data-varidx="11" data-price="360" data-sku="PREM-EL-RAGI" data-pack="4pcs (250g)" onclick="showPage('detail')">
-          <div class="plimg pi2">🌾</div>
-          <div class="plinfo">
-            <div><div class="plname">Ragi Brownie 🌿</div><div class="pltag" data-tag="eggless healthy">💚 Eggless · Healthy · Finger millet</div><div class="pldesc">Nutritious finger millet base</div><div class="plrat">★★★★☆ 4.7 · 98 reviews</div></div>
-            <div class="plfoot"><span class="plprice">from ₹360</span><button class="abtn" onclick="event.stopPropagation();quickAddCart(this)">+</button></div>
-          </div>
-        </div>
-        <div class="plcard" data-tags="eggless healthy" data-name="Black Rice Brownie" data-tier="premium" data-egg="eggless" data-varidx="13" data-price="395" data-sku="PREM-EL-BLACKRICE" data-pack="4pcs (250g)" onclick="showPage('detail')">
-          <div class="plimg pi3">🌾</div>
-          <div class="plinfo">
-            <div><div class="plname">Black Rice Brownie 🌿</div><div class="pltag" data-tag="eggless healthy">💚 Eggless · Antioxidant-rich</div><div class="pldesc">Black rice — superfood brownie</div><div class="plrat">★★★★★ 4.8 · 76 reviews</div></div>
-            <div class="plfoot"><span class="plprice">from ₹395</span><button class="abtn" onclick="event.stopPropagation();quickAddCart(this)">+</button></div>
-          </div>
-        </div>
-        <div class="plcard" data-tags="eggless couverture classic" data-name="Couverture Classic Brownie" data-tier="couverture" data-egg="eggless" data-varidx="0" data-price="450" data-sku="COUV-EL-CLASSIC" data-pack="4pcs (250g)" onclick="showPage('detail')">
-          <div class="plimg pi4">🌟</div>
-          <div class="plinfo">
-            <div><div class="plname">Couverture Classic 🌟</div><div class="pltag" data-tag="eggless couverture classic">💚 Eggless · Belgian chocolate</div><div class="pldesc">Luxury Belgian couverture chocolate</div><div class="plrat">★★★★★ 5.0 · 134 reviews</div></div>
-            <div class="plfoot"><span class="plprice">from ₹450</span><button class="abtn" onclick="event.stopPropagation();quickAddCart(this)">+</button></div>
-          </div>
-        </div>
-        <div class="plcard" data-tags="custom" onclick="showPage('custom-order')">
-          <div class="plimg pi5">🎂</div>
-          <div class="plinfo">
-            <div><div class="plname">Custom Brownie Creation</div><div class="pltag" data-tag="custom">🎨 Made to Order · Price varies</div><div class="pldesc">Slab · Tower · Layer · Anniversary · Birthday</div><div class="plrat">★★★★★ 5.0 · Made to order</div></div>
-            <div class="plfoot"><span class="plprice" style="font-size:13px;font-family:'DM Sans'">Custom</span><button class="abtn" onclick="event.stopPropagation();quickAddCart(this)">+</button></div>
-          </div>
-        </div>
-      </div>
+      
       <div style="height:8px"></div>
       
     </div><!-- /explore -->
@@ -1250,11 +1172,11 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
     <!-- ═══ PROFILE ═══ -->
     <div class="page" id="page-profile">
       <div class="prof-hero" style="position:relative;">
-        <div class="back" onclick="showPage('home')" style="top:16px;left:16px;">
+        <!--<div class="back" onclick="showPage('home')" style="top:16px;left:16px;">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-        </div>
+        </div> -->
         <div class="pavatar" id="prof-avatar">👤</div>
         <div class="pname" id="prof-name">Guest</div>
         <div class="pemail" id="prof-phone">Not signed in</div>
@@ -1273,39 +1195,34 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
       <div class="msec">
         <div class="mgrp">Account</div>
         <div class="mitem" onclick="loadAndShowOrders()">
-          <div class="mico" style="background:rgba(107,47,206,.15)">📦</div>
           <div class="mtxt"><div class="mtitle">My Orders</div><div class="msub" id="prof-orders-sub">Loading...</div></div>
           <span class="mbadge" id="prof-active-badge" style="display:none">Active</span>
           <span class="marrow">›</span>
         </div>
         <div class="mitem" onclick="loadAndShowAddresses()">
-          <div class="mico" style="background:rgba(34,197,94,.15)">📍</div>
           <div class="mtxt"><div class="mtitle">Delivery Addresses</div><div class="msub" id="prof-addr-sub">Loading...</div></div>
           <span class="marrow">›</span>
         </div>
         <div class="mgrp">Preferences</div>
         <div class="mitem" id="egg-pref-item" style="cursor:not-allowed;opacity:0.6;">
-          <div class="mico" style="background:rgba(107,47,206,.15)">🥚</div>
           <div class="mtxt">
             <div class="mtitle">Egg Preference</div>
             <div class="msub" id="prof-egg">💚 Eggless</div>
             <div style="font-size:10px;color:var(--faint);margin-top:2px">Set during signup · Cannot be changed</div>
           </div>
-          <span style="font-size:11px;color:var(--faint)">🔒</span>
         </div>
         <div class="mitem" onclick="window.open('https://instagram.com/nsdi.chococravings','_blank')">
-          <div class="mico" style="background:rgba(192,132,232,.1)">📸</div>
           <div class="mtxt"><div class="mtitle">Follow on Instagram</div><div class="msub">@nsdi.chococravings</div></div>
           <span class="marrow">›</span>
         </div>
+        <!--
         <div class="mitem" onclick="openThemePicker()" style="cursor:pointer">
           <div class="mico" style="background:rgba(107,47,206,.15)">🎨</div>
           <div class="mtxt"><div class="mtitle">App Theme</div><div class="msub" id="theme-current-lbl">Purple (Default)</div></div>
           <div id="theme-dot-preview" style="width:18px;height:18px;border-radius:50%;background:var(--p);flex-shrink:0;margin-right:4px"></div>
           <span class="marrow">›</span>
-        </div>
+        </div>-->
         <div class="mitem" onclick="doLogout()">
-          <div class="mico" style="background:rgba(255,100,100,.1)">🚪</div>
           <div class="mtxt"><div class="mtitle">Sign Out</div><div class="msub">See you soon!</div></div>
           <span class="marrow">›</span>
         </div>
@@ -1616,21 +1533,18 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
     <div class="page" id="page-custom-order">
       <!-- Header -->
       <!-- HERO HEADER -->
-      <div style="position:relative;overflow:hidden;min-height:220px;background:linear-gradient(135deg,#1a0030 0%,#3d0060 40%,#6e0977 70%,#9c0ca1 100%);">
+      <div style="position:relative;overflow:hidden;min-height:220px;">
+        <!-- Photo background focused on cake table -->
+        <img src="https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/diya.jpeg"
+          style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 75%">
 
+        <!-- Dark overlay for readability -->
+        <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(10,0,25,.88) 0%,rgba(60,5,80,.75) 45%,rgba(0,0,0,.3) 100%)"></div>
         <!-- Animated blobs -->
         <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none">
           <div style="position:absolute;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(255,180,255,.18),transparent 70%);top:-60px;right:-40px;animation:blobDrift 6s ease-in-out infinite"></div>
           <div style="position:absolute;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(200,100,255,.15),transparent 70%);bottom:10px;left:-30px;animation:blobDrift 8s ease-in-out infinite reverse"></div>
           <div style="position:absolute;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,rgba(255,220,100,.12),transparent 70%);top:50%;left:40%;animation:blobDrift 5s ease-in-out infinite 2s"></div>
-        </div>
-
-        <!-- Floating chocolate shapes -->
-        <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden">
-          <div style="position:absolute;font-size:38px;top:18px;right:18px;animation:floatY 3.5s ease-in-out infinite;filter:drop-shadow(0 8px 16px rgba(0,0,0,.4))">🎂</div>
-          <div style="position:absolute;font-size:24px;top:90px;right:60px;animation:floatY 4.5s ease-in-out infinite 1s;opacity:.7">🍫</div>
-          <div style="position:absolute;font-size:18px;bottom:40px;right:30px;animation:floatY 3s ease-in-out infinite 0.5s;opacity:.5">✨</div>
-          <div style="position:absolute;font-size:16px;top:50px;right:110px;animation:floatY 5s ease-in-out infinite 1.5s;opacity:.4">🌸</div>
         </div>
 
         <!-- Shimmer lines -->
@@ -1643,14 +1557,15 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         <div style="position:absolute;inset:0;opacity:.04;background-image:url('data:image/svg+xml,%3Csvg viewBox=%220 0 256 256%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E');pointer-events:none"></div>
 
         <!-- Back button -->
+         <!--
         <div class="back" onclick="goBack()" style="position:absolute;top:calc(14px + env(safe-area-inset-top));left:16px;width:36px;height:36px;background:rgba(255,255,255,.12);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.2);box-shadow:0 4px 16px rgba(0,0,0,.2)">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-        </div>
+        </div>-->
 
         <!-- Content -->
-        <div style="position:relative;z-index:2;padding:calc(52px + env(safe-area-inset-top)) 22px 24px">
+        <div style="position:relative;z-index:2;padding:calc(4px + env(safe-area-inset-top)) 22px 24px">
 
           <!-- Badge pill -->
           <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.12);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:4px 12px;margin-bottom:12px">
@@ -1670,12 +1585,6 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 
           <!-- Feature chips -->
           <div style="display:flex;gap:7px;flex-wrap:wrap">
-            <div style="display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.1);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:5px 10px">
-              <span style="font-size:11px">🎨</span><span style="font-size:10px;font-weight:600;color:rgba(255,255,255,.85)">Custom Design</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.1);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:5px 10px">
-              <span style="font-size:11px">💚</span><span style="font-size:10px;font-weight:600;color:rgba(255,255,255,.85)">Eggless Option</span>
-            </div>
             <div style="display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.1);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:5px 10px">
               <span style="font-size:11px">📅</span><span style="font-size:10px;font-weight:600;color:rgba(255,255,255,.85)">Book 7 days ahead</span>
             </div>
@@ -1795,19 +1704,19 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
           <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Flavour Base</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <div class="cust-chip on" data-group="flavour" data-val="Classic Dark Chocolate" onclick="selChip(this,'flavour')" style="padding:12px;border-radius:12px;background:rgba(107,47,206,.15);border:1.5px solid var(--p);cursor:pointer">
-              <div style="font-size:12px;font-weight:700;color:var(--pl)">🍫 Classic Dark</div>
+              <div style="font-size:12px;font-weight:700;color:var(--pl)">Classic Dark</div>
               <div style="font-size:10px;color:var(--dim);margin-top:2px">Rich & fudgy</div>
             </div>
             <div class="cust-chip" data-group="flavour" data-val="Couverture Belgian" onclick="selChip(this,'flavour')" style="padding:12px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer">
-              <div style="font-size:12px;font-weight:700;color:var(--white)">🌟 Couverture</div>
+              <div style="font-size:12px;font-weight:700;color:var(--white)">Couverture</div>
               <div style="font-size:10px;color:var(--dim);margin-top:2px">Premium Belgian</div>
             </div>
-            <div class="cust-chip" data-group="flavour" data-val="Nutella" onclick="selChip(this,'flavour')" style="padding:12px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer">
-              <div style="font-size:12px;font-weight:700;color:var(--white)">🍯 Nutella</div>
+            <div class="cust-chip" data-group="flavour" data-val="Double Chocolate" onclick="selChip(this,'flavour')" style="padding:12px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer">
+              <div style="font-size:12px;font-weight:700;color:var(--white)">Double Chocolate</div>
               <div style="font-size:10px;color:var(--dim);margin-top:2px">Hazelnut dream</div>
             </div>
             <div class="cust-chip" data-group="flavour" data-val="Triple Chocolate" onclick="selChip(this,'flavour')" style="padding:12px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer">
-              <div style="font-size:12px;font-weight:700;color:var(--white)">🍫🥛⬜ Triple Choco</div>
+              <div style="font-size:12px;font-weight:700;color:var(--white)">Triple Choco</div>
               <div style="font-size:10px;color:var(--dim);margin-top:2px">Dark + Milk + White</div>
             </div>
           </div>
@@ -2296,7 +2205,44 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         </button>
       </div>
     </div>
+        <!-- LOGOUT CONFIRMATION SHEET -->
+    <div id="logout-overlay" onclick="closeLogoutSheet()"
+      style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.6);z-index:2500;backdrop-filter:blur(4px)"></div>
 
+    <div id="logout-sheet"
+      style="display:none;position:absolute;bottom:0;left:0;right:0;
+      background:var(--d2);border-radius:24px 24px 0 0;
+      border-top:1px solid var(--bdr2);z-index:2501;padding:0 0 32px">
+      <div style="width:40px;height:4px;border-radius:2px;background:var(--faint);margin:14px auto 20px"></div>
+      
+      <!-- Icon -->
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="width:64px;height:64px;border-radius:50%;background:rgba(244,114,182,.12);border:1px solid rgba(244,114,182,.25);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto">🚪</div>
+      </div>
+
+      <!-- Text -->
+      <div style="text-align:center;padding:0 32px;margin-bottom:24px">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--white);margin-bottom:6px">Sign Out?</div>
+        <div style="font-size:13px;color:var(--dim);line-height:1.6">You'll need to sign in again to place orders and track your ChocoCravings</div>
+      </div>
+
+      <!-- Buttons -->
+      <div style="display:flex;flex-direction:column;gap:10px;padding:0 22px">
+        <button onclick="confirmLogout()"
+          style="width:100%;padding:15px;background:linear-gradient(135deg,#e11d48,#f43f5e);
+          color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;
+          border:none;border-radius:16px;cursor:pointer">
+          Yes, Sign Out
+        </button>
+        <button onclick="closeLogoutSheet()"
+          style="width:100%;padding:15px;background:var(--card);
+          border:1.5px solid var(--bdr);color:var(--white);
+          font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;
+          border-radius:16px;cursor:pointer">
+          Cancel
+        </button>
+      </div>
+    </div>
     </div><!-- /screen -->
   </div><!-- /phone -->
   <div class="toast" id="toast">✓ Added to cart!</div>
@@ -2376,8 +2322,18 @@ async function loadProfileData() {
     if (el) el.textContent = eggPref === 'egg' ? '❤️ With Egg' : eggPref === 'both' ? '🍫 Both' : '💚 Eggless';
     // Stats
     var pts   = cust.loyalty_points  || 0;
-    var orders = cust.total_orders   || 0;
-    var spent  = cust.total_spent    || 0;
+    // Count actual orders from orders table instead of cached value
+    var { data: allOrders } = await db.from('orders')
+      .select('id', { count: 'exact' })
+      .eq('customer_id', currentUser.db_id);
+    var orders = allOrders ? allOrders.length : (cust.total_orders || 0);
+
+    var { data: spentOrders } = await db.from('orders')
+      .select('total')
+      .eq('customer_id', currentUser.db_id)
+      .not('status', 'in', '(cancelled)');
+    var spent = spentOrders ? spentOrders.reduce(function(s, o){ return s + (o.total || 0); }, 0) : (cust.total_spent || 0);
+    
     el = document.getElementById('prof-orders'); if(el) el.textContent = orders;
     el = document.getElementById('prof-points'); if(el) el.textContent = pts;
     el = document.getElementById('prof-spent');  if(el) el.textContent = '₹' + (spent >= 1000 ? (spent/1000).toFixed(1)+'k' : spent);
@@ -3693,8 +3649,18 @@ function closeAdminPanel() {
   if (overlay) overlay.style.display = 'none';
 }
 
-async function doLogout() {
-  if (!confirm('Sign out of ChocoCravings?')) return;
+function doLogout() {
+  document.getElementById('logout-overlay').style.display = 'block';
+  document.getElementById('logout-sheet').style.display   = 'block';
+}
+
+function closeLogoutSheet() {
+  document.getElementById('logout-overlay').style.display = 'none';
+  document.getElementById('logout-sheet').style.display   = 'none';
+}
+
+async function confirmLogout() {
+  closeLogoutSheet();
   await db.auth.signOut();
   currentUser = null;
   localStorage.removeItem('cc_user');
@@ -3866,7 +3832,7 @@ setTimeout(updateCartDots, 100);
   // ── Restore last visited page ──
   try {
     var lastPage = localStorage.getItem('cc_last_page');
-    var skipRestore = ['checkout', 'success', 'login', 'profile'];
+    var skipRestore = ['checkout', 'success', 'login'];
     if (lastPage && !skipRestore.includes(lastPage)) {
       // Remove active from home immediately
     var homeEl = document.getElementById('page-home');
