@@ -280,7 +280,8 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 .plcard{display:flex;gap:12px;background:var(--card-surface,rgba(255,255,255,.05));border-radius:18px;overflow:hidden;border:1px solid var(--bdr);cursor:pointer;transition:transform .2s,border-color .2s}
 .plcard:active{transform:scale(.985)}
 .plcard:hover{border-color:var(--bdr2)}
-.plimg{width:96px;height:96px;display:flex;align-items:center;justify-content:center;font-size:40px;flex-shrink:0}
+.plimg{width:96px;height:96px;display:flex;align-items:center;justify-content:center;font-size:40px;flex-shrink:0;overflow:hidden;border-radius:0}
+.plimg img{width:100%;height:100%;object-fit:cover}
 .plinfo{flex:1;padding:12px 12px 12px 0;display:flex;flex-direction:column;justify-content:space-between}
 .plname{font-size:13px;font-weight:600;color:var(--white);line-height:1.3}
 .pltag{font-size:10px;color:var(--green);font-weight:600;margin:2px 0}
@@ -425,7 +426,8 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 .cart-count{font-size:12px;color:var(--dim)}
 .citems{padding:0 22px;display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
 .citem{display:flex;gap:12px;background:var(--card);border-radius:16px;overflow:hidden;border:1px solid var(--bdr)}
-.cimg{width:88px;height:88px;display:flex;align-items:center;justify-content:center;font-size:38px;flex-shrink:0}
+.cimg{width:88px;height:88px;display:flex;align-items:center;justify-content:center;font-size:38px;flex-shrink:0;overflow:hidden}
+.cimg img{width:100%;height:100%;object-fit:cover}
 .cii1{background:linear-gradient(135deg,#2D0060,#6B2FCE)}
 .cii2{background:linear-gradient(135deg,#1C0040,#4A1080)}
 .cii3{background:linear-gradient(135deg,#0D001A,#3A0870)}
@@ -766,20 +768,98 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
           onfocus="showPage('explore');setTimeout(function(){var e=document.getElementById('explore-search');if(e){e.focus();}},450)">
         <div class="srch-btn" onclick="showPage('explore')">🔍</div>
       </div> -->
-      <!-- CUSTOM SLAB HERO BANNER -->
-      <div class="hero-card hc-1" id="hero-card" onclick="showPage('custom-order')" style="margin:0 22px 16px;background:linear-gradient(135deg,#2D0060,#9605b3,#9c0ca1);border-radius:18px;padding:18px;cursor:pointer;position:relative;overflow:hidden">
-        <div style="position:absolute;top:-20px;right:-20px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.06)"></div>
-        <div style="position:absolute;bottom:-10px;left:30px;width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.04)"></div>
-        <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px">New · Design Yours</div>
-        <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:#fff;margin-bottom:4px">Custom Brownie Slab 🎂</div>
-        <div style="font-size:12px;color:rgba(255,255,255,.7);margin-bottom:12px">Birthday · Anniversary · Any occasion</div>
-        <div style="display:flex;gap:8px;align-items:center">
-          <div style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;color:#fff">Build Your Creation</div>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M6 3L11 8L6 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+      <!-- ═══ HOME HERO — LUXURY EDITORIAL ═══ -->
+      <div style="margin:0 16px 20px;position:relative">
+
+        <!-- MAIN HERO CARD -->
+        <div onclick="showPage('custom-order')" style="position:relative;border-radius:26px;overflow:hidden;cursor:pointer;min-height:200px;background:linear-gradient(145deg,#0d001a 0%,#2a0045 35%,#5c0872 65%,#8b0f96 100%)">
+
+          <!-- Animated mesh blobs -->
+          <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none">
+            <div style="position:absolute;width:280px;height:280px;border-radius:50%;background:radial-gradient(circle,rgba(180,50,255,.25),transparent 65%);top:-80px;right:-60px;animation:hmBlob 7s ease-in-out infinite"></div>
+            <div style="position:absolute;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(255,100,220,.15),transparent 65%);bottom:-40px;left:-20px;animation:hmBlob 9s ease-in-out infinite reverse 2s"></div>
+            <div style="position:absolute;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(255,200,80,.1),transparent 65%);top:40%;left:35%;animation:hmBlob 6s ease-in-out infinite 1s"></div>
+          </div>
+
+          <!-- Grain texture -->
+          <div style="position:absolute;inset:0;opacity:.06;background-image:url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E');pointer-events:none"></div>
+
+          <!-- Diagonal shimmer line -->
+          <div style="position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.05) 50%,transparent 60%);animation:hmShimmer 4s ease-in-out infinite 1s;pointer-events:none"></div>
+
+          <!-- Floating emojis -->
+          <div style="position:absolute;right:20px;top:18px;font-size:52px;animation:hmFloat 3.5s ease-in-out infinite;filter:drop-shadow(0 12px 24px rgba(0,0,0,.5));pointer-events:none">🎂</div>
+          <div style="position:absolute;right:72px;top:14px;font-size:20px;animation:hmFloat 4.5s ease-in-out infinite 1s;opacity:.6;pointer-events:none">✨</div>
+          <div style="position:absolute;right:24px;bottom:52px;font-size:18px;animation:hmFloat 5s ease-in-out infinite .5s;opacity:.5;pointer-events:none">🍫</div>
+
+          <!-- Content -->
+          <div style="position:relative;z-index:2;padding:22px 20px 20px">
+            <!-- Live badge -->
+            <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.1);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:4px 11px;margin-bottom:12px">
+              <span style="width:5px;height:5px;border-radius:50%;background:#ff9de2;display:inline-block;box-shadow:0 0 6px #ff9de2;animation:hmPulse 1.5s infinite"></span>
+              <span style="font-size:9px;font-weight:700;color:rgba(255,255,255,.85);letter-spacing:2px;text-transform:uppercase">New · Design Yours</span>
+            </div>
+
+            <!-- Headline -->
+            <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;color:#fff;line-height:1.1;margin-bottom:5px;letter-spacing:-.5px">
+              Custom Brownie<br>
+              <span style="font-style:italic;background:linear-gradient(90deg,#f9c8ff,#ffb3f0,#ffd6b0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Slab & Cakes</span>
+            </div>
+
+            <div style="font-size:11px;color:rgba(255,255,255,.6);margin-bottom:16px;letter-spacing:.3px">Birthday · Anniversary · Any occasion</div>
+
+            <!-- CTA button -->
+            <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.92);border-radius:22px;padding:9px 18px;backdrop-filter:blur(8px)">
+              <span style="font-size:12px;font-weight:800;color:#5c0872;letter-spacing:.3px">Build Your Creation</span>
+              <div style="width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#8b0f96,#5c0872);display:flex;align-items:center;justify-content:center">
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2L7 5L3 8" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FLOATING STATS ROW — below hero, overlapping slightly -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px">
+          <div style="background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:12px 10px;text-align:center;position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--p),var(--pl))"></div>
+            <div style="font-size:20px;margin-bottom:3px">🎨</div>
+            <div style="font-size:11px;font-weight:700;color:var(--white);line-height:1.2">Custom</div>
+            <div style="font-size:9px;color:var(--faint);margin-top:1px">Design</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:12px 10px;text-align:center;position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#22c55e,#4ade80)"></div>
+            <div style="font-size:20px;margin-bottom:3px">💚</div>
+            <div style="font-size:11px;font-weight:700;color:var(--white);line-height:1.2">Eggless</div>
+            <div style="font-size:9px;color:var(--faint);margin-top:1px">Available</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:12px 10px;text-align:center;position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></div>
+            <div style="font-size:20px;margin-bottom:3px">🚚</div>
+            <div style="font-size:11px;font-weight:700;color:var(--white);line-height:1.2">Fresh</div>
+            <div style="font-size:9px;color:var(--faint);margin-top:1px">Baked daily</div>
+          </div>
         </div>
       </div>
+
+      <!-- HOME HERO KEYFRAMES -->
+      <style>
+      @keyframes hmBlob {
+        0%,100% { transform:translate(0,0) scale(1); }
+        50%      { transform:translate(-18px,22px) scale(1.12); }
+      }
+      @keyframes hmFloat {
+        0%,100% { transform:translateY(0) rotate(-4deg); }
+        50%      { transform:translateY(-10px) rotate(4deg); }
+      }
+      @keyframes hmShimmer {
+        0%   { left:-100%; }
+        100% { left:200%; }
+      }
+      @keyframes hmPulse {
+        0%,100% { opacity:1; transform:scale(1); }
+        50%      { opacity:.5; transform:scale(1.3); }
+      }
+      </style>
       <!--
       <div class="hero-dots">
           <div class="hdot on" onclick="setHero(0)"></div>
@@ -840,10 +920,19 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         <div class="cat" onclick="selCat(this)"><div class="cat-i">🎂</div><div class="cat-l">Custom</div></div>
       </div> -->
 
-      <!-- FEATURED SECTION -->
-      <div class="sec"><span class="sec-t">Featured</span><span class="sec-l" onclick="showPage('explore')">View all</span></div>
-      <div id="featured-grid" class="pgrid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:2px 22px 14px;">
-        <!-- loaded dynamically -->
+      <!-- FEATURED SECTION -->   
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 22px 8px">
+        <div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--white);line-height:1">Our Brownies</div>
+          <div style="font-size:10px;color:var(--faint);margin-top:2px;letter-spacing:.5px">Freshly baked · No preservatives</div>
+        </div>
+        <div onclick="showPage('explore')" style="display:flex;align-items:center;gap:4px;background:rgba(110,9,119,.12);border:1px solid rgba(110,9,119,.25);border-radius:20px;padding:6px 12px;cursor:pointer">
+          <span style="font-size:11px;font-weight:700;color:var(--pl)">View all</span>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="var(--pl)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div id="featured-grid" style="display:flex;flex-direction:row;overflow-x:auto;gap:12px;padding:4px 22px 16px;scrollbar-width:none;">
+      <!-- loaded dynamically -->
       </div>
       <div id="pgrid-empty" style="display:none;text-align:center;padding:20px 22px 8px">
         <div style="font-size:13px;color:var(--dim)">No featured items</div>
@@ -851,11 +940,8 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 
       <!-- TRENDING -->
       <div class="sec"><span class="sec-t">Trending 🔥</span><span class="sec-l" onclick="showPage('explore')">See all →</span></div>
-      <div class="tscroll">
-        <div class="tcard" onclick="showPage('detail')"><div class="timg ti1">🥜</div><div class="tinfo"><div class="tname">Assorted Box</div><div class="trat">★★★★★</div><div class="tprice">₹400 · 4pcs</div></div></div>
-        <div class="tcard" onclick="showPage('detail')"><div class="timg ti2">🍪</div><div class="tinfo"><div class="tname">Biscoff Brownie</div><div class="trat">★★★★★</div><div class="tprice">₹390 · 4pcs</div></div></div>
-        <div class="tcard" onclick="showPage('detail')"><div class="timg ti3">🌾</div><div class="tinfo"><div class="tname">Ragi Brownie</div><div class="trat">★★★★☆</div><div class="tprice">₹390 · 4pcs</div></div></div>
-        <div class="tcard" onclick="showPage('detail')"><div class="timg ti4">✨</div><div class="tinfo"><div class="tname">Couverture Nutella</div><div class="trat">★★★★★</div><div class="tprice">₹550 · 4pcs</div></div></div>
+      <div class="tscroll" id="trending-scroll">
+        <!-- loaded dynamically -->
       </div>
 
       <!-- REVIEWS -->
@@ -911,7 +997,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         <div class="ftag" onclick="selTag(this)">🍯 Nutella</div>
         <div class="ftag" onclick="selTag(this)">🎂 Custom</div>
       </div>
-      <div class="plist">
+      <div class="plist"  id="explore-list"></div>
         <div class="plcard" data-tags="eggless couverture classic" data-name="Classic Fudge Brownie" data-tier="premium" data-egg="eggless" data-varidx="0" data-price="270" data-sku="PREM-EL-CLASSIC" data-pack="4pcs (250g)" onclick="showPage('detail')">
           <div class="plimg pi1">🍫</div>
           <div class="plinfo">
@@ -1105,14 +1191,14 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 
     <!-- ═══ CART ═══ -->
     <div class="page" id="page-cart">
-      <div class="cart-hdr">
+      <!--<div class="cart-hdr">
         <div class="back" style="position:static;width:36px;height:36px" onclick="goBack()">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
         </div>
         <div><div class="cart-title">My Cart</div><div class="cart-count" id="cart-count-lbl">0 items</div></div>
-      </div>
+      </div>-->
       <div class="citems" id="cart-items-list">
         <!-- empty state -->
         <div id="cart-empty" style="text-align:center;padding:60px 20px;color:#aaa">
@@ -1529,21 +1615,88 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
     <!-- ═══ CUSTOM ORDER ═══ -->
     <div class="page" id="page-custom-order">
       <!-- Header -->
-      <div style="padding:52px 22px 20px">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-          <div class="back" style="position:static;width:36px;height:36px" onclick="goBack()">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+      <!-- HERO HEADER -->
+      <div style="position:relative;overflow:hidden;min-height:220px;background:linear-gradient(135deg,#1a0030 0%,#3d0060 40%,#6e0977 70%,#9c0ca1 100%);">
+
+        <!-- Animated blobs -->
+        <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none">
+          <div style="position:absolute;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(255,180,255,.18),transparent 70%);top:-60px;right:-40px;animation:blobDrift 6s ease-in-out infinite"></div>
+          <div style="position:absolute;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(200,100,255,.15),transparent 70%);bottom:10px;left:-30px;animation:blobDrift 8s ease-in-out infinite reverse"></div>
+          <div style="position:absolute;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,rgba(255,220,100,.12),transparent 70%);top:50%;left:40%;animation:blobDrift 5s ease-in-out infinite 2s"></div>
+        </div>
+
+        <!-- Floating chocolate shapes -->
+        <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden">
+          <div style="position:absolute;font-size:38px;top:18px;right:18px;animation:floatY 3.5s ease-in-out infinite;filter:drop-shadow(0 8px 16px rgba(0,0,0,.4))">🎂</div>
+          <div style="position:absolute;font-size:24px;top:90px;right:60px;animation:floatY 4.5s ease-in-out infinite 1s;opacity:.7">🍫</div>
+          <div style="position:absolute;font-size:18px;bottom:40px;right:30px;animation:floatY 3s ease-in-out infinite 0.5s;opacity:.5">✨</div>
+          <div style="position:absolute;font-size:16px;top:50px;right:110px;animation:floatY 5s ease-in-out infinite 1.5s;opacity:.4">🌸</div>
+        </div>
+
+        <!-- Shimmer lines -->
+        <div style="position:absolute;inset:0;pointer-events:none">
+          <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent)"></div>
+          <div style="position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent)"></div>
+        </div>
+
+        <!-- Noise grain texture -->
+        <div style="position:absolute;inset:0;opacity:.04;background-image:url('data:image/svg+xml,%3Csvg viewBox=%220 0 256 256%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E');pointer-events:none"></div>
+
+        <!-- Back button -->
+        <div class="back" onclick="goBack()" style="position:absolute;top:calc(14px + env(safe-area-inset-top));left:16px;width:36px;height:36px;background:rgba(255,255,255,.12);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.2);box-shadow:0 4px 16px rgba(0,0,0,.2)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
+        <!-- Content -->
+        <div style="position:relative;z-index:2;padding:calc(52px + env(safe-area-inset-top)) 22px 24px">
+
+          <!-- Badge pill -->
+          <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.12);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:4px 12px;margin-bottom:12px">
+            <span style="width:6px;height:6px;border-radius:50%;background:#ff9de2;display:inline-block;animation:pulse 1.5s infinite"></span>
+            <span style="font-size:10px;font-weight:700;color:rgba(255,255,255,.9);letter-spacing:1.5px;text-transform:uppercase">Made to Order</span>
           </div>
-          <div>
-            <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--white)">Custom Brownie 🎂</div>
-            <div style="font-size:11px;color:var(--dim);margin-top:2px">Build your dream creation</div>
+
+          <!-- Title -->
+          <div style="font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:700;color:#fff;line-height:1.15;margin-bottom:6px;letter-spacing:-.3px">
+            Custom Brownie<br><span style="font-style:italic;color:#f9c8ff">Creations</span>
+          </div>
+
+          <!-- Subtitle -->
+          <div style="font-size:12px;color:rgba(255,255,255,.65);margin-bottom:16px;line-height:1.6">
+            Birthday · Anniversary · Baby Shower<br>Designed & baked just for you 🍫
+          </div>
+
+          <!-- Feature chips -->
+          <div style="display:flex;gap:7px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.1);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:5px 10px">
+              <span style="font-size:11px">🎨</span><span style="font-size:10px;font-weight:600;color:rgba(255,255,255,.85)">Custom Design</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.1);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:5px 10px">
+              <span style="font-size:11px">💚</span><span style="font-size:10px;font-weight:600;color:rgba(255,255,255,.85)">Eggless Option</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.1);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:5px 10px">
+              <span style="font-size:11px">📅</span><span style="font-size:10px;font-weight:600;color:rgba(255,255,255,.85)">Book 7 days ahead</span>
+            </div>
           </div>
         </div>
 
-        
+        <!-- Bottom fade -->
+        <div style="position:absolute;bottom:0;left:0;right:0;height:32px;background:linear-gradient(to bottom,transparent,var(--dark));pointer-events:none"></div>
       </div>
+
+      <!-- Add keyframes if not already present -->
+      <style>
+      @keyframes floatY {
+        0%,100% { transform: translateY(0px) rotate(-4deg); }
+        50%      { transform: translateY(-12px) rotate(4deg); }
+      }
+      @keyframes blobDrift {
+        0%,100% { transform: translate(0,0) scale(1); }
+        50%      { transform: translate(-15px,20px) scale(1.1); }
+      }
+      </style>
 
       <div style="padding:18px 22px;display:flex;flex-direction:column;gap:20px;padding-bottom:30px">
 
@@ -1820,10 +1973,10 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:16px;margin-bottom:14px">
           <div style="font-size:10px;font-weight:700;color:var(--faint);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px">Your Brownie Preview</div>
           <div style="display:flex;gap:14px;align-items:center">
-            <!-- SVG brownie shape preview -->
-            <div style="flex-shrink:0">
+            <!-- SVG brownie shape preview 
+            <!-- <div style="flex-shrink:0">
               <canvas id="brownie-canvas" width="100" height="100" style="border-radius:12px"></canvas>
-            </div>
+            </div>-->
             <!-- Details -->
             <div style="flex:1;display:flex;flex-direction:column;gap:5px">
               <div style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:700;color:var(--white)" id="prev-title">Birthday Brownie Slab</div>
@@ -1906,7 +2059,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
     </div>
     <!-- ═══ LIVE TRACKING PAGE ═══ -->
     <div class="page" id="page-tracking">
-      <div style="background:linear-gradient(160deg,var(--d3),var(--d2));padding:5px 22px 18px;position:relative">
+      <!--<div style="background:linear-gradient(160deg,var(--d3),var(--d2));padding:5px 22px 18px;position:relative">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
           <div class="back" style="position:static;width:36px;height:36px;flex-shrink:0" onclick="goBack()">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -1918,7 +2071,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
             <div style="font-size:12px;color:var(--dim)">Status of your active orders</div>
           </div>
         </div>
-      </div>
+      </div> -->
 
       <div id="tracking-orders-list" style="padding:16px 22px;display:flex;flex-direction:column;gap:12px">
         <div style="text-align:center;padding:40px 20px;color:var(--dim)">Loading...</div>
@@ -1992,6 +2145,156 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         <div id="cod-order-num" style="font-size:12px;color:var(--dim);margin-top:3px"></div>
       </div>
       <div id="cod-body" style="padding:16px 22px;display:flex;flex-direction:column;gap:10px"></div>
+    </div>
+
+        <!-- CUSTOM ORDER EDIT SHEET -->
+    <div id="coe-overlay" onclick="closeCustomOrderEdit()"
+      style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;
+      background:rgba(0,0,0,.7);z-index:2500;backdrop-filter:blur(6px)"></div>
+
+    <div id="coe-sheet"
+      style="display:none;position:absolute;bottom:0;left:0;right:0;
+      background:var(--d2);border-radius:24px 24px 0 0;
+      border-top:1px solid var(--bdr2);z-index:2501;
+      max-height:92%;overflow-y:auto;
+      transition:transform .35s cubic-bezier(.16,1,.3,1)">
+
+      <!-- Handle + Header -->
+      <div style="position:sticky;top:0;background:var(--d2);z-index:10;padding:14px 22px 12px;border-bottom:1px solid var(--bdr)">
+        <div style="width:40px;height:4px;border-radius:2px;background:var(--faint);margin:0 auto 14px"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:var(--white)">✏️ Edit Custom Order</div>
+            <div style="font-size:11px;color:var(--dim);margin-top:2px" id="coe-order-label">Pending · Changes allowed</div>
+          </div>
+          <div onclick="closeCustomOrderEdit()"
+            style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.06);
+            display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px">✕</div>
+        </div>
+      </div>
+
+      <input type="hidden" id="coe-order-id">
+      <input type="hidden" id="coe-custom-id">
+
+      <div style="padding:18px 22px;display:flex;flex-direction:column;gap:18px">
+
+        <!-- OCCASION -->
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Occasion</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <div class="coe-chip" data-group="occasion" data-val="Birthday" onclick="selCoeChip(this,'occasion')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:18px;margin-bottom:3px">🎂</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Birthday</div></div>
+            <div class="coe-chip" data-group="occasion" data-val="Anniversary" onclick="selCoeChip(this,'occasion')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:18px;margin-bottom:3px">💑</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Anniversary</div></div>
+            <div class="coe-chip" data-group="occasion" data-val="Baby Shower" onclick="selCoeChip(this,'occasion')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:18px;margin-bottom:3px">👶</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Baby Shower</div></div>
+            <div class="coe-chip" data-group="occasion" data-val="Graduation" onclick="selCoeChip(this,'occasion')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:18px;margin-bottom:3px">🎓</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Graduation</div></div>
+            <div class="coe-chip" data-group="occasion" data-val="Corporate" onclick="selCoeChip(this,'occasion')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:18px;margin-bottom:3px">💼</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Corporate</div></div>
+            <div class="coe-chip" data-group="occasion" data-val="Other" onclick="selCoeChip(this,'occasion')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:18px;margin-bottom:3px">✨</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Other</div></div>
+          </div>
+        </div>
+
+        <!-- SHAPE -->
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Shape</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <div class="coe-chip" data-group="shape" data-val="Square" onclick="selCoeChip(this,'shape')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:18px;margin-bottom:3px">■</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Square</div></div>
+            <div class="coe-chip" data-group="shape" data-val="Round" onclick="selCoeChip(this,'shape')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:18px;margin-bottom:3px">⬤</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Round</div></div>
+            <div class="coe-chip" data-group="shape" data-val="Heart" onclick="selCoeChip(this,'shape')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:18px;margin-bottom:3px">♥</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Heart</div></div>
+            <div class="coe-chip" data-group="shape" data-val="Rectangle" onclick="selCoeChip(this,'shape')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:18px;margin-bottom:3px">▬</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Rectangle</div></div>
+          </div>
+        </div>
+
+        <!-- THEME -->
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Theme</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <div class="coe-chip" data-group="theme" data-val="Floral" onclick="selCoeChip(this,'theme')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:18px;margin-bottom:3px">🌸</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Fairy</div></div>
+            <div class="coe-chip" data-group="theme" data-val="Jungle" onclick="selCoeChip(this,'theme')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:18px;margin-bottom:3px">🌿</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Jungle</div></div>
+            <div class="coe-chip" data-group="theme" data-val="Avengers" onclick="selCoeChip(this,'theme')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:18px;margin-bottom:3px">🦸</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Avengers</div></div>
+            <div class="coe-chip" data-group="theme" data-val="Princess" onclick="selCoeChip(this,'theme')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:18px;margin-bottom:3px">👑</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Princess</div></div>
+            <div class="coe-chip" data-group="theme" data-val="Galaxy" onclick="selCoeChip(this,'theme')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:18px;margin-bottom:3px">🌌</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Galaxy</div></div>
+            <div class="coe-chip" data-group="theme" data-val="Sports" onclick="selCoeChip(this,'theme')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:18px;margin-bottom:3px">⚽</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Sports</div></div>
+            <div class="coe-chip" data-group="theme" data-val="Custom" onclick="selCoeChip(this,'theme')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:18px;margin-bottom:3px">🎨</div><div style="font-size:10px;font-weight:600;color:var(--dim)">My Own</div></div>
+          </div>
+        </div>
+
+        <!-- WEIGHT -->
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Weight</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <div class="coe-chip" data-group="weight" data-val="0.5 kg" onclick="selCoeChip(this,'weight')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:13px;font-weight:700;color:var(--white)">½ kg</div></div>
+            <div class="coe-chip" data-group="weight" data-val="1 kg" onclick="selCoeChip(this,'weight')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:13px;font-weight:700;color:var(--white)">1 kg</div></div>
+            <div class="coe-chip" data-group="weight" data-val="1.5 kg" onclick="selCoeChip(this,'weight')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:13px;font-weight:700;color:var(--white)">1.5 kg</div></div>
+            <div class="coe-chip" data-group="weight" data-val="2 kg" onclick="selCoeChip(this,'weight')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:13px;font-weight:700;color:var(--white)">2 kg</div></div>
+            <div class="coe-chip" data-group="weight" data-val="3 kg" onclick="selCoeChip(this,'weight')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:13px;font-weight:700;color:var(--white)">3 kg</div></div>
+            <div class="coe-chip" data-group="weight" data-val="5 kg+" onclick="selCoeChip(this,'weight')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:13px;font-weight:700;color:var(--white)">5 kg+</div></div>
+          </div>
+        </div>
+
+        <!-- FLAVOUR -->
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Flavour Base</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="coe-chip" data-group="flavour" data-val="Classic Dark Chocolate" onclick="selCoeChip(this,'flavour')" style="padding:11px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer"><div style="font-size:12px;font-weight:700;color:var(--white)">🍫 Classic Dark</div></div>
+            <div class="coe-chip" data-group="flavour" data-val="Couverture Belgian" onclick="selCoeChip(this,'flavour')" style="padding:11px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer"><div style="font-size:12px;font-weight:700;color:var(--white)">🌟 Couverture</div></div>
+            <div class="coe-chip" data-group="flavour" data-val="Nutella" onclick="selCoeChip(this,'flavour')" style="padding:11px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer"><div style="font-size:12px;font-weight:700;color:var(--white)">🍯 Nutella</div></div>
+            <div class="coe-chip" data-group="flavour" data-val="Triple Chocolate" onclick="selCoeChip(this,'flavour')" style="padding:11px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer"><div style="font-size:12px;font-weight:700;color:var(--white)">🍫 Triple Choco</div></div>
+          </div>
+        </div>
+
+        <!-- LAYERS -->
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Layers</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <div class="coe-chip" data-group="layers" data-val="Single layer" onclick="selCoeChip(this,'layers')" style="padding:11px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:12px;font-weight:700;color:var(--white)">Single</div><div style="font-size:9px;color:var(--faint);margin-top:2px">Base price</div></div>
+            <div class="coe-chip" data-group="layers" data-val="Double layer" onclick="selCoeChip(this,'layers')" style="padding:11px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:12px;font-weight:700;color:var(--white)">Double</div><div style="font-size:9px;color:var(--gold);margin-top:2px">+₹150/kg</div></div>
+            <div class="coe-chip" data-group="layers" data-val="Triple layer" onclick="selCoeChip(this,'layers')" style="padding:11px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:12px;font-weight:700;color:var(--white)">Triple</div><div style="font-size:9px;color:var(--gold);margin-top:2px">+₹300/kg</div></div>
+          </div>
+        </div>
+
+        <!-- EGG -->
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Egg Preference</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="coe-chip" data-group="egg" data-val="Eggless" onclick="selCoeChip(this,'egg')" style="padding:12px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:12px;font-weight:700;color:var(--white)">💚 Eggless</div></div>
+            <div class="coe-chip" data-group="egg" data-val="With Egg" onclick="selCoeChip(this,'egg')" style="padding:12px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:12px;font-weight:700;color:var(--white)">❤️ With Egg</div></div>
+          </div>
+        </div>
+
+        <!-- DELIVERY DATE -->
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Delivery Date</div>
+          <input type="date" id="coe-date" style="width:100%;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;padding:13px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;color-scheme:dark">
+          <div id="coe-date-msg" style="font-size:11px;color:var(--pink);margin-top:5px;display:none">⚠️ Please select a date at least 7 days from today</div>
+        </div>
+
+        <!-- TOPPER NAME -->
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Name on Topper <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--faint)">optional</span></div>
+          <input type="text" id="coe-topper-name" maxlength="20" placeholder="e.g. Priya" style="width:100%;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;padding:13px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none">
+        </div>
+
+        <!-- BROWNIE MESSAGE -->
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Message on Brownie <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--faint)">optional</span></div>
+          <input type="text" id="coe-message" maxlength="40" placeholder="e.g. Happy Birthday Priya! 🎉" style="width:100%;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;padding:13px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none">
+        </div>
+
+        <!-- SPECIAL NOTES -->
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Special Instructions <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--faint)">optional</span></div>
+          <textarea id="coe-notes" rows="3" placeholder="Colours, design details, allergens..." style="width:100%;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;padding:13px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;resize:none"></textarea>
+        </div>
+
+        <!-- SAVE BUTTON -->
+        <div style="background:rgba(107,47,206,.08);border:1px solid rgba(107,47,206,.2);border-radius:12px;padding:11px 14px;font-size:11px;color:var(--dim)">
+          ✏️ Changes will be sent to NSDI ChocoCravings via WhatsApp for re-confirmation.
+        </div>
+        <button id="coe-save-btn" onclick="saveCustomOrderEdit()"
+          style="width:100%;padding:16px;background:linear-gradient(135deg,var(--p),var(--p2));
+          color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;
+          border:none;border-radius:16px;cursor:pointer;margin-bottom:8px">
+          💾 Save Changes
+        </button>
+      </div>
     </div>
 
     </div><!-- /screen -->
@@ -2956,7 +3259,7 @@ async function submitCustomOrder() {
       layers:          {'1':'Single','2':'Double','3':'Triple'}[customSelections.layers] + ' layer',
       flavour:         customSelections.flavour,
       egg_preference:  egg2,
-      Faux_ball:        customSelections.Fauxball !== 'None' ? customSelections.Fauxball : null,
+      faux_ball:        customSelections.Fauxball !== 'None' ? customSelections.Fauxball : null,
       butterfly:       customSelections.butterfly !== 'None' ? customSelections.butterfly : null,
       topper_type:     customSelections.topper !== 'None' ? customSelections.topper : null,
       topper_style:    customSelections.topper === 'Acrylic Topper' ? customSelections.acrylicStyle : null,
@@ -2967,7 +3270,8 @@ async function submitCustomOrder() {
       est_price_lo:    base[0] + extra,
       est_price_hi:    base[1] + extra
     };
-    await db.from('custom_orders').insert([customRow]);
+    var { error: customInsertError } = await db.from('custom_orders').insert([customRow]);
+    if (customInsertError) console.error('custom_orders insert failed:', customInsertError.message);
 
     // Insert status history
     await db.from('order_status_history').insert([{
@@ -3562,7 +3866,7 @@ setTimeout(updateCartDots, 100);
   // ── Restore last visited page ──
   try {
     var lastPage = localStorage.getItem('cc_last_page');
-    var skipRestore = ['checkout', 'success', 'login','profile'];
+    var skipRestore = ['checkout', 'success', 'login', 'profile'];
     if (lastPage && !skipRestore.includes(lastPage)) {
       // Remove active from home immediately
     var homeEl = document.getElementById('page-home');
@@ -3578,6 +3882,7 @@ setTimeout(updateCartDots, 100);
     }
     setNav(lastPage);
     if (lastPage === 'cart') renderCart();
+    if (lastPage === 'tracking') setTimeout(loadLiveTrackingData, 300);
 
     }
   } catch(e) {}
@@ -3592,7 +3897,7 @@ setTimeout(async function() {
     var { data } = await db.from('orders')
       .select('id')
       .eq('customer_id', currentUser.db_id)
-      .not('status', 'in', '("delivered","cancelled")');
+      .not('status', 'in', '(delivered,cancelled)');
     var badge = document.getElementById('tracking-badge');
     if (badge && data && data.length > 0) {
       badge.style.display = 'block';
@@ -3780,10 +4085,15 @@ function renderCart() {
     var toppingStr = (item.toppings && item.toppings.length) ? ' · +' + item.toppings[0] : '';
     var emoji = emojis[idx % emojis.length];
 
+    var cartImgUrl = getProductImage(item.sku);
     var div = document.createElement('div');
     div.className = 'citem citem-dynamic';
     div.innerHTML =
-      '<div class="cimg">' + emoji + '</div>' +
+      '<div class="cimg" style="overflow:hidden;padding:0;background:#1a0030">'
+      + (cartImgUrl
+          ? '<img src="' + cartImgUrl + '" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\';this.parentElement.style.fontSize=\'38px\';this.parentElement.innerHTML=\'' + emoji + '\'">'
+          : emoji)
+      + '</div>' +
       '<div class="cinfo">' +
         '<div class="cname">' + (item.product_name || item.product_name) + '</div>' +
         '<div class="csize">' + eggLabel + ' · ' + packLabel + ' · ' + tierLabel + toppingStr + '</div>' +
@@ -3834,6 +4144,9 @@ function showPage(name){
   }
   if (name === 'checkout') {
     setTimeout(loadCheckoutAddresses, 100);
+  }
+  if (name === 'tracking') {
+    setTimeout(loadLiveTrackingData, 100);
   }
   if (name === 'explore') {
     // Reset search when opening explore
@@ -4689,8 +5002,10 @@ showPage('success');
   }
 }
 
-async function openLiveTracking() {
-  showPage('tracking');
+function openLiveTracking() {
+  showPage('tracking'); // showPage will trigger loadLiveTrackingData automatically
+}
+async function loadLiveTrackingData() {
   var listEl = document.getElementById('tracking-orders-list');
   if (!listEl) return;
 
@@ -4701,11 +5016,19 @@ async function openLiveTracking() {
 
   listEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--dim)">Loading orders...</div>';
 
-  var { data: orders, error } = await db.from('orders')
-    .select('id,order_number,status,total,payment_method,created_at,order_items(product_name,quantity,pack_label,egg_type)')
-    .eq('customer_id', currentUser.db_id)
-    .not('status', 'in', '("delivered","cancelled")')
-    .order('created_at', { ascending: false });
+  var orders, error;
+  try {
+    var result = await db.from('orders')
+      .select('id,order_number,status,total,payment_method,is_custom,created_at,order_items(product_name,quantity,pack_label,egg_type)')
+      .eq('customer_id', currentUser.db_id)
+      .not('status', 'in', '(delivered,cancelled)')
+      .order('created_at', { ascending: false });
+    orders = result.data;
+    error  = result.error;
+  } catch(e) {
+    listEl.innerHTML = '<div style="text-align:center;padding:40px 20px"><div style="font-size:40px;margin-bottom:12px">⚠️</div><div style="font-size:14px;font-weight:600;color:var(--white)">Could not load orders</div><div style="font-size:12px;color:var(--dim);margin-top:6px">' + (e.message || 'Please try again') + '</div></div>';
+    return;
+  }
 
   if (error || !orders || orders.length === 0) {
     listEl.innerHTML = '<div style="text-align:center;padding:40px 20px"><div style="font-size:48px;margin-bottom:12px">✅</div><div style="font-size:14px;font-weight:600;color:var(--white)">No active orders</div><div style="font-size:12px;color:var(--dim);margin-top:6px">All your orders have been delivered!</div><div onclick="showPage(\'explore\')" style="margin-top:16px;display:inline-block;padding:10px 20px;background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer">Order Now 🍫</div></div>';
@@ -4764,8 +5087,36 @@ async function openLiveTracking() {
       + '</div>'
       + '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center">'
       + '<span style="font-size:11px;color:var(--dim)">₹' + o.total + ' · ' + (o.payment_method||'').toUpperCase() + '</span>'
-      + '<span style="font-size:11px;font-weight:700;color:var(--pl)">View Details →</span>'
+      + '<span style="font-size:11px;font-weight:700;color:var(--pl)">Tap Details</span>'
+      + (o.status === 'pending' && o.order_items && o.order_items.length === 0  ? '<div onclick="event.stopPropagation();openCustomOrderEdit(\'' + o.order_number  + '\',\'\')" '
+      + 'style="margin-top:10px;padding:10px;background:rgba(107,47,206,.12);'
+      + 'border:1.5px solid rgba(107,47,206,.35);border-radius:12px;'
+      + 'font-size:12px;font-weight:700;color:var(--pl);text-align:center;cursor:pointer">'
       + '</div>'
+      : '')
+      + '</div>'
+      + (o.is_custom
+          ? o.status === 'pending'
+            ? '<div style="display:flex;gap:8px;margin-top:10px">'
+            + '<div onclick="event.stopPropagation();openCustomOrderSheet(\'' + o.order_number + '\',false)" '
+            + 'style="flex:1;padding:10px;background:rgba(107,47,206,.1);border:1.5px solid rgba(107,47,206,.3);border-radius:12px;display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer">'
+            + '<span style="font-size:13px">✏️</span><span style="font-size:11px;font-weight:700;color:var(--pl)">Edit Order</span>'
+            + '</div>'
+            + '<div onclick="event.stopPropagation();openCustomOrderSheet(\'' + o.order_number + '\',true)" '
+            + 'style="flex:1;padding:10px;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer">'
+            + '<span style="font-size:13px">👁</span><span style="font-size:11px;font-weight:700;color:var(--dim)">View Details</span>'
+            + '</div>'
+            + '</div>'
+            : '<div style="display:flex;gap:8px;margin-top:10px">'
+            + '<div onclick="event.stopPropagation();openCustomOrderSheet(\'' + o.order_number + '\',true)" '
+            + 'style="flex:1;padding:10px;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer">'
+            + '<span style="font-size:13px">👁</span><span style="font-size:11px;font-weight:700;color:var(--dim)">View Details</span>'
+            + '</div>'
+            + '<div style="flex:1;padding:10px;background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2);border-radius:12px;display:flex;align-items:center;justify-content:center;gap:5px">'
+            + '<span style="font-size:12px">🔒</span><span style="font-size:11px;font-weight:600;color:var(--green)">Locked · Confirmed</span>'
+            + '</div>'
+            + '</div>'
+          : '')
       + '</div>';
   }).join('');
 }
@@ -4939,6 +5290,7 @@ async function loadProducts() {
 
     renderFeaturedGrid(products);
     renderExploreList(products);
+    renderTrending(products);
 
     // Hide loading overlay
     var overlay = document.getElementById('loading-overlay');
@@ -4949,6 +5301,44 @@ async function loadProducts() {
         console.warn('loadProducts:', e.message);
       }
     }
+
+function renderTrending(products) {
+  var scroll = document.getElementById('trending-scroll');
+  if (!scroll || !products) return;
+
+  // Pick top 6 featured or first 6
+  var trending = products.filter(function(p){ return p.is_featured; }).slice(0,6);
+  if (trending.length === 0) trending = products.slice(0,6);
+
+  scroll.innerHTML = trending.map(function(p) {
+    var sortedVariants = (p.product_variants||[]).slice().sort(function(a,b){ return (a.price||0)-(b.price||0); });
+    var price  = sortedVariants.length > 0 ? sortedVariants[0].price : 0;
+    var pack   = sortedVariants.length > 0 ? sortedVariants[0].pack_label : '4pcs';
+    var varIdx = getVariantIndex(p.sku);
+    var imgUrl = getProductImage(p.sku);
+    var emoji  = getEmojiForProduct(p.name);
+
+    var imgHtml = imgUrl
+      ? '<div class="timg" style="padding:0;overflow:hidden;background:#1a0030">'
+        + '<img src="' + imgUrl + '" style="width:100%;height:100%;object-fit:cover" onerror="this.parentElement.innerHTML=\''+emoji+'\'">'
+        + '</div>'
+      : '<div class="timg ti1">' + emoji + '</div>';
+
+    return '<div class="tcard" '
+      + 'data-name="' + p.name + '" data-tier="' + (p.tier||'premium') + '" '
+      + 'data-egg="' + (p.egg_type||'eggless') + '" data-varidx="' + varIdx + '" '
+      + 'data-price="' + price + '" data-sku="' + (p.sku||'') + '" '
+      + 'data-pack="' + pack + '" onclick="openDetail(this)">'
+      + imgHtml
+      + '<div class="tinfo">'
+      + '<div class="tname">' + p.name + '</div>'
+      + '<div class="trat">★★★★★</div>'
+      + '<div class="tprice">₹' + price + ' · ' + pack + '</div>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+
 
 function getLowestPrice(variants) {
   if (!variants || variants.length === 0) return 0;
@@ -4971,55 +5361,134 @@ function getPiClass(index) {
   return classes[index % classes.length];
 }
 
+// ── PRODUCT PHOTO MAP ──
+var PRODUCT_IMAGES = {
+  'PREM-EL-CLASSIC':   'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/PREM-EL-CLASSIC.jpeg',
+  'PREM-EL-CLASSIC':   'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/PREM-EG-CLASSIC.jpeg',
+  'PREM-EL-DOUBLE':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/PREM-EL-DOUBLE.jpeg',
+  'PREM-EL-TRIPLE':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/PREM-EL-TRIPLE.jpeg',
+  'PREM-EL-BISCOFF':   'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/PREM-EL-BISCOFF.jpeg',
+  'PREM-EL-ASSORTED':  'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/PREM-EL-ASSORTED1.jpeg',
+  'PREM-EL-SEEDS':     'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/PREM-EL-SEEDS.jpeg',
+};
+
+function getProductImage(sku) {
+  if (!sku) return null;
+  // Exact match first
+  if (PRODUCT_IMAGES[sku]) return PRODUCT_IMAGES[sku];
+  // Extract just the variant code (last segment) and try all prefix combos
+  var parts   = sku.split('-');
+  var varCode = parts[parts.length - 1];
+  var tries   = [
+    'PREM-EL-' + varCode,
+    'PREM-EG-' + varCode,
+    'COUV-EL-' + varCode,
+    'COUV-EG-' + varCode
+  ];
+  for (var i = 0; i < tries.length; i++) {
+    if (PRODUCT_IMAGES[tries[i]]) return PRODUCT_IMAGES[tries[i]];
+  }
+  return null;
+}
+
 function renderFeaturedGrid(products) {
   var grid = document.getElementById('featured-grid');
   if (!grid) return;
 
   var featured = products.filter(function(p){ return p.is_featured; });
   if (featured.length === 0) featured = products.slice(0, 8);
-
   if (featured.length === 0) {
     document.getElementById('pgrid-empty').style.display = 'block';
     return;
   }
 
+  // Override grid styles for horizontal scroll
+  grid.style.display       = 'flex';
+  grid.style.flexDirection = 'row';
+  grid.style.overflowX     = 'auto';
+  grid.style.gap           = '12px';
+  grid.style.padding       = '4px 22px 16px';
+  grid.style.scrollbarWidth = 'none';
+
   grid.innerHTML = featured.map(function(p, i) {
-    var price = getLowestPrice(p.product_variants);
-    var emoji = getEmojiForProduct(p.name);
-    var piClass = getPiClass(i);
+    var sortedVariants = (p.product_variants || []).slice().sort(function(a,b){ return (a.price||0)-(b.price||0); });
+    var price    = sortedVariants.length > 0 ? sortedVariants[0].price : 0;
+    var pack     = sortedVariants.length > 0 ? sortedVariants[0].pack_label : '4pcs';
+    var varIdx   = getVariantIndex(p.sku);
     var userPref = getUserEggPref();
     var eggLabel = (userPref || p.egg_type) === 'eggless' ? '💚 Eggless' : '❤️ With Egg';
-    var tierLabel = p.tier === 'couverture' ? '🌟 Premium' : eggLabel;
-    var rating = p.rating || 4.9;
-    // Sort variants by price ascending to get smallest pack first
-    var sortedVariants = (p.product_variants || []).slice().sort(function(a,b){ return (a.price||0) - (b.price||0); });
-    var pack = sortedVariants.length > 0 ? sortedVariants[0].pack_label : '4pcs';
-    var price = sortedVariants.length > 0 ? sortedVariants[0].price : 0;
-    var varIdx = getVariantIndex(p.sku);
+    var imgUrl   = getProductImage(p.sku);
+    var rating   = p.rating || 4.9;
+    var isBestSeller = i === 0;
+    var isNew        = i >= featured.length - 2;
 
-    return '<div class="pcard"'
-      + ' data-name="' + p.name + '"'
-      + ' data-tier="' + (p.tier || 'premium') + '"'
-      + ' data-egg="' + (p.egg_type || 'eggless') + '"'
-      + ' data-varidx="' + varIdx + '"'
-      + ' data-price="' + price + '"'
-      + ' data-sku="' + (p.sku || '') + '"'
-      + ' data-cat="' + (p.category || '') + '"'
-      + ' data-pack="' + pack + '"'
-      + ' onclick="openDetail(this)">'
-      + '<div class="pimg ' + piClass + '">' + emoji
-      + '</div>'
-      + '<div class="pinfo">'
-      + '<div class="prating">★★★★★ ' + rating + '</div>'
-      + '<div class="pname">' + p.name + '</div>'
-      + '<div class="pdesc">' + (p.description || '') + '</div>'
-      + '<div class="pfoot">'
-      + '<span class="pprice">₹' + price + '</span>'
-      + '<button class="abtn" onclick="event.stopPropagation();quickAddCart(this)">+</button>'
+    // Image section — real photo or gradient fallback
+    var imgSection = imgUrl
+      ? '<div style="width:100%;height:150px;position:relative;overflow:hidden;border-radius:0">'
+        + '<img src="' + imgUrl + '" alt="' + p.name + '" '
+        + 'style="width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s ease" '
+        + 'onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
+        // Fallback gradient behind image in case it fails
+        + '<div style="display:none;width:100%;height:100%;background:linear-gradient(135deg,#2D0060,#9c0ca1);align-items:center;justify-content:center;font-size:44px">'
+        + getEmojiForProduct(p.name) + '</div>'
+        // Gradient overlay for text readability
+        + '<div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.05) 0%,rgba(0,0,0,.55) 100%)"></div>'
+        // Badges on image
+        + (isBestSeller ? '<div style="position:absolute;top:9px;left:9px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-size:9px;font-weight:800;padding:3px 8px;border-radius:10px;letter-spacing:.5px">🔥 BEST SELLER</div>' : '')
+        + (isNew && !isBestSeller ? '<div style="position:absolute;top:9px;left:9px;background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff;font-size:9px;font-weight:800;padding:3px 8px;border-radius:10px;letter-spacing:.5px">✨ NEW</div>' : '')
+        // Price on image bottom
+        + '<div style="position:absolute;bottom:9px;left:9px">'
+        + '<span style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:700;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.4)">₹' + price + '</span>'
+        + '<span style="font-size:9px;color:rgba(255,255,255,.7);margin-left:3px">/ ' + pack + '</span>'
+        + '</div>'
+        + '</div>'
+      // Pure gradient fallback if no image
+      : '<div style="width:100%;height:150px;background:linear-gradient(135deg,#2D0060,#9c0ca1);display:flex;align-items:center;justify-content:center;font-size:44px;position:relative">'
+        + getEmojiForProduct(p.name)
+        + (isBestSeller ? '<div style="position:absolute;top:9px;left:9px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-size:9px;font-weight:800;padding:3px 8px;border-radius:10px">🔥 BEST SELLER</div>' : '')
+        + '<div style="position:absolute;bottom:9px;left:9px"><span style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:700;color:#fff">₹' + price + '</span><span style="font-size:9px;color:rgba(255,255,255,.7);margin-left:3px">/ ' + pack + '</span></div>'
+        + '</div>';
+
+    return '<div class="feat-card" '
+      + 'data-name="' + p.name + '" data-tier="' + (p.tier||'premium') + '" '
+      + 'data-egg="' + (p.egg_type||'eggless') + '" data-varidx="' + varIdx + '" '
+      + 'data-price="' + price + '" data-sku="' + (p.sku||'') + '" '
+      + 'data-cat="' + (p.category||'') + '" data-pack="' + pack + '" '
+      + 'onclick="openDetail(this)" '
+      + 'style="flex-shrink:0;width:158px;background:var(--card);border-radius:20px;'
+      + 'overflow:hidden;border:1px solid var(--bdr);cursor:pointer;'
+      + 'transition:transform .25s,box-shadow .25s;position:relative">'
+
+      + imgSection
+
+      // Info below image
+      + '<div style="padding:10px 11px 11px">'
+      + '<div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:3px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + p.name + '</div>'
+      + '<div style="font-size:9px;color:var(--green);font-weight:600;margin-bottom:5px">' + eggLabel + ' · ' + (p.tier === 'couverture' ? '🌟 Couverture' : 'Premium') + '</div>'
+      + '<div style="display:flex;align-items:center;justify-content:space-between">'
+      + '<div style="font-size:10px;color:var(--gold)">★ ' + rating + '</div>'
+      + '<button class="abtn" onclick="event.stopPropagation();quickAddCart(this)" '
+      + 'style="width:26px;height:26px;border-radius:8px;font-size:16px">+</button>'
       + '</div>'
       + '</div>'
       + '</div>';
   }).join('');
+
+  // Add hover effect via event delegation
+  grid.querySelectorAll('.feat-card').forEach(function(card) {
+    card.addEventListener('mouseenter', function() {
+      this.style.transform  = 'translateY(-5px)';
+      this.style.boxShadow  = '0 16px 40px rgba(110,9,119,.3)';
+      var img = this.querySelector('img');
+      if (img) img.style.transform = 'scale(1.06)';
+    });
+    card.addEventListener('mouseleave', function() {
+      this.style.transform  = '';
+      this.style.boxShadow  = '';
+      var img = this.querySelector('img');
+      if (img) img.style.transform = '';
+    });
+  });
 }
 
 function renderExploreList(products) {
@@ -5055,7 +5524,11 @@ function renderExploreList(products) {
       + ' data-sku="' + (p.sku || '') + '"'
       + ' data-pack="' + pack + '"'
       + ' onclick="openDetail(this)">'
-      + '<div class="plimg ' + piClass + '">' + emoji + '</div>'
+      + '<div class="plimg ' + piClass + '" style="overflow:hidden">'
+      + (getProductImage(p.sku)
+          ? '<img src="' + getProductImage(p.sku) + '" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\'">'
+          : emoji)
+      + '</div>'
       + '<div class="plinfo">'
       + '<div>'
       + '<div class="plname">' + p.name + '</div>'
@@ -5171,6 +5644,266 @@ function closeCustomOrderDetail() {
   document.getElementById('cod-sheet').style.display   = 'none';
 }
 
+var _coeSelections = {};
+var _coeCustomRowId = null; // stores custom_orders.id (PK) for reliable update
+
+function selCoeChip(el, group) {
+  document.querySelectorAll('.coe-chip[data-group="' + group + '"]').forEach(function(c) {
+    c.style.background  = 'var(--card)';
+    c.style.borderColor = 'var(--bdr)';
+    var lbl = c.querySelector('div');
+    if (lbl) lbl.style.color = 'var(--white)';
+  });
+  el.style.background  = 'rgba(107,47,206,.15)';
+  el.style.borderColor = 'var(--p)';
+  var lbl = el.querySelector('div');
+  if (lbl) lbl.style.color = 'var(--pl)';
+  _coeSelections[group] = el.getAttribute('data-val');
+}
+
+function setCoeChip(group, val) {
+  if (!val) return;
+  // Try exact match first
+  var match = document.querySelector('.coe-chip[data-group="' + group + '"][data-val="' + val + '"]');
+  // If no exact match, try case-insensitive partial match
+  if (!match) {
+    var chips = document.querySelectorAll('.coe-chip[data-group="' + group + '"]');
+    for (var i = 0; i < chips.length; i++) {
+      if (chips[i].getAttribute('data-val').toLowerCase() === val.toLowerCase()) {
+        match = chips[i]; break;
+      }
+    }
+  }
+  if (match) selCoeChip(match, group);
+}
+
+async function openCustomOrderSheet(orderNum, readOnly) {
+  _coeSelections  = {};
+  _coeCustomRowId = null;
+  var isReadOnly  = readOnly === true;
+
+  // Reset chips
+  document.querySelectorAll('.coe-chip').forEach(function(c) {
+    c.style.background  = 'var(--card)';
+    c.style.borderColor = 'var(--bdr)';
+    var lbl = c.querySelector('div');
+    if (lbl) lbl.style.color = 'var(--white)';
+  });
+  // Clear inputs
+  ['coe-date','coe-topper-name','coe-message','coe-notes'].forEach(function(id) {
+    var el = document.getElementById(id); if (el) el.value = '';
+  });
+
+  // Show sheet
+  document.getElementById('coe-overlay').style.display = 'block';
+  document.getElementById('coe-sheet').style.display   = 'block';
+
+  // Header label
+  var labelEl = document.getElementById('coe-order-label');
+  if (labelEl) labelEl.textContent = isReadOnly
+    ? '🔒 View only · Order confirmed'
+    : '⏳ Pending · You can edit until confirmed';
+
+  // Save button — hide in read-only
+  var saveBtn = document.getElementById('coe-save-btn');
+  saveBtn.style.display = isReadOnly ? 'none' : 'block';
+  saveBtn.disabled      = true;
+  saveBtn.textContent   = '⏳ Loading...';
+
+  // Disable / enable all inputs
+  var inputs = document.querySelectorAll('#coe-sheet input, #coe-sheet textarea');
+  inputs.forEach(function(inp) { inp.disabled = isReadOnly; inp.style.opacity = isReadOnly ? '0.6' : '1'; });
+  document.querySelectorAll('.coe-chip').forEach(function(c) {
+    c.style.pointerEvents = isReadOnly ? 'none' : 'auto';
+    c.style.opacity       = isReadOnly ? '0.7'  : '1';
+  });
+
+  // Resolve order UUID from order_number
+  var realOrderId = orderNum;
+  if (orderNum && orderNum.startsWith('CC-')) {
+    try {
+      var { data: orderRow } = await db.from('orders')
+        .select('id')
+        .eq('order_number', orderNum)
+        .maybeSingle();
+      if (orderRow) realOrderId = orderRow.id;
+    } catch(e) { console.warn('Order lookup:', e.message); }
+  }
+  document.getElementById('coe-order-id').value = realOrderId;
+
+  // Set min date
+  var minD = new Date(); minD.setDate(minD.getDate() + 7);
+  var dateEl = document.getElementById('coe-date');
+  if (dateEl) dateEl.min = minD.toISOString().split('T')[0];
+
+  // Fetch custom order row
+  try {
+    var { data: co, error } = await db
+      .from('custom_orders')
+      .select('*')
+      .eq('order_id', realOrderId)
+      .maybeSingle();
+
+    if (error) {
+      showToast('Load error: ' + error.message);
+      console.error('custom_orders fetch:', error);
+      if (!isReadOnly) { saveBtn.disabled = false; saveBtn.textContent = '💾 Save Changes'; }
+      return;
+    }
+
+    if (!co) {
+      if (isReadOnly) {
+        showToast('No custom order details found');
+        closeCustomOrderEdit();
+        return;
+      }
+      // Editable blank form — let user fill from scratch
+      console.warn('No custom_orders row found — blank form');
+      labelEl.textContent = '⏳ Pending · Fill in your details';
+      saveBtn.disabled    = false;
+      saveBtn.textContent = '💾 Save Changes';
+      return;
+    }
+
+    _coeCustomRowId = co.id;
+    document.getElementById('coe-custom-id').value = co.id;
+
+    // Pre-fill chips
+    setCoeChip('occasion', co.occasion);
+    setCoeChip('shape',    co.shape);
+    setCoeChip('theme',    co.theme);
+    setCoeChip('weight',   co.weight_kg);
+    setCoeChip('flavour',  co.flavour);
+    setCoeChip('layers',   co.layers);
+    setCoeChip('egg',      co.egg_preference);
+
+    // Pre-fill text inputs
+    var setVal = function(id, val) {
+      var el = document.getElementById(id);
+      if (el) el.value = val || '';
+    };
+    setVal('coe-date',        co.delivery_date    || '');
+    setVal('coe-topper-name', co.topper_name      || '');
+    setVal('coe-message',     co.brownie_message  || '');
+    setVal('coe-notes',       co.special_notes    || '');
+
+    if (!isReadOnly) {
+      saveBtn.disabled    = false;
+      saveBtn.textContent = '💾 Save Changes';
+    }
+
+  } catch(e) {
+    console.error('openCustomOrderSheet error:', e);
+    showToast('Error: ' + e.message);
+    if (!isReadOnly) { saveBtn.disabled = false; saveBtn.textContent = '💾 Save Changes'; }
+  }
+}
+
+function openCustomOrderEdit(orderNum) { openCustomOrderSheet(orderNum, false); }
+
+function closeCustomOrderEdit() {
+  document.getElementById('coe-overlay').style.display = 'none';
+  document.getElementById('coe-sheet').style.display   = 'none';
+}
+
+async function saveCustomOrderEdit() {
+  var orderId  = document.getElementById('coe-order-id').value;
+  var dateVal  = document.getElementById('coe-date').value;
+
+  if (!orderId) { showToast('Order ID missing — please close and retry'); return; }
+  if (!dateVal) { showToast('Please select a delivery date'); return; }
+
+  var minDate = new Date(); minDate.setDate(minDate.getDate() + 7);
+  if (new Date(dateVal) < minDate) {
+    document.getElementById('coe-date-msg').style.display = 'block';
+    showToast('Date must be at least 7 days from today');
+    return;
+  }
+  document.getElementById('coe-date-msg').style.display = 'none';
+
+  var btn = document.getElementById('coe-save-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Saving...';
+
+  var updateData = {
+    occasion:        _coeSelections.occasion || null,
+    shape:           _coeSelections.shape    || null,
+    theme:           _coeSelections.theme    || null,
+    weight_kg:       _coeSelections.weight   || null,
+    flavour:         _coeSelections.flavour  || null,
+    layers:          _coeSelections.layers   || null,
+    egg_preference:  _coeSelections.egg      || null,
+    delivery_date:   dateVal,
+    topper_name:     document.getElementById('coe-topper-name').value.trim() || null,
+    brownie_message: document.getElementById('coe-message').value.trim()     || null,
+    special_notes:   document.getElementById('coe-notes').value.trim()       || null,
+    last_edited_at:  new Date().toISOString()
+  };
+
+  console.log('Saving custom order update:', updateData, 'row id:', _coeCustomRowId, 'order_id:', orderId);
+
+  try {
+    var upsertData = Object.assign({}, updateData, {
+      order_id:    orderId,
+      customer_id: currentUser.db_id
+    });
+    // If we have the PK, add it so Supabase knows to UPDATE not INSERT
+    if (_coeCustomRowId) upsertData.id = _coeCustomRowId;
+
+    var { data: upserted, error: upsertError } = await db
+      .from('custom_orders')
+      .upsert([upsertData], { onConflict: 'order_id' })
+      .select('id')
+      .single();
+
+    if (upsertError) throw upsertError;
+
+    // Store the ID for future saves in same session
+    if (upserted) _coeCustomRowId = upserted.id;
+
+    // Log in history
+    await db.from('order_status_history').insert([{
+      order_id:    orderId,
+      from_status: 'pending',
+      to_status:   'pending',
+      changed_by:  'customer',
+      note:        'Customer edited custom order details'
+    }]);
+
+    // WhatsApp notification to NSDI
+    var u = currentUser || {};
+    var parts = [];
+    if (updateData.occasion)        parts.push('🎉 ' + updateData.occasion);
+    if (updateData.shape)           parts.push('▬ ' + updateData.shape);
+    if (updateData.theme)           parts.push('🎨 ' + updateData.theme);
+    if (updateData.weight_kg)       parts.push('⚖️ ' + updateData.weight_kg);
+    if (updateData.layers)          parts.push('🍰 ' + updateData.layers);
+    if (updateData.flavour)         parts.push('🍫 ' + updateData.flavour);
+    if (updateData.egg_preference)  parts.push('🥚 ' + updateData.egg_preference);
+    if (updateData.delivery_date)   parts.push('📅 ' + updateData.delivery_date);
+    if (updateData.brownie_message) parts.push('✍️ ' + updateData.brownie_message);
+    if (updateData.topper_name)     parts.push('✨ Topper: ' + updateData.topper_name);
+    if (updateData.special_notes)   parts.push('📝 ' + updateData.special_notes);
+
+    var waMsg = encodeURIComponent(
+      '✏️ *Custom Order UPDATED*\n\n'
+      + '👤 ' + (u.name||'Customer') + ' · ' + (u.phone||'') + '\n\n'
+      + parts.join('\n')
+      + '\n\n_Please re-confirm this updated order_'
+    );
+    window.open('https://wa.me/' + NSDI_PHONE + '?text=' + waMsg, '_blank');
+
+    showToast('✅ Order updated successfully!');
+    closeCustomOrderEdit();
+    setTimeout(loadLiveTrackingData, 500);
+
+  } catch(e) {
+    console.error('saveCustomOrderEdit error:', e);
+    showToast('Save failed: ' + (e.message || 'Unknown error'));
+    btn.disabled    = false;
+    btn.textContent = '💾 Save Changes';
+  }
+}
 // ── Handle mobile back button ──
 window.addEventListener('popstate', function(e) {
   var page = (e.state && e.state.page) || 'home';
