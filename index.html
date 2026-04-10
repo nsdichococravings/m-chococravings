@@ -204,7 +204,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 /* TRENDING SCROLL */
 .tscroll{display:flex;gap:12px;padding:2px 0 14px 22px;overflow-x:auto;scrollbar-width:none}
 .tscroll::-webkit-scrollbar{display:none}
-.tcard{flex-shrink:0;width:156px;background:var(--card);border-radius:20px;overflow:hidden;border:1px solid var(--bdr);cursor:pointer;transition:transform .25s}
+.tcard{flex-shrink:0;width:150px;background:var(--card);border-radius:20px;overflow:hidden;border:1px solid var(--bdr);cursor:pointer;transition:transform .25s}
 .tcard:active{transform:scale(.95)}
 .timg{width:100%;height:100px;display:flex;align-items:center;justify-content:center;font-size:42px}
 .ti1{background:linear-gradient(135deg,#2D0060,#e018d6)}
@@ -2205,7 +2205,44 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         </button>
       </div>
     </div>
+        <!-- LOGOUT CONFIRMATION SHEET -->
+    <div id="logout-overlay" onclick="closeLogoutSheet()"
+      style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.6);z-index:2500;backdrop-filter:blur(4px)"></div>
 
+    <div id="logout-sheet"
+      style="display:none;position:absolute;bottom:0;left:0;right:0;
+      background:var(--d2);border-radius:24px 24px 0 0;
+      border-top:1px solid var(--bdr2);z-index:2501;padding:0 0 32px">
+      <div style="width:40px;height:4px;border-radius:2px;background:var(--faint);margin:14px auto 20px"></div>
+      
+      <!-- Icon -->
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="width:64px;height:64px;border-radius:50%;background:rgba(244,114,182,.12);border:1px solid rgba(244,114,182,.25);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto">🚪</div>
+      </div>
+
+      <!-- Text -->
+      <div style="text-align:center;padding:0 32px;margin-bottom:24px">
+        <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--white);margin-bottom:6px">Sign Out?</div>
+        <div style="font-size:13px;color:var(--dim);line-height:1.6">You'll need to sign in again to place orders and track your ChocoCravings</div>
+      </div>
+
+      <!-- Buttons -->
+      <div style="display:flex;flex-direction:column;gap:10px;padding:0 22px">
+        <button onclick="confirmLogout()"
+          style="width:100%;padding:15px;background:linear-gradient(135deg,#e11d48,#f43f5e);
+          color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;
+          border:none;border-radius:16px;cursor:pointer">
+          Yes, Sign Out
+        </button>
+        <button onclick="closeLogoutSheet()"
+          style="width:100%;padding:15px;background:var(--card);
+          border:1.5px solid var(--bdr);color:var(--white);
+          font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;
+          border-radius:16px;cursor:pointer">
+          Cancel
+        </button>
+      </div>
+    </div>
     </div><!-- /screen -->
   </div><!-- /phone -->
   <div class="toast" id="toast">✓ Added to cart!</div>
@@ -3612,8 +3649,18 @@ function closeAdminPanel() {
   if (overlay) overlay.style.display = 'none';
 }
 
-async function doLogout() {
-  if (!confirm('Sign out of ChocoCravings?')) return;
+function doLogout() {
+  document.getElementById('logout-overlay').style.display = 'block';
+  document.getElementById('logout-sheet').style.display   = 'block';
+}
+
+function closeLogoutSheet() {
+  document.getElementById('logout-overlay').style.display = 'none';
+  document.getElementById('logout-sheet').style.display   = 'none';
+}
+
+async function confirmLogout() {
+  closeLogoutSheet();
   await db.auth.signOut();
   currentUser = null;
   localStorage.removeItem('cc_user');
@@ -3785,7 +3832,7 @@ setTimeout(updateCartDots, 100);
   // ── Restore last visited page ──
   try {
     var lastPage = localStorage.getItem('cc_last_page');
-    var skipRestore = ['checkout', 'success', 'login', 'profile'];
+    var skipRestore = ['checkout', 'success', 'login'];
     if (lastPage && !skipRestore.includes(lastPage)) {
       // Remove active from home immediately
     var homeEl = document.getElementById('page-home');
