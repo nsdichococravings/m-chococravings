@@ -96,8 +96,8 @@ self.addEventListener('push', function(event) {
   event.waitUntil(
     self.registration.showNotification(data.title || 'ChocoCravings 🍫', {
       body:    data.body    || 'You have a new update!',
-      icon:    '/icons/icon-192.png',
-      badge:   '/icons/icon-96.png',
+      icon:    '/icons/maskable_icon_x72.png',
+      badge:   '/icons/maskable_icon_x48.png',
       vibrate: [200, 100, 200],
       data:    { url: data.url || '/' }
     })
