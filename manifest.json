@@ -75,13 +75,13 @@
       "name": "Order Now",
       "short_name": "Order",
       "url": "/index.html",
-      "icons": [{ "src": "/icons/icon-512.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/icons/maskable_icon_x72", "sizes": "96x96" }]
     },
     {
       "name": "My Orders",
       "short_name": "Orders",
       "url": "/index.html#orders",
-      "icons": [{ "src": "/icons/icon-512.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/icons/maskable_icon_x72", "sizes": "96x96" }]
     }
   ]
 }
