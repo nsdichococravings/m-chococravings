@@ -3821,25 +3821,24 @@ setTimeout(updateCartDots, 100);
   // ── Restore last visited page ──
   try {
     var lastPage = localStorage.getItem('cc_last_page');
-    var skipRestore = ['checkout', 'success', 'login'];
+    var skipRestore = ['checkout', 'success', 'login', 'orders', 'addresses'];
     if (lastPage && !skipRestore.includes(lastPage)) {
-      // Remove active from home immediately
-    var homeEl = document.getElementById('page-home');
-    if (homeEl) { homeEl.classList.remove('active'); }
-    // Activate target page directly without animation
-    var targetEl = document.getElementById('page-' + lastPage);
-
-     if (targetEl) {
-      targetEl.style.transition = 'none'; // skip animation on restore
-      targetEl.classList.add('active');
-      targetEl.scrollTop = 0;
-      setTimeout(function(){ targetEl.style.transition = ''; }, 50); // re-enable after
+      var homeEl = document.getElementById('page-home');
+      if (homeEl) { homeEl.classList.remove('active'); }
+      var targetEl = document.getElementById('page-' + lastPage);
+      if (targetEl) {
+        targetEl.style.transition = 'none';
+        targetEl.classList.add('active');
+        targetEl.scrollTop = 0;
+        setTimeout(function(){ targetEl.style.transition = ''; }, 50);
+      }
+      setNav(lastPage);
+      if (lastPage === 'cart')     renderCart();
+      if (lastPage === 'tracking') setTimeout(loadLiveTrackingData, 300);
+      if (lastPage === 'profile')  { window._profileLastLoaded = null; setTimeout(loadProfileData, 500); }
     }
-    setNav(lastPage);
-    if (lastPage === 'cart') renderCart();
-    if (lastPage === 'tracking') setTimeout(loadLiveTrackingData, 300);
-
-    }
+    if (lastPage === 'orders')    setTimeout(function(){ showPage('profile'); setTimeout(loadAndShowOrders, 300); }, 100);
+    if (lastPage === 'addresses') setTimeout(function(){ showPage('profile'); setTimeout(loadAndShowAddresses, 300); }, 100);
   } catch(e) {}
 })();
 // Load products dynamically
