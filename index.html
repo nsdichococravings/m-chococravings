@@ -202,7 +202,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 .abtn:active{transform:scale(.88);background:var(--pl)}
 
 /* TRENDING SCROLL */
-.tscroll{display:flex;gap:12px;padding:2px 0 14px 22px;overflow-x:auto;scrollbar-width:none}
+.tscroll{display:flex;gap:12px;padding:2px 22px 14px 22px;overflow-x:auto;scrollbar-width:none}
 .tscroll::-webkit-scrollbar{display:none}
 .tcard{flex-shrink:0;width:150px;background:var(--card);border-radius:20px;overflow:hidden;border:1px solid var(--bdr);cursor:pointer;transition:transform .25s}
 .tcard:active{transform:scale(.95)}
@@ -1711,6 +1711,102 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
           </div>
         </div>
 
+        <!-- TRIPS & DRIZZLE -->
+        <!-- TRIPS & DRIZZLE -->
+        <div>
+          <!-- Animated drizzle header -->
+          <div style="position:relative;border-radius:16px;overflow:hidden;margin-bottom:14px;background:linear-gradient(135deg,#1a0030,#3d0060,#5c0872);padding:16px 14px 14px">
+            
+            <!-- Animated drizzle lines -->
+            <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden">
+              <div style="position:absolute;top:-10px;left:10%;width:2px;height:60px;background:linear-gradient(to bottom,transparent,rgba(255,200,100,.6),transparent);border-radius:2px;animation:drizzleFall 2s ease-in-out infinite 0s"></div>
+              <div style="position:absolute;top:-10px;left:22%;width:1.5px;height:50px;background:linear-gradient(to bottom,transparent,rgba(255,150,50,.5),transparent);border-radius:2px;animation:drizzleFall 2.4s ease-in-out infinite .3s"></div>
+              <div style="position:absolute;top:-10px;left:38%;width:2px;height:70px;background:linear-gradient(to bottom,transparent,rgba(200,100,255,.5),transparent);border-radius:2px;animation:drizzleFall 1.8s ease-in-out infinite .6s"></div>
+              <div style="position:absolute;top:-10px;left:55%;width:1.5px;height:55px;background:linear-gradient(to bottom,transparent,rgba(255,200,100,.6),transparent);border-radius:2px;animation:drizzleFall 2.2s ease-in-out infinite .2s"></div>
+              <div style="position:absolute;top:-10px;left:68%;width:2px;height:65px;background:linear-gradient(to bottom,transparent,rgba(255,150,50,.5),transparent);border-radius:2px;animation:drizzleFall 2.6s ease-in-out infinite .8s"></div>
+              <div style="position:absolute;top:-10px;left:80%;width:1.5px;height:45px;background:linear-gradient(to bottom,transparent,rgba(200,100,255,.4),transparent);border-radius:2px;animation:drizzleFall 2s ease-in-out infinite .4s"></div>
+              <div style="position:absolute;top:-10px;left:92%;width:2px;height:60px;background:linear-gradient(to bottom,transparent,rgba(255,200,100,.5),transparent);border-radius:2px;animation:drizzleFall 2.3s ease-in-out infinite 1s"></div>
+
+              <!-- Drizzle pool dots at bottom -->
+              <div style="position:absolute;bottom:6px;left:10%;width:6px;height:3px;border-radius:50%;background:rgba(255,200,100,.4);animation:drizzlePool 2s ease-in-out infinite 0s"></div>
+              <div style="position:absolute;bottom:6px;left:38%;width:8px;height:3px;border-radius:50%;background:rgba(200,100,255,.3);animation:drizzlePool 1.8s ease-in-out infinite .6s"></div>
+              <div style="position:absolute;bottom:6px;left:68%;width:6px;height:3px;border-radius:50%;background:rgba(255,150,50,.4);animation:drizzlePool 2.2s ease-in-out infinite .2s"></div>
+            </div>
+
+            <!-- Grain overlay -->
+            <div style="position:absolute;inset:0;opacity:.05;background-image:url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E');pointer-events:none"></div>
+
+            <!-- Content -->
+            <div style="position:relative;z-index:2;display:flex;align-items:center;gap:10px">
+              <div style="width:44px;height:44px;flex-shrink:0;position:relative">
+                <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <!-- Piping bag body -->
+                  <path d="M8 6 L36 6 L36 10 Q36 12 34 13 L26 18 L26 24 Q26 26 24 27 L22 28 L20 27 Q18 26 18 24 L18 18 L10 13 Q8 12 8 10 Z" fill="rgba(255,255,255,0.25)" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+                  <!-- Bag twist top -->
+                  <path d="M14 6 Q22 3 30 6" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                  <!-- Bag clip/tie -->
+                  <rect x="16" y="5" width="12" height="3" rx="1.5" fill="rgba(255,200,100,0.7)"/>
+                  <!-- Nozzle -->
+                  <path d="M20 27 L21 32 L22 34 L23 32 L24 27" fill="rgba(255,255,255,0.3)" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+                  <!-- Chocolate drop 1 — falling -->
+                  <ellipse cx="22" cy="37" rx="2" ry="2.5" fill="rgba(255,180,60,0.9)" style="animation:dropFall1 1.8s ease-in infinite"/>
+                  <!-- Chocolate drop 2 — mid fall -->
+                  <ellipse cx="22" cy="41" rx="1.5" ry="1.8" fill="rgba(255,160,40,0.7)" style="animation:dropFall2 1.8s ease-in infinite 0.4s"/>
+                  <!-- Shine on bag -->
+                  <path d="M12 8 Q14 10 13 14" stroke="rgba(255,255,255,0.3)" stroke-width="1" stroke-linecap="round" fill="none"/>
+                </svg>
+                <style>
+                @keyframes dropFall1 {
+                  0%   { transform:translateY(0);   opacity:1;   }
+                  70%  { transform:translateY(4px); opacity:1;   }
+                  100% { transform:translateY(8px); opacity:0;   }
+                }
+                @keyframes dropFall2 {
+                  0%   { transform:translateY(0);   opacity:.7; }
+                  100% { transform:translateY(6px); opacity:0;  }
+                }
+                </style>
+              </div>
+              <div>
+                <div style="font-size:13px;font-weight:700;color:#fff;letter-spacing:.3px">Trips & Drizzle</div>
+                <div style="font-size:10px;color:rgba(255,255,255,.6);margin-top:2px">Choose your topping drizzle style</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Drizzle keyframes -->
+          <style>
+          @keyframes drizzleFall {
+            0%   { transform:translateY(-20px); opacity:0; }
+            20%  { opacity:1; }
+            80%  { opacity:1; }
+            100% { transform:translateY(90px); opacity:0; }
+          }
+          @keyframes drizzlePool {
+            0%,100% { transform:scaleX(1); opacity:.4; }
+            50%      { transform:scaleX(1.6); opacity:.7; }
+          }
+        </style>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="cust-chip on" data-group="drizzle" data-val="None" onclick="selChip(this,'drizzle')" style="padding:12px;border-radius:12px;background:rgba(107,47,206,.15);border:1.5px solid var(--p);cursor:pointer;text-align:center">
+              <div style="font-size:11px;font-weight:700;color:var(--pl)">No Drizzle</div>
+            </div>
+            <div class="cust-chip" data-group="drizzle" data-val="Dark Ganache Drizzle" onclick="selChip(this,'drizzle')" style="padding:12px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer;text-align:center">
+              <div style="font-size:11px;font-weight:700;color:var(--white)">Dark Ganache</div>
+              <div style="font-size:9px;color:var(--dim);margin-top:2px">Rich dark drizzle</div>
+            </div>
+            <div class="cust-chip" data-group="drizzle" data-val="Nutella Drizzle" onclick="selChip(this,'drizzle')" style="padding:12px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer;text-align:center">
+              <div style="font-size:11px;font-weight:700;color:var(--white)">Nutella</div>
+              <div style="font-size:9px;color:var(--dim);margin-top:2px">Hazelnut drizzle</div>
+            </div>
+            <div class="cust-chip" data-group="drizzle" data-val="Other Drizzle" onclick="selChip(this,'drizzle')" style="padding:12px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer;text-align:center">
+              <div style="font-size:11px;font-weight:700;color:var(--white)">Other</div>
+              <div style="font-size:9px;color:var(--dim);margin-top:2px">Mention in notes</div>
+            </div>
+          </div>
+        </div>
+        <!-- LAYERS -->
+
         <!-- LAYERS -->
         <div>
           <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Brownie Layers</div>
@@ -1765,7 +1861,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         <!-- DELIVERY DATE -->
         <div>
           <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Delivery Date <span style="color:var(--pink)">*</span></div>
-          <input type="date" id="custom-date" min="" style="width:100%;background:rgba(255,255,255,.06);border:1.5px solid var(--bdr);border-radius:12px;padding:13px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;color-scheme:dark"
+          <input type="date" id="custom-date" min="" style="width:100%;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;padding:13px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;color-scheme:light"
             oninput="validateCustomDate(this)">
           <div id="custom-date-msg" style="font-size:11px;color:var(--pink);margin-top:6px;display:none">⚠️ Please select a date at least 7 days from today</div>
         </div>
@@ -1782,11 +1878,12 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
               <div class="cust-chip" data-group="Fauxball" data-val="None" onclick="selChip(this,'Fauxball')" style="padding:10px 6px;border-radius:12px;background:rgba(107,47,206,.15);border:1.5px solid var(--p);text-align:center;cursor:pointer">
                 <div style="font-size:18px;margin-bottom:3px">✕</div><div style="font-size:10px;font-weight:600;color:var(--pl)">None</div>
               </div>
+              <!--
               <div class="cust-chip" data-group="Fauxball" data-val="Faux Ball – 1 Corner" onclick="selChip(this,'Fauxball')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
-                <div style="font-size:18px;margin-bottom:3px">🟡</div><div style="font-size:10px;font-weight:600;color:var(--dim)">1 Corner</div>
-              </div>
+                <div style="font-size:18px;margin-bottom:3px">🟡</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Corner Design</div>
+              </div>-->
               <div class="cust-chip" data-group="Fauxball" data-val="Faux Balls – 4 Corners" onclick="selChip(this,'Fauxball')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
-                <div style="font-size:18px;margin-bottom:3px">🟡</div><div style="font-size:10px;font-weight:600;color:var(--dim)">4 Corners</div>
+                <div style="font-size:18px;margin-bottom:3px">🟡</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Corners Design</div>
               </div>
             </div>
           </div>
@@ -1798,11 +1895,12 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
               <div class="cust-chip on" data-group="butterfly" data-val="None" onclick="selChip(this,'butterfly')" style="padding:10px 6px;border-radius:12px;background:rgba(107,47,206,.15);border:1.5px solid var(--p);text-align:center;cursor:pointer">
                 <div style="font-size:18px;margin-bottom:3px">✕</div><div style="font-size:10px;font-weight:600;color:var(--pl)">None</div>
               </div>
+              <!--
               <div class="cust-chip" data-group="butterfly" data-val="1 Butterfly" onclick="selChip(this,'butterfly')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
                 <div style="font-size:18px;margin-bottom:3px">🦋</div><div style="font-size:10px;font-weight:600;color:var(--dim)">1 Butterfly</div>
-              </div>
+              </div>-->
               <div class="cust-chip" data-group="butterfly" data-val="3 Butterflies" onclick="selChip(this,'butterfly')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
-                <div style="font-size:18px;margin-bottom:3px">🦋</div><div style="font-size:10px;font-weight:600;color:var(--dim)">3 Butterflies</div>
+                <div style="font-size:18px;margin-bottom:3px">🦋</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Butterflies</div>
               </div>
             </div>
           </div>
@@ -2137,8 +2235,16 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
             <div class="coe-chip" data-group="flavour" data-val="Triple Chocolate" onclick="selCoeChip(this,'flavour')" style="padding:11px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer"><div style="font-size:12px;font-weight:700;color:var(--white)">🍫 Triple Choco</div></div>
           </div>
         </div>
-
-        <!-- LAYERS -->
+        <!-- DRIZZLE -->
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Trips & Drizzle</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="coe-chip" data-group="drizzle" data-val="None" onclick="selCoeChip(this,'drizzle')" style="padding:11px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:12px;font-weight:700;color:var(--white)">✕ No Drizzle</div></div>
+            <div class="coe-chip" data-group="drizzle" data-val="Dark Ganache Drizzle" onclick="selCoeChip(this,'drizzle')" style="padding:11px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:12px;font-weight:700;color:var(--white)">🍫 Dark Ganache</div></div>
+            <div class="coe-chip" data-group="drizzle" data-val="Nutella Drizzle" onclick="selCoeChip(this,'drizzle')" style="padding:11px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:12px;font-weight:700;color:var(--white)">🍯 Nutella</div></div>
+            <div class="coe-chip" data-group="drizzle" data-val="Other Drizzle" onclick="selCoeChip(this,'drizzle')" style="padding:11px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer"><div style="font-size:12px;font-weight:700;color:var(--white)">✨ Other</div></div>
+          </div>
+        </div>
         <div>
           <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Layers</div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
@@ -2579,11 +2685,12 @@ async function loadAndShowAddresses() {
   listEl.innerHTML = addrs.map(function(a) {
     var full = [a.address_line1, a.address_line2, a.landmark, a.city, a.pincode].filter(Boolean).join(', ');
     var setBtn = a.is_default ? '' : '<span onclick="setDefaultAddress(\'' + a.id + '\')" style="font-size:10px;color:var(--dim);cursor:pointer;border:1px solid var(--bdr);padding:2px 8px;border-radius:8px">Set default</span>';
+    var editBtn = '<span onclick="editAddress(' + JSON.stringify(a).replace(/"/g,"'") + ')" style="font-size:10px;color:var(--pl);cursor:pointer;border:1px solid rgba(107,47,206,.3);padding:2px 8px;border-radius:8px">Edit</span>';
     var delBtn = '<span onclick="deleteAddress(\'' + a.id + '\')" style="font-size:10px;color:var(--pink);cursor:pointer;border:1px solid rgba(244,114,182,.3);padding:2px 8px;border-radius:8px">Delete</span>';
     return '<div style="background:var(--card);border:1.5px solid ' + (a.is_default ? 'var(--p)' : 'var(--bdr)') + ';border-radius:16px;padding:14px">'
       + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">'
       + '<div style="font-size:12px;font-weight:700;color:var(--pl)">' + (a.label || 'Address') + (a.is_default ? ' ⭐' : '') + '</div>'
-      + '<div style="display:flex;gap:6px">' + setBtn + delBtn + '</div>'
+      + '<div style="display:flex;gap:6px">' + setBtn + editBtn + delBtn + '</div>'
       + '</div>'
       + '<div style="font-size:12px;color:var(--dim);line-height:1.6;margin-bottom:4px">' + full + '</div>'
       + '</div>';
@@ -2781,8 +2888,7 @@ async function setEggPref(pref) {
 }
 
 // ── CUSTOM ORDER ──
-var customSelections = { occasion:'Birthday', shape:'Rectangle', theme:'Floral', serves:'1 kg', flavour:'Classic Dark Chocolate', egg:'Eggless', layers:'1', Fauxball:'None', butterfly:'None', topper:'None', acrylicStyle:'Clear' };
-
+var customSelections = { occasion:'Birthday', shape:'Rectangle', theme:'Floral', serves:'1 kg', flavour:'Classic Dark Chocolate', egg:'Eggless', layers:'1', Fauxball:'None', butterfly:'None', topper:'None', acrylicStyle:'Clear', drizzle:'None' };
 function selTopperChip(el, val) {
   document.querySelectorAll('.cust-chip[data-group="topper"]').forEach(function(c) {
     c.style.background  = 'var(--card)';
@@ -3205,6 +3311,7 @@ async function submitCustomOrder() {
       flavour:         customSelections.flavour,
       egg_preference:  egg2,
       faux_ball:        customSelections.Fauxball !== 'None' ? customSelections.Fauxball : null,
+      drizzle:          customSelections.drizzle !== 'None' ? customSelections.drizzle : null,
       butterfly:       customSelections.butterfly !== 'None' ? customSelections.butterfly : null,
       topper_type:     customSelections.topper !== 'None' ? customSelections.topper : null,
       topper_style:    customSelections.topper === 'Acrylic Topper' ? customSelections.acrylicStyle : null,
@@ -3241,6 +3348,7 @@ async function submitCustomOrder() {
       + '📅 Delivery: ' + dateStr + '\n'
       + (msgVal   ? '✍️ Brownie Msg: ' + msgVal + '\n' : '')
       + (Faux  !== 'None' ? '🟡 Faux Ball: ' + Faux + '\n' : '')
+      + (customSelections.drizzle !== 'None' ? '🍫 Drizzle: ' + customSelections.drizzle + '\n' : '')
       + (butter !== 'None' ? '🦋 Butterfly: ' + butter + '\n' : '')
       + (topper !== 'None' ? '✨ Topper: ' + customConfig.topper + (topName ? ' — "'+topName+'"' : '') + '\n' : '')
       + (notesVal ? '📝 Notes: ' + notesVal + '\n' : '')
@@ -3250,8 +3358,10 @@ async function submitCustomOrder() {
 
     window.open('https://wa.me/' + NSDI_PHONE + '?text=' + waMsg, '_blank');
 
-    showToast('✅ Enquiry sent! Order #' + ord.order_number + ' placed in pending');
-    setTimeout(function() { showPage('home'); }, 2000);
+    showToast('✅ Enquiry sent! Order #' + ord.order_number + ' placed!');
+    setTimeout(function() {
+      showPage('tracking');
+    }, 2000);
 
   } catch(err) {
     showToast('Error: ' + (err.message || 'Could not place order'));
@@ -3397,18 +3507,34 @@ async function saveAddress() {
   var { data: existing } = await db.from('customer_addresses').select('id').eq('customer_id', currentUser.db_id);
   var isFirst = !existing || existing.length === 0;
 
-  console.log('Saving address with label:', label, '| db_id:', currentUser.db_id);
-  const { error } = await db.from('customer_addresses').insert([{
-    customer_id:  currentUser.db_id,
-    label,
-    address_line1: line1,
-    address_line2: line2 || null,
-    city,
-    pincode:      pin || null,
-    state:        'Tamil Nadu',
-    is_default:   isFirst
-  }]);
-  console.log('Insert result error:', error);
+ var editId = window._editingAddressId || null;
+  var error;
+
+  if (editId) {
+    // UPDATE existing address
+    var result = await db.from('customer_addresses').update({
+      label,
+      address_line1: line1,
+      address_line2: line2 || null,
+      city,
+      pincode: pin || null,
+      state: 'Tamil Nadu'
+    }).eq('id', editId);
+    error = result.error;
+  } else {
+    // INSERT new address
+    var result = await db.from('customer_addresses').insert([{
+      customer_id:  currentUser.db_id,
+      label,
+      address_line1: line1,
+      address_line2: line2 || null,
+      city,
+      pincode:      pin || null,
+      state:        'Tamil Nadu',
+      is_default:   isFirst
+    }]);
+    error = result.error;
+  }
 
   if (error) {
     if (error.message.includes('label')) {
@@ -3425,7 +3551,10 @@ async function saveAddress() {
   ['addr-label','addr-line1','addr-line2','addr-city','addr-pin'].forEach(function(id) {
     var el = document.getElementById(id); if(el) el.value = '';
   });
-  showToast('Address saved! ✅');
+  showToast(window._editingAddressId ? 'Address updated! ✅' : 'Address saved! ✅');
+  window._editingAddressId = null;
+  var saveBtn = document.querySelector('#add-addr-form button');
+  if (saveBtn) saveBtn.textContent = 'Save Address';
   document.getElementById('add-addr-form').style.display = 'none';
   loadAndShowAddresses();
 }
@@ -4932,8 +5061,11 @@ ownerWA.onclick = () => {
   }, 1000);
 };
 
-// 4. Show success page
 showPage('success');
+setTimeout(function() {
+  showPage('tracking');
+  showToast('Tracking your order live!');
+}, 3500);
 
   } catch (err) {
     overlay.classList.remove('show');
@@ -5730,6 +5862,7 @@ async function openCustomOrderSheet(orderNum, readOnly) {
     setCoeChip('flavour',  co.flavour);
     setCoeChip('layers',   co.layers);
     setCoeChip('egg',      co.egg_preference);
+    setCoeChip('drizzle',  co.drizzle);
 
     // Pre-fill text inputs
     var setVal = function(id, val) {
@@ -5787,6 +5920,7 @@ async function saveCustomOrderEdit() {
     flavour:         _coeSelections.flavour  || null,
     layers:          _coeSelections.layers   || null,
     egg_preference:  _coeSelections.egg      || null,
+    drizzle:         _coeSelections.drizzle  || null,
     delivery_date:   dateVal,
     topper_name:     document.getElementById('coe-topper-name').value.trim() || null,
     brownie_message: document.getElementById('coe-message').value.trim()     || null,
@@ -5883,6 +6017,43 @@ function getUserEggPref() {
 // Push initial history entry on load so first back press goes home not exit
 history.replaceState({ page: 'home' }, '', '#home');
 
+function editAddress(a) {
+  // Show the form and pre-fill with existing data
+  var f = document.getElementById('add-addr-form');
+  if (f) f.style.display = 'block';
+
+  // Pre-fill fields
+  var setInp = function(id, val) { var el = document.getElementById(id); if (el) el.value = val || ''; };
+  setInp('addr-line1', a.address_line1);
+  setInp('addr-line2', a.address_line2);
+  setInp('addr-city',  a.city);
+  setInp('addr-pin',   a.pincode);
+
+  // Set label chip
+  var label = (a.label || 'home');
+  document.querySelectorAll('.addr-chip').forEach(function(c) {
+    c.style.background  = 'var(--card)';
+    c.style.borderColor = 'var(--bdr)';
+    c.style.color       = 'var(--dim)';
+  });
+  var labelMap = { 'Home':'Home', 'Office':'Office', 'Other':'Other', 'home':'Home', 'office':'Office', 'other':'Other' };
+  var matchChip = document.querySelector('.addr-chip[onclick*="' + (labelMap[label] || 'Home') + '"]');
+  if (matchChip) {
+    matchChip.style.background  = 'rgba(107,47,206,.15)';
+    matchChip.style.borderColor = 'var(--p)';
+    matchChip.style.color       = 'var(--pl)';
+  }
+  var labelEl = document.getElementById('addr-label');
+  if (labelEl) labelEl.value = labelMap[label] || 'Home';
+
+  // Store editing ID and change save button to Update
+  window._editingAddressId = a.id;
+  var saveBtn = document.querySelector('#add-addr-form button[onclick="saveAddress()"]');
+  if (saveBtn) saveBtn.textContent = 'Update Address';
+
+  // Scroll form into view
+  f.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
 </script>
 </body>
