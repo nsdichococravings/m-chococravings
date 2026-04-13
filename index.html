@@ -1871,9 +1871,15 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         <!-- DELIVERY DATE -->
         <div>
           <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Delivery Date <span style="color:var(--pink)">*</span></div>
-          <input type="date" id="custom-date" min="" style="width:100%;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;padding:13px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;color-scheme:light;-webkit-text-fill-color:var(--white)"
-            oninput="validateCustomDate(this)">
-          <div id="custom-date-msg" style="font-size:11px;color:var(--pink);margin-top:6px;display:none">⚠️ Please select a date at least 7 days from today</div>
+          <div style="position:relative">
+            <input type="date" id="custom-date" min=""
+              style="width:100%;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;padding:13px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;color-scheme:light;-webkit-text-fill-color:transparent"
+              oninput="validateCustomDate(this);this.style.webkitTextFillColor='var(--white)';document.getElementById('custom-date-ph').style.display='none'">
+            <div id="custom-date-ph" style="position:absolute;top:50%;left:14px;transform:translateY(-50%);font-size:13px;color:var(--faint);pointer-events:none">
+              📅 Select delivery date
+            </div>
+          </div>
+            <div id="custom-date-msg" style="font-size:11px;color:var(--pink);margin-top:6px;display:none">⚠️ Please select a date at least 7 days from today</div>
         </div>
 
         <!-- ── ADD-ONS ── -->
@@ -2276,7 +2282,14 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         <!-- DELIVERY DATE -->
         <div>
           <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Delivery Date</div>
-          <input type="date" id="coe-date" style="width:100%;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;padding:13px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;color-scheme:light;-webkit-text-fill-color:var(--white)">
+          <div style="position:relative">
+            <input type="date" id="coe-date" min=""
+              style="width:100%;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;padding:13px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;color-scheme:light;-webkit-text-fill-color:transparent"
+              oninput="document.getElementById('coe-date-ph').style.display='none';this.style.webkitTextFillColor='var(--white)'">
+            <div id="coe-date-ph" style="position:absolute;top:50%;left:14px;transform:translateY(-50%);font-size:13px;color:var(--faint);pointer-events:none">
+              📅 Select delivery date
+            </div>
+          </div>
           <div id="coe-date-msg" style="font-size:11px;color:var(--pink);margin-top:5px;display:none">⚠️ Please select a date at least 7 days from today</div>
         </div>
 
