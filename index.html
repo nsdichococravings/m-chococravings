@@ -939,7 +939,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
       <div class="rcard" id="reviews-section">
         <div class="rstars">★★★★★</div>
         <div class="rtxt">"Ordered the triple chocolate brownie for my daughter's birthday — arrived perfectly packed. Best homemade bakes in Tamil Nadu!"</div>
-        <div class="ruser"><div class="ravatar ra1">👩</div><div><div class="rname">Priya Krishnan</div><div class="rloc">Coimbatore · Verified ✓</div></div></div>
+        <div class="ruser"><div class="ravatar ra1">👩</div><div><div class="rname">Diya Krishnan</div><div class="rloc">Coimbatore · Verified ✓</div></div></div>
       </div>
       <div class="rcard">
         <div class="rstars">★★★★★</div>
@@ -1042,8 +1042,9 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         </div>
 
         <!-- VARIANT -->
-        <div class="dlabel" id="sec-variant">Choose Variety <span class="dlabel-badge">(scroll)</span></div>
-        <div class="vlist" id="v-list">
+                <!-- VARIANT — hidden: already selected from product grid -->
+        <div class="dlabel" id="sec-variant" style="display:none">Choose Variety <span class="dlabel-badge">(scroll)</span></div>
+        <div class="vlist" id="v-list" style="display:none">
           <div class="vrow on" onclick="selVar(this,0)"><div><div class="vname">Classic Fudge Chocolate</div><div class="vtag">Rich dark chocolate goodness</div></div><div class="vchk">✓</div></div>
           <div class="vrow" onclick="selVar(this,1)"><div><div class="vname">Double Chocolate</div><div class="vtag">Dark + Milk chocolate</div></div><div class="vchk"></div></div>
           <div class="vrow" onclick="selVar(this,2)"><div><div class="vname">Triple Chocolate</div><div class="vtag">Dark + Milk + White</div></div><div class="vchk"></div></div>
@@ -1702,7 +1703,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
             </div>
             <div class="cust-chip" data-group="flavour" data-val="Double Chocolate" onclick="selChip(this,'flavour')" style="padding:12px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer">
               <div style="font-size:12px;font-weight:700;color:var(--white)">Double Chocolate</div>
-              <div style="font-size:10px;color:var(--dim);margin-top:2px">Hazelnut dream</div>
+              <div style="font-size:10px;color:var(--dim);margin-top:2px">Dark + Milk</div>
             </div>
             <div class="cust-chip" data-group="flavour" data-val="Triple Chocolate" onclick="selChip(this,'flavour')" style="padding:12px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer">
               <div style="font-size:12px;font-weight:700;color:var(--white)">Triple Choco</div>
@@ -1786,6 +1787,15 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
             0%,100% { transform:scaleX(1); opacity:.4; }
             50%      { transform:scaleX(1.6); opacity:.7; }
           }
+        input[type="date"]::-webkit-datetime-edit,
+        input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+        input[type="date"]::-webkit-datetime-edit-text,
+        input[type="date"]::-webkit-datetime-edit-month-field,
+        input[type="date"]::-webkit-datetime-edit-day-field,
+        input[type="date"]::-webkit-datetime-edit-year-field {
+          color: var(--white);
+          -webkit-text-fill-color: var(--white);
+        }
         </style>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <div class="cust-chip on" data-group="drizzle" data-val="None" onclick="selChip(this,'drizzle')" style="padding:12px;border-radius:12px;background:rgba(107,47,206,.15);border:1.5px solid var(--p);cursor:pointer;text-align:center">
@@ -1861,7 +1871,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         <!-- DELIVERY DATE -->
         <div>
           <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Delivery Date <span style="color:var(--pink)">*</span></div>
-          <input type="date" id="custom-date" min="" style="width:100%;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;padding:13px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;color-scheme:light"
+          <input type="date" id="custom-date" min="" style="width:100%;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;padding:13px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;color-scheme:light;-webkit-text-fill-color:var(--white)"
             oninput="validateCustomDate(this)">
           <div id="custom-date-msg" style="font-size:11px;color:var(--pink);margin-top:6px;display:none">⚠️ Please select a date at least 7 days from today</div>
         </div>
@@ -1931,7 +1941,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 
             <!-- Topper name input — shown when topper selected -->
             <div id="topper-name-wrap" style="display:none">
-              <input type="text" id="topper-name" maxlength="20" placeholder="Name to write / engrave (e.g. Priya)" style="width:100%;background:rgba(255,255,255,.06);border:1.5px solid var(--p);border-radius:12px;padding:12px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none" oninput="updateBrowniePreview()">
+              <input type="text" id="topper-name" maxlength="20" placeholder="Name to write / engrave (e.g. Diya)" style="width:100%;background:rgba(255,255,255,.06);border:1.5px solid var(--p);border-radius:12px;padding:12px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none" oninput="updateBrowniePreview()">
               <div style="font-size:10px;color:var(--faint);margin-top:5px">Max 20 characters</div>
             </div>
 
@@ -1956,7 +1966,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         <!-- MESSAGE ON BROWNIE -->
         <div>
           <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Message on Brownie <span style="color:var(--dim);font-weight:400;text-transform:none;letter-spacing:0">optional</span></div>
-          <input type="text" id="custom-message" maxlength="40" placeholder="e.g. Happy Birthday Priya! 🎉" style="width:100%;background:rgba(255,255,255,.06);border:1.5px solid var(--bdr);border-radius:12px;padding:13px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none" oninput="document.getElementById('msg-count').textContent=(40-this.value.length)+' left';updateBrowniePreview()">
+          <input type="text" id="custom-message" maxlength="40" placeholder="e.g. Happy Birthday Diya! 🎉" style="width:100%;background:rgba(255,255,255,.06);border:1.5px solid var(--bdr);border-radius:12px;padding:13px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none" oninput="document.getElementById('msg-count').textContent=(40-this.value.length)+' left';updateBrowniePreview()">
           <div style="font-size:10px;color:var(--faint);margin-top:4px;text-align:right" id="msg-count">40 left</div>
         </div>
 
@@ -2231,7 +2241,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <div class="coe-chip" data-group="flavour" data-val="Classic Dark Chocolate" onclick="selCoeChip(this,'flavour')" style="padding:11px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer"><div style="font-size:12px;font-weight:700;color:var(--white)">🍫 Classic Dark</div></div>
             <div class="coe-chip" data-group="flavour" data-val="Couverture Belgian" onclick="selCoeChip(this,'flavour')" style="padding:11px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer"><div style="font-size:12px;font-weight:700;color:var(--white)">🌟 Couverture</div></div>
-            <div class="coe-chip" data-group="flavour" data-val="Nutella" onclick="selCoeChip(this,'flavour')" style="padding:11px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer"><div style="font-size:12px;font-weight:700;color:var(--white)">🍯 Nutella</div></div>
+            <div class="coe-chip" data-group="flavour" data-val="Double Chocolate" onclick="selCoeChip(this,'flavour')" style="padding:11px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer"><div style="font-size:12px;font-weight:700;color:var(--white)">🍯 Double Choco</div></div>
             <div class="coe-chip" data-group="flavour" data-val="Triple Chocolate" onclick="selCoeChip(this,'flavour')" style="padding:11px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer"><div style="font-size:12px;font-weight:700;color:var(--white)">🍫 Triple Choco</div></div>
           </div>
         </div>
@@ -2266,20 +2276,20 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         <!-- DELIVERY DATE -->
         <div>
           <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Delivery Date</div>
-          <input type="date" id="coe-date" style="width:100%;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;padding:13px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;color-scheme:dark">
+          <input type="date" id="coe-date" style="width:100%;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;padding:13px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;color-scheme:light;-webkit-text-fill-color:var(--white)">
           <div id="coe-date-msg" style="font-size:11px;color:var(--pink);margin-top:5px;display:none">⚠️ Please select a date at least 7 days from today</div>
         </div>
 
         <!-- TOPPER NAME -->
         <div>
           <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Name on Topper <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--faint)">optional</span></div>
-          <input type="text" id="coe-topper-name" maxlength="20" placeholder="e.g. Priya" style="width:100%;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;padding:13px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none">
+          <input type="text" id="coe-topper-name" maxlength="20" placeholder="e.g. Diya" style="width:100%;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;padding:13px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none">
         </div>
 
         <!-- BROWNIE MESSAGE -->
         <div>
           <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Message on Brownie <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--faint)">optional</span></div>
-          <input type="text" id="coe-message" maxlength="40" placeholder="e.g. Happy Birthday Priya! 🎉" style="width:100%;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;padding:13px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none">
+          <input type="text" id="coe-message" maxlength="40" placeholder="e.g. Happy Birthday Diya! 🎉" style="width:100%;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;padding:13px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none">
         </div>
 
         <!-- SPECIAL NOTES -->
@@ -3898,9 +3908,9 @@ const heroes=[
 let hi=0;
 function setHero(i){
   const card=document.getElementById('hero-card');
+  if(!card) return;
   const h=heroes[i];
   card.className='hero-card '+h.bg;
-  
 }
 setInterval(()=>{hi=(hi+1)%3;setHero(hi);},4200);
 
