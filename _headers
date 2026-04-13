@@ -18,5 +18,10 @@
 
 /.well-known/assetlinks.json
   Content-Type: application/json
-  Cache-Control: public, max-age=3600
   Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=3600
+
+/assetlinks.json
+  Content-Type: application/json
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=3600
