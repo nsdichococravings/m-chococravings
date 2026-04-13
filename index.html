@@ -937,7 +937,22 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
       <div id="pgrid-empty" style="display:none;text-align:center;padding:20px 22px 8px">
         <div style="font-size:13px;color:var(--dim)">No featured items</div>
       </div>
-
+      <!-- PARTY ACCESSORIES TEASER -->
+      <div onclick="showPage('accessories')" style="margin:0 16px 20px;position:relative;border-radius:22px;overflow:hidden;cursor:pointer;height:110px;background:linear-gradient(135deg,#1a0035,#3d0060,#6e0977)">
+        <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,110,180,.15),rgba(255,180,50,.1))"></div>
+        <div id="acc-teaser-confetti" style="position:absolute;inset:0;pointer-events:none;overflow:hidden"></div>
+        <div style="position:relative;z-index:2;padding:18px 16px;height:100%;display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">NEW · Party Store</div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:#fff;line-height:1.1">Party <span style="font-style:italic;color:#ffb3f0">Accessories</span></div>
+            <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:3px">Balloons · Decor · Candles · More</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+            <div style="font-size:36px">🎈</div>
+            <div style="background:rgba(255,255,255,.9);color:#3d0060;font-size:10px;font-weight:800;padding:5px 12px;border-radius:20px">Shop Now →</div>
+          </div>
+        </div>
+      </div>
       <!-- TRENDING -->
       <div class="sec"><span class="sec-t">Trending 🔥</span><span class="sec-l" onclick="showPage('explore')">See all →</span></div>
       <div class="tscroll" id="trending-scroll">
@@ -2064,6 +2079,14 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
     <!-- HAMBURGER MENU OVERLAY -->
     <div id="hamburger-overlay" onclick="closeHamburgerMenu()" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.4);z-index:1200;backdrop-filter:blur(4px)"></div>
     <div id="hamburger-menu" style="display:none;position:absolute;top:65px;right:12px;background:var(--d2);border:1px solid var(--bdr);border-radius:16px;z-index:1300;min-width:210px;padding:8px;box-shadow:0 8px 32px rgba(0,0,0,.4)">
+      
+      <div onclick="showPage('accessories');closeHamburgerMenu()" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;cursor:pointer;background:rgba(255,150,50,.08);border:1px solid rgba(255,150,50,.15);margin-bottom:6px">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#ffb347">🎉 Party Accessories</div>
+          <div style="font-size:11px;color:var(--dim)">Balloons · Decor · Candles · More</div>
+        </div>
+      </div>
+
       <!-- Live Tracking item — always visible -->
       <div onclick="openLiveTracking();closeHamburgerMenu()" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;cursor:pointer;background:rgba(110,9,119,.08);border:1px solid rgba(110,9,119,.15);margin-bottom:6px">
         <div>
@@ -2079,6 +2102,50 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
           <div style="font-size:11px;color:var(--dim)">Manage orders & products</div>
         </div>
       </div>
+    </div>
+    <!-- ═══ PARTY ACCESSORIES PAGE ═══ -->
+<div class="page" id="page-accessories">
+  <!-- Hero -->
+  <div style="position:relative;overflow:hidden;min-height:160px">
+    <div style="position:absolute;inset:0;background:linear-gradient(135deg,#1a0035,#3d0060,#6e0977)"></div>
+    <div id="acc-page-confetti" style="position:absolute;inset:0;pointer-events:none;overflow:hidden"></div>
+    <div style="position:relative;z-index:2;padding:16px 20px 20px">
+      <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:4px 12px;margin-bottom:10px">
+        <span style="width:5px;height:5px;border-radius:50%;background:#ff9de2;display:inline-block;animation:hmPulse 1.5s infinite"></span>
+        <span style="font-size:9px;font-weight:700;color:rgba(255,255,255,.9);letter-spacing:2px;text-transform:uppercase">New · Party Store</span>
+      </div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;color:#fff;line-height:1.1;margin-bottom:4px">Party <span style="font-style:italic;color:#ffb3f0">Accessories</span></div>
+      <div style="font-size:12px;color:rgba(255,255,255,.6)">Everything to make it magical ✨</div>
+    </div>
+  </div>
+
+  <!-- Category Filter -->
+  <div id="acc-cat-chips" style="display:flex;gap:8px;overflow-x:auto;padding:14px 20px 4px;scrollbar-width:none">
+    <div class="acc-cat on" data-cat="all" onclick="selAccCat(this)" style="flex-shrink:0;padding:7px 14px;border-radius:20px;background:var(--p);border:1.5px solid var(--p);font-size:11px;font-weight:700;color:#fff;cursor:pointer;white-space:nowrap">🌟 All</div>
+    <div class="acc-cat" data-cat="balloons" onclick="selAccCat(this)" style="flex-shrink:0;padding:7px 14px;border-radius:20px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);font-size:11px;font-weight:600;color:rgba(255,255,255,.65);cursor:pointer;white-space:nowrap">🎈 Balloons</div>
+    <div class="acc-cat" data-cat="decoration_kits" onclick="selAccCat(this)" style="flex-shrink:0;padding:7px 14px;border-radius:20px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);font-size:11px;font-weight:600;color:rgba(255,255,255,.65);cursor:pointer;white-space:nowrap">🎊 Decoration</div>
+    <div class="acc-cat" data-cat="candles" onclick="selAccCat(this)" style="flex-shrink:0;padding:7px 14px;border-radius:20px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);font-size:11px;font-weight:600;color:rgba(255,255,255,.65);cursor:pointer;white-space:nowrap">🕯️ Candles</div>
+    <div class="acc-cat" data-cat="banners" onclick="selAccCat(this)" style="flex-shrink:0;padding:7px 14px;border-radius:20px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);font-size:11px;font-weight:600;color:rgba(255,255,255,.65);cursor:pointer;white-space:nowrap">🎀 Banners</div>
+    <div class="acc-cat" data-cat="return_gifts" onclick="selAccCat(this)" style="flex-shrink:0;padding:7px 14px;border-radius:20px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);font-size:11px;font-weight:600;color:rgba(255,255,255,.65);cursor:pointer;white-space:nowrap">🎁 Return Gifts</div>
+    <div class="acc-cat" data-cat="party_props" onclick="selAccCat(this)" style="flex-shrink:0;padding:7px 14px;border-radius:20px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);font-size:11px;font-weight:600;color:rgba(255,255,255,.65);cursor:pointer;white-space:nowrap">📸 Props</div>
+  </div>
+
+      <!-- Products Grid -->
+      <div id="acc-products-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px 20px 16px">
+        <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--dim)">Loading...</div>
+      </div>
+
+      <!-- Bundle Banner -->
+      <div style="margin:4px 20px 16px;background:linear-gradient(135deg,rgba(255,180,100,.12),rgba(255,100,180,.12));border:1px solid rgba(255,180,100,.25);border-radius:18px;padding:14px 16px;display:flex;align-items:center;gap:12px">
+        <div style="font-size:28px">🎂</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:var(--white)">Bundle & Save!</div>
+          <div style="font-size:11px;color:var(--dim);margin-top:2px">Add brownies + accessories together</div>
+        </div>
+        <div onclick="showPage('explore')" style="background:linear-gradient(135deg,#ff9de2,#ffb347);color:#3d0060;font-size:11px;font-weight:800;padding:8px 14px;border-radius:10px;cursor:pointer;flex-shrink:0">Browse →</div>
+      </div>
+
+      <div style="height:10px"></div>
     </div>
     <!-- ═══ LIVE TRACKING PAGE ═══ -->
     <div class="page" id="page-tracking">
@@ -4197,7 +4264,8 @@ function renderCart() {
     totalQty += (item.qty || 1);
 
     var tierLabel = item.tier === 'couverture' ? 'Belgian' : 'Premium';
-    var eggLabel  = (item.egg || item.egg_type) === 'eggless' ? '💚 Eggless' : '❤️ With Egg';
+    var eggType = item.egg || item.egg_type || '';
+    var eggLabel = eggType === 'na' ? '🎉 Accessory' : (eggType === 'eggless' ? '💚 Eggless' : '❤️ With Egg');
     var packLabel = item.pack || item.pack_label || '4pcs';
     var toppingStr = (item.toppings && item.toppings.length) ? ' · +' + item.toppings[0] : '';
     var emoji = emojis[idx % emojis.length];
@@ -4264,6 +4332,7 @@ function showPage(name){
   }
   if (name === 'tracking') {
     setTimeout(loadLiveTrackingData, 100);
+    setTimeout(spawnAccConfetti, 300);
   }
   if (name === 'explore') {
     // Reset search when opening explore
@@ -6087,6 +6156,178 @@ function editAddress(a) {
 
   // Scroll form into view
   f.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+// ── ACCESSORY CATEGORY EMOJIS ──
+var ACC_EMOJIS = {
+  balloons:'🎈', candles:'🕯️', decoration_kits:'🎊',
+  banners:'🎀', return_gifts:'🎁', party_props:'📸',
+  accessories:'🎉'
+};
+
+var ACC_GRADIENTS = {
+  balloons:'linear-gradient(135deg,#1a0035,#ff6eb4)',
+  candles:'linear-gradient(135deg,#0d001a,#f59e0b)',
+  decoration_kits:'linear-gradient(135deg,#0d001a,#ff9500)',
+  banners:'linear-gradient(135deg,#0d001a,#ec4899)',
+  return_gifts:'linear-gradient(135deg,#0d001a,#10b981)',
+  party_props:'linear-gradient(135deg,#0d001a,#8b5cf6)',
+  accessories:'linear-gradient(135deg,#1a0035,#6e0977)'
+};
+
+// ── LOAD ACCESSORIES FROM SUPABASE ──
+var _accLoaded = false;
+var _allAccProducts = [];
+
+async function loadAccessories() {
+  if (_accLoaded) { renderAccGrid(_allAccProducts); return; }
+  var grid = document.getElementById('acc-products-grid');
+  if (!grid) return;
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--dim)"><div style="font-size:32px;margin-bottom:10px">🎈</div><div>Loading accessories...</div></div>';
+
+  try {
+    var { data: products, error } = await db
+      .from('products')
+      .select('id,name,sku,description,accessory_category,is_featured,product_variants(id,pack_label,price,weight_grams)')
+      .eq('product_type','accessory')
+      .eq('is_active', true)
+      .order('is_featured', { ascending: false });
+
+    if (error) throw error;
+
+    if (!products || products.length === 0) {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--dim)"><div style="font-size:40px;margin-bottom:12px">🎈</div><div style="font-size:14px;font-weight:600;color:var(--white)">Coming Soon!</div><div style="font-size:12px;margin-top:6px">Party accessories launching shortly</div></div>';
+      return;
+    }
+
+    _allAccProducts = products;
+    _accLoaded = true;
+    renderAccGrid(products);
+    spawnAccConfetti();
+
+  } catch(e) {
+    console.warn('loadAccessories:', e.message);
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--dim)">Could not load products. Please try again.</div>';
+  }
+}
+
+function renderAccGrid(products) {
+  var grid = document.getElementById('acc-products-grid');
+  if (!grid) return;
+
+  if (products.length === 0) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--dim)">No products in this category</div>';
+    return;
+  }
+
+  grid.innerHTML = products.map(function(p) {
+    var variants = (p.product_variants || []).sort(function(a,b){ return (a.price||0)-(b.price||0); });
+    var price    = variants.length > 0 ? variants[0].price : 0;
+    var pack     = variants.length > 0 ? (variants[0].pack_label || '1 pc') : '1 pc';
+    var cat      = p.accessory_category || 'accessories';
+    var emoji    = ACC_EMOJIS[cat] || '🎉';
+    var gradient = ACC_GRADIENTS[cat] || ACC_GRADIENTS.accessories;
+    var imgUrl   = getProductImage(p.sku);
+    var isFeatured = p.is_featured;
+
+    var imgSection = imgUrl
+      ? '<div style="width:100%;height:120px;position:relative;overflow:hidden">'
+        + '<img src="' + imgUrl + '" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
+        + '<div style="display:none;width:100%;height:100%;background:' + gradient + ';align-items:center;justify-content:center;font-size:44px">' + emoji + '</div>'
+        + '<div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,.4))"></div>'
+        + (isFeatured ? '<div style="position:absolute;top:8px;left:8px;background:rgba(255,110,180,.3);color:#ffb3f0;border:1px solid rgba(255,110,180,.4);font-size:9px;font-weight:700;padding:3px 8px;border-radius:8px">POPULAR</div>' : '')
+        + '</div>'
+      : '<div style="width:100%;height:120px;display:flex;align-items:center;justify-content:center;font-size:46px;background:' + gradient + ';position:relative">'
+        + emoji
+        + (isFeatured ? '<div style="position:absolute;top:8px;left:8px;background:rgba(255,110,180,.3);color:#ffb3f0;border:1px solid rgba(255,110,180,.4);font-size:9px;font-weight:700;padding:3px 8px;border-radius:8px">POPULAR</div>' : '')
+        + '</div>';
+
+    return '<div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:20px;overflow:hidden;cursor:pointer;transition:all .25s" data-acc-cat="' + cat + '" onclick="openAccDetail(\'' + p.id + '\')">'
+      + imgSection
+      + '<div style="padding:10px 11px 12px">'
+      + '<div style="font-size:12px;font-weight:600;color:var(--white);margin-bottom:3px;line-height:1.3">' + p.name + '</div>'
+      + '<div style="font-size:10px;color:rgba(255,255,255,.45);margin-bottom:8px;line-height:1.4">' + (p.description || '') + '</div>'
+      + '<div style="display:flex;align-items:center;justify-content:space-between">'
+      + '<div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:18px;font-weight:700;color:#ffb3f0">₹' + price + '</div>'
+      + '<div style="font-size:9px;color:rgba(255,255,255,.35);margin-top:1px">' + pack + '</div>'
+      + '</div>'
+      + '<button onclick="event.stopPropagation();quickAddAccToCart(this,\'' + p.id + '\',\'' + p.name.replace(/'/g,"\\'") + '\',' + price + ',\'' + (p.sku||'') + '\',\'' + pack + '\')" '
+      + 'style="width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#9c0ca1,#6e0977);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s">+</button>'
+      + '</div>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+function selAccCat(el) {
+  document.querySelectorAll('.acc-cat').forEach(function(c) {
+    c.style.background  = 'rgba(255,255,255,.06)';
+    c.style.borderColor = 'rgba(255,255,255,.12)';
+    c.style.color       = 'rgba(255,255,255,.65)';
+    c.style.fontWeight  = '600';
+  });
+  el.style.background  = 'var(--p)';
+  el.style.borderColor = 'var(--p)';
+  el.style.color       = '#fff';
+  el.style.fontWeight  = '700';
+
+  var cat = el.getAttribute('data-cat');
+  var cards = document.querySelectorAll('#acc-products-grid > div[data-acc-cat]');
+  var shown = 0;
+  cards.forEach(function(card) {
+    var match = cat === 'all' || card.getAttribute('data-acc-cat') === cat;
+    card.style.display = match ? '' : 'none';
+    if (match) shown++;
+  });
+}
+
+function quickAddAccToCart(btn, productId, name, price, sku, pack) {
+  cartItems.push({
+    product_name: name,
+    name:         name,
+    tier:         'standard',
+    egg:          'na',
+    egg_type:     'na',
+    pack:         pack,
+    pack_label:   pack,
+    qty:          1,
+    quantity:     1,
+    base_price:   price,
+    topping_price:0,
+    toppings:     [],
+    line_total:   price,
+    sku:          sku,
+    product_type: 'accessory'
+  });
+
+  renderCart();
+
+  var badge = document.getElementById('cart-badge');
+  if (badge) { badge.classList.add('bump'); setTimeout(function(){ badge.classList.remove('bump'); }, 200); }
+
+  var o = btn.innerHTML;
+  btn.innerHTML = '✓';
+  btn.style.background = 'linear-gradient(135deg,#10b981,#059669)';
+  setTimeout(function(){ btn.innerHTML = o; btn.style.background = ''; }, 1100);
+
+  showToast('✓ ' + name + ' added!');
+}
+
+function openAccDetail(productId) {
+  showToast('Opening product...');
+}
+
+function spawnAccConfetti() {
+  var colors = ['#ff6eb4','#ffb347','#7c3aed','#10b981','#f59e0b','#ec4899'];
+  ['acc-page-confetti','acc-teaser-confetti'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    for(var i=0;i<14;i++){
+      var d = document.createElement('div');
+      d.style.cssText = 'position:absolute;width:'+(4+Math.random()*5)+'px;height:'+(4+Math.random()*5)+'px;border-radius:1px;background:'+colors[i%colors.length]+';left:'+Math.random()*100+'%;top:'+Math.random()*30+'%;animation:drift '+(3+Math.random()*4)+'s ease-in-out infinite '+(Math.random()*2)+'s;opacity:'+(0.3+Math.random()*0.5);
+      el.appendChild(d);
+    }
+  });
 }
 
 </script>
