@@ -6258,8 +6258,31 @@ async function saveCustomOrderEdit() {
 }
 // ── Handle mobile back button ──
 window.addEventListener('popstate', function(e) {
+  // Close VS detail sheet if open
+  var vsSheet = document.getElementById('vs-detail-sheet');
+  if (vsSheet && vsSheet.style.display !== 'none') {
+    closeVsDetail();
+    return;
+  }
+  // Close tracking detail if open
+  var tdSheet = document.getElementById('tracking-detail-sheet');
+  if (tdSheet && tdSheet.style.display !== 'none') {
+    closeTrackingDetail();
+    return;
+  }
+  // Close custom order detail if open
+  var codSheet = document.getElementById('cod-sheet');
+  if (codSheet && codSheet.style.display !== 'none') {
+    closeCustomOrderDetail();
+    return;
+  }
+  // Close custom order edit if open
+  var coeSheet = document.getElementById('coe-sheet');
+  if (coeSheet && coeSheet.style.display !== 'none') {
+    closeCustomOrderEdit();
+    return;
+  }
   var page = (e.state && e.state.page) || 'home';
-  // Don't use showPage() here — it would push another history entry
   setNav(page);
   try { localStorage.setItem('cc_last_page', page); } catch(e2) {}
   var cur = document.querySelector('.page.active');
@@ -6267,7 +6290,6 @@ window.addEventListener('popstate', function(e) {
   var nxt = document.getElementById('page-' + page);
   if (nxt) { nxt.classList.add('active'); nxt.scrollTop = 0; }
   if (page === 'cart') renderCart();
-  // Close any open sheets
   closeTrackingDetail();
   closeCustomOrderDetail();
 });
@@ -6368,7 +6390,7 @@ async function loadAccessories() {
   try {
     var { data: products, error } = await db
     .from('products')
-    .select('id,name,sku,description,accessory_category,is_featured,product_type,product_variants(id,pack_label,price,weight_grams)')
+    .select('id,name,sku,description,accessory_category,is_featured,product_type,product_variants(id,pack_label,price,weight_grams,pieces)')
     .eq('is_active', true)
     .in('sku', ['ACC-BALLOON-01','ACC-CANDLE-01','ACC-DECOR-01','ACC-BANNER-01','ACC-RETURN-01','ACC-PROPS-01']);
 
@@ -6665,7 +6687,7 @@ async function openVsDetail(productId) {
   if (!product) {
     var { data } = await db
       .from('products')
-      .select('id,name,sku,description,accessory_category,is_featured,product_variants(id,pack_label,price,weight_grams)')
+      .select('id,name,sku,description,accessory_category,is_featured,product_variants(id,pack_label,price,weight_grams,pieces)')
       .eq('id', productId)
       .single();
     product = data;
@@ -6692,7 +6714,7 @@ var safeHTML = function(id, val) {
 // Set first variant as default
 if (variants.length > 0) {
   _vsdPrice     = variants[0].price || 0;
-  _vsdPack      = variants[0].pack_label || '1 pc';
+  _vsdPack      = variants[0].pack_label || (variants[0].pieces ? variants[0].pieces + ' pc' : '1 pc');
   _vsdVariantId = variants[0].id;
 }
 
@@ -6711,14 +6733,19 @@ safeHTML('vsd-name', nameFirst + ' <em style="font-style:italic;color:#6e0977">'
 safeHTML('vsd-tags', tags.map(function(t){
   return '<div style="padding:5px 12px;border:1px solid #ddd0ea;font-size:10px;color:#7a6080;letter-spacing:.5px;border-radius:1px">' + t + '</div>';
 }).join(''));
-  safeHTML('vsd-variants', variants.map(function(v, i) {
+  // Store variants globally for safe access
+window._vsdVariants = variants;
+
+safeHTML('vsd-variants', variants.map(function(v, i) {
     var isOn = i === 0;
-    return '<div onclick="vsdSelVar(this,\'' + v.id + '\',' + v.price + ',\'' + (v.pack_label||'1 pc') + '\')" '
+    var packLabel = v.pack_label || (v.pieces ? v.pieces + ' pc' : '1 pc');
+    return '<div onclick="vsdSelVarIdx(' + i + ')" '
+      + 'data-idx="' + i + '" '
       + 'style="flex-shrink:0;min-width:80px;padding:10px 8px;border:1.5px solid '
       + (isOn ? '#6e0977' : '#ddd0ea')
       + ';background:' + (isOn ? 'rgba(110,9,119,.06)' : 'transparent')
       + ';text-align:center;cursor:pointer;transition:all .2s;border-radius:1px">'
-      + '<div style="font-size:11px;font-weight:600;color:' + (isOn ? '#6e0977' : '#1a0820') + '">' + (v.pack_label || '1 pc') + '</div>'
+      + '<div style="font-size:11px;font-weight:600;color:' + (isOn ? '#6e0977' : '#1a0820') + '">' + packLabel + '</div>'
       + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:14px;color:#6e0977;margin-top:2px">₹' + v.price + '</div>'
       + '</div>';
   }).join(''));
@@ -6742,6 +6769,7 @@ safeHTML('vsd-tags', tags.map(function(t){
   // Show sheet
   document.getElementById('vs-detail-overlay').style.display = 'block';
   document.getElementById('vs-detail-sheet').style.display   = 'block';
+  history.pushState({ page: 'accessories', sheet: 'vs-detail' }, '', '#accessories');
 }
 
 function vsdBuildGallery() {
@@ -6807,23 +6835,25 @@ function vsdNav(dir) {
   vsdSetImg((_vsdCurImg + dir + _vsdImages.length) % _vsdImages.length);
 }
 
-function vsdSelVar(el, variantId, price, pack) {
-  document.querySelectorAll('#vsd-variants > div').forEach(function(v){
-    v.style.borderColor = '#ddd0ea';
-    v.style.background  = 'transparent';
-    v.querySelector('div').style.color = '#1a0820';
+function vsdSelVarIdx(i) {
+  var v = window._vsdVariants && window._vsdVariants[i];
+  if (!v) return;
+  var packLabel = v.pack_label || (v.pieces ? v.pieces + ' pc' : '1 pc');
+
+  document.querySelectorAll('#vsd-variants > div').forEach(function(el, idx) {
+    var isOn = idx === i;
+    el.style.borderColor = isOn ? '#6e0977' : '#ddd0ea';
+    el.style.background  = isOn ? 'rgba(110,9,119,.06)' : 'transparent';
+    el.querySelector('div').style.color = isOn ? '#6e0977' : '#1a0820';
   });
-  el.style.borderColor = '#6e0977';
-  el.style.background  = 'rgba(110,9,119,.06)';
-  el.querySelector('div').style.color = '#6e0977';
 
-  _vsdPrice     = price;
-  _vsdPack      = pack;
-  _vsdVariantId = variantId;
+  _vsdPrice     = v.price;
+  _vsdPack      = packLabel;
+  _vsdVariantId = v.id;
 
-  document.getElementById('vsd-price').textContent = '₹' + price;
-  document.getElementById('vsd-pack').textContent  = pack;
-  document.getElementById('vsd-total').textContent = price * _vsdQty;
+  document.getElementById('vsd-price').textContent = '₹' + v.price;
+  document.getElementById('vsd-pack').textContent  = packLabel;
+  document.getElementById('vsd-total').textContent = v.price * _vsdQty;
 }
 
 function vsdQty(d) {
