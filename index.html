@@ -937,19 +937,27 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
       <div id="pgrid-empty" style="display:none;text-align:center;padding:20px 22px 8px">
         <div style="font-size:13px;color:var(--dim)">No featured items</div>
       </div>
-      <!-- PARTY ACCESSORIES TEASER -->
-      <div onclick="showPage('accessories')" style="margin:0 16px 20px;position:relative;border-radius:22px;overflow:hidden;cursor:pointer;height:110px;background:linear-gradient(135deg,#1a0035,#3d0060,#6e0977)">
-        <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,110,180,.15),rgba(255,180,50,.1))"></div>
-        <div id="acc-teaser-confetti" style="position:absolute;inset:0;pointer-events:none;overflow:hidden"></div>
-        <div style="position:relative;z-index:2;padding:18px 16px;height:100%;display:flex;align-items:center;justify-content:space-between">
+      <!-- THE VIBE STORE TEASER — Option A -->
+      <div onclick="showPage('accessories')" style="margin:0 16px 20px;position:relative;border-radius:0px;overflow:hidden;height:120px;cursor:pointer">
+        <div style="position:absolute;inset:0;background:#1a0820"></div>
+        <div style="position:absolute;top:0;bottom:0;right:0;width:45%;background:#faf8fc"></div>
+        <div style="position:absolute;top:0;bottom:0;right:45%;width:1px;background:#6e0977;opacity:.4"></div>
+        <svg style="position:absolute;top:-30px;right:3%;width:110px;height:110px;opacity:.12;pointer-events:none" viewBox="0 0 110 110" fill="none">
+          <circle cx="55" cy="55" r="52" stroke="#6e0977" stroke-width="0.5"/>
+          <circle cx="55" cy="55" r="40" stroke="#6e0977" stroke-width="0.5"/>
+          <circle cx="55" cy="55" r="28" stroke="#6e0977" stroke-width="0.5"/>
+          <line x1="3" y1="55" x2="107" y2="55" stroke="#6e0977" stroke-width="0.5"/>
+          <line x1="55" y1="3" x2="55" y2="107" stroke="#6e0977" stroke-width="0.5"/>
+        </svg>
+        <div style="position:relative;z-index:2;padding:20px 18px;height:100%;display:flex;align-items:center;justify-content:space-between">
           <div>
-            <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,.7);letter-spacing:2px;text-transform:uppercase;margin-bottom:5px">NEW · Party Store</div>
-            <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:#fff;line-height:1.1">Party <span style="font-style:italic;color:#ffb3f0">Accessories</span></div>
-            <div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:3px">Balloons · Decor · Candles · More</div>
+            <div style="font-size:8px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:6px">NSDI · New Arrival</div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:#fff;line-height:.95;letter-spacing:-1px">The<br><span style="font-style:italic;color:#e8d0f8">Vibe Store</span></div>
           </div>
-          <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
-            <div style="font-size:36px">🎈</div>
-            <div style="background:rgba(255,255,255,.9);color:#3d0060;font-size:10px;font-weight:800;padding:5px 12px;border-radius:20px">Shop Now →</div>
+          <div style="text-align:right">
+            <div style="font-family:'Cormorant Garamond',serif;font-size:42px;font-weight:300;color:#6e0977;line-height:1">6+</div>
+            <div style="font-size:8px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#6e0977;opacity:.7">Collections</div>
+            <div style="display:inline-block;margin-top:6px;background:#6e0977;color:#fff;font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:6px 12px">Explore →</div>
           </div>
         </div>
       </div>
@@ -2103,46 +2111,121 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         </div>
       </div>
     </div>
-    <!-- ═══ PARTY ACCESSORIES PAGE ═══ -->
-<div class="page" id="page-accessories">
-  <!-- Hero -->
-  <div style="position:relative;overflow:hidden;min-height:160px">
-    <div style="position:absolute;inset:0;background:linear-gradient(135deg,#1a0035,#3d0060,#6e0977)"></div>
-    <div id="acc-page-confetti" style="position:absolute;inset:0;pointer-events:none;overflow:hidden"></div>
-    <div style="position:relative;z-index:2;padding:16px 20px 20px">
-      <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:4px 12px;margin-bottom:10px">
-        <span style="width:5px;height:5px;border-radius:50%;background:#ff9de2;display:inline-block;animation:hmPulse 1.5s infinite"></span>
-        <span style="font-size:9px;font-weight:700;color:rgba(255,255,255,.9);letter-spacing:2px;text-transform:uppercase">New · The Vibe Store</span>
-      </div>
-      <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:700;color:#fff;line-height:1.1;margin-bottom:4px">The Vibe <span style="font-style:italic;color:#ffb3f0">Store</span></div>
-      <div style="font-size:12px;color:rgba(255,255,255,.6)">Everything to make it magical ✨</div>
-    </div>
-  </div>
+        <!-- ═══ THE VIBE STORE ═══ -->
+    <div class="page" id="page-accessories">
 
-  <!-- Category Filter -->
-  <div id="acc-cat-chips" style="display:flex;gap:8px;overflow-x:auto;padding:14px 20px 4px;scrollbar-width:none">
-    <div class="acc-cat on" data-cat="all" onclick="selAccCat(this)" style="flex-shrink:0;padding:7px 14px;border-radius:20px;background:var(--p);border:1.5px solid var(--p);font-size:11px;font-weight:700;color:#fff;cursor:pointer;white-space:nowrap">🌟 All</div>
-    <div class="acc-cat" data-cat="balloons" onclick="selAccCat(this)" style="flex-shrink:0;min-width:fit-content;padding:7px 14px;border-radius:20px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);font-size:11px;font-weight:600;color:rgba(255,255,255,.65);cursor:pointer;white-space:nowrap">🎈 Balloons</div>
-    <div class="acc-cat" data-cat="decoration_kits" onclick="selAccCat(this)" style="flex-shrink:0;min-width:fit-content;padding:7px 14px;border-radius:20px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);font-size:11px;font-weight:600;color:rgba(255,255,255,.65);cursor:pointer;white-space:nowrap">🎊 Decoration</div>
-    <div class="acc-cat" data-cat="candles" onclick="selAccCat(this)" style="flex-shrink:0;min-width:fit-content;padding:7px 14px;border-radius:20px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);font-size:11px;font-weight:600;color:rgba(255,255,255,.65);cursor:pointer;white-space:nowrap">🕯️ Candles</div>
-    <div class="acc-cat" data-cat="banners" onclick="selAccCat(this)" style="flex-shrink:0;min-width:fit-content;padding:7px 14px;border-radius:20px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);font-size:11px;font-weight:600;color:rgba(255,255,255,.65);cursor:pointer;white-space:nowrap">🎀 Banners</div>
-    <div class="acc-cat" data-cat="return_gifts" onclick="selAccCat(this)" style="flex-shrink:0;min-width:fit-content;padding:7px 14px;border-radius:20px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);font-size:11px;font-weight:600;color:rgba(255,255,255,.65);cursor:pointer;white-space:nowrap">🎁 Return Gifts</div>
-    <div class="acc-cat" data-cat="party_props" onclick="selAccCat(this)" style="flex-shrink:0;min-width:fit-content;padding:7px 14px;border-radius:20px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);font-size:11px;font-weight:600;color:rgba(255,255,255,.65);cursor:pointer;white-space:nowrap">📸 Props</div>
-  </div>
+      <style>
+      .vs-hero{position:relative;background:#faf8fc;padding:16px 24px 24px;border-bottom:1px solid #e8d8f0}
+      .vs-hero-deco{position:absolute;top:0;right:0;width:180px;height:180px;opacity:.08;overflow:hidden;pointer-events:none}
+      .vs-eyebrow{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+      .vs-eyebrow-line{width:28px;height:1px;background:#6e0977}
+      .vs-eyebrow-text{font-size:9px;font-weight:600;letter-spacing:3.5px;text-transform:uppercase;color:#6e0977}
+      .vs-title{font-family:'Cormorant Garamond',serif;font-size:52px;font-weight:300;color:#1a0820;line-height:.92;letter-spacing:-1.5px;margin-bottom:8px}
+      .vs-title em{font-style:italic;color:#6e0977;font-weight:400}
+      .vs-title strong{font-weight:600;color:#1a0820}
+      .vs-tagline{font-size:11px;color:#7a6080;letter-spacing:.8px;line-height:1.6;margin-bottom:22px;max-width:260px}
+      .vs-hero-stats{display:flex;gap:0;border-top:1px solid #e8d8f0;padding-top:18px}
+      .vs-hstat{flex:1;text-align:center;padding:0 8px}
+      .vs-hstat+.vs-hstat{border-left:1px solid #e8d8f0}
+      .vs-hstat-n{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:#6e0977;line-height:1}
+      .vs-hstat-l{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:#a090b0;margin-top:3px}
+      .vs-cats-bar{display:flex;gap:6px;padding:16px 22px 14px;overflow-x:auto;scrollbar-width:none;background:#faf8fc;border-bottom:1px solid #e8d8f0;flex-shrink:0}
+      .vs-cats-bar::-webkit-scrollbar{display:none}
+      .vs-chip{flex-shrink:0;padding:6px 14px;border:1px solid #ddd0ea;background:transparent;font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#7a6080;cursor:pointer;transition:all .2s;white-space:nowrap;border-radius:1px}
+      .vs-chip.on{background:#6e0977;border-color:#6e0977;color:#fff}
+      .vs-chip:active{transform:scale(.96)}
+      .vs-sec-hdr{display:flex;align-items:center;gap:14px;padding:18px 22px 12px;background:#faf8fc}
+      .vs-sec-line{flex:1;height:1px;background:#e8d8f0}
+      .vs-sec-lbl{font-size:8px;font-weight:600;letter-spacing:3px;text-transform:uppercase;color:#6e0977;white-space:nowrap}
+      .vs-pgrid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#e8d8f0}
+      .vs-pcard{background:#faf8fc;cursor:pointer;transition:background .2s;position:relative;overflow:hidden}
+      .vs-pcard:active{background:#f3eaf8}
+      .vs-pcard-wide{grid-column:1/-1}
+      .vs-pimg{width:100%;height:130px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+      .vs-pimg-wide{width:130px;height:120px;flex-shrink:0}
+      .vs-pemoji{font-size:50px;position:relative;z-index:2;transition:transform .3s}
+      .vs-pcard:active .vs-pemoji{transform:scale(1.08)}
+      .vs-ptag{position:absolute;bottom:10px;left:10px;font-size:7px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:3px 9px}
+      .vs-ptag-p{background:#6e0977;color:#fff}
+      .vs-ptag-d{background:#1a0820;color:#f5eaff}
+      .vs-pbody{padding:14px 14px 16px}
+      .vs-pbody-wide{padding:16px 18px;display:flex;flex-direction:column;justify-content:center;flex:1}
+      .vs-pcat{font-size:7px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#9c0ca1;margin-bottom:5px}
+      .vs-pname{font-family:'Cormorant Garamond',serif;font-size:19px;font-weight:400;color:#1a0820;line-height:1.2;margin-bottom:4px}
+      .vs-pname em{font-style:italic;font-weight:300;color:#6e0977}
+      .vs-pdesc{font-size:10px;color:#7a6080;line-height:1.5;margin-bottom:10px}
+      .vs-pfoot{display:flex;align-items:flex-end;justify-content:space-between}
+      .vs-pprice{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:600;color:#1a0820}
+      .vs-pprice-sub{font-size:8px;letter-spacing:1px;text-transform:uppercase;color:#a090b0;margin-top:1px}
+      .vs-padd{width:32px;height:32px;background:transparent;border:1px solid #6e0977;color:#6e0977;font-size:20px;font-weight:300;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s;flex-shrink:0;font-family:'Cormorant Garamond',serif}
+      .vs-padd:active{background:#6e0977;color:#fff;transform:scale(.9)}
+      .vs-strip{grid-column:1/-1;background:linear-gradient(135deg,#3d0060,#6e0977);padding:20px 22px;display:flex;align-items:center;gap:16px;position:relative;overflow:hidden}
+      .vs-strip::before{content:'';position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.05)}
+      .vs-strip-btn{flex-shrink:0;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:8px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:9px 16px;cursor:pointer;transition:all .2s;white-space:nowrap;position:relative;z-index:1;font-family:'DM Sans',sans-serif}
+      .vs-strip-btn:active{background:rgba(255,255,255,.25)}
+      .vs-footer-bar{padding:20px 22px;border-top:1px solid #e8d8f0;display:flex;align-items:center;gap:12px;background:#faf8fc}
+      .vs-fline{flex:1;height:1px;background:#e8d8f0}
+      .vs-ftxt{font-size:8px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#c0a0d0;white-space:nowrap}
+      .vs-acc-toast{margin:0 22px 12px;background:linear-gradient(135deg,#6e0977,#9c0ca1);padding:11px 16px;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#fff;text-align:center;display:none;border-radius:2px}
+      #acc-loading{grid-column:1/-1;text-align:center;padding:50px 20px;background:#faf8fc}
+      </style>
 
-      <!-- Products Grid -->
-      <div id="acc-products-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:12px 20px 16px">
-        <div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--dim)">Loading...</div>
-      </div>
-
-      <!-- Bundle Banner -->
-      <div style="margin:4px 20px 16px;background:linear-gradient(135deg,rgba(255,180,100,.12),rgba(255,100,180,.12));border:1px solid rgba(255,180,100,.25);border-radius:18px;padding:14px 16px;display:flex;align-items:center;gap:12px">
-        <div style="font-size:28px">🎂</div>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:700;color:var(--white)">Bundle & Save!</div>
-          <div style="font-size:11px;color:var(--dim);margin-top:2px">Add brownies + accessories together</div>
+      <!-- HERO -->
+      <div class="vs-hero">
+        <svg class="vs-hero-deco" viewBox="0 0 180 180" fill="none">
+          <circle cx="140" cy="40" r="80" stroke="#6e0977" stroke-width="0.5"/>
+          <circle cx="140" cy="40" r="60" stroke="#6e0977" stroke-width="0.5"/>
+          <circle cx="140" cy="40" r="40" stroke="#6e0977" stroke-width="0.5"/>
+          <line x1="60" y1="0" x2="180" y2="120" stroke="#6e0977" stroke-width="0.5"/>
+          <line x1="80" y1="0" x2="180" y2="100" stroke="#6e0977" stroke-width="0.5"/>
+        </svg>
+        <div class="vs-eyebrow">
+          <div class="vs-eyebrow-line"></div>
+          <span class="vs-eyebrow-text">NSDI ChocoCravings · Est. 2024</span>
         </div>
-        <div onclick="showPage('explore')" style="background:linear-gradient(135deg,#ff9de2,#ffb347);color:#3d0060;font-size:11px;font-weight:800;padding:8px 14px;border-radius:10px;cursor:pointer;flex-shrink:0">Browse →</div>
+        <div class="vs-title">The<br><em>Vibe</em><br><strong>Store</strong></div>
+        <div class="vs-tagline">Curated party essentials for your most extraordinary celebrations</div>
+        <div class="vs-hero-stats">
+          <div class="vs-hstat"><div class="vs-hstat-n" id="vs-count">6+</div><div class="vs-hstat-l">Collections</div></div>
+          <div class="vs-hstat"><div class="vs-hstat-n">₹99</div><div class="vs-hstat-l">Starts at</div></div>
+          <div class="vs-hstat"><div class="vs-hstat-n">Same</div><div class="vs-hstat-l">Day ready</div></div>
+        </div>
+      </div>
+
+      <!-- CATEGORY CHIPS -->
+      <div class="vs-cats-bar" id="vs-cats-bar">
+        <div class="vs-chip on" data-cat="all" onclick="vsFilter(this)">✦ All</div>
+        <div class="vs-chip" data-cat="balloons" onclick="vsFilter(this)">Balloons</div>
+        <div class="vs-chip" data-cat="decoration_kits" onclick="vsFilter(this)">Décor</div>
+        <div class="vs-chip" data-cat="candles" onclick="vsFilter(this)">Candles</div>
+        <div class="vs-chip" data-cat="banners" onclick="vsFilter(this)">Banners</div>
+        <div class="vs-chip" data-cat="return_gifts" onclick="vsFilter(this)">Return Gifts</div>
+        <div class="vs-chip" data-cat="party_props" onclick="vsFilter(this)">Props</div>
+      </div>
+
+      <!-- SECTION HEADER -->
+      <div class="vs-sec-hdr">
+        <div class="vs-sec-lbl">The Collection</div>
+        <div class="vs-sec-line"></div>
+        <div class="vs-sec-lbl">2024</div>
+      </div>
+
+      <!-- PRODUCTS GRID -->
+      <div class="vs-pgrid" id="vs-pgrid">
+        <div id="acc-loading">
+          <div style="font-size:32px;margin-bottom:10px">🎈</div>
+          <div style="font-size:13px;color:#7a6080;font-family:'Cormorant Garamond',serif;font-style:italic">Loading The Vibe Store...</div>
+        </div>
+      </div>
+
+      <!-- TOAST -->
+      <div class="vs-acc-toast" id="vs-acc-toast"></div>
+
+      <!-- FOOTER -->
+      <div class="vs-footer-bar">
+        <div class="vs-fline"></div>
+        <div class="vs-ftxt">The Vibe Store · NSDI ChocoCravings</div>
+        <div class="vs-fline"></div>
       </div>
 
       <div style="height:10px"></div>
@@ -2173,6 +2256,80 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
       <div class="loader"></div>
       <div class="loading-txt">Loading…</div>
     </div>
+
+    <!-- VIBE STORE PRODUCT DETAIL SHEET -->
+    <div id="vs-detail-overlay" onclick="closeVsDetail()"
+      style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;
+      background:rgba(0,0,0,.55);z-index:2000;backdrop-filter:blur(4px)"></div>
+
+    <div id="vs-detail-sheet"
+      style="display:none;position:absolute;bottom:0;left:0;right:0;
+      background:#faf8fc;border-radius:24px 24px 0 0;
+      border-top:1px solid #e8d8f0;z-index:2001;
+      max-height:90%;overflow-y:auto;font-family:'DM Sans',sans-serif">
+
+      <div style="width:40px;height:4px;border-radius:2px;background:#ddd0ea;margin:14px auto 0"></div>
+
+      <!-- GALLERY -->
+      <div id="vsd-gallery-main" style="width:100%;height:220px;position:relative;overflow:hidden;background:linear-gradient(145deg,#f8f0fc,#edd8f5);transition:background .3s">
+        <div id="vsd-gallery-emoji" style="font-size:80px;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);transition:all .3s;z-index:2"></div>
+        <img id="vsd-gallery-img" src="" alt="" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;inset:0">
+        <div onclick="vsdNav(-1)" style="position:absolute;top:50%;left:10px;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.85);border:1px solid #e8d8f0;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;z-index:3">‹</div>
+        <div onclick="vsdNav(1)" style="position:absolute;top:50%;right:10px;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.85);border:1px solid #e8d8f0;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;z-index:3">›</div>
+        <div id="vsd-gallery-dots" style="position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:5px;z-index:3"></div>
+      </div>
+
+      <!-- THUMBNAILS -->
+      <div id="vsd-thumbs" style="display:flex;gap:8px;padding:12px 18px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid #e8d8f0"></div>
+
+      <!-- BODY -->
+      <div style="padding:16px 18px 0">
+        <div id="vsd-eyebrow" style="font-size:8px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#9c0ca1;margin-bottom:6px"></div>
+        <div id="vsd-name" style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:400;color:#1a0820;line-height:1.15;margin-bottom:6px"></div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px">
+          <span style="font-size:12px;color:#c9a633">★★★★★</span>
+          <span style="font-size:12px;font-weight:600;color:#1a0820">4.9</span>
+          <span style="font-size:11px;color:#a090b0" id="vsd-orders">· 0 orders</span>
+        </div>
+
+        <!-- PRICE ROW -->
+        <div style="display:flex;align-items:center;justify-content:space-between;background:#f5f0fc;border:1px solid #e8d8f0;border-radius:12px;padding:12px 14px;margin-bottom:14px">
+          <div>
+            <div id="vsd-price" style="font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:600;color:#1a0820">₹0</div>
+            <div id="vsd-pack" style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#a090b0;margin-top:2px"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <button onclick="vsdQty(-1)" style="width:30px;height:30px;border-radius:8px;background:#6e0977;color:#fff;border:none;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .18s">−</button>
+            <div id="vsd-qty" style="font-size:15px;font-weight:700;color:#1a0820;min-width:20px;text-align:center">1</div>
+            <button onclick="vsdQty(1)" style="width:30px;height:30px;border-radius:8px;background:#6e0977;color:#fff;border:none;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .18s">+</button>
+          </div>
+        </div>
+
+        <!-- VARIANTS -->
+        <div style="font-size:8px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#6e0977;margin-bottom:8px">Select Pack</div>
+        <div id="vsd-variants" style="display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;scrollbar-width:none"></div>
+
+        <!-- DESCRIPTION -->
+        <div style="height:1px;background:#e8d8f0;margin-bottom:14px"></div>
+        <div style="font-size:8px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#6e0977;margin-bottom:8px">About this product</div>
+        <div id="vsd-desc" style="font-size:12px;color:#5a4060;line-height:1.7;margin-bottom:14px"></div>
+
+        <!-- TAGS -->
+        <div id="vsd-tags" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px"></div>
+
+        <!-- ADD TO CART -->
+        <button id="vsd-add-btn" onclick="vsdAddToCart()"
+          style="width:100%;padding:15px;background:linear-gradient(135deg,#6e0977,#9c0ca1);
+          color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;
+          border:none;border-radius:2px;cursor:pointer;display:flex;align-items:center;
+          justify-content:center;gap:8px;margin-bottom:20px;letter-spacing:.5px;transition:all .2s">
+          🛒 Add to Cart — ₹<span id="vsd-total">0</span>
+        </button>
+
+      </div>
+    </div>
+
+    <!-- TRACKING DETAIL SHEET -->
     
     <!-- TRACKING DETAIL SHEET -->
 <div id="tracking-detail-overlay" onclick="closeTrackingDetail()"
@@ -4069,6 +4226,7 @@ setTimeout(updateCartDots, 100);
     }
     if (lastPage === 'orders')    setTimeout(function(){ showPage('profile'); setTimeout(loadAndShowOrders, 300); }, 100);
     if (lastPage === 'addresses') setTimeout(function(){ showPage('profile'); setTimeout(loadAndShowAddresses, 300); }, 100);
+    if (lastPage === 'accessories') setTimeout(function(){ showPage('accessories'); }, 100);
   } catch(e) {}
 })();
 // Load products dynamically
@@ -4323,6 +4481,9 @@ function showPage(name){
       window._profileLastLoaded = now;
       setTimeout(loadProfileData, 450); // wait for slide animation to finish
     }
+  }
+  if (name === 'accessories') {
+  loadAccessories();
   }
   if (name === 'custom-order') {
     setTimeout(updateBrowniePreview, 100);
@@ -6175,39 +6336,190 @@ var ACC_GRADIENTS = {
 };
 
 // ── LOAD ACCESSORIES FROM SUPABASE ──
+
 var _accLoaded = false;
 var _allAccProducts = [];
 
+var VS_EMOJIS = {
+  balloons:'🎈', candles:'🕯️', decoration_kits:'🎊',
+  banners:'🎀', return_gifts:'🎁', party_props:'📸', accessories:'🎉'
+};
+var VS_BG = {
+  balloons:'linear-gradient(145deg,#f8f0fc,#edd8f5)',
+  candles:'linear-gradient(145deg,#fdf5f0,#fce8d8)',
+  decoration_kits:'linear-gradient(145deg,#f5f0fc,#e8d8f5)',
+  banners:'linear-gradient(145deg,#fdf5f8,#f8dde8)',
+  return_gifts:'linear-gradient(145deg,#f0f8f0,#dceedd)',
+  party_props:'linear-gradient(145deg,#f5f0fc,#e8d0f0)',
+  accessories:'linear-gradient(145deg,#f8f0fc,#edd8f5)'
+};
+var VS_CAT_LABELS = {
+  balloons:'Balloons', candles:'Candles', decoration_kits:'Decoration',
+  banners:'Banners', return_gifts:'Return Gifts', party_props:'Party Props',
+  accessories:'Accessories'
+};
+
 async function loadAccessories() {
-  if (_accLoaded) { renderAccGrid(_allAccProducts); return; }
-  var grid = document.getElementById('acc-products-grid');
+  _accLoaded = false;
+  _allAccProducts = [];
+  var grid = document.getElementById('vs-pgrid');
   if (!grid) return;
-  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--dim)"><div style="font-size:32px;margin-bottom:10px">🎈</div><div>Loading accessories...</div></div>';
 
   try {
     var { data: products, error } = await db
-      .from('products')
-      .select('id,name,sku,description,accessory_category,is_featured,product_variants(id,pack_label,price,weight_grams)')
-      .eq('product_type','accessory')
-      .eq('is_active', true)
-      .order('is_featured', { ascending: false });
+    .from('products')
+    .select('id,name,sku,description,accessory_category,is_featured,product_type,product_variants(id,pack_label,price,weight_grams)')
+    .eq('is_active', true)
+    .in('sku', ['ACC-BALLOON-01','ACC-CANDLE-01','ACC-DECOR-01','ACC-BANNER-01','ACC-RETURN-01','ACC-PROPS-01']);
 
-    if (error) throw error;
-
+  console.log('VIBE STORE:', products, error);
     if (!products || products.length === 0) {
-      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--dim)"><div style="font-size:40px;margin-bottom:12px">🎈</div><div style="font-size:14px;font-weight:600;color:var(--white)">Coming Soon!</div><div style="font-size:12px;margin-top:6px">The Vibe Store launching shortly</div></div>';
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:50px 20px;background:#faf8fc"><div style="font-size:40px;margin-bottom:12px">🎈</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:18px;font-style:italic;color:#6e0977">Coming Soon</div><div style="font-size:11px;color:#7a6080;margin-top:6px">Party accessories launching shortly</div></div>';
       return;
     }
 
     _allAccProducts = products;
     _accLoaded = true;
-    renderAccGrid(products);
-    spawnAccConfetti();
+
+    var countEl = document.getElementById('vs-count');
+    if (countEl) countEl.textContent = products.length + '+';
+
+    vsRenderGrid(products);
 
   } catch(e) {
-    console.warn('loadAccessories:', e.message);
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--dim)">Could not load products. Please try again.</div>';
+    console.error('loadAccessories:', e);
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;background:#faf8fc;color:#9c0ca1">Could not load. Please try again.</div>';
   }
+}
+
+function vsRenderGrid(products) {
+  var grid = document.getElementById('vs-pgrid');
+  if (!grid) return;
+
+  if (!products || products.length === 0) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;background:#faf8fc;color:#7a6080">No products in this category</div>';
+    return;
+  }
+
+  var html = products.map(function(p, i) {
+    var variants = (p.product_variants || []).sort(function(a,b){ return (a.price||0)-(b.price||0); });
+    var price    = variants.length > 0 ? variants[0].price : 0;
+    var pack     = variants.length > 0 ? (variants[0].pack_label || '1 pc') : '1 pc';
+    var cat      = p.accessory_category || 'accessories';
+    var emoji    = VS_EMOJIS[cat] || '🎉';
+    var bg       = VS_BG[cat]    || VS_BG.accessories;
+    var catLabel = VS_CAT_LABELS[cat] || 'Accessories';
+    var isFeatured = p.is_featured;
+    var isWide   = (i === 2 || i === 4); // every 3rd card is wide
+
+    var nameParts = p.name.split(' ');
+    var nameFirst = nameParts.slice(0, nameParts.length - 1).join(' ');
+    var nameLast  = nameParts[nameParts.length - 1];
+
+    var imgUrl = getProductImage(p.sku);
+    var imgContent = imgUrl
+      ? '<img src="' + imgUrl + '" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'">'
+        + '<span class="vs-pemoji" style="display:none">' + emoji + '</span>'
+      : '<span class="vs-pemoji">' + emoji + '</span>';
+
+    if (isWide) {
+      return '<div class="vs-pcard vs-pcard-wide" data-acc-cat="' + cat + '" onclick="openVsDetail(\'' + p.id + '\')">'
+        + '<div style="display:flex;align-items:stretch">'
+        + '<div class="vs-pimg vs-pimg-wide" style="background:' + bg + '">'
+        + imgContent
+        + (isFeatured ? '<div class="vs-ptag vs-ptag-p">POPULAR</div>' : '<div class="vs-ptag vs-ptag-d">NEW</div>')
+        + '</div>'
+        + '<div class="vs-pbody-wide">'
+        + '<div class="vs-pcat">' + catLabel + '</div>'
+        + '<div class="vs-pname" style="font-size:22px">' + nameFirst + ' <em>' + nameLast + '</em></div>'
+        + '<div class="vs-pdesc">' + (p.description || '') + '</div>'
+        + '<div class="vs-pfoot">'
+        + '<div><div class="vs-pprice" style="font-size:26px">₹' + price + '</div><div class="vs-pprice-sub">' + pack + '</div></div>'
+        + '<button class="vs-padd" onclick="vsAddToCart(this,\'' + p.id + '\',\'' + p.name.replace(/'/g,"\\'") + '\',' + price + ',\'' + (p.sku||'') + '\',\'' + pack + '\')">+</button>'
+        + '</div>'
+        + '</div>'
+        + '</div>'
+        + '</div>';
+    }
+
+    return '<div class="vs-pcard" data-acc-cat="' + cat + '" onclick="openVsDetail(\'' + p.id + '\')">'
+      + '<div class="vs-pimg" style="background:' + bg + '">'
+      + imgContent
+      + (isFeatured ? '<div class="vs-ptag vs-ptag-p">POPULAR</div>' : '')
+      + '</div>'
+      + '<div class="vs-pbody">'
+      + '<div class="vs-pcat">' + catLabel + '</div>'
+      + '<div class="vs-pname">' + nameFirst + ' <em>' + nameLast + '</em></div>'
+      + '<div class="vs-pdesc">' + (p.description || '') + '</div>'
+      + '<div class="vs-pfoot">'
+      + '<div><div class="vs-pprice">₹' + price + '</div><div class="vs-pprice-sub">' + pack + '</div></div>'
+      + '<button class="vs-padd" onclick="vsAddToCart(this,\'' + p.id + '\',\'' + p.name.replace(/'/g,"\\'") + '\',' + price + ',\'' + (p.sku||'') + '\',\'' + pack + '\')">+</button>'
+      + '</div>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+
+  // Bundle strip at end
+  html += '<div class="vs-strip">'
+    + '<div style="flex:1;position:relative;z-index:1">'
+    + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:300;color:#fff;line-height:1.2;margin-bottom:3px">Bundle with <em style="font-style:italic;color:#e8b4ff">Brownies</em></div>'
+    + '<div style="font-size:10px;color:rgba(255,255,255,.55)">Add accessories alongside your order</div>'
+    + '</div>'
+    + '<button class="vs-strip-btn" onclick="showPage(\'explore\')">Explore →</button>'
+    + '</div>';
+
+  grid.innerHTML = html;
+}
+
+function vsFilter(el) {
+  document.querySelectorAll('.vs-chip').forEach(function(c){
+    c.classList.remove('on');
+  });
+  el.classList.add('on');
+  var cat = el.getAttribute('data-cat');
+  document.querySelectorAll('#vs-pgrid .vs-pcard[data-acc-cat]').forEach(function(card){
+    card.style.display = (cat === 'all' || card.getAttribute('data-acc-cat') === cat) ? '' : 'none';
+  });
+}
+
+function vsAddToCart(btn, productId, name, price, sku, pack) {
+  cartItems.push({
+    product_name:  name,
+    name:          name,
+    tier:          'standard',
+    egg:           'na',
+    egg_type:      'na',
+    pack:          pack,
+    pack_label:    pack,
+    qty:           1,
+    quantity:      1,
+    base_price:    price,
+    topping_price: 0,
+    toppings:      [],
+    line_total:    price,
+    sku:           sku,
+    product_type:  'accessory'
+  });
+
+  renderCart();
+
+  var badge = document.getElementById('cart-badge');
+  if (badge) { badge.classList.add('bump'); setTimeout(function(){ badge.classList.remove('bump'); }, 200); }
+
+  var o = btn.innerHTML;
+  btn.innerHTML = '✓';
+  btn.style.background = '#6e0977';
+  btn.style.color = '#fff';
+  setTimeout(function(){ btn.innerHTML = o; btn.style.background = ''; btn.style.color = ''; }, 1200);
+
+  var toast = document.getElementById('vs-acc-toast');
+  if (toast) {
+    toast.textContent = '✦ ' + name.toUpperCase() + ' added to cart — ₹' + price;
+    toast.style.display = 'block';
+    setTimeout(function(){ toast.style.display = 'none'; }, 2400);
+  }
+
+  showToast('✓ ' + name + ' added!');
 }
 
 function renderAccGrid(products) {
@@ -6329,7 +6641,240 @@ function spawnAccConfetti() {
     }
   });
 }
+// ══ VIBE STORE PRODUCT DETAIL ══
+var _vsdProduct   = null;
+var _vsdImages    = [];
+var _vsdCurImg    = 0;
+var _vsdQty       = 1;
+var _vsdPrice     = 0;
+var _vsdPack      = '';
+var _vsdVariantId = null;
 
+var VS_FEAT_TAGS = {
+  balloons:       ['Same day ready','Premium latex','Satin ribbon','10 pcs'],
+  candles:        ['Number candles','Star candles','Safe wax','Colourful'],
+  decoration_kits:['Complete kit','Easy setup','Reusable parts','All in one'],
+  banners:        ['Foil finish','Reusable','Easy hang','Gold letters'],
+  return_gifts:   ['Surprise inside','Min 10 pcs','Premium box','Ready to give'],
+  party_props:    ['10 piece set','Fun designs','Photo ready','Durable'],
+  accessories:    ['Premium quality','Same day ready','Party essential']
+};
+
+async function openVsDetail(productId) {
+  var product = _allAccProducts.find(function(p){ return p.id === productId; });
+  if (!product) {
+    var { data } = await db
+      .from('products')
+      .select('id,name,sku,description,accessory_category,is_featured,product_variants(id,pack_label,price,weight_grams)')
+      .eq('id', productId)
+      .single();
+    product = data;
+  }
+  if (!product) return;
+
+  _vsdProduct = product;
+  _vsdQty     = 1;
+  _vsdCurImg  = 0;
+
+  var cat      = product.accessory_category || 'accessories';
+var catLabel = VS_CAT_LABELS[cat] || 'Accessories';
+var emoji    = VS_EMOJIS[cat] || '🎉';
+var variants = (product.product_variants || []).sort(function(a,b){ return (a.price||0)-(b.price||0); });
+var tags     = VS_FEAT_TAGS[cat] || VS_FEAT_TAGS.accessories;  // ← must be here
+
+var safeSet = function(id, val) {
+  var el = document.getElementById(id); if (el) el.textContent = val;
+};
+var safeHTML = function(id, val) {
+  var el = document.getElementById(id); if (el) el.innerHTML = val;
+};
+
+// Set first variant as default
+if (variants.length > 0) {
+  _vsdPrice     = variants[0].price || 0;
+  _vsdPack      = variants[0].pack_label || '1 pc';
+  _vsdVariantId = variants[0].id;
+}
+
+safeSet('vsd-eyebrow', catLabel + ' · The Vibe Store');
+safeSet('vsd-orders',  '· ' + (Math.floor(Math.random()*80)+10) + ' orders');
+safeSet('vsd-qty',     '1');
+safeSet('vsd-total',   _vsdPrice);
+safeSet('vsd-price',   '₹' + _vsdPrice);
+safeSet('vsd-pack',    _vsdPack);
+safeSet('vsd-desc',    product.description || 'Premium quality party accessory.');
+
+var parts     = product.name.split(' ');
+var nameFirst = parts.slice(0, parts.length-1).join(' ');
+var nameLast  = parts[parts.length-1];
+safeHTML('vsd-name', nameFirst + ' <em style="font-style:italic;color:#6e0977">' + nameLast + '</em>');
+safeHTML('vsd-tags', tags.map(function(t){
+  return '<div style="padding:5px 12px;border:1px solid #ddd0ea;font-size:10px;color:#7a6080;letter-spacing:.5px;border-radius:1px">' + t + '</div>';
+}).join(''));
+  safeHTML('vsd-variants', variants.map(function(v, i) {
+    var isOn = i === 0;
+    return '<div onclick="vsdSelVar(this,\'' + v.id + '\',' + v.price + ',\'' + (v.pack_label||'1 pc') + '\')" '
+      + 'style="flex-shrink:0;min-width:80px;padding:10px 8px;border:1.5px solid '
+      + (isOn ? '#6e0977' : '#ddd0ea')
+      + ';background:' + (isOn ? 'rgba(110,9,119,.06)' : 'transparent')
+      + ';text-align:center;cursor:pointer;transition:all .2s;border-radius:1px">'
+      + '<div style="font-size:11px;font-weight:600;color:' + (isOn ? '#6e0977' : '#1a0820') + '">' + (v.pack_label || '1 pc') + '</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:14px;color:#6e0977;margin-top:2px">₹' + v.price + '</div>'
+      + '</div>';
+  }).join(''));
+  // Gallery
+  // Build images array
+  _vsdImages = [];
+  var mainImg = getProductImage(product.sku);
+  if (mainImg) {
+    _vsdImages.push({ type:'img', src: mainImg });
+  }
+  variants.slice(0, 3).forEach(function(v) {
+    _vsdImages.push({ type:'emoji', emoji: emoji, bg: VS_BG[cat] || VS_BG.accessories, label: v.pack_label });
+  });
+  if (_vsdImages.length === 0) {
+    _vsdImages.push({ type:'emoji', emoji: emoji, bg: VS_BG[cat] || VS_BG.accessories });
+  }
+
+  // Gallery
+  vsdBuildGallery();
+
+  // Show sheet
+  document.getElementById('vs-detail-overlay').style.display = 'block';
+  document.getElementById('vs-detail-sheet').style.display   = 'block';
+}
+
+function vsdBuildGallery() {
+  var dotsEl  = document.getElementById('vsd-gallery-dots');
+  var thumbsEl = document.getElementById('vsd-thumbs');
+
+  dotsEl.innerHTML = _vsdImages.map(function(img, i){
+    return '<div onclick="vsdSetImg(' + i + ')" '
+      + 'style="width:' + (i===0?'18':'6') + 'px;height:6px;border-radius:' + (i===0?'3':'50%') + 'px;'
+      + 'background:' + (i===0?'#6e0977':'rgba(110,9,119,.25)') + ';cursor:pointer;transition:all .2s"></div>';
+  }).join('');
+
+  thumbsEl.innerHTML = _vsdImages.map(function(img, i){
+    var inner = img.type === 'img'
+      ? '<img src="' + img.src + '" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\'">'
+      : (img.emoji || '🎉');
+    return '<div onclick="vsdSetImg(' + i + ')" '
+      + 'style="width:56px;height:56px;border-radius:8px;border:' + (i===0?'2':'1.5') + 'px solid '
+      + (i===0?'#6e0977':'#ddd0ea') + ';overflow:hidden;cursor:pointer;flex-shrink:0;'
+      + 'display:flex;align-items:center;justify-content:center;background:#f5f0fc;font-size:24px">'
+      + inner + '</div>';
+  }).join('');
+
+  vsdSetImg(0);
+}
+
+function vsdSetImg(i) {
+  _vsdCurImg = i;
+  var img    = _vsdImages[i];
+  var main   = document.getElementById('vsd-gallery-main');
+  var imgEl  = document.getElementById('vsd-gallery-img');
+  var emoji  = document.getElementById('vsd-gallery-emoji');
+
+  if (img.type === 'img') {
+    imgEl.src          = img.src;
+    imgEl.style.display = 'block';
+    emoji.style.display = 'none';
+    main.style.background = '#f5f0fc';
+  } else {
+    imgEl.style.display   = 'none';
+    emoji.style.display   = 'block';
+    emoji.textContent     = img.emoji || '🎉';
+    main.style.background = img.bg || VS_BG.accessories;
+  }
+
+  // Update dots
+  var dots = document.getElementById('vsd-gallery-dots').children;
+  for(var d=0;d<dots.length;d++){
+    dots[d].style.width      = d===i ? '18px' : '6px';
+    dots[d].style.borderRadius = d===i ? '3px' : '50%';
+    dots[d].style.background   = d===i ? '#6e0977' : 'rgba(110,9,119,.25)';
+  }
+
+  // Update thumbs
+  var thumbs = document.getElementById('vsd-thumbs').children;
+  for(var t=0;t<thumbs.length;t++){
+    thumbs[t].style.borderColor = t===i ? '#6e0977' : '#ddd0ea';
+    thumbs[t].style.borderWidth = t===i ? '2px' : '1.5px';
+  }
+}
+
+function vsdNav(dir) {
+  vsdSetImg((_vsdCurImg + dir + _vsdImages.length) % _vsdImages.length);
+}
+
+function vsdSelVar(el, variantId, price, pack) {
+  document.querySelectorAll('#vsd-variants > div').forEach(function(v){
+    v.style.borderColor = '#ddd0ea';
+    v.style.background  = 'transparent';
+    v.querySelector('div').style.color = '#1a0820';
+  });
+  el.style.borderColor = '#6e0977';
+  el.style.background  = 'rgba(110,9,119,.06)';
+  el.querySelector('div').style.color = '#6e0977';
+
+  _vsdPrice     = price;
+  _vsdPack      = pack;
+  _vsdVariantId = variantId;
+
+  document.getElementById('vsd-price').textContent = '₹' + price;
+  document.getElementById('vsd-pack').textContent  = pack;
+  document.getElementById('vsd-total').textContent = price * _vsdQty;
+}
+
+function vsdQty(d) {
+  _vsdQty = Math.max(1, _vsdQty + d);
+  document.getElementById('vsd-qty').textContent   = _vsdQty;
+  document.getElementById('vsd-total').textContent = _vsdPrice * _vsdQty;
+}
+
+function vsdAddToCart() {
+  if (!_vsdProduct) return;
+  cartItems.push({
+    product_name:  _vsdProduct.name,
+    name:          _vsdProduct.name,
+    tier:          'standard',
+    egg:           'na',
+    egg_type:      'na',
+    pack:          _vsdPack,
+    pack_label:    _vsdPack,
+    qty:           _vsdQty,
+    quantity:      _vsdQty,
+    base_price:    _vsdPrice,
+    topping_price: 0,
+    toppings:      [],
+    line_total:    _vsdPrice * _vsdQty,
+    sku:           _vsdProduct.sku,
+    product_type:  'accessory'
+  });
+
+  renderCart();
+
+  var badge = document.getElementById('cart-badge');
+  if (badge) { badge.classList.add('bump'); setTimeout(function(){ badge.classList.remove('bump'); }, 200); }
+
+  var btn = document.getElementById('vsd-add-btn');
+  if (btn) {
+    btn.innerHTML = '✓ Added to Cart!';
+    btn.style.background = 'linear-gradient(135deg,#10b981,#059669)';
+    setTimeout(function(){
+      btn.innerHTML = '🛒 Add to Cart — ₹<span id="vsd-total">' + (_vsdPrice * _vsdQty) + '</span>';
+      btn.style.background = 'linear-gradient(135deg,#6e0977,#9c0ca1)';
+    }, 1400);
+  }
+
+  showToast('✓ ' + _vsdProduct.name + ' added!');
+  setTimeout(closeVsDetail, 1500);
+}
+
+function closeVsDetail() {
+  document.getElementById('vs-detail-overlay').style.display = 'none';
+  document.getElementById('vs-detail-sheet').style.display   = 'none';
+}
 </script>
 </body>
 </html>
