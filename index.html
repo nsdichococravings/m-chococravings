@@ -728,8 +728,6 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         </svg>
         <span id="notif-badge" style="display:none;position:absolute;top:2px;right:2px;min-width:16px;height:16px;border-radius:8px;background:#9c0ca1;color:#fff;font-size:9px;font-weight:700;align-items:center;justify-content:center;padding:0 3px;border:2px solid #fcfcfc;font-family:'DM Sans',sans-serif;line-height:1"></span>
       </button>
-      <img src="/SourceCode_Bkp/src/logo/Original_on_transparent.png"     alt="NSDI ChocoCravings"     style="height: 50px; object-fit: contain;"  />
-      
       <button class="menu-btn" onclick="toggleHamburgerMenu()">
         <svg width="22" height="16" viewBox="0 0 22 16" fill="none">
           <rect width="22" height="2.5" rx="1.25" fill="#6e0977"/>
@@ -1034,7 +1032,10 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
     <!-- ═══ DETAIL ═══ -->
     <div class="page" id="page-detail">
       <div class="dhero">
-        <img src="/SourceCode_Bkp/src/logo/diya.jpeg" alt="NSDI ChocoCravings Brownie" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;"/>
+        <img id="detail-hero-img" src="" alt="NSDI ChocoCravings Brownie"
+            style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;display:none"
+            onerror="this.style.display='none';document.getElementById('detail-hero-emoji').style.display='flex'">
+        <div id="detail-hero-emoji" style="font-size:108px;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#fcfcfc,#f0d4f0,#fcfcfc)">🍫</div>
         <div class="back" onclick="goBack()">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -5252,6 +5253,8 @@ async function placeOrder() {
     const { data, error } = await db.from('orders').insert([orderInsert]).select().single();
     if (error) throw error;
 
+    orderData.id = data.id; // ← this line is missing — causes all downstream failures
+
     // 2. Save order items — look up product_id & variant_id from Supabase
     const orderId = data.id;
     const itemRows = await Promise.all(cartItems.map(async function(i) {
@@ -5654,10 +5657,30 @@ function openDetail(el) {
   // Reset toppings
   resetToppings();
 
-  // Refresh prices
-  refreshPrices();
+    // Refresh prices
+    refreshPrices();
 
-  showPage('detail');
+    var heroImg   = document.getElementById('detail-hero-img');
+    var heroEmoji = document.getElementById('detail-hero-emoji');
+    var imgUrl    = getProductImage(data.sku);
+
+    if (heroImg && imgUrl) {
+    heroImg.src            = imgUrl;
+    heroImg.style.display  = 'block';
+    if (heroEmoji) heroEmoji.style.display = 'none';
+    } else {
+    if (heroImg)   heroImg.style.display   = 'none';
+    if (heroEmoji) {
+        heroEmoji.style.display    = 'flex';
+        heroEmoji.textContent      = getEmojiForProduct(data.name || '');
+    }
+    }
+
+    // Update detail hero emoji fallback
+    var heroEmoji = document.querySelector('#page-detail .dhero .hc-emoji');
+    if (heroEmoji) heroEmoji.textContent = getEmojiForProduct(data.name || '');
+
+    showPage('detail');
 }
 
 async function loadProducts() {
@@ -7053,11 +7076,6 @@ function closeNotificationSheet() {
   }, 220);
 }
 
-function closeNotificationSheet() {
-  document.getElementById('notif-overlay').style.display = 'none';
-  document.getElementById('notif-sheet').style.display   = 'none';
-}
-
 function renderNotifList() {
   var list = document.getElementById('notif-list');
   var lbl  = document.getElementById('notif-unread-lbl');
@@ -7106,10 +7124,10 @@ function renderNotifList() {
 
     groups[dateLabel].forEach(function(n, gi) {
       var isRead = !!n.read_at;
-      var ic     = iconColor[n.type] || iconColor.system;
+      var ic = iconColor[n.template_name] || iconColor[n.type] || iconColor.system;
       var timeStr = n.sent_at ? new Date(n.sent_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) : '';
       var orderLink = n.order_id
-        ? '<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#6e0977;margin-top:5px">View order →</div>'
+        ? '<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#6e0977;margin-top:5px"></div>'
         : '';
 
       html += '<div onclick="markNotifRead(\'' + n.id + '\')" '
@@ -7177,63 +7195,106 @@ async function markAllNotifsRead() {
   } catch(e) {}
 }
 
-// ── Insert notification into DB ──
 async function insertNotification(orderId, type, subject, message) {
-  if (!currentUser || !currentUser.db_id) return;
+  if (!currentUser || !currentUser.db_id) {
+    console.warn('insertNotification: no currentUser');
+    return;
+  }
   try {
     var row = {
-      order_id:    orderId    || null,
+      order_id:    orderId || null,
       customer_id: currentUser.db_id,
-      type:        type,
-      direction:   'inbound',
+      type:        'whatsapp',       // ← valid type per constraint
+      direction:   'inbound',        // ← valid direction per constraint
       recipient:   currentUser.phone || currentUser.email || '',
       subject:     subject,
       message:     message,
-      status:      'delivered',
+      status:      'delivered',      // ← valid status per constraint
+      template_name: type,           // ← store our custom type here instead
       sent_at:     new Date().toISOString(),
       delivered_at:new Date().toISOString()
     };
-    var { data } = await db.from('notifications').insert([row]).select('*').single();
+    console.log('Inserting notification:', row);
+    var { data, error } = await db.from('notifications').insert([row]).select('*').single();
+    if (error) {
+      console.error('Notification insert error:', error.message, error.hint);
+      return;
+    }
     if (data) {
       _notifData.unshift(data);
       updateNotifBadge();
     }
-  } catch(e) { console.warn('insertNotification:', e.message); }
+  } catch(e) {
+    console.error('insertNotification exception:', e.message);
+  }
 }
 
 // ── Subscribe to order status changes in realtime ──
 function subscribeOrderNotifications() {
   if (!currentUser || !currentUser.db_id) return;
-  db.channel('order-status-' + currentUser.db_id)
+  try { db.removeAllChannels(); } catch(e) {}
+
+  var STATUS_NOTIF = {
+    confirmed:         { icon:'✅', subject:'Order Confirmed!',       message:'Your order {num} has been confirmed.' },
+    ready_for_baking:  { icon:'🍫', subject:'Baking Starts Soon!',    message:'Your brownies for {num} are being prepared.' },
+    baking:            { icon:'🔥', subject:'Fresh Out the Oven!',     message:'Your order {num} is in the oven right now!' },
+    ready_to_dispatch: { icon:'📦', subject:'Packed with Love!',       message:'Order {num} is packed and ready to dispatch.' },
+    shipped:           { icon:'🚚', subject:'On the Way!',             message:'Your order {num} has been shipped.' },
+    out_for_delivery:  { icon:'🛵', subject:'Almost There!',           message:'Order {num} is out for delivery!' },
+    delivered:         { icon:'🎉', subject:'Delivered! Enjoy 🍫',     message:'Order {num} delivered. Enjoy your ChocoCravings!' },
+    cancelled:         { icon:'❌', subject:'Order Cancelled',         message:'Your order {num} has been cancelled.' }
+  };
+
+  db.channel('order-updates-' + currentUser.db_id)
     .on('postgres_changes', {
       event:  'UPDATE',
       schema: 'public',
       table:  'orders',
       filter: 'customer_id=eq.' + currentUser.db_id
-    }, function(payload) {
-      var order  = payload.new;
-      var status = order.status;
-      var num    = order.order_number || '#' + order.id.slice(0,6);
-      var msgMap = {
-        confirmed:         { subject: 'Order Confirmed! ✅',          message: 'Your order ' + num + ' has been confirmed by NSDI ChocoCravings.' },
-        ready_for_baking:  { subject: 'Baking Started 🍫',            message: 'Your brownies are now being prepared fresh for ' + num + '.' },
-        baking:            { subject: 'Fresh Out the Oven! 🔥',        message: 'Your order ' + num + ' is baking right now.' },
-        ready_to_dispatch: { subject: 'Packed with Love 📦',           message: 'Order ' + num + ' is packed and ready for dispatch.' },
-        shipped:           { subject: 'On the Way! 🚚',                message: 'Your order ' + num + ' has been shipped.' },
-        out_for_delivery:  { subject: 'Almost There! 🛵',              message: 'Your order ' + num + ' is out for delivery.' },
-        delivered:         { subject: 'Delivered! Enjoy 🎉',           message: 'Order ' + num + ' delivered. Enjoy your ChocoCravings!' },
-        cancelled:         { subject: 'Order Cancelled ❌',            message: 'Your order ' + num + ' has been cancelled.' }
-      };
-      var notif = msgMap[status];
-      if (notif) {
-        insertNotification(order.id, 'order_' + status.replace('ready_for_baking','baking').replace('ready_to_dispatch','packed'), notif.subject, notif.message);
-        showToast(notif.subject);
-        // Refresh tracking if open
-        var trackPage = document.getElementById('page-tracking');
-        if (trackPage && trackPage.classList.contains('active')) loadLiveTrackingData();
+    }, async function(payload) {
+      var order     = payload.new;
+      var oldStatus = payload.old && payload.old.status;
+      var newStatus = order.status;
+      if (!newStatus || newStatus === oldStatus) return;
+
+      var notif = STATUS_NOTIF[newStatus];
+      if (!notif) return;
+
+      var num     = order.order_number || ('#' + (order.id||'').slice(0,6));
+      var subject = notif.subject;
+      var message = notif.message.replace('{num}', num);
+      var type    = 'order_' + newStatus;
+
+      // 1. Insert into notifications table
+      await insertNotification(order.id, type, subject, message);
+
+      // 2. Toast
+      showToast(notif.icon + ' ' + subject);
+
+      // 3. Pulse bell
+      var bellBtn = document.getElementById('notif-btn');
+      if (bellBtn) {
+        bellBtn.style.transform  = 'scale(1.35)';
+        setTimeout(function(){ bellBtn.style.transform = 'scale(1)'; }, 300);
+        setTimeout(function(){ bellBtn.style.transform = 'scale(1.2)'; }, 500);
+        setTimeout(function(){ bellBtn.style.transform = 'scale(1)'; }, 700);
+      }
+
+      // 4. Refresh live tracking if open
+      var trackPage = document.getElementById('page-tracking');
+      if (trackPage && trackPage.classList.contains('active')) {
+        setTimeout(loadLiveTrackingData, 500);
+      }
+
+      // 5. Refresh notif dropdown if open
+      var sheet = document.getElementById('notif-sheet');
+      if (sheet && sheet.style.display === 'flex') {
+        renderNotifList();
       }
     })
-    .subscribe();
+    .subscribe(function(status) {
+      console.log('Realtime subscription status:', status);
+    });
 }
 
 // ── Call on startup (after auth) ──
