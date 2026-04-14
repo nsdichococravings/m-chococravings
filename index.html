@@ -769,7 +769,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
       </div>-->
 
       <div class="greet">
-        <div class="greet-main">What's your <em>craving</em> today?</div>
+        <div class="greet-main" id="greet-main">What's your <em>craving</em> today?</div>
       </div>
       <!--
       <div class="loc">
@@ -2696,7 +2696,12 @@ function updateProfileUI() {
   el = document.getElementById('prof-avatar'); if(el) el.textContent = '👤';
   el = document.getElementById('prof-name');   if(el) el.textContent = name;
   el = document.getElementById('prof-phone');  if(el) el.textContent = phone + city;
-  
+    // Update home greeting with customer name
+    var greetEl = document.getElementById('greet-main');
+    var firstName = (currentUser.name || '').split(' ')[0];
+    if (greetEl && firstName) {
+    greetEl.innerHTML = 'What\'s your <em>craving</em> today, <em>' + firstName + '</em>?';
+    }
 }
 
 var _profileLoading = false;
@@ -7229,15 +7234,23 @@ async function insertNotification(orderId, type, subject, message) {
   }
 }
 
-// ── Subscribe to order status changes in realtime ──
 function subscribeOrderNotifications() {
-  if (!currentUser || !currentUser.db_id) return;
-  try { db.removeAllChannels(); } catch(e) {}
+  if (!currentUser || !currentUser.db_id) {
+    console.warn('subscribeOrderNotifications: no db_id');
+    return;
+  }
+
+  console.log('Setting up realtime for customer:', currentUser.db_id);
+
+  // Remove old channels first
+  try { 
+    db.getChannels().forEach(function(ch){ db.removeChannel(ch); });
+  } catch(e) {}
 
   var STATUS_NOTIF = {
     confirmed:         { icon:'✅', subject:'Order Confirmed!',       message:'Your order {num} has been confirmed.' },
     ready_for_baking:  { icon:'🍫', subject:'Baking Starts Soon!',    message:'Your brownies for {num} are being prepared.' },
-    baking:            { icon:'🔥', subject:'Fresh Out the Oven!',     message:'Your order {num} is in the oven right now!' },
+    baking:            { icon:'🔥', subject:'Fresh Out the Oven!',     message:'Your order {num} is baking right now!' },
     ready_to_dispatch: { icon:'📦', subject:'Packed with Love!',       message:'Order {num} is packed and ready to dispatch.' },
     shipped:           { icon:'🚚', subject:'On the Way!',             message:'Your order {num} has been shipped.' },
     out_for_delivery:  { icon:'🛵', subject:'Almost There!',           message:'Order {num} is out for delivery!' },
@@ -7245,62 +7258,193 @@ function subscribeOrderNotifications() {
     cancelled:         { icon:'❌', subject:'Order Cancelled',         message:'Your order {num} has been cancelled.' }
   };
 
+  // ── Subscribe WITHOUT filter (filter by customer_id in handler instead) ──
+  // Filtered subscriptions require exact type match which can fail silently
   db.channel('order-updates-' + currentUser.db_id)
     .on('postgres_changes', {
       event:  'UPDATE',
       schema: 'public',
-      table:  'orders',
-      filter: 'customer_id=eq.' + currentUser.db_id
+      table:  'orders'
+      // NO filter here — we check in handler
     }, async function(payload) {
-      var order     = payload.new;
+      console.log('Realtime order update received:', payload);
+
+      var order = payload.new;
+
+      // ── Manual filter: only process this customer's orders ──
+      if (String(order.customer_id) !== String(currentUser.db_id)) {
+        console.log('Skipping — different customer');
+        return;
+      }
+
       var oldStatus = payload.old && payload.old.status;
       var newStatus = order.status;
+
+      console.log('Status change:', oldStatus, '→', newStatus);
+
       if (!newStatus || newStatus === oldStatus) return;
 
       var notif = STATUS_NOTIF[newStatus];
-      if (!notif) return;
+      if (!notif) {
+        console.log('No notification config for status:', newStatus);
+        return;
+      }
 
       var num     = order.order_number || ('#' + (order.id||'').slice(0,6));
       var subject = notif.subject;
       var message = notif.message.replace('{num}', num);
       var type    = 'order_' + newStatus;
 
-      // 1. Insert into notifications table
+      // Insert notification
       await insertNotification(order.id, type, subject, message);
 
-      // 2. Toast
+      // Toast
       showToast(notif.icon + ' ' + subject);
 
-      // 3. Pulse bell
+      // Pulse bell
       var bellBtn = document.getElementById('notif-btn');
       if (bellBtn) {
-        bellBtn.style.transform  = 'scale(1.35)';
+        bellBtn.style.transform = 'scale(1.35)';
         setTimeout(function(){ bellBtn.style.transform = 'scale(1)'; }, 300);
         setTimeout(function(){ bellBtn.style.transform = 'scale(1.2)'; }, 500);
         setTimeout(function(){ bellBtn.style.transform = 'scale(1)'; }, 700);
       }
 
-      // 4. Refresh live tracking if open
+      // Refresh tracking if open
       var trackPage = document.getElementById('page-tracking');
       if (trackPage && trackPage.classList.contains('active')) {
         setTimeout(loadLiveTrackingData, 500);
       }
 
-      // 5. Refresh notif dropdown if open
+      // Refresh notif dropdown if open
       var sheet = document.getElementById('notif-sheet');
       if (sheet && sheet.style.display === 'flex') {
         renderNotifList();
       }
     })
-    .subscribe(function(status) {
-      console.log('Realtime subscription status:', status);
+    .subscribe(function(status, err) {
+      console.log('Realtime subscription status:', status, err || '');
+      if (status === 'SUBSCRIBED') {
+        console.log('✅ Realtime connected for order updates');
+      } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        console.warn('Realtime unavailable — switching to polling');
+        startOrderPolling();
+        }
     });
 }
 
-// ── Call on startup (after auth) ──
-setTimeout(function() {
-  loadNotifications();
+var _pollingInterval = null;
+var _lastKnownStatuses = {};
+
+function startOrderPolling() {
+  if (_pollingInterval) return; // already polling
+  console.log('Starting order status polling every 30s');
+
+  // Poll immediately then every 30 seconds
+  pollOrderStatuses();
+  _pollingInterval = setInterval(pollOrderStatuses, 30000);
+}
+
+function stopOrderPolling() {
+  if (_pollingInterval) {
+    clearInterval(_pollingInterval);
+    _pollingInterval = null;
+  }
+}
+
+async function pollOrderStatuses() {
+  if (!currentUser || !currentUser.db_id) return;
+  try {
+    var { data: orders } = await db
+      .from('orders')
+      .select('id, order_number, status')
+      .eq('customer_id', currentUser.db_id)
+      .not('status', 'in', '(delivered,cancelled)')
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (!orders || orders.length === 0) return;
+
+    var STATUS_NOTIF = {
+      confirmed:         { icon:'✅', subject:'Order Confirmed!',       message:'Your order {num} has been confirmed.' },
+      ready_for_baking:  { icon:'🍫', subject:'Baking Starts Soon!',    message:'Brownies for {num} are being prepared.' },
+      baking:            { icon:'🔥', subject:'Fresh Out the Oven!',     message:'Your order {num} is baking right now!' },
+      ready_to_dispatch: { icon:'📦', subject:'Packed with Love!',       message:'Order {num} is packed and ready.' },
+      shipped:           { icon:'🚚', subject:'On the Way!',             message:'Your order {num} has been shipped.' },
+      out_for_delivery:  { icon:'🛵', subject:'Almost There!',           message:'Order {num} is out for delivery!' },
+      delivered:         { icon:'🎉', subject:'Delivered! Enjoy 🍫',     message:'Order {num} delivered!' },
+      cancelled:         { icon:'❌', subject:'Order Cancelled',         message:'Your order {num} has been cancelled.' }
+    };
+
+    orders.forEach(async function(order) {
+      var prevStatus = _lastKnownStatuses[order.id];
+
+      // First time seeing this order — just store, don't notify
+      if (prevStatus === undefined) {
+        _lastKnownStatuses[order.id] = order.status;
+        return;
+      }
+
+      // Status changed
+      if (prevStatus !== order.status) {
+        console.log('Status changed:', order.order_number, prevStatus, '→', order.status);
+        _lastKnownStatuses[order.id] = order.status;
+
+        var notif = STATUS_NOTIF[order.status];
+        if (!notif) return;
+
+        // ── Check if notification already exists for this order + status ──
+        var { data: existing } = await db
+        .from('notifications')
+        .select('id')
+        .eq('order_id', order.id)
+        .eq('template_name', 'order_' + order.status)
+        .maybeSingle();
+
+        if (existing) {
+        console.log('Notification already exists for', order.order_number, order.status);
+        return; // Don't insert duplicate
+        }
+
+        var num     = order.order_number;
+        var subject = notif.subject;
+        var message = notif.message.replace('{num}', num);
+
+        await insertNotification(order.id, 'order_' + order.status, subject, message);
+        showToast(notif.icon + ' ' + subject);
+
+        // Pulse bell
+        var bellBtn = document.getElementById('notif-btn');
+        if (bellBtn) {
+          bellBtn.style.transform = 'scale(1.35)';
+          setTimeout(function(){ bellBtn.style.transform = 'scale(1)'; }, 300);
+          setTimeout(function(){ bellBtn.style.transform = 'scale(1.2)'; }, 500);
+          setTimeout(function(){ bellBtn.style.transform = 'scale(1)'; }, 700);
+        }
+
+        // Refresh tracking if open
+        var trackPage = document.getElementById('page-tracking');
+        if (trackPage && trackPage.classList.contains('active')) {
+          setTimeout(loadLiveTrackingData, 500);
+        }
+
+        // Refresh notif dropdown if open
+        var sheet = document.getElementById('notif-sheet');
+        if (sheet && sheet.style.display === 'flex') {
+          renderNotifList();
+        }
+      }
+    });
+  } catch(e) {
+    console.warn('pollOrderStatuses error:', e.message);
+  }
+}
+
+setTimeout(async function() {
+  await loadNotifications();
   subscribeOrderNotifications();
+  // Start polling immediately as backup — works even without realtime
+  startOrderPolling();
 }, 1500);
 
 </script>
