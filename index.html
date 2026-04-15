@@ -1208,6 +1208,23 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
             Redeem →
         </div>
        </div>
+
+      <!-- TIER DISCOUNT BAR -->
+      <div id="tier-discount-bar" style="display:none;margin:0 22px 10px;
+        background:linear-gradient(135deg,rgba(201,166,51,.12),rgba(201,166,51,.06));
+        border:1px solid rgba(201,166,51,.3);border-radius:14px;
+        padding:12px 14px;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--gold)">🏅 Member Benefit</div>
+          <div style="font-size:11px;color:var(--dim);margin-top:2px" id="tier-discount-lbl">Silver member — 5% extra off!</div>
+        </div>
+        <div onclick="applyTierDiscount()"
+          style="background:linear-gradient(135deg,var(--gold),#b8952a);color:#fff;
+          font-size:11px;font-weight:700;padding:8px 14px;border-radius:10px;cursor:pointer">
+          Apply →
+        </div>
+      </div>
+
       <div class="summary">
         <div class="srow"><span class="slbl" id="cart-subtotal-lbl">Subtotal (0 items)</span><span class="sval" id="cart-subtotal">₹0</span></div>
         <div class="srow"><span class="slbl">Delivery</span><span class="sval" style="color:var(--green)">FREE</span></div>
@@ -4572,14 +4589,33 @@ function renderCart() {
   currentOrderTotal = subtotal;
 
   // Show points bar if customer has points
+// Show points bar + tier discount bar
 if (currentUser && currentUser.db_id && cartItems.length > 0) {
-  db.from('customers').select('loyalty_points').eq('id', currentUser.db_id).single()
+  db.from('customers').select('loyalty_points,loyalty_tier').eq('id', currentUser.db_id).single()
     .then(function(res) {
-      var pts = res.data ? res.data.loyalty_points : 0;
+      var pts  = res.data ? res.data.loyalty_points : 0;
+      var tier = res.data ? (res.data.loyalty_tier || 'bronze') : 'bronze';
+
+      // Points bar
       var bar = document.getElementById('points-redeem-bar');
       var lbl = document.getElementById('points-redeem-lbl');
       if (bar) bar.style.display = pts >= 50 ? 'flex' : 'none';
       if (lbl) lbl.textContent = pts + ' points · worth ₹' + Math.floor(pts/50)*5;
+
+      // Tier discount bar
+      if (tier !== 'bronze') {
+        db.from('tier_benefits').select('discount_pct').eq('tier', tier).eq('is_active', true).single()
+          .then(function(tb) {
+            var pct = tb.data ? tb.data.discount_pct : 0;
+            var tierBar = document.getElementById('tier-discount-bar');
+            var tierLbl = document.getElementById('tier-discount-lbl');
+            if (pct > 0 && !appliedPromo) {
+              if (tierBar) tierBar.style.display = 'flex';
+              if (tierLbl) tierLbl.textContent = tier.charAt(0).toUpperCase()+tier.slice(1) + ' member — ' + pct + '% extra off!';
+              window._tierDiscount = { tier: tier, pct: pct };
+            }
+          });
+      }
     });
 }
 
@@ -7646,7 +7682,41 @@ async function redeemPoints() {
 
   showToast('✅ ₹' + redeemDiscount + ' discount applied using ' + pts + ' points!');
 }
+async function applyTierDiscount() {
+  if (!window._tierDiscount || window._tierDiscount.pct <= 0) return;
+  if (appliedPromo) { showToast('Remove existing promo first'); return; }
 
+  var pct      = window._tierDiscount.pct;
+  var tier     = window._tierDiscount.tier;
+  var subtotal = cartItems.reduce(function(s,i){
+    return s + (i.base_price||0) * (i.qty||1) + (i.topping_price||0);
+  }, 0);
+  var discount = Math.round(subtotal * pct / 100);
+
+  appliedPromo = {
+    code:    tier.toUpperCase() + '_MEMBER',
+    discount: discount,
+    offerId:  null,
+    label:   '🏅 ' + tier + ' member ' + pct + '% off'
+  };
+  currentOrderTotal = subtotal - discount;
+
+  var promoRow    = document.getElementById('promo-row-display');
+  var promoLbl    = document.getElementById('promo-lbl');
+  var promoDisc   = document.getElementById('promo-disc');
+  var totalEl     = document.getElementById('cart-total-display');
+  var checkoutBtn = document.getElementById('checkout-btn');
+  if (promoRow)    promoRow.style.display  = 'flex';
+  if (promoLbl)    promoLbl.textContent    = '🏅 ' + tier.charAt(0).toUpperCase()+tier.slice(1) + ' Member ' + pct + '% off';
+  if (promoDisc)   promoDisc.textContent   = '−₹' + discount;
+  if (totalEl)     totalEl.textContent     = '₹' + currentOrderTotal;
+  if (checkoutBtn) checkoutBtn.textContent = '🎉 Proceed to Checkout — ₹' + currentOrderTotal;
+
+  var tierBar = document.getElementById('tier-discount-bar');
+  if (tierBar) tierBar.style.display = 'none';
+
+  showToast('🏅 ' + pct + '% member discount applied — ₹' + discount + ' off!');
+}
 </script>
 </body>
 </html>
