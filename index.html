@@ -936,6 +936,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
           <div class="promo-code">BDAY</div>
         </div>
       </div>
+      
 
       <!-- CATEGORIES -->
       
@@ -1193,6 +1194,20 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         </div>
       </div>
       <div class="promo-row"><span style="font-size:17px">🏷️</span><input class="promo-in" id="promo-input" type="text" placeholder="Enter promo code"><div class="promo-apply" onclick="applyPromo()">Apply</div></div>
+      <div id="points-redeem-bar" style="display:none;margin:0 22px 10px;
+        background:linear-gradient(135deg,rgba(107,47,206,.12),rgba(168,85,247,.08));
+        border:1px solid rgba(107,47,206,.25);border-radius:14px;
+        padding:12px 14px;align-items:center;justify-content:space-between">
+        <div>
+            <div style="font-size:12px;font-weight:700;color:var(--white)">⭐ Your Points</div>
+            <div style="font-size:11px;color:var(--dim);margin-top:2px" id="points-redeem-lbl">0 points available</div>
+        </div>
+        <div onclick="redeemPoints()"
+            style="background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;
+            font-size:11px;font-weight:700;padding:8px 14px;border-radius:10px;cursor:pointer">
+            Redeem →
+        </div>
+       </div>
       <div class="summary">
         <div class="srow"><span class="slbl" id="cart-subtotal-lbl">Subtotal (0 items)</span><span class="sval" id="cart-subtotal">₹0</span></div>
         <div class="srow"><span class="slbl">Delivery</span><span class="sval" style="color:var(--green)">FREE</span></div>
@@ -1246,12 +1261,15 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         <div class="pstats">
           <div class="pstat"><div class="pstat-n" id="prof-orders">0</div><div class="pstat-l">Orders</div></div>
           <div class="pstat"><div class="pstat-n" id="prof-points">0</div><div class="pstat-l">Points</div></div>
-          <div class="pstat"><div class="pstat-n" id="prof-spent">₹0</div><div class="pstat-l">Spent</div></div>
+          <div class="pstat"><div class="pstat-n" id="prof-spent">₹0</div><div class="pstat-l">Enjoyed!</div></div>
         </div>
       </div>
       <div class="lcard">
         <div class="lt" id="prof-tier-lbl">🥉 Bronze Member</div>
-        <div class="lpts"><span id="prof-pts-num">0</span> <span>points</span></div>
+        <div class="lpts">
+            <span id="prof-pts-num">0</span> 
+            <span>points</span>
+        </div>
         <div class="lbar"><div class="lbar-fill" id="prof-lbar" style="width:0%"></div></div>
         <div class="lsub" id="prof-tier-sub">Place your first order to earn points!</div>
       </div>
@@ -2736,9 +2754,9 @@ async function loadProfileData() {
   try {
     // ── Load customer stats from customers table ──
     const { data: cust } = await db.from('customers')
-      .select('name,phone,email,city,loyalty_points,loyalty_tier,total_orders,total_spent,egg_preference,customer_code')
-      .eq('id', currentUser.db_id)
-      .single();
+        .select('name,phone,email,city,loyalty_points,lifetime_points,loyalty_tier,total_orders,total_spent,egg_preference,customer_code')
+        .eq('id', currentUser.db_id)
+        .single();
 
     if (!cust) return;
 
@@ -2750,7 +2768,8 @@ async function loadProfileData() {
     el = document.getElementById('prof-egg');
     if (el) el.textContent = eggPref === 'egg' ? '❤️ With Egg' : eggPref === 'both' ? '🍫 Both' : '💚 Eggless';
     // Stats
-    var pts   = cust.loyalty_points  || 0;
+    var pts          = cust.loyalty_points  || 0; // redeemable balance
+    var lifetimePts  = cust.lifetime_points || pts; // for tier calculation
     // Count actual orders from orders table instead of cached value
     var { data: allOrders } = await db.from('orders')
       .select('id', { count: 'exact' })
@@ -2765,9 +2784,22 @@ async function loadProfileData() {
     
     el = document.getElementById('prof-orders'); if(el) el.textContent = orders;
     el = document.getElementById('prof-points'); if(el) el.textContent = pts;
-    el = document.getElementById('prof-spent');  if(el) el.textContent = '₹' + (spent >= 1000 ? (spent/1000).toFixed(1)+'k' : spent);
+    // Calculate total brownies enjoyed (sum of quantities)
+    var totalPieces = 0;
+    try {
+    var orderIds = allOrders ? allOrders.map(function(o){ return o.id; }) : [];
+    if (orderIds.length > 0) {
+        var { data: itemData } = await db
+        .from('order_items')
+        .select('quantity')
+        .in('order_id', orderIds);
+        totalPieces = itemData ? itemData.reduce(function(s,i){ return s + (i.quantity||1); }, 0) : 0;
+    }
+    } catch(e) { totalPieces = 0; }
+    el = document.getElementById('prof-spent');
+    if(el) el.textContent = totalPieces;
     el = document.getElementById('prof-pts-num'); if(el) el.textContent = pts;
-
+    
     // Loyalty tier
     var tier  = (cust.loyalty_tier || 'bronze').toLowerCase();
     var tierConfig = {
@@ -2778,12 +2810,13 @@ async function loadProfileData() {
     };
     var tc = tierConfig[tier] || tierConfig.bronze;
     el = document.getElementById('prof-tier-lbl'); if(el) el.textContent = tc.icon + ' ' + tc.label;
-    var pct = tc.next ? Math.min(100, Math.round(pts/tc.next*100)) : 100;
+    // Tier progress based on LIFETIME points
+    var pct = tc.next ? Math.min(100, Math.round(lifetimePts/tc.next*100)) : 100;
     el = document.getElementById('prof-lbar'); if(el) el.style.width = pct + '%';
     el = document.getElementById('prof-tier-sub');
     if (el) el.textContent = tc.next
-      ? (tc.next - pts) + ' pts more to unlock next tier!'
-      : '🏆 You have reached the highest tier!';
+    ? (tc.next - lifetimePts) + ' pts more to unlock next tier!'
+    : '🏆 You have reached the highest tier!';
 
     // Orders sub-label
     var { data: activeOrders } = await db.from('orders')
@@ -4538,6 +4571,18 @@ function renderCart() {
   if (paySection) paySection.style.display = cartItems.length > 0 ? 'block' : 'none';
   currentOrderTotal = subtotal;
 
+  // Show points bar if customer has points
+if (currentUser && currentUser.db_id && cartItems.length > 0) {
+  db.from('customers').select('loyalty_points').eq('id', currentUser.db_id).single()
+    .then(function(res) {
+      var pts = res.data ? res.data.loyalty_points : 0;
+      var bar = document.getElementById('points-redeem-bar');
+      var lbl = document.getElementById('points-redeem-lbl');
+      if (bar) bar.style.display = pts >= 50 ? 'flex' : 'none';
+      if (lbl) lbl.textContent = pts + ' points · worth ₹' + Math.floor(pts/50)*5;
+    });
+}
+
 }
 
 function changeQty(idx, delta) {
@@ -5284,6 +5329,75 @@ async function placeOrder() {
     if (error) throw error;
 
     orderData.id = data.id; // ← this line is missing — causes all downstream failures
+
+    // Deduct redeemed points from customer balance
+    if (appliedPromo && appliedPromo.code === 'POINTS') {
+    var ptsUsed = Math.floor(appliedPromo.discount / 5) * 50;
+    console.log('Points to deduct:', ptsUsed);
+    console.log('currentUser:', JSON.stringify(currentUser));
+
+    try {
+        // Step 1 — Get the real UUID from customers table
+        var lookupCol = currentUser.email ? 'email' : 'phone';
+        var lookupVal = currentUser.email || currentUser.phone;
+        console.log('Looking up customer by:', lookupCol, '=', lookupVal);
+
+        var { data: custRow, error: lookupErr } = await db
+        .from('customers')
+        .select('id, loyalty_points')
+        .eq(lookupCol, lookupVal)
+        .single();
+
+        console.log('Customer row:', custRow, 'lookup error:', lookupErr);
+        if (lookupErr || !custRow) throw new Error('Customer not found: ' + (lookupErr?.message || ''));
+
+        var realUUID = custRow.id;
+        var newPts   = Math.max(0, (custRow.loyalty_points || 0) - ptsUsed);
+        console.log('Real UUID:', realUUID, '| Current pts:', custRow.loyalty_points, '| New pts:', newPts);
+
+        // Step 2 — Use RPC (bypasses RLS — guaranteed to work)
+        var { data: rpcResult, error: rpcErr } = await db
+            .rpc('deduct_loyalty_points', {
+            p_customer_id:      realUUID,
+            p_points_to_deduct: ptsUsed
+            });
+        console.log('RPC result:', rpcResult, 'RPC error:', rpcErr);
+        if (rpcErr) throw rpcErr;
+        newPts = rpcResult !== null ? rpcResult : newPts;
+
+        // Record transaction
+        await db.from('points_transactions').insert([{
+            customer_id:   realUUID,
+            order_id:      data.id,
+            type:          'redeemed',
+            points:        -ptsUsed,
+            balance_after: newPts,
+            description:   'Redeemed for ₹' + appliedPromo.discount + ' on ' + orderNum
+        }]).then(function(){}).catch(function(){});
+
+        // Step 4 — Update localStorage + currentUser
+        try {
+        var saved = JSON.parse(localStorage.getItem('cc_user')) || {};
+        saved.loyalty_points  = newPts;
+        saved.db_id           = realUUID; // fix db_id going forward
+        localStorage.setItem('cc_user', JSON.stringify(saved));
+        currentUser.loyalty_points = newPts;
+        currentUser.db_id          = realUUID;
+        } catch(e) {}
+
+        // Step 5 — Update profile UI
+        ['prof-points','prof-pts-num'].forEach(function(id){
+        var el = document.getElementById(id);
+        if (el) el.textContent = newPts;
+        });
+        window._profileLastLoaded = null;
+
+        console.log('✅ Points deducted successfully. New balance:', newPts);
+
+    } catch(e) {
+        console.error('❌ Points deduction error:', e.message);
+    }
+    }
 
     // 2. Save order items — look up product_id & variant_id from Supabase
     const orderId = data.id;
@@ -7133,7 +7247,10 @@ function renderNotifList() {
     order_cancelled:  ['❌','rgba(239,68,68,.08)','rgba(239,68,68,.2)'],
     promo:            ['🏷️','rgba(236,72,153,.08)','rgba(236,72,153,.2)'],
     custom_order:     ['🎂','rgba(156,12,161,.08)','rgba(156,12,161,.2)'],
-    system:           ['📢','rgba(110,9,119,.08)','rgba(110,9,119,.2)']
+    system:           ['📢','rgba(110,9,119,.08)','rgba(110,9,119,.2)'],
+    birthday_7days:  ['🎂','rgba(245,158,11,.08)','rgba(245,158,11,.2)'],
+    birthday_3days:  ['🎈','rgba(236,72,153,.08)','rgba(236,72,153,.2)'],
+    birthday_today:  ['🎉','rgba(255,180,0,.12)','rgba(255,180,0,.3)']
   };
 
   var groups = {};
@@ -7471,6 +7588,64 @@ setTimeout(async function() {
   // Start polling immediately as backup — works even without realtime
   startOrderPolling();
 }, 1500);
+
+async function redeemPoints() {
+  if (!currentUser || !currentUser.db_id) return;
+
+  var { data: cust } = await db
+    .from('customers')
+    .select('loyalty_points')
+    .eq('id', currentUser.db_id)
+    .single();
+
+  var pts = cust ? cust.loyalty_points : 0;
+  if (pts < 50) {
+    showToast('You need at least 50 points to redeem');
+    return;
+  }
+
+  // 50 points = ₹5 discount
+  var redeemDiscount = Math.floor(pts / 50) * 5;
+  var subtotal = cartItems.reduce(function(s,i){
+    return s + (i.base_price||0) * (i.qty||1) + (i.topping_price||0);
+  }, 0);
+
+  // Cap at 20% of order value
+  redeemDiscount = Math.min(redeemDiscount, Math.floor(subtotal * 0.2));
+
+  if (redeemDiscount <= 0) {
+    showToast('Not enough points for this order');
+    return;
+  }
+
+  // Apply as promo
+  appliedPromo = {
+    code:     'POINTS',
+    discount: redeemDiscount,
+    offerId:  null,
+    label:    pts + ' points redeemed'
+  };
+  currentOrderTotal = subtotal - redeemDiscount;
+
+  // Update cart UI
+  var promoRow    = document.getElementById('promo-row-display');
+  var promoLbl    = document.getElementById('promo-lbl');
+  var promoDisc   = document.getElementById('promo-disc');
+  var totalEl     = document.getElementById('cart-total-display');
+  var checkoutBtn = document.getElementById('checkout-btn');
+
+  if (promoRow)    promoRow.style.display    = 'flex';
+  if (promoLbl)    promoLbl.textContent      = '⭐ ' + pts + ' points redeemed';
+  if (promoDisc)   promoDisc.textContent     = '−₹' + redeemDiscount;
+  if (totalEl)     totalEl.textContent       = '₹' + currentOrderTotal;
+  if (checkoutBtn) checkoutBtn.textContent   = '🎉 Proceed to Checkout — ₹' + currentOrderTotal;
+
+  // Hide redeem bar after use
+  var bar = document.getElementById('points-redeem-bar');
+  if (bar) bar.style.display = 'none';
+
+  showToast('✅ ₹' + redeemDiscount + ' discount applied using ' + pts + ' points!');
+}
 
 </script>
 </body>
