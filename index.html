@@ -10,7 +10,7 @@
 
 <title>NSDI ChocoCravings</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"> </script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -704,6 +704,195 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 .lcard {
   min-height: 100px;
 }
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#0a0602;
+  --bg-mid:#130905;
+  --bg-raised:#1c0f07;
+  --panel:#160c05;
+  --panel-raised:#1e1008;
+  --gold:#c9a040;
+  --gold-bright:#e0bc5a;
+  --gold-dim:#8a6820;
+  --gold-pale:rgba(201,160,64,0.1);
+  --gold-glow:rgba(201,160,64,0.22);
+  --text:#f0e0c0;
+  --text-mid:#c8a878;
+  --text-soft:#8a6840;
+  --text-ghost:#4a3018;
+  --border:rgba(201,160,64,0.13);
+  --border-hover:rgba(201,160,64,0.34);
+  --border-active:rgba(201,160,64,0.68);
+  --shadow:rgba(0,0,0,0.55);
+  --shadow-gold:rgba(201,160,64,0.14);
+}
+
+html,body{width:100%;height:100%;overflow-x:hidden;background:var(--bg);font-family:'Jost',sans-serif;color:var(--text)}
+
+body{
+  background-color:var(--bg);
+  background-image:
+    radial-gradient(ellipse 60% 50% at 20% 10%, rgba(160,80,15,0.07) 0%,transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 80%, rgba(120,55,8,0.06) 0%,transparent 55%);
+}
+body::before{
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  opacity:0.6;
+}
+
+.studio{position:relative;z-index:1;min-height:100vh;display:grid;grid-template-rows:auto 1fr auto;grid-template-columns:1fr 460px;grid-template-areas:"header header" "canvas panel" "footer footer"}
+
+header{grid-area:header;padding:0 52px;height:72px;display:flex;align-items:center;justify-content:space-between;background:rgba(14,7,2,0.96);border-bottom:1px solid var(--border);backdrop-filter:blur(24px);box-shadow:0 1px 0 rgba(201,160,64,0.1),0 4px 32px rgba(0,0,0,0.7);position:sticky;top:0;z-index:10}
+.logo-group{display:flex;align-items:center;gap:14px}
+.logo-emblem{width:40px;height:40px;border-radius:50%;background:linear-gradient(145deg,#e0bc5a 0%,#7a5010 45%,#c9a040 100%);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;box-shadow:0 0 0 1px rgba(201,160,64,0.3),0 4px 20px rgba(201,160,64,0.22)}
+.brand-text{display:flex;flex-direction:column;gap:2px}
+.brand-name{font-family:'Cinzel',serif;font-size:13px;letter-spacing:0.32em;color:var(--gold-bright);font-weight:500;text-transform:uppercase;line-height:1}
+.brand-tagline{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:11px;letter-spacing:0.12em;color:var(--text-soft);line-height:1}
+.header-centre{position:absolute;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px}
+.header-label{font-family:'Cinzel',serif;font-size:8.5px;letter-spacing:0.75em;color:var(--gold);text-transform:uppercase}
+.header-ornament{display:flex;align-items:center;gap:8px}
+.header-ornament::before,.header-ornament::after{content:'';display:block;width:36px;height:1px;background:linear-gradient(to right,transparent,rgba(201,160,64,0.38))}
+.header-ornament::after{background:linear-gradient(to left,transparent,rgba(201,160,64,0.38))}
+.header-ornament span{font-size:7px;letter-spacing:0.3em;color:rgba(201,160,64,0.42)}
+.header-right .badge{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.28em;color:var(--text-soft);border:1px solid var(--border);padding:5px 14px;background:rgba(201,160,64,0.04)}
+
+.canvas-wrap{grid-area:canvas;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;background:radial-gradient(ellipse 65% 55% at 45% 42%, rgba(50,24,6,0.98) 0%,rgba(20,10,3,1) 55%,rgba(6,3,1,1) 100%)}
+.canvas-wrap::after{content:'';position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 85% 80% at 50% 50%, transparent 50%, rgba(0,0,0,0.6) 100%)}
+#cake-canvas{width:100%!important;height:100%!important;display:block}
+.canvas-ui{position:absolute;inset:0;pointer-events:none}
+.cbracket{position:absolute;width:26px;height:26px}
+.cbracket::before,.cbracket::after{content:'';position:absolute;background:rgba(201,160,64,0.4)}
+.cbracket::before{width:100%;height:1px}
+.cbracket::after{width:1px;height:100%}
+.cbracket.tl{top:18px;left:18px}.cbracket.tl::before{top:0;left:0}.cbracket.tl::after{top:0;left:0}
+.cbracket.tr{top:18px;right:18px}.cbracket.tr::before{top:0;right:0}.cbracket.tr::after{top:0;right:0}
+.cbracket.bl{bottom:18px;left:18px}.cbracket.bl::before{bottom:0;left:0}.cbracket.bl::after{bottom:0;left:0}
+.cbracket.br{bottom:18px;right:18px}.cbracket.br::before{bottom:0;right:0}.cbracket.br::after{bottom:0;right:0}
+.cake-label{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:5px}
+.cake-label-name{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:300;font-style:italic;letter-spacing:0.1em;color:rgba(240,220,170,0.92);text-shadow:0 0 40px rgba(201,160,64,0.5),0 2px 4px rgba(0,0,0,0.9);white-space:nowrap;transition:opacity 0.45s}
+.cake-label-name.out{opacity:0}
+.cake-label-rule{width:44px;height:1px;background:linear-gradient(to right,transparent,var(--gold),transparent)}
+.hint-pill{position:absolute;top:20px;left:50%;transform:translateX(-50%);font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.4em;color:var(--text-soft);text-transform:uppercase;background:rgba(10,5,1,0.75);border:1px solid var(--border);padding:4px 14px;backdrop-filter:blur(8px)}
+
+.panel{grid-area:panel;background:var(--panel);border-left:1px solid var(--border);box-shadow:-1px 0 0 rgba(201,160,64,0.07),-8px 0 40px rgba(0,0,0,0.6);display:flex;flex-direction:column;overflow-y:auto;padding:32px 28px;gap:26px}
+.panel::-webkit-scrollbar{width:2px}
+.panel::-webkit-scrollbar-thumb{background:var(--gold-dim);border-radius:2px}
+
+.sh{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.sh-text{font-family:'Cinzel',serif;font-size:7.5px;letter-spacing:0.65em;color:var(--gold);text-transform:uppercase;white-space:nowrap}
+.sh-line{flex:1;height:1px;background:linear-gradient(to right,rgba(201,160,64,0.28),transparent)}
+.sh-dot{width:3px;height:3px;border-radius:50%;background:rgba(201,160,64,0.45);flex-shrink:0}
+
+.flavor-cards{display:flex;flex-direction:column;gap:9px}
+.fcard{position:relative;overflow:hidden;border:1px solid var(--border);background:var(--panel-raised);padding:15px 16px 13px 18px;cursor:pointer;transition:border-color 0.3s,box-shadow 0.3s,transform 0.2s}
+.fcard::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--card-accent);transform:scaleY(0);transform-origin:bottom;transition:transform 0.35s cubic-bezier(0.23,1,0.32,1)}
+.fcard:hover{border-color:var(--border-hover);box-shadow:0 4px 20px rgba(0,0,0,0.5);transform:translateY(-1px)}
+.fcard.active{border-color:rgba(201,160,64,0.38);background:rgba(201,160,64,0.055)}
+.fcard.active::before{transform:scaleY(1)}
+.fcard[data-f="vanilla"]{--card-accent:#c9a040}
+.fcard[data-f="chocberry"]{--card-accent:#c04070}
+.fswatch{width:30px;height:30px;border-radius:50%;flex-shrink:0;border:1.5px solid rgba(255,255,255,0.1);box-shadow:0 2px 8px rgba(0,0,0,0.5)}
+.fcard[data-f="vanilla"] .fswatch{background:radial-gradient(circle at 35% 35%,#f8efc8,#d4a050 55%,#8a5818)}
+.fcard[data-f="chocberry"] .fswatch{background:radial-gradient(circle at 35% 35%,#702020,#3a0e0e 55%,#1a0508)}
+.fcard-head{display:flex;align-items:center;gap:11px;margin-bottom:5px}
+.ftitle{font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:600;color:var(--text);letter-spacing:0.02em;line-height:1}
+.fsub{font-size:9px;letter-spacing:0.15em;color:var(--text-soft);text-transform:uppercase;font-weight:300;margin-top:1px}
+.fdesc{font-size:11px;line-height:1.6;color:var(--text-mid);font-weight:300;margin-top:5px}
+.ftags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.ftag{font-size:7.5px;letter-spacing:0.18em;text-transform:uppercase;padding:2px 8px;border:1px solid;font-weight:400}
+.fcard[data-f="vanilla"] .ftag{border-color:rgba(201,160,64,0.22);color:var(--gold)}
+.fcard[data-f="chocberry"] .ftag{border-color:rgba(192,64,112,0.28);color:#c04070}
+
+.frost-row{display:flex;gap:7px}
+.fbtn{flex:1;background:var(--panel-raised);border:1px solid var(--border);padding:11px 8px 9px;cursor:pointer;transition:all 0.25s;display:flex;flex-direction:column;align-items:center;gap:7px}
+.fbtn:hover{border-color:var(--border-hover);transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,0.5)}
+.fbtn.active{border-color:var(--border-active);background:var(--gold-pale);box-shadow:0 0 18px var(--gold-glow)}
+.frost-swatch{width:34px;height:34px;border-radius:50%;border:2px solid rgba(255,255,255,0.1);box-shadow:0 3px 12px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.12)}
+.frost-name{font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.2em;color:var(--text-soft);text-transform:uppercase;text-align:center;line-height:1.4}
+
+.pill-row{display:flex;gap:7px}
+.pill{flex:1;background:var(--panel-raised);border:1px solid var(--border);color:var(--text-soft);padding:10px 7px;cursor:pointer;font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.2em;text-transform:uppercase;transition:all 0.22s;display:flex;flex-direction:column;align-items:center;gap:4px}
+.pill:hover{border-color:var(--border-hover);color:var(--text-mid);transform:translateY(-1px)}
+.pill.active{border-color:var(--border-active);color:var(--gold-bright);background:var(--gold-pale);box-shadow:0 0 14px var(--gold-glow)}
+.pill-icon{font-size:10px}
+.pill-big{font-family:'Cormorant Garamond',serif;font-size:21px;font-weight:300;color:var(--text);line-height:1}
+.pill-sub{font-size:8px;letter-spacing:0.12em;color:var(--text-soft)}
+
+.touches-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.tchip{border:1px solid var(--border);background:var(--panel-raised);color:var(--text-soft);font-size:8.5px;letter-spacing:0.12em;text-transform:uppercase;padding:9px 10px;cursor:pointer;transition:all 0.2s;font-family:'Jost',sans-serif;font-weight:300;text-align:left;display:flex;align-items:center;gap:7px}
+.tchip::before{content:'';width:6px;height:6px;border:1px solid rgba(201,160,64,0.22);border-radius:50%;flex-shrink:0;transition:all 0.22s}
+.tchip:hover{border-color:var(--border-hover);color:var(--text-mid)}
+.tchip.active{border-color:var(--border-active);color:var(--text);background:var(--gold-pale);box-shadow:inset 0 0 0 1px rgba(201,160,64,0.08)}
+.tchip.active::before{background:var(--gold);border-color:var(--gold);box-shadow:0 0 8px rgba(201,160,64,0.55)}
+
+.toy-sub{display:none;grid-column:1/-1;border:1px solid var(--border);background:rgba(201,160,64,0.04);padding:11px;gap:6px;flex-wrap:wrap}
+.toy-sub.on{display:flex}
+.toy-sub-lbl{font-family:'Cinzel',serif;font-size:7px;letter-spacing:0.4em;color:var(--gold);text-transform:uppercase;width:100%;margin-bottom:2px}
+.topt,.sopt{font-size:8.5px;letter-spacing:0.12em;padding:6px 11px;border:1px solid var(--border);color:var(--text-soft);background:var(--panel-raised);cursor:pointer;font-family:'Cinzel',serif;transition:all 0.18s}
+.topt:hover,.sopt:hover{border-color:var(--border-hover);color:var(--text-mid)}
+.topt.active,.sopt.active{border-color:var(--border-active);color:var(--gold-bright);background:var(--gold-pale)}
+
+.qty-row{display:flex;align-items:center;border:1px solid var(--border);overflow:hidden}
+.qbtn{width:46px;height:46px;background:var(--panel-raised);border:none;color:var(--gold);font-size:20px;cursor:pointer;transition:background 0.2s;font-family:'Cormorant Garamond',serif;font-weight:300}
+.qbtn:hover{background:var(--gold-pale)}
+.qval{flex:1;text-align:center;font-family:'Cinzel',serif;font-size:15px;letter-spacing:0.28em;color:var(--text);border-left:1px solid var(--border);border-right:1px solid var(--border);padding:12px;background:var(--panel)}
+
+.price-block{border:1px solid var(--border);padding:18px 20px;background:linear-gradient(135deg,rgba(201,160,64,0.08),rgba(201,160,64,0.03));display:flex;align-items:center;justify-content:space-between}
+.price-lbl{font-family:'Cinzel',serif;font-size:7.5px;letter-spacing:0.6em;color:var(--text-soft);text-transform:uppercase}
+.price-amount{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:300;color:var(--gold-bright);letter-spacing:0.02em;line-height:1}
+.price-amount .sym{font-size:17px;opacity:0.65;vertical-align:super;margin-right:2px}
+
+.cta{width:100%;padding:18px 24px;background:linear-gradient(135deg,#c9a040 0%,#6a4810 50%,#b89030 100%);background-size:200% 100%;background-position:0% 0%;border:none;color:#fdf4dc;font-family:'Cinzel',serif;font-size:10.5px;letter-spacing:0.55em;cursor:pointer;text-transform:uppercase;transition:background-position 0.5s,letter-spacing 0.3s,box-shadow 0.3s;box-shadow:0 4px 24px rgba(201,160,64,0.28),inset 0 1px 0 rgba(255,255,255,0.1);position:relative;overflow:hidden}
+.cta::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent);transform:translateX(-100%);transition:transform 0.6s}
+.cta:hover{background-position:100% 0%;letter-spacing:0.65em;box-shadow:0 6px 32px rgba(201,160,64,0.42)}
+.cta:hover::before{transform:translateX(100%)}
+
+footer{grid-area:footer;height:50px;background:rgba(8,4,1,0.97);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 52px}
+footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:var(--text-ghost);text-transform:uppercase}
+
+#pts{position:fixed;inset:0;pointer-events:none;z-index:0}
+
+.loader{position:fixed;inset:0;z-index:99;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity 0.9s,visibility 0.9s}
+.loader.gone{opacity:0;visibility:hidden}
+.loader-emblem{width:64px;height:64px;border-radius:50%;background:linear-gradient(145deg,#e0bc5a,#8a6018,#c9a040);display:flex;align-items:center;justify-content:center;font-size:26px;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 1px rgba(201,160,64,0.3),0 0 30px rgba(201,160,64,0.15)}50%{box-shadow:0 0 0 1px rgba(201,160,64,0.55),0 0 55px rgba(201,160,64,0.35)}}
+.loader-name{font-family:'Cinzel',serif;font-size:13px;letter-spacing:0.45em;color:var(--gold-bright);text-transform:uppercase}
+.loader-sub{font-family:'Cormorant Garamond',serif;font-style:italic;font-size:13px;letter-spacing:0.1em;color:var(--text-soft)}
+.loader-dots{display:flex;gap:6px}
+.loader-dots span{width:5px;height:5px;border-radius:50%;background:var(--gold);animation:dot 1.4s infinite;opacity:0.3}
+.loader-dots span:nth-child(2){animation-delay:0.2s}
+.loader-dots span:nth-child(3){animation-delay:0.4s}
+@keyframes dot{0%,80%,100%{opacity:0.2;transform:scale(0.8)}40%{opacity:1;transform:scale(1.1)}}
+
+.name-input-wrap{position:relative;border:1px solid var(--border);background:var(--panel-raised);transition:border-color 0.2s,box-shadow 0.2s}
+.name-input-wrap:focus-within{border-color:var(--border-active);box-shadow:0 0 0 2px rgba(201,160,64,0.1),0 4px 16px rgba(0,0,0,0.5)}
+.name-input{width:100%;padding:13px 14px 13px 38px;background:transparent;border:none;outline:none;font-family:'Cormorant Garamond',serif;font-size:17px;font-style:italic;letter-spacing:0.06em;color:var(--text)}
+.name-input::placeholder{color:var(--text-ghost);font-style:italic}
+.name-input-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:13px;opacity:0.35;pointer-events:none}
+.name-char-count{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:8.5px;letter-spacing:0.1em;color:var(--text-ghost);font-family:'Cinzel',serif}
+
+.placement-row{display:flex;gap:7px;margin-top:10px}
+.pplace{flex:1;background:var(--panel-raised);border:1px solid var(--border);color:var(--text-soft);padding:10px 6px;cursor:pointer;font-family:'Cinzel',serif;font-size:7.5px;letter-spacing:0.18em;text-transform:uppercase;transition:all 0.22s;display:flex;flex-direction:column;align-items:center;gap:5px}
+.pplace:hover{border-color:var(--border-hover);color:var(--text-mid);transform:translateY(-1px)}
+.pplace.active{border-color:var(--border-active);color:var(--gold-bright);background:var(--gold-pale);box-shadow:0 0 14px var(--gold-glow)}
+.pplace-icon{font-size:15px;line-height:1}
+.pplace-sub{font-size:7px;letter-spacing:0.12em;color:var(--text-ghost);margin-top:1px}
+
+.toast{position:fixed;bottom:36px;left:50%;transform:translateX(-50%) translateY(24px);background:linear-gradient(135deg,#c9a040,#6a4810);color:#fdf4dc;font-family:'Cinzel',serif;font-size:9px;letter-spacing:0.35em;padding:14px 32px;z-index:50;opacity:0;transition:opacity 0.4s,transform 0.4s;pointer-events:none;text-transform:uppercase;box-shadow:0 6px 32px rgba(201,160,64,0.32)}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(max-width:900px){
+  .studio{grid-template-columns:1fr;grid-template-rows:auto 74vw auto auto;grid-template-areas:"header" "canvas" "panel" "footer"}
+  .panel{border-left:none;border-top:1px solid var(--border);padding:20px 16px}
+  header{padding:0 20px}
+  .header-centre{display:none}
+  .cake-label-name{font-size:22px}
+  footer{padding:0 20px}
+}
+
 </style>
 </head>
 <body>
@@ -812,8 +1001,8 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
       </div> -->
       <!-- ═══ HOME HERO — PHOTO EDITION ═══ -->
       <div style="margin:0 16px 20px;position:relative">
-
-        <div onclick="showPage('custom-order')" style="position:relative;border-radius:26px;overflow:hidden;cursor:pointer;height:220px">
+        <!--onclick="showPage('custom-order')"-->
+        <div  onclick="showPage('cake-studio');setTimeout(function(){if(typeof initCakeGL==='function')initCakeGL();},200)" style="position:relative;border-radius:26px;overflow:hidden;cursor:pointer;height:220px">
 
           <!-- Real photo background -->
           <img src="https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/diya.jpeg"
@@ -839,8 +1028,8 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 
             <!-- Headline -->
             <div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:#fff;line-height:1.1;margin-bottom:5px;letter-spacing:-.5px;text-shadow:0 2px 12px rgba(0,0,0,.4)">
-              Custom Brownie<br>
-              <span style="font-style:italic;background:linear-gradient(90deg,#f9c8ff,#ffb3f0,#ffd6b0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Slab & Cakes</span>
+              Custom<br>
+              <span style="font-style:italic;background:linear-gradient(90deg,#f9c8ff,#ffb3f0,#ffd6b0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Premium Cakes</span>
             </div>
 
             <div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:14px;letter-spacing:.3px">Birthday · Anniversary · Any occasion</div>
@@ -868,6 +1057,38 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
             <div style="font-size:20px;margin-bottom:3px">🚚</div>
             <div style="font-size:11px;font-weight:700;color:var(--white);line-height:1.2">Fresh</div>
             <div style="font-size:9px;color:var(--faint);margin-top:1px">Baked daily</div>
+          </div>
+        </div>
+      </div>
+      
+
+      <!-- CUSTOM BROWNIE SLAB CARD -->
+      <div onclick="showPage('custom-order')" style="margin:0 16px 16px;position:relative;border-radius:18px;overflow:hidden;cursor:pointer;height:130px">
+
+        <!-- Real photo background -->
+        <img src="https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-1.jpeg"
+          style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 60%">
+
+        <!-- Dark gradient overlay -->
+        <div style="position:absolute;inset:0;background:linear-gradient(105deg,rgba(10,0,25,.88) 0%,rgba(80,5,90,.75) 50%,rgba(0,0,0,.2) 100%)"></div>
+
+        <!-- Shimmer -->
+        <div style="position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.06) 50%,transparent 60%);animation:hmShimmer 5s ease-in-out infinite;pointer-events:none"></div>
+
+        <!-- Content -->
+        <div style="position:relative;z-index:2;padding:16px 18px;height:100%;display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:6px">NSDI · Made to Order</div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:#fff;line-height:1.1;text-shadow:0 2px 10px rgba(0,0,0,.4)">Custom Brownie<br><span style="font-style:italic;background:linear-gradient(90deg,#f9c8ff,#ffb3f0,#ffd6b0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Slab & Creations</span></div>
+            <div style="font-size:10px;color:rgba(255,255,255,.65);margin-top:5px">Birthday · Anniversary · Baby Shower</div>
+          </div>
+          <!-- CTA arrow -->
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0">
+            <div style="font-size:28px">🍫</div>
+            <div style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border-radius:20px;padding:4px 10px">
+              <span style="font-size:9px;font-weight:700;color:#fff">Design</span>
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2L7 5L3 8" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
           </div>
         </div>
       </div>
@@ -1622,6 +1843,293 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
       </div>
     </div>
 
+    <!-- ═══ CAKE STUDIO ═══ -->
+        <div class="page" id="page-cake-studio">
+        <div class="back" onclick="goBack()" style="position:fixed;top:calc(14px + env(safe-area-inset-top));left:16px;z-index:1100">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        </div>
+        <div class="studio" style="display:grid;grid-template-areas:'canvas' 'panel';grid-template-columns:1fr;grid-template-rows:55vw 1fr">
+        <div class="canvas-wrap">
+    <canvas id="cake-canvas"></canvas>
+    <div class="canvas-ui">
+      <div class="cbracket tl"></div><div class="cbracket tr"></div>
+      <div class="cbracket bl"></div><div class="cbracket br"></div>
+      <div class="hint-pill">Drag · Rotate · Zoom</div>
+      <div class="cake-label">
+        <div class="cake-label-name" id="clabel">Vanilla Pineapple</div>
+        <div class="cake-label-rule"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL -->
+  <!-- PANEL -->
+  <div class="panel">
+    <!-- REAL EXAMPLE CAROUSEL -->
+    <div>
+      <div class="sh"><div class="sh-dot"></div><div class="sh-text">Real Examples</div><div class="sh-line"></div></div>
+
+      <!-- CAROUSEL STRIP -->
+      <div style="position:relative;overflow:hidden;border-radius:4px" id="ref-carousel">
+        <!-- SLIDES -->
+        <div id="ref-slides" style="display:flex;transition:transform .4s cubic-bezier(.16,1,.3,1);will-change:transform">
+
+          <!-- Slide 1 -->
+          <div class="ref-slide" style="min-width:100%;position:relative;flex-shrink:0">
+            <img src="https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-1.jpeg"
+              style="width:100%;height:170px;object-fit:cover;display:block"
+              onerror="this.parentElement.parentElement.style.display='none'">
+            <div style="position:absolute;inset:0;background:linear-gradient(transparent 45%,rgba(0,0,0,.7))"></div>
+            <!-- Labels -->
+            <div style="position:absolute;top:14%;right:6%;background:rgba(0,0,0,.65);color:#e0bc5a;font-size:7.5px;letter-spacing:.18em;padding:3px 8px;backdrop-filter:blur(4px)">Faux Balls ✦</div>
+            <div style="position:absolute;top:36%;left:4%;background:rgba(0,0,0,.65);color:#e0bc5a;font-size:7.5px;letter-spacing:.18em;padding:3px 8px;backdrop-filter:blur(4px)">Gold Leaf ✦</div>
+            <div style="position:absolute;top:58%;right:6%;background:rgba(0,0,0,.65);color:#e0bc5a;font-size:7.5px;letter-spacing:.18em;padding:3px 8px;backdrop-filter:blur(4px)">Gold Drips ✦</div>
+            <div style="position:absolute;bottom:22%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.65);color:#e0bc5a;font-size:7.5px;letter-spacing:.18em;padding:3px 8px;backdrop-filter:blur(4px);white-space:nowrap">Name on Board ✦</div>
+            <!-- Caption -->
+            <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 8px">
+              <div style="font-family:'Cormorant Garamond',serif;font-size:12px;font-style:italic;color:rgba(240,220,170,.9)">2-Tier · White Cream · Gold Drips</div>
+            </div>
+            <!-- Tap to view -->
+            <div onclick="openRefLightbox(0)" style="position:absolute;top:8px;right:8px;background:rgba(201,160,64,.18);border:1px solid rgba(201,160,64,.45);color:#e0bc5a;font-size:7px;letter-spacing:.22em;padding:4px 10px;cursor:pointer;backdrop-filter:blur(6px)">TAP TO VIEW</div>
+          </div>
+
+          <!-- Slide 2 — add your second real photo here -->
+          <div class="ref-slide" style="min-width:100%;position:relative;flex-shrink:0">
+            <img src="https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-2.jpeg"
+              style="width:100%;height:170px;object-fit:cover;display:block"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div style="display:none;width:100%;height:170px;background:#1e1008;align-items:center;justify-content:center;flex-direction:column;gap:8px">
+              <div style="font-size:28px">🎂</div>
+              <div style="font-size:9px;letter-spacing:.2em;color:var(--text-soft)">COMING SOON</div>
+            </div>
+            <div style="position:absolute;inset:0;background:linear-gradient(transparent 45%,rgba(0,0,0,.7))"></div>
+            <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 8px">
+              <div style="font-family:'Cormorant Garamond',serif;font-size:12px;font-style:italic;color:rgba(240,220,170,.9)">1-Tier · Chocolate Frosting</div>
+            </div>
+            <div onclick="openRefLightbox(1)" style="position:absolute;top:8px;right:8px;background:rgba(201,160,64,.18);border:1px solid rgba(201,160,64,.45);color:#e0bc5a;font-size:7px;letter-spacing:.22em;padding:4px 10px;cursor:pointer;backdrop-filter:blur(6px)">TAP TO VIEW</div>
+          </div>
+
+          <!-- Slide 3 -->
+          <div class="ref-slide" style="min-width:100%;position:relative;flex-shrink:0">
+            <img src="https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-3.jpeg"
+              style="width:100%;height:170px;object-fit:cover;display:block"
+              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div style="display:none;width:100%;height:170px;background:#1e1008;align-items:center;justify-content:center;flex-direction:column;gap:8px">
+              <div style="font-size:28px">🎂</div>
+              <div style="font-size:9px;letter-spacing:.2em;color:var(--text-soft)">COMING SOON</div>
+            </div>
+            <div style="position:absolute;inset:0;background:linear-gradient(transparent 45%,rgba(0,0,0,.7))"></div>
+            <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 8px">
+              <div style="font-family:'Cormorant Garamond',serif;font-size:12px;font-style:italic;color:rgba(240,220,170,.9)">3-Tier · Flowers · Sprinkles</div>
+            </div>
+            <div onclick="openRefLightbox(2)" style="position:absolute;top:8px;right:8px;background:rgba(201,160,64,.18);border:1px solid rgba(201,160,64,.45);color:#e0bc5a;font-size:7px;letter-spacing:.22em;padding:4px 10px;cursor:pointer;backdrop-filter:blur(6px)">TAP TO VIEW</div>
+          </div>
+
+        </div>
+
+        <!-- PREV / NEXT ARROWS -->
+        <div onclick="refSlide(-1)" style="position:absolute;left:6px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.55);border:1px solid rgba(201,160,64,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#e0bc5a;backdrop-filter:blur(6px);z-index:2">‹</div>
+        <div onclick="refSlide(1)"  style="position:absolute;right:6px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.55);border:1px solid rgba(201,160,64,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#e0bc5a;backdrop-filter:blur(6px);z-index:2">›</div>
+      </div>
+
+      <!-- DOTS -->
+      <div id="ref-dots" style="display:flex;justify-content:center;gap:6px;margin-top:9px">
+        <div onclick="refGoTo(0)" style="width:18px;height:4px;border-radius:2px;background:var(--gold);cursor:pointer;transition:all .3s"></div>
+        <div onclick="refGoTo(1)" style="width:6px;height:4px;border-radius:50%;background:rgba(201,160,64,.28);cursor:pointer;transition:all .3s"></div>
+        <div onclick="refGoTo(2)" style="width:6px;height:4px;border-radius:50%;background:rgba(201,160,64,.28);cursor:pointer;transition:all .3s"></div>
+      </div>
+    </div>
+
+    <!-- LIGHTBOX OVERLAY -->
+    <div id="ref-lightbox" onclick="closeRefLightbox()" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.94);backdrop-filter:blur(12px);align-items:center;justify-content:center;flex-direction:column;gap:14px">
+      <img id="ref-lb-img" src="" style="max-width:95vw;max-height:80vh;object-fit:contain;border:1px solid rgba(201,160,64,.25)">
+      <div id="ref-lb-cap" style="font-family:'Cormorant Garamond',serif;font-size:14px;font-style:italic;color:rgba(240,220,170,.7);letter-spacing:.08em"></div>
+      <div style="font-size:8px;letter-spacing:.35em;color:rgba(201,160,64,.45)">TAP ANYWHERE TO CLOSE</div>
+      <!-- prev/next in lightbox -->
+      <div onclick="event.stopPropagation();refLbNav(-1)" style="position:fixed;left:12px;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;background:rgba(201,160,64,.12);border:1px solid rgba(201,160,64,.3);display:flex;align-items:center;justify-content:center;font-size:22px;color:#e0bc5a;cursor:pointer">‹</div>
+      <div onclick="event.stopPropagation();refLbNav(1)"  style="position:fixed;right:12px;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;background:rgba(201,160,64,.12);border:1px solid rgba(201,160,64,.3);display:flex;align-items:center;justify-content:center;font-size:22px;color:#e0bc5a;cursor:pointer">›</div>
+    </div>
+
+    
+    <!-- Flavour -->
+    <div>
+      <div class="sh"><div class="sh-dot"></div><div class="sh-text">Flavour</div><div class="sh-line"></div></div>
+      
+       <div class="flavor-cards" id="cs-flavours">
+
+        <div class="fcard active" data-f="vanilla" onclick="setFlavor('vanilla')">
+          <div class="fcard-head">
+            <div class="fswatch"></div>
+            <div>
+              <div class="ftitle">Vanilla Pineapple</div>
+              <div class="fsub">Tropical · Bright · Caramelised</div>
+            </div>
+          </div>
+          <div class="fdesc">Soft vanilla sponge, pineapple compote filling between layers, whipped cream frosting.</div>
+          <div class="ftags"><span class="ftag">Eggless</span><span class="ftag">Vanilla Bean</span><span class="ftag">Pineapple</span></div>
+        </div>
+
+        <div class="fcard" data-f="chocberry" onclick="setFlavor('chocberry')">
+          <div class="fcard-head">
+            <div class="fswatch"></div>
+            <div>
+              <div class="ftitle">Chocolate Strawberry</div>
+              <div class="fsub">Decadent · Fruity · Velvety</div>
+            </div>
+          </div>
+          <div class="fdesc">Rich chocolate sponge, fresh strawberry cream filling, finished with your chosen frosting.</div>
+          <div class="ftags"><span class="ftag">Eggless</span><span class="ftag">Dark Sponge</span><span class="ftag">Strawberry</span></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Frosting -->
+    <div>
+      <div class="sh"><div class="sh-dot"></div><div class="sh-text">Frosting</div><div class="sh-line"></div></div>
+      <div class="frost-row" id="cs-frostings">
+        <button class="fbtn active" onclick="setFrost(this,'fresh',0xfff0e0)">
+          <div class="frost-swatch" style="background:radial-gradient(circle at 38% 32%,#fff8f0,#ede0c8 55%,#d0bea0)"></div>
+          <div class="frost-name">Fresh<br>Cream</div>
+        </button>
+        <button class="fbtn" onclick="setFrost(this,'choc',0x7a3010)">
+          <div class="frost-swatch" style="background:radial-gradient(circle at 38% 32%,#b06030,#7a3010 55%,#3e1005)"></div>
+          <div class="frost-name">Chocolate<br>Frosting</div>
+        </button>
+        <button class="fbtn" onclick="setFrost(this,'truffle',0x220a04)">
+          <div class="frost-swatch" style="background:radial-gradient(circle at 38% 32%,#3e1408,#1e0806 55%,#0a0402)"></div>
+          <div class="frost-name">Truffle<br>Dark</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Tiers -->
+    <div>
+      <div class="sh"><div class="sh-dot"></div><div class="sh-text">Tiers</div><div class="sh-line"></div></div>
+      <div class="pill-row" id="cs-tiers">
+        <button class="pill active" onclick="setTiers(this,1)"><span class="pill-icon">▬</span>Single</button>
+        <button class="pill" onclick="setTiers(this,2)"><span class="pill-icon">▬▬</span>Two Tier</button>
+        <button class="pill" onclick="setTiers(this,3)"><span class="pill-icon">▬▬▬</span>Three Tier</button>
+      </div>
+    </div>
+
+    <!-- Size -->
+    <div>
+      <div class="sh"><div class="sh-dot"></div><div class="sh-text">Serves</div><div class="sh-line"></div></div>
+      <div class="pill-row" id="cs-sizes">
+        <button class="pill" onclick="setSize(this,6,699)"><div class="pill-big">6"</div><div class="pill-sub">8–10 pax</div></button>
+        <button class="pill active" onclick="setSize(this,8,999)"><div class="pill-big">8"</div><div class="pill-sub">12–16 pax</div></button>
+        <button class="pill" onclick="setSize(this,10,1499)"><div class="pill-big">10"</div><div class="pill-sub">20–24 pax</div></button>
+      </div>
+    </div>
+
+    <!-- Weight -->
+    <div>
+      <div class="sh"><div class="sh-dot"></div><div class="sh-text">Cake Weight</div><div class="sh-line"></div></div>
+      <div class="pill-row" id="cs-weights">
+        <button class="pill" onclick="setWeight(this,'0.5kg',0)"><div class="pill-big">½</div><div class="pill-sub">0.5 kg</div></button>
+        <button class="pill active" onclick="setWeight(this,'1kg',200)"><div class="pill-big">1</div><div class="pill-sub">1.0 kg</div></button>
+        <button class="pill" onclick="setWeight(this,'1.5kg',400)"><div class="pill-big">1½</div><div class="pill-sub">1.5 kg</div></button>
+        <button class="pill" onclick="setWeight(this,'2kg',700)"><div class="pill-big">2</div><div class="pill-sub">2.0 kg</div></button>
+      </div>
+    </div>
+
+    <!-- Finishing -->
+    <div>
+      <div class="sh"><div class="sh-dot"></div><div class="sh-text">Finishing Touches</div><div class="sh-line"></div></div>
+      <div class="touches-grid" id="cs-touches">
+        <button class="tchip" data-k="goldLeaf" onclick="setTouch(this,'goldLeaf',80)">Gold Leaf</button>
+        <button class="tchip" data-k="flowers" onclick="setTouch(this,'flowers',50)">Edible Flowers</button>
+        <button class="tchip" data-k="customMsg" onclick="setTouch(this,'customMsg',0)">Custom Message</button>
+        <button class="tchip" data-k="fauxBalls" onclick="setTouch(this,'fauxBalls',60)">Faux Balls</button>
+        <button class="tchip" data-k="chocDrips" onclick="setTouch(this,'chocDrips',50)">Chocolate Drips</button>
+        <button class="tchip" data-k="hbd" onclick="setTouch(this,'hbd',90)">Happy Birthday Topper</button>
+        <button class="tchip" id="toy-btn" onclick="toggleToys(this)">Toys</button>
+        <button class="tchip" id="sprinkle-btn" onclick="toggleSprinkles(this)">✨ Sprinkles</button>
+        <div class="toy-sub" id="toy-sub">
+          <div class="toy-sub-lbl">Choose Theme</div>
+          <button class="topt" onclick="pickToy(this,'Car')">🚗 Car</button>
+          <button class="topt" onclick="pickToy(this,'Animals')">🦁 Animals</button>
+          <button class="topt" onclick="pickToy(this,'Avengers')">⚡ Avengers</button>
+          <button class="topt" onclick="pickToy(this,'Princess')">👑 Princess</button>
+          <button class="topt" onclick="pickToy(this,'Dinosaur')">🦕 Dinosaur</button>
+          <button class="topt" onclick="pickToy(this,'Unicorn')">🦄 Unicorn</button>
+        </div>
+        <div class="toy-sub" id="sprinkle-sub">
+          <div class="toy-sub-lbl">Sprinkle Colour</div>
+          <button class="sopt topt active" onclick="pickSprinkle(this,0xd4a820)">✦ Gold</button>
+          <button class="sopt topt" onclick="pickSprinkle(this,0xc8c8d0)">◆ Silver</button>
+          <button class="sopt topt" onclick="pickSprinkle(this,0xffffff)">◆ White</button>
+          <button class="sopt topt" onclick="pickSprinkle(this,0x60a8e0)">◆ Blue</button>
+          <button class="sopt topt" onclick="pickSprinkle(this,0xe04040)">◆ Red</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Name on Cake -->
+    <div>
+      <div class="sh"><div class="sh-dot"></div><div class="sh-text">Name on Cake</div><div class="sh-line"></div></div>
+      <div class="name-input-wrap">
+        <span class="name-input-icon">✍️</span>
+        <input class="name-input" id="cake-name-input" type="text" maxlength="18"
+          placeholder="e.g. Happy Birthday Priya"
+          oninput="setName(this.value)"/>
+        <span class="name-char-count" id="name-cc">0/18</span>
+      </div>
+      <div class="placement-row">
+        <button class="pplace active" onclick="setPlacement(this,'top')">
+          <span class="pplace-icon">🎂</span>
+          Top
+          <span class="pplace-sub">On surface</span>
+        </button>
+        <button class="pplace" onclick="setPlacement(this,'front')">
+          <span class="pplace-icon">◻️</span>
+          Front Side
+          <span class="pplace-sub">Facing you</span>
+        </button>
+        <button class="pplace" onclick="setPlacement(this,'board')">
+          <span class="pplace-icon">🟫</span>
+          Base Board
+          <span class="pplace-sub">Gold board</span>
+        </button>
+      </div>
+    </div>
+    <!-- Delivery Date -->
+    <div>
+      <div class="sh"><div class="sh-dot"></div><div class="sh-text">Delivery Date</div><div class="sh-line"></div></div>
+      <div style="position:relative">
+        <input type="date" id="cake-delivery-date" min=""
+          style="width:100%;background:var(--panel-raised);border:1px solid var(--border);padding:13px 14px;color:var(--text);font-family:'Jost',sans-serif;font-size:13px;outline:none;color-scheme:dark;-webkit-text-fill-color:transparent"
+          oninput="this.style.webkitTextFillColor='var(--text)';document.getElementById('cake-date-ph').style.display='none';document.getElementById('cake-date-err').style.display='none'">
+        <div id="cake-date-ph" style="position:absolute;top:50%;left:14px;transform:translateY(-50%);font-size:12px;color:var(--text-soft);pointer-events:none">📅 Select delivery date</div>
+      </div>
+      <div id="cake-date-err" style="display:none;font-size:10px;color:#ff6b6b;margin-top:6px;letter-spacing:.05em">⚠️ Please select a date at least 7 days from today</div>
+    </div>
+    <!-- Quantity -->
+    <div>
+      <div class="sh"><div class="sh-dot"></div><div class="sh-text">Quantity</div><div class="sh-line"></div></div>
+      <div class="qty-row">
+        <button class="qbtn" onclick="setQty(-1)">−</button>
+        <div class="qval" id="qval">1</div>
+        <button class="qbtn" onclick="setQty(1)">+</button>
+      </div>
+    </div>
+
+    <!-- Price + CTA -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="price-block">
+        <div class="price-lbl">Total Price</div>
+        <div class="price-amount"><span class="sym">₹</span><span id="pnum">999</span></div>
+      </div>
+      <button class="cta" onclick="addCart()">Add to Cart</button>
+    </div>
+
+  </div>
+  </div>
+    </div>
+
     <!-- ═══ CUSTOM ORDER ═══ -->
     <div class="page" id="page-custom-order">
       <!-- Header -->
@@ -1698,6 +2206,30 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
         0%,100% { transform: translate(0,0) scale(1); }
         50%      { transform: translate(-15px,20px) scale(1.1); }
       }
+    .cs-studio-inner {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    padding-top: calc(60px + env(safe-area-inset-top));
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+    }
+    .cs-canvas-wrap {
+    height: 55vw;
+    min-height: 240px;
+    max-height: 320px;
+    position: relative;
+    flex-shrink: 0;
+    }
+    .cs-panel {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 18px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    background: #160c05;
+    }
+
       </style>
 
       <div style="padding:18px 22px;display:flex;flex-direction:column;gap:20px;padding-bottom:30px">
@@ -1872,7 +2404,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
                 </style>
               </div>
               <div>
-                <div style="font-size:13px;font-weight:700;color:#fff;letter-spacing:.3px">Trips & Drizzle</div>
+                <div style="font-size:13px;font-weight:700;color:#fff;letter-spacing:.3px">Drips & Drizzle</div>
                 <div style="font-size:10px;color:rgba(255,255,255,.6);margin-top:2px">Choose your topping drizzle style</div>
               </div>
             </div>
@@ -3591,9 +4123,60 @@ async function submitCustomOrder() {
   var notesVal = document.getElementById('custom-notes').value.trim();
   var topName  = (document.getElementById('topper-name') || {}).value || '';
 
-  if (!dateVal) { showToast('Please select a delivery date'); return; }
-  var minDate = new Date(); minDate.setDate(minDate.getDate() + 7);
-  if (new Date(dateVal) < minDate) { showToast('Date must be at least 7 days from today'); return; }
+  // ── VALIDATION ──
+  var errors = [];
+
+  var requiredGroups = [
+    { key:'occasion', label:'Occasion' },
+    { key:'theme',    label:'Theme' },
+    { key:'serves',   label:'Weight / KG' },
+    { key:'flavour',  label:'Flavour Base' },
+    { key:'egg',      label:'Egg Preference' }
+  ];
+
+  requiredGroups.forEach(function(g) {
+    if (!customSelections[g.key]) {
+      errors.push(g.label);
+      document.querySelectorAll('.cust-chip[data-group="' + g.key + '"]').forEach(function(c) {
+        c.style.borderColor = 'var(--pink)';
+        setTimeout(function(){ c.style.borderColor = 'var(--bdr)'; }, 2000);
+      });
+    }
+  });
+
+  var dateInp   = document.getElementById('custom-date');
+  var dateMsgEl = document.getElementById('custom-date-msg');
+  if (!dateVal) {
+    errors.push('Delivery Date');
+    dateInp.style.borderColor = 'var(--pink)';
+    dateMsgEl.textContent     = '⚠️ Please select a delivery date';
+    dateMsgEl.style.display   = 'block';
+    setTimeout(function(){ dateInp.style.borderColor = 'var(--bdr)'; }, 2000);
+  } else {
+    var minDate = new Date(); minDate.setDate(minDate.getDate() + 7);
+    if (new Date(dateVal) < minDate) {
+      errors.push('Delivery Date (min 7 days)');
+      dateInp.style.borderColor = 'var(--pink)';
+      dateMsgEl.textContent     = '⚠️ Please select a date at least 7 days from today';
+      dateMsgEl.style.display   = 'block';
+      setTimeout(function(){ dateInp.style.borderColor = 'var(--bdr)'; }, 2000);
+    } else {
+      dateMsgEl.style.display = 'none';
+    }
+  }
+
+  if (errors.length > 0) {
+    showToast('⚠️ Please fill: ' + errors[0]);
+    var firstMissing = requiredGroups.find(function(g){ return !customSelections[g.key]; });
+    if (firstMissing) {
+      var el = document.querySelector('.cust-chip[data-group="' + firstMissing.key + '"]');
+      if (el) el.scrollIntoView({ behavior:'smooth', block:'center' });
+    } else {
+      dateInp.scrollIntoView({ behavior:'smooth', block:'center' });
+    }
+    return;
+  }
+  // ── END VALIDATION ──
 
   if (!currentUser || !currentUser.db_id) { showToast('Please log in to place an order'); return; }
 
@@ -4187,7 +4770,13 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 // Init Supabase client
 const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
+  }
+});
 
 // NSDI WhatsApp number (receives order notifications)
 const NSDI_PHONE = '+91 89731 41898';
@@ -4357,6 +4946,169 @@ setTimeout(updateCartDots, 100);
 })();
 // Load products dynamically
 loadProducts();
+async function loadCakeStudioConfig() {
+  try {
+    var [flavRes, frostRes, tierRes, sizeRes, weightRes, touchRes] = await Promise.all([
+      db.from('cake_flavours').select('*').eq('is_active', true).order('sort_order'),
+      db.from('cake_frostings').select('*').eq('is_active', true).order('sort_order'),
+      db.from('cake_tiers').select('*').eq('is_active', true).order('sort_order'),
+      db.from('cake_sizes').select('*').eq('is_active', true).order('sort_order'),
+      db.from('cake_weights').select('*').eq('is_active', true).order('sort_order'),
+      db.from('cake_finishing_touches').select('*').eq('is_active', true).order('sort_order'),
+    ]);
+
+    var flavours = flavRes.data || [];
+    var frostings = frostRes.data || [];
+    var tiers = tierRes.data || [];
+    var sizes = sizeRes.data || [];
+    var weights = weightRes.data || [];
+    var touches = touchRes.data || [];
+
+    // ── FLAVOURS ──
+    var flavEl = document.getElementById('cs-flavours');
+    if (flavEl && flavours.length > 0) {
+      flavEl.innerHTML = flavours.map(function(f, i) {
+        var tags = (f.tags || []).map(function(t){ return '<span class="ftag">' + t + '</span>'; }).join('');
+        var isActive = i === 0;
+        if (isActive) { S.flavor = f.key; }
+        return '<div class="fcard' + (isActive ? ' active' : '') + '" data-f="' + f.key + '" onclick="setFlavor(\'' + f.key + '\')">'
+          + '<div class="fcard-head"><div class="fswatch"></div><div>'
+          + '<div class="ftitle">' + f.name + '</div>'
+          + '<div class="fsub">' + (f.subtitle || '') + '</div>'
+          + '</div></div>'
+          + '<div class="fdesc">' + (f.description || '') + '</div>'
+          + '<div class="ftags">' + tags + '</div>'
+          + '</div>';
+      }).join('');
+
+      // Apply fcard CSS per key
+      flavours.forEach(function(f) {
+        var el = document.querySelector('.fcard[data-f="' + f.key + '"]');
+        if (el) {
+          var accent = f.key === 'vanilla' ? '#c9a040' : '#c04070';
+          el.style.setProperty('--card-accent', accent);
+        }
+      });
+
+      // Apply fswatch gradient per key
+      document.querySelectorAll('.fcard[data-f="vanilla"] .fswatch').forEach(function(s) {
+        s.style.background = 'radial-gradient(circle at 35% 35%,#f8efc8,#d4a050 55%,#8a5818)';
+      });
+      document.querySelectorAll('.fcard[data-f="chocberry"] .fswatch').forEach(function(s) {
+        s.style.background = 'radial-gradient(circle at 35% 35%,#702020,#3a0e0e 55%,#1a0508)';
+      });
+    }
+
+    // ── FROSTINGS ──
+    var frostEl = document.getElementById('cs-frostings');
+    if (frostEl && frostings.length > 0) {
+      frostEl.innerHTML = frostings.map(function(f, i) {
+        var isActive = i === 0;
+        var hexNum = parseInt((f.hex_color || '#f5f0e8').replace('#', ''), 16);
+        if (isActive) { S.frostCol = hexNum; S.frostType = f.key; }
+        return '<button class="fbtn' + (isActive ? ' active' : '') + '" onclick="setFrost(this,\'' + f.key + '\',' + hexNum + ')">'
+          + '<div class="frost-swatch" style="background:' + (f.swatch_css || 'radial-gradient(circle at 38% 32%,#fff8f0,#ede0c8 55%,#d0bea0)') + '"></div>'
+          + '<div class="frost-name">' + f.name.replace(' ', '<br>') + '</div>'
+          + '</button>';
+      }).join('');
+    }
+
+    // ── TIERS ──
+    var tierEl = document.getElementById('cs-tiers');
+    if (tierEl && tiers.length > 0) {
+      tierEl.innerHTML = tiers.map(function(t, i) {
+        var isActive = i === 0;
+        if (isActive) { S.tiers = t.count; }
+        var icon = t.count === 1 ? '▬' : t.count === 2 ? '▬▬' : '▬▬▬';
+        return '<button class="pill' + (isActive ? ' active' : '') + '" onclick="setTiers(this,' + t.count + ')">'
+          + '<span class="pill-icon">' + icon + '</span>' + t.label
+          + '</button>';
+      }).join('');
+    }
+
+    // ── SIZES ──
+    var sizeEl = document.getElementById('cs-sizes');
+    if (sizeEl && sizes.length > 0) {
+      // Default active = middle size
+      var activeIdx = Math.floor(sizes.length / 2);
+      sizeEl.innerHTML = sizes.map(function(s, i) {
+        var isActive = i === activeIdx;
+        if (isActive) { S.size = s.inches; S.basePrice = s.base_price; }
+        return '<button class="pill' + (isActive ? ' active' : '') + '" onclick="setSize(this,' + s.inches + ',' + s.base_price + ')">'
+          + '<div class="pill-big">' + s.label + '</div>'
+          + '<div class="pill-sub">' + s.serves_min + '–' + s.serves_max + ' pax</div>'
+          + '</button>';
+      }).join('');
+    }
+
+    // ── WEIGHTS ──
+    var weightEl = document.getElementById('cs-weights');
+    if (weightEl && weights.length > 0) {
+      // Default active = 1kg
+      var activeWIdx = weights.findIndex(function(w){ return w.key === '1kg'; });
+      if (activeWIdx < 0) activeWIdx = 1;
+      sizeEl && sizeEl; // no-op
+      weightEl.innerHTML = weights.map(function(w, i) {
+        var isActive = i === activeWIdx;
+        if (isActive) { S.weight = w.key; S.weightExtra = w.extra_price; }
+        var bigLabel = w.key.replace('kg','').replace('0.5','½');
+        return '<button class="pill' + (isActive ? ' active' : '') + '" onclick="setWeight(this,\'' + w.key + '\',' + w.extra_price + ')">'
+          + '<div class="pill-big">' + bigLabel + '</div>'
+          + '<div class="pill-sub">' + w.key + '</div>'
+          + '</button>';
+      }).join('');
+    }
+
+    // ── FINISHING TOUCHES ──
+    var touchEl = document.getElementById('cs-touches');
+    if (touchEl && touches.length > 0) {
+      var touchHtml = touches.map(function(t) {
+        if (t.key === 'toys') {
+          return '<button class="tchip" id="toy-btn" data-k="toys" onclick="toggleToys(this)">🧸 ' + t.name + '</button>'
+            + '<div class="toy-sub" id="toy-sub">'
+            + '<div class="toy-sub-lbl">Choose Theme</div>'
+            + '<button class="topt" onclick="pickToy(this,\'Car\')">🚗 Car</button>'
+            + '<button class="topt" onclick="pickToy(this,\'Animals\')">🦁 Animals</button>'
+            + '<button class="topt" onclick="pickToy(this,\'Avengers\')">⚡ Avengers</button>'
+            + '<button class="topt" onclick="pickToy(this,\'Princess\')">👑 Princess</button>'
+            + '<button class="topt" onclick="pickToy(this,\'Dinosaur\')">🦕 Dinosaur</button>'
+            + '<button class="topt" onclick="pickToy(this,\'Unicorn\')">🦄 Unicorn</button>'
+            + '</div>';
+        }
+        if (t.key === 'sprinkles') {
+          return '<button class="tchip" id="sprinkle-btn" data-k="sprinkles" onclick="toggleSprinkles(this)">✨ ' + t.name + '</button>'
+            + '<div class="toy-sub" id="sprinkle-sub">'
+            + '<div class="toy-sub-lbl">Sprinkle Colour</div>'
+            + '<button class="sopt topt active" onclick="pickSprinkle(this,0xd4a820)">✦ Gold</button>'
+            + '<button class="sopt topt" onclick="pickSprinkle(this,0xc8c8d0)">◆ Silver</button>'
+            + '<button class="sopt topt" onclick="pickSprinkle(this,0xffffff)">◆ White</button>'
+            + '<button class="sopt topt" onclick="pickSprinkle(this,0x60a8e0)">◆ Blue</button>'
+            + '<button class="sopt topt" onclick="pickSprinkle(this,0xe04040)">◆ Red</button>'
+            + '</div>';
+        }
+        var EMOJIS = { goldLeaf:'✦', fauxBalls:'🟡', chocDrips:'🍫', hbd:'🎂', flowers:'🌸' };
+        var costStr = t.extra_price > 0 ? '' : '';
+        var extraCost = t.extra_price || 0;
+        // Map to existing setTouch cost values
+        var costMap = { goldLeaf:80, fauxBalls:60, chocDrips:50, hbd:90, flowers:50 };
+        var cost = costMap[t.key] || extraCost || 0;
+        return '<button class="tchip" data-k="' + t.key + '" onclick="setTouch(this,\'' + t.key + '\',' + cost + ')">'
+          + (EMOJIS[t.key] || '') + ' ' + t.name
+          + '</button>';
+      }).join('');
+      touchEl.innerHTML = touchHtml;
+    }
+
+    // Recalculate price with loaded values
+    calcPrice();
+    console.log('✅ Cake studio config loaded from Supabase');
+
+  } catch(e) {
+    console.warn('loadCakeStudioConfig error:', e.message);
+  }
+}
+setTimeout(loadCakeStudioConfig, 1000);
+
 debugProducts();
 
 // Check for active orders badge
@@ -4652,6 +5404,13 @@ function showPage(name){
     setTimeout(loadLiveTrackingData, 100);
     setTimeout(spawnAccConfetti, 300);
   }
+if (name === 'cake-studio') {
+  loadCakeStudioConfig();
+  setTimeout(function(){ 
+    if (typeof initCakeGL === 'function') initCakeGL();
+    if (typeof onResize === 'function') onResize();
+  }, 300);
+}
   if (name === 'explore') {
     // Reset search when opening explore
     var inp = document.getElementById('explore-search');
@@ -5497,6 +6256,36 @@ async function placeOrder() {
       if (itemsError) console.warn('Items insert warning:', itemsError.message);
     }
 
+    // ── Save cake custom orders ──
+    for (const item of cartItems) {
+      if (item.product_type === 'custom_cake' && item.cake_config) {
+        try {
+          const S = JSON.parse(item.cake_config);
+          await db.from('cake_custom_orders').insert({
+            order_id:       orderId,
+            customer_id:    customerId,
+            flavour_key:    S.flavor,
+            frosting_key:   S.frostType,
+            tier_count:     S.tiers,
+            size_inches:    parseInt(S.size) || null,
+            weight_key:     S.weight,
+            finishing:      [...(S.touches || [])],
+            toy_theme:      S.toyTheme       || null,
+            sprinkle_color: S.sprinkleColor  || null,
+            cake_name:      S.cakeName       || null,
+            name_placement: S.namePlacement  || null,
+            delivery_date:  item.delivery_date || null,
+            qty:            item.qty          || 1,
+            total_price:    item.line_total   || 0,
+            status:         'pending'
+          });
+          console.log('✅ Cake custom order saved');
+        } catch(e) {
+          console.warn('Cake order insert error:', e.message);
+        }
+      }
+    }
+
     overlay.classList.remove('show');
 
     // 2. Update success page
@@ -5555,6 +6344,24 @@ ownerWA.onclick = () => {
 
 showPage('success');
 insertNotification(data.id, 'order_placed', 'Order Placed! 🛒', 'Your order ' + orderNum + ' has been placed. We\'ll confirm it shortly.');
+// Inside placeOrder(), after successful order insert:
+var cakeItems = cartItems.filter(function(i){ return i.product_type === 'custom_cake' && i.cake_config; });
+if (cakeItems.length > 0) {
+  var cfg = JSON.parse(cakeItems[0].cake_config);
+  await db.from('cake_custom_orders').insert([{
+    order_id:       orderId,
+    customer_id:    customerId,
+    flavour_key:    cfg.flavor,
+    frosting_key:   cfg.frostType,
+    tier_count:     cfg.tiers,
+    size_inches:    cfg.size,
+    weight_key:     cfg.weight,
+    finishing:      [...cfg.touches],
+    cake_name:      cfg.cakeName,
+    name_placement: cfg.namePlacement,
+    total_price:    parseInt(document.getElementById('pnum').textContent)
+  }]);
+}
 setTimeout(function() {
   showPage('tracking');
   showToast('Tracking your order live!');
@@ -5700,6 +6507,14 @@ async function loadLiveTrackingData() {
   }).join('');
 }
 
+function _cakeDetailRow(label, value) {
+  if (!value || value === 'undefined' || value === 'null') return '';
+  return '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:9px 12px;background:var(--card);border:1px solid var(--bdr);border-radius:10px">'
+    + '<div style="font-size:11px;color:var(--dim);flex-shrink:0;margin-right:10px">' + label + '</div>'
+    + '<div style="font-size:11px;font-weight:600;color:var(--white);text-align:right">' + value + '</div>'
+    + '</div>';
+}
+
 async function openTrackingDetail(orderId, orderNum, status, total, date, itemName, itemDesc) {
   document.getElementById('td-order-num').textContent  = orderNum;
   document.getElementById('td-order-date').textContent = 'Placed on ' + date;
@@ -5733,31 +6548,75 @@ async function openTrackingDetail(orderId, orderNum, status, total, date, itemNa
 
     // ── Build items HTML ──
     var itemsHtml = '';
-    if (items.length > 0) {
+
+    // Check for cake custom order
+    var cakeData = null;
+    try {
+      var { data: cakeRow } = await db
+        .from('cake_custom_orders')
+        .select('*')
+        .eq('order_id', orderId)
+        .maybeSingle();
+      cakeData = cakeRow;
+    } catch(e) {}
+
+    if (cakeData) {
+      var finishingLabels = {
+        goldLeaf:  '✦ Gold Leaf',
+        flowers:   '🌸 Edible Flowers',
+        fauxBalls: '🟡 Faux Balls',
+        chocDrips: '🍫 Chocolate Drips',
+        hbd:       '🎂 HBD Topper',
+        toys:      '🧸 Toys',
+        sprinkles: '✨ Sprinkles'
+      };
+      var touches     = cakeData.finishing || [];
+      var touchLabels = touches.map(function(t){ return finishingLabels[t] || t; }).join('  ·  ');
+      var frostNames  = { fresh:'Fresh Cream', choc:'Chocolate Frosting', truffle:'Truffle Dark' };
+      var flavorNames = { vanilla:'Vanilla Pineapple 🍋', chocberry:'Chocolate Strawberry 🍓' };
+
+      itemsHtml = '<div style="margin-bottom:18px">'
+        + '<div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:12px">🎂 Your Custom Cake</div>'
+
+        + '<div style="background:linear-gradient(135deg,rgba(201,160,64,.12),rgba(201,160,64,.05));border:1px solid rgba(201,160,64,.28);border-radius:14px;padding:13px 15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">'
+        + '<div style="font-family:\'Fraunces\',serif;font-size:22px;font-weight:300;color:#e0bc5a">₹' + (cakeData.total_price || total) + '</div>'
+        + '<div style="font-size:11px;color:var(--dim)">Qty: ' + (cakeData.qty || 1) + '</div>'
+        + '</div>'
+
+        + '<div style="display:flex;flex-direction:column;gap:7px">'
+        + _cakeDetailRow('🍰 Flavour',    flavorNames[cakeData.flavour_key]  || cakeData.flavour_key)
+        + _cakeDetailRow('🍦 Frosting',   frostNames[cakeData.frosting_key]  || cakeData.frosting_key)
+        + _cakeDetailRow('🏗️ Tiers',      cakeData.tier_count + '-Tier')
+        + _cakeDetailRow('📐 Size',       cakeData.size_inches + '"')
+        + _cakeDetailRow('⚖️ Weight',     cakeData.weight_key)
+        + (touchLabels     ? _cakeDetailRow('✨ Finishes',    touchLabels)               : '')
+        + (cakeData.toy_theme      ? _cakeDetailRow('🧸 Toy Theme',   cakeData.toy_theme)        : '')
+        + (cakeData.sprinkle_color ? _cakeDetailRow('🎨 Sprinkles',   cakeData.sprinkle_color)   : '')
+        + (cakeData.cake_name      ? _cakeDetailRow('✍️ Name on Cake','"' + cakeData.cake_name + '" — ' + (cakeData.name_placement || 'top')) : '')
+        + (cakeData.delivery_date  ? _cakeDetailRow('📅 Delivery',    cakeData.delivery_date)    : '')
+        + '</div></div>';
+
+    } else if (items && items.length > 0) {
       itemsHtml = '<div style="margin-bottom:18px">'
         + '<div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:10px">🛒 Order Items</div>'
         + items.map(function(item) {
-          var egg   = item.egg_type === 'eggless' ? '💚 Eggless' : '❤️ With Egg';
-          var tier  = item.tier === 'couverture'  ? '🌟 Couverture' : '🍫 Premium';
-          var pack  = item.pack_label || '4pcs';
-          var qty   = item.quantity   || 1;
-          var price = item.line_total || ((item.unit_price || 0) * qty);
-          return '<div style="background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:12px;margin-bottom:8px">'
-            + '<div style="display:flex;justify-content:space-between;align-items:flex-start">'
-            + '<div style="flex:1">'
-            + '<div style="font-size:13px;font-weight:600;color:var(--white)">' + (item.product_name || 'Brownie') + '</div>'
-            + '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">'
-            + '<span style="font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(34,197,94,.12);color:var(--green)">' + egg + '</span>'
-            + '<span style="font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(107,47,206,.12);color:var(--pl)">' + tier + '</span>'
-            + '<span style="font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(255,255,255,.07);color:var(--dim)">' + pack + '</span>'
-            + '<span style="font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(255,255,255,.07);color:var(--dim)">Qty: ' + qty + '</span>'
-            + '</div>'
-            + (item.topping_price > 0 ? '<div style="font-size:10px;color:var(--gold);margin-top:3px">+ Toppings ₹' + item.topping_price + '</div>' : '')
-            + '</div>'
-            + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:16px;font-weight:700;color:var(--pl);flex-shrink:0;margin-left:12px">₹' + price + '</div>'
-            + '</div>'
-            + '</div>';
-        }).join('')
+            var egg   = item.egg_type === 'eggless' ? '💚 Eggless' : '❤️ With Egg';
+            var tier  = item.tier === 'couverture'  ? '🌟 Couverture' : '🍫 Premium';
+            var qty   = item.quantity || 1;
+            var price = item.line_total || ((item.unit_price || 0) * qty);
+            return '<div style="background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:12px;margin-bottom:8px">'
+              + '<div style="display:flex;justify-content:space-between;align-items:flex-start">'
+              + '<div style="flex:1">'
+              + '<div style="font-size:13px;font-weight:600;color:var(--white)">' + (item.product_name || 'Brownie') + '</div>'
+              + '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">'
+              + '<span style="font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(34,197,94,.12);color:var(--green)">' + egg + '</span>'
+              + '<span style="font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(107,47,206,.12);color:var(--pl)">' + tier + '</span>'
+              + '<span style="font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(255,255,255,.07);color:var(--dim)">Qty: ' + qty + '</span>'
+              + '</div>'
+              + '</div>'
+              + '<div style="font-size:16px;font-weight:700;color:var(--pl);margin-left:12px">₹' + price + '</div>'
+              + '</div></div>';
+          }).join('')
         + '</div>';
     }
 
@@ -7720,6 +8579,733 @@ async function applyTierDiscount() {
   if (tierBar) tierBar.style.display = 'none';
 
   showToast('🏅 ' + pct + '% member discount applied — ₹' + discount + ' off!');
+}
+// ══════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════
+const S = {
+  flavor:'vanilla', frostCol:0xfff0e0, frostType:'fresh',
+  tiers:1, size:8, basePrice:999, qty:1, extras:0,
+  weight:'1kg', weightExtra:200,
+  touches: new Set(),
+  toyOn:false, toy:null,
+  sprinkleOn:false, sprinkleCol:0xd4a820,
+  cakeName:'', namePlacement:'top'
+};
+
+function calcPrice(){
+  const tm = S.tiers===1?1:S.tiers===2?1.8:2.6;
+  document.getElementById('pnum').textContent = Math.round((S.basePrice+S.weightExtra)*tm*S.qty+S.extras);
+}
+
+function setWeight(btn,w,extra){
+  S.weight=w; S.weightExtra=extra;
+  btn.parentElement.querySelectorAll('.pill').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  calcPrice();
+}
+
+function setFlavor(f){
+  S.flavor=f;
+  document.querySelectorAll('.fcard').forEach(c=>c.classList.remove('active'));
+  document.querySelector(`[data-f="${f}"]`).classList.add('active');
+  const el=document.getElementById('clabel');
+  el.classList.add('out');
+  setTimeout(()=>{ el.textContent=f==='vanilla'?'Vanilla Pineapple':'Chocolate Strawberry'; el.classList.remove('out'); },400);
+  rebuild();
+}
+
+function setFrost(btn,type,col){
+  S.frostType=type; S.frostCol=col;
+  document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  rebuild();
+}
+
+function setTiers(btn,t){ S.tiers=t; document.querySelectorAll('.pill-row:nth-of-type(1) .pill').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); rebuild(); calcPrice(); }
+
+// Use separate selectors for tier and size pill rows
+function setTiersBtn(btn,t){ S.tiers=t; btn.parentElement.querySelectorAll('.pill').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); rebuild(); calcPrice(); }
+function setSizeBtn(btn,s,p){ S.size=s; S.basePrice=p; btn.parentElement.querySelectorAll('.pill').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); rebuild(); calcPrice(); }
+
+function setSize(btn,s,p){ S.size=s; S.basePrice=p; btn.parentElement.querySelectorAll('.pill').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); rebuild(); calcPrice(); }
+function setTiers(btn,t){ S.tiers=t; btn.parentElement.querySelectorAll('.pill').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); rebuild(); calcPrice(); }
+
+function setQty(d){ S.qty=Math.max(1,Math.min(20,S.qty+d)); document.getElementById('qval').textContent=S.qty; calcPrice(); }
+
+function setTouch(btn,k,cost){
+  btn.classList.toggle('active');
+  if(btn.classList.contains('active')){ S.touches.add(k); S.extras+=cost; }
+  else{ S.touches.delete(k); S.extras-=cost; }
+  rebuild(); calcPrice();
+}
+
+function toggleToys(btn){
+  S.toyOn=!S.toyOn; btn.classList.toggle('active',S.toyOn);
+  document.getElementById('toy-sub').classList.toggle('on',S.toyOn);
+  if(S.toyOn){ S.touches.add('toys'); S.extras+=150; }
+  else{ S.touches.delete('toys'); S.extras-=150; S.toy=null; document.querySelectorAll('.topt').forEach(o=>o.classList.remove('active')); }
+  rebuild(); calcPrice();
+}
+function pickToy(btn,t){ document.querySelectorAll('.topt').forEach(o=>o.classList.remove('active')); btn.classList.add('active'); S.toy=t; }
+function setName(val){
+  S.cakeName=val.trim();
+  document.getElementById('name-cc').textContent=val.length+'/18';
+  rebuild();
+}
+function setPlacement(btn,p){
+  S.namePlacement=p;
+  document.querySelectorAll('.pplace').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  rebuild();
+}
+function toggleSprinkles(btn){
+  S.sprinkleOn=!S.sprinkleOn; btn.classList.toggle('active',S.sprinkleOn);
+  document.getElementById('sprinkle-sub').classList.toggle('on',S.sprinkleOn);
+  if(S.sprinkleOn){ S.touches.add('sprinkles'); S.extras+=40; }
+  else{ S.touches.delete('sprinkles'); S.extras-=40; document.querySelectorAll('.sopt').forEach(o=>o.classList.remove('active')); }
+  rebuild(); calcPrice();
+}
+function pickSprinkle(btn,col){
+  document.querySelectorAll('.sopt').forEach(o=>o.classList.remove('active'));
+  btn.classList.add('active'); S.sprinkleCol=col; rebuild();
+}
+
+function addCart(){
+  // ── Validate delivery date ──
+  var dateInp = document.getElementById('cake-delivery-date');
+  var dateErr = document.getElementById('cake-date-err');
+  var dateVal = dateInp ? dateInp.value : '';
+  var minDate = new Date(); minDate.setDate(minDate.getDate() + 7);
+  if (!dateVal || new Date(dateVal) < minDate) {
+    if (dateErr) { dateErr.style.display = 'block'; }
+    if (dateInp) {
+      dateInp.style.borderColor = '#ff6b6b';
+      dateInp.scrollIntoView({ behavior:'smooth', block:'center' });
+      setTimeout(function(){ dateInp.style.borderColor = 'var(--border)'; }, 2000);
+    }
+    showToast('⚠️ Please select a delivery date (min 7 days)');
+    return;
+  }
+  if (dateErr) dateErr.style.display = 'none';
+
+  // ── Build cart item ──
+  var label = S.tiers + '-tier ' + (S.flavor==='vanilla'?'Vanilla Pineapple':'Choc Strawberry')
+            + ' Cake · ' + S.weight + ' · ' + S.frostType;
+  cartItems.push({
+    product_name:  'Custom Cake — ' + (S.flavor==='vanilla'?'Vanilla Pineapple':'Chocolate Strawberry'),
+    name:          'Custom Cake',
+    tier:          'couverture',
+    egg:           'eggless',
+    egg_type:      'eggless',
+    pack:          S.weight + ' · ' + S.tiers + ' tier',
+    pack_label:    S.weight,
+    qty:           S.qty,
+    quantity:      S.qty,
+    base_price:    parseInt(document.getElementById('pnum').textContent),
+    topping_price: 0,
+    toppings:      [...S.touches],
+    line_total:    parseInt(document.getElementById('pnum').textContent) * S.qty,
+    sku:           'CUSTOM-CAKE-' + S.flavor.toUpperCase(),
+    product_type:  'custom_cake',
+    delivery_date: dateVal,
+    cake_config:   JSON.stringify(S)
+  });
+
+  renderCart();
+
+  var badge = document.getElementById('cart-badge');
+  if (badge) { badge.classList.add('bump'); setTimeout(function(){ badge.classList.remove('bump'); }, 200); }
+
+  var t = document.getElementById('toast');
+  t.textContent = '🎂 Cake added to cart!';
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 2500);
+
+  setTimeout(function(){ showPage('cart'); }, 1200);
+}
+
+// ══════════════════════════════════════════════════════
+//  PARTICLES
+// ══════════════════════════════════════════════════════
+(function(){
+  const c=document.getElementById('pts');
+  if(!c) return;
+  const ctx=c.getContext('2d');
+  let W,H,p=[];
+  const rs=()=>{W=c.width=innerWidth;H=c.height=innerHeight;}
+  const mk=()=>{p=Array.from({length:35},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.2+0.3,vx:(Math.random()-0.5)*0.12,vy:-(Math.random()*0.16+0.04),a:Math.random()*0.18+0.04}));}
+  const tick=()=>{ctx.clearRect(0,0,W,H);p.forEach(d=>{d.x+=d.vx;d.y+=d.vy;if(d.y<-4){d.y=H+4;d.x=Math.random()*W;}ctx.beginPath();ctx.arc(d.x,d.y,d.r,0,Math.PI*2);ctx.fillStyle=`rgba(170,120,30,${d.a})`;ctx.fill();});requestAnimationFrame(tick);}
+  window.addEventListener('resize',()=>{rs();mk();}); rs();mk();tick();
+})();
+
+// ══════════════════════════════════════════════════════
+//  THREE.JS
+// ══════════════════════════════════════════════════════
+let renderer,scene,camera,cakeGrp;
+let drag=false,prev={x:0,y:0},ry=0.4,rx=0.08,ty=0.4,tx=0.08;
+
+const FL={
+  vanilla:{ sponge:0xe8d090, filling:0xfffae0, drizzle:0xd4a040,
+            deco:[0xffe870,0x4a9a3a,0xf5c842],
+            fogCol:0x1a0c04, l1:0xffe8a0, l2:0xa0c860 },
+  chocberry:{ sponge:0x2a0d0d, filling:0xe04870, drizzle:0x180608,
+              deco:[0xe03060,0xff5080,0xc01040],
+              fogCol:0x120508, l1:0xffb0c0, l2:0xff80a0 }
+};
+
+function initGL(){
+  const cv=document.getElementById('cake-canvas');
+  renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer.shadowMap.enabled=true;
+  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure=1.3;
+
+  scene=new THREE.Scene();
+  scene.fog=new THREE.FogExp2(0x1a0c04,0.038);
+
+  camera=new THREE.PerspectiveCamera(36,1,0.1,40);
+  camera.position.set(0,1.8,7);
+  camera.lookAt(0,0.4,0);
+
+  // Lights
+  scene.add(new THREE.AmbientLight(0xffe8c0,0.28));
+  const key=new THREE.DirectionalLight(0xffe8a0,2.2);
+  key.position.set(4,6,5); key.castShadow=true; key.shadow.mapSize.set(1024,1024); scene.add(key);
+  const fill=new THREE.DirectionalLight(0xfff0c0,0.85);
+  fill.position.set(-3,3,2); scene.add(fill);
+  const rim=new THREE.DirectionalLight(0xffeedd,0.55);
+  rim.position.set(0,2,-5); scene.add(rim);
+
+  rebuild(); onResize(); loop();
+  window.addEventListener('resize',onResize);
+
+  cv.addEventListener('mousedown',e=>{drag=true;prev={x:e.clientX,y:e.clientY};});
+  window.addEventListener('mouseup',()=>drag=false);
+  window.addEventListener('mousemove',e=>{if(!drag)return;ty+=(e.clientX-prev.x)*0.013;tx+=(e.clientY-prev.y)*0.009;tx=Math.max(-0.55,Math.min(0.65,tx));prev={x:e.clientX,y:e.clientY};});
+  cv.addEventListener('touchstart',e=>{drag=true;prev={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});
+  window.addEventListener('touchend',()=>drag=false);
+  window.addEventListener('touchmove',e=>{if(!drag)return;ty+=(e.touches[0].clientX-prev.x)*0.013;tx+=(e.touches[0].clientY-prev.y)*0.009;tx=Math.max(-0.55,Math.min(0.65,tx));prev={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});
+  cv.addEventListener('wheel',e=>{camera.position.z=Math.max(3.5,Math.min(11,camera.position.z+e.deltaY*0.009));},{passive:true});
+}
+
+function mkMat(col,rough,metal,opts){
+  return new THREE.MeshStandardMaterial(Object.assign({color:col,roughness:rough,metalness:metal||0},opts||{}));
+}
+
+// Canvas rounded rect helper
+function roundRect(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+}
+
+function rebuild(){
+  if(cakeGrp) scene.remove(cakeGrp);
+  cakeGrp=new THREE.Group();
+
+  const f=FL[S.flavor];
+  const R={6:1.0,8:1.3,10:1.6}[S.size]||1.3;
+  const cfgs=[{r:R,h:0.9},{r:R*0.72,h:0.85},{r:R*0.5,h:0.8}].slice(0,S.tiers);
+  let yOff=0, topInfo=null;
+
+  cfgs.forEach((tc,ti)=>{
+    const lg=new THREE.Group();
+
+    // — Sponge 1
+    const sGeo=new THREE.CylinderGeometry(tc.r,tc.r,tc.h*0.38,48);
+    const sMat=mkMat(f.sponge,0.88);
+    const s1=new THREE.Mesh(sGeo,sMat); s1.castShadow=true; lg.add(s1);
+
+    // — Filling ring (visible between sponges)
+    const fillGeo=new THREE.CylinderGeometry(tc.r+0.04,tc.r+0.04,0.1,48);
+    const fillEmissive=S.flavor==='chocberry'?new THREE.Color(0x2a0010):new THREE.Color(0x000000);
+    const fillMat=mkMat(f.filling,0.42,0.02,{emissive:fillEmissive,emissiveIntensity:S.flavor==='chocberry'?0.2:0});
+    const fillMesh=new THREE.Mesh(fillGeo,fillMat);
+    fillMesh.position.set(0, tc.h*0.38/2+0.05, 0);
+    lg.add(fillMesh);
+
+    // — Sponge 2
+    const s2=new THREE.Mesh(sGeo.clone(),sMat.clone());
+    s2.position.set(0, tc.h*0.38+0.1, 0); s2.castShadow=true; lg.add(s2);
+
+    // — Outer frosting shell
+    const frRough=S.frostType==='fresh'?0.52:S.frostType==='choc'?0.34:0.22;
+    const frMetal=S.frostType==='fresh'?0.02:0.12;
+    const frMat=mkMat(S.frostCol,frRough,frMetal,{side:THREE.DoubleSide});
+    const frGeo=new THREE.CylinderGeometry(tc.r+0.05,tc.r+0.05,tc.h*0.88,48,1,true);
+    const frost=new THREE.Mesh(frGeo,frMat);
+    frost.position.set(0, tc.h*0.88/2-0.02, 0); frost.castShadow=true; lg.add(frost);
+
+    // — Top cap (organic bumpy surface)
+    const capGeo=new THREE.CylinderGeometry(tc.r+0.045,tc.r+0.05,0.1,48,4);
+    const capPos=capGeo.attributes.position;
+    for(let i=0;i<capPos.count;i++){
+      if(capPos.getY(i)>0.03){
+        capPos.setX(i,capPos.getX(i)+(Math.random()-0.5)*0.04);
+        capPos.setZ(i,capPos.getZ(i)+(Math.random()-0.5)*0.04);
+        capPos.setY(i,capPos.getY(i)+Math.random()*0.045);
+      }
+    }
+    capPos.needsUpdate=true; capGeo.computeVertexNormals();
+    const capMesh=new THREE.Mesh(capGeo,frMat.clone());
+    capMesh.position.set(0, tc.h*0.88+0.03, 0); lg.add(capMesh);
+
+    // ── THICK GOLD DRIPS (TubeGeometry — matches real ganache drips in photo)
+    const dripActive = S.touches.has('chocDrips');
+    const dripCol  = dripActive ? 0xc9860a : f.drizzle;
+    const dripCount= dripActive ? 16 : 7;
+    const dripMat  = mkMat(dripCol, 0.18, 0.55, {emissive:new THREE.Color(dripActive?0x7a4000:0x3a2000), emissiveIntensity:0.3});
+    for(let d=0;d<dripCount;d++){
+      const angle=(d/dripCount)*Math.PI*2 + (Math.random()-0.5)*0.18;
+      const dripLen=0.28+Math.random()*0.42;
+      const thick=dripActive?(0.022+Math.random()*0.024):(0.009+Math.random()*0.009);
+      const curve=new THREE.CatmullRomCurve3([
+        new THREE.Vector3(Math.cos(angle)*(tc.r+0.04), tc.h*0.87,           Math.sin(angle)*(tc.r+0.04)),
+        new THREE.Vector3(Math.cos(angle)*(tc.r+0.05), tc.h*0.87-dripLen*0.4, Math.sin(angle)*(tc.r+0.05)),
+        new THREE.Vector3(Math.cos(angle)*(tc.r+0.05), tc.h*0.87-dripLen*0.85,Math.sin(angle)*(tc.r+0.05)),
+        new THREE.Vector3(Math.cos(angle)*(tc.r+0.04), tc.h*0.87-dripLen,    Math.sin(angle)*(tc.r+0.04)),
+      ]);
+      const tube=new THREE.Mesh(new THREE.TubeGeometry(curve,10,thick,8,false),dripMat.clone());
+      // Drip bulb at bottom
+      const bulb=new THREE.Mesh(new THREE.SphereGeometry(thick*1.6,8,6),dripMat.clone());
+      bulb.position.set(Math.cos(angle)*(tc.r+0.045), tc.h*0.87-dripLen, Math.sin(angle)*(tc.r+0.045));
+      lg.add(tube); lg.add(bulb);
+    }
+
+    // ── GOLD SPLATTER DOTS (always on, matches real cake)
+    const splatterMat=mkMat(0xd4a820,0.08,0.9,{emissive:new THREE.Color(0x886000),emissiveIntensity:0.4});
+    for(let i=0;i<40;i++){
+      const angle=Math.random()*Math.PI*2;
+      const onSide=Math.random()>0.4;
+      const sz=0.006+Math.random()*0.012;
+      const sp=new THREE.Mesh(new THREE.SphereGeometry(sz,7,6),splatterMat.clone());
+      if(onSide){
+        const yy=Math.random()*tc.h*0.82;
+        sp.position.set(Math.cos(angle)*(tc.r+0.055), yy, Math.sin(angle)*(tc.r+0.055));
+      } else {
+        const rr=Math.random()*tc.r*0.85;
+        sp.position.set(Math.cos(angle)*rr, tc.h*0.92+sz, Math.sin(angle)*rr);
+      }
+      lg.add(sp);
+    }
+
+    // — Gold cake board (bottom tier only) + name letter blocks
+    if(ti===0){
+      const boardR=tc.r+0.24;
+      const board=new THREE.Mesh(
+        new THREE.CylinderGeometry(boardR,boardR,0.055,64),
+        mkMat(0xc8a030,0.28,0.55)
+      );
+      board.position.set(0,-0.07,0); board.receiveShadow=true; lg.add(board);
+
+      // Name letter blocks around base board perimeter (matches "KAARMUGI LAN" in photo)
+      if(S.cakeName && S.namePlacement==='board'){
+        const letters=S.cakeName.toUpperCase().replace(/\s/g,'');
+        const letterCount=Math.min(letters.length,20);
+        const blockSize=0.095;
+        const boardPerim=2*Math.PI*boardR;
+        const spacing=Math.min(boardPerim/letterCount, blockSize*1.5);
+        const totalArc=(spacing*letterCount)/boardR;
+        const startAngle=-totalArc/2;
+        for(let li=0;li<letterCount;li++){
+          const a=startAngle+(li+0.5)*(totalArc/letterCount);
+          const bx=Math.cos(a)*boardR;
+          const bz=Math.sin(a)*boardR;
+          // Block (dark chocolate)
+          const block=new THREE.Mesh(
+            new THREE.BoxGeometry(blockSize,blockSize*0.9,blockSize),
+            mkMat(0x1e0a04,0.7,0.05)
+          );
+          block.position.set(bx, -0.02, bz);
+          block.rotation.y=-a;
+          lg.add(block);
+          // Letter canvas texture
+          const lc=document.createElement('canvas'); lc.width=64; lc.height=64;
+          const lx=lc.getContext('2d');
+          lx.fillStyle='#9060c0'; lx.font='bold 36px Georgia'; lx.textAlign='center'; lx.textBaseline='middle';
+          lx.fillText(letters[li],32,34);
+          const ltex=new THREE.CanvasTexture(lc);
+          const lface=new THREE.Mesh(new THREE.PlaneGeometry(blockSize*0.85,blockSize*0.8),new THREE.MeshStandardMaterial({map:ltex,transparent:true,roughness:0.5}));
+          lface.position.set(bx+Math.cos(a)*blockSize*0.52, -0.02, bz+Math.sin(a)*blockSize*0.52);
+          lface.rotation.y=-a;
+          lg.add(lface);
+        }
+      }
+    }
+
+    lg.position.set(0,yOff,0);
+    if(ti===cfgs.length-1) topInfo={lg,tc,topY:tc.h*0.93};
+
+    // ── TIER JUNCTION BALLS (scattered at each tier join, like photo)
+    if(ti>0 && S.touches.has('fauxBalls')){
+      const junctY=yOff-0.06;
+      const junctCnt=Math.round(tc.r*14);
+      const jCols=[{c:0xd4a820,r:0.1,m:0.7},{c:0xf5f0ea,r:0.2,m:0.1}];
+      for(let i=0;i<junctCnt;i++){
+        const angle=(i/junctCnt)*Math.PI*2+(Math.random()-0.5)*0.4;
+        const pick=jCols[Math.floor(Math.random()*jCols.length)];
+        const sz=0.04+Math.random()*0.05;
+        const jm=new THREE.Mesh(new THREE.SphereGeometry(sz,12,10),mkMat(pick.c,pick.r,pick.m));
+        jm.position.set(Math.cos(angle)*(tc.r+0.06), junctY+sz, Math.sin(angle)*(tc.r+0.06));
+        jm.castShadow=true; cakeGrp.add(jm);
+      }
+    }
+
+    yOff+=tc.h*0.9+0.06;
+    cakeGrp.add(lg);
+  });
+
+  // ━━ TOP TIER DECORATIONS ━━━━━━━━━━━━━━━━━━━━━━━━━━
+  if(topInfo){
+    const {lg,tc,topY}=topInfo;
+    const flav=FL[S.flavor];
+
+    // Base flavour deco (fruit on top)
+    if(S.flavor==='vanilla'){
+      for(let d=0;d<5;d++){
+        const angle=(d/5)*Math.PI*2;
+        const m=new THREE.Mesh(new THREE.BoxGeometry(0.1,0.09,0.1),mkMat(flav.deco[d%3],0.5));
+        m.position.set(Math.cos(angle)*(tc.r*0.6), topY+0.1, Math.sin(angle)*(tc.r*0.6));
+        m.rotation.y=Math.random(); lg.add(m);
+      }
+    } else {
+      const pool=new THREE.Mesh(new THREE.CylinderGeometry(tc.r*0.44,tc.r*0.44,0.022,36),mkMat(0xc02040,0.3,0,{transparent:true,opacity:0.75}));
+      pool.position.set(0, topY+0.04, 0); lg.add(pool);
+      for(let d=0;d<5;d++){
+        const angle=(d/5)*Math.PI*2;
+        const m=new THREE.Mesh(new THREE.SphereGeometry(0.09+Math.random()*0.03,12,8),mkMat(flav.deco[d%3],0.4));
+        m.position.set(Math.cos(angle)*(tc.r*0.58), topY+0.1, Math.sin(angle)*(tc.r*0.58));
+        m.castShadow=true; lg.add(m);
+      }
+    }
+
+    // ── FRESH FRUIT
+    if(S.touches.has('freshFruit')){
+      const fc=[0xff4040,0xff6030,0xffd700,0x44cc44,0xff69b4,0xff8844];
+      for(let i=0;i<8;i++){
+        const angle=(i/8)*Math.PI*2+0.35;
+        const m=new THREE.Mesh(new THREE.SphereGeometry(0.07+Math.random()*0.04,10,8),mkMat(fc[i%fc.length],0.35,0.03));
+        m.position.set(Math.cos(angle)*(tc.r*0.52), topY+0.13+Math.random()*0.05, Math.sin(angle)*(tc.r*0.52));
+        m.castShadow=true; lg.add(m);
+      }
+    }
+
+    // ── FAUX BALLS — clustered like real cake photo (gold + white, grouped not ringed)
+    if(S.touches.has('fauxBalls')){
+      // Main cluster: dense group on back-right of top (like photo)
+      const clusterAngle=Math.PI*0.35; // offset angle for cluster
+      const goldMat =mkMat(0xd4a820,0.06,0.88,{emissive:new THREE.Color(0x886000),emissiveIntensity:0.3});
+      const whiteMat=mkMat(0xf5f0ea,0.15,0.08,{emissive:new THREE.Color(0x222222),emissiveIntensity:0.1});
+      const ballDefs=[
+        // [r, offsetX, offsetZ, height, isGold]
+        [0.14,  0.0,   0.0,  0.16, true ],  // big gold centre
+        [0.11,  0.18,  0.04, 0.12, false],  // white
+        [0.12, -0.12,  0.08, 0.13, false],  // white
+        [0.10,  0.10, -0.14, 0.11, true ],  // gold
+        [0.09, -0.18, -0.06, 0.10, false],  // white
+        [0.07,  0.22, -0.08, 0.08, true ],  // small gold
+        [0.06, -0.06,  0.20, 0.07, false],  // small white
+        [0.08,  0.0,  -0.22, 0.09, true ],  // gold
+        [0.05,  0.28,  0.08, 0.06, false],  // tiny white
+        [0.06, -0.26,  0.10, 0.07, true ],  // tiny gold
+      ];
+      const cx=Math.cos(clusterAngle)*(tc.r*0.55);
+      const cz=Math.sin(clusterAngle)*(tc.r*0.55);
+      ballDefs.forEach(([r,ox,oz,h,isGold])=>{
+        const bm=new THREE.Mesh(new THREE.SphereGeometry(r,14,12),isGold?goldMat.clone():whiteMat.clone());
+        bm.position.set(cx+ox, topY+h, cz+oz);
+        bm.castShadow=true; lg.add(bm);
+      });
+      // Scattered few around edge (like photo shows some on sides)
+      const edgePts=[[0.6,Math.PI*1.1],[0.5,Math.PI*1.6],[0.65,Math.PI*0.8]];
+      edgePts.forEach(([frac,ang])=>{
+        const isGold=Math.random()>0.5;
+        const r=0.06+Math.random()*0.05;
+        const em=new THREE.Mesh(new THREE.SphereGeometry(r,12,10),isGold?goldMat.clone():whiteMat.clone());
+        em.position.set(Math.cos(ang)*(tc.r*frac), topY+r, Math.sin(ang)*(tc.r*frac));
+        em.castShadow=true; lg.add(em);
+      });
+    }
+
+    // ── GOLD LEAF FANS (like photo — geometric gold fan shapes on sides of cake)
+    if(S.touches.has('goldLeaf')){
+      const fanMat=mkMat(0xd4a820,0.05,0.92,{emissive:new THREE.Color(0x8a5000),emissiveIntensity:0.35,side:THREE.DoubleSide});
+      [Math.PI*0.15, Math.PI*1.15].forEach(fanAngle=>{
+        const fg=new THREE.Group();
+        const fx=Math.cos(fanAngle)*(tc.r+0.06);
+        const fz=Math.sin(fanAngle)*(tc.r+0.06);
+        fg.position.set(fx, topY+0.12, fz);
+        fg.rotation.y=-fanAngle;
+        // Fan ribs radiating from base
+        const ribCount=14;
+        const fanSpan=Math.PI*0.68;
+        const ribLen=0.28;
+        for(let ri=0;ri<ribCount;ri++){
+          const ra=-fanSpan/2+(ri/(ribCount-1))*fanSpan;
+          const ribPts=[
+            new THREE.Vector3(0,0,0),
+            new THREE.Vector3(Math.sin(ra)*ribLen, Math.cos(ra)*ribLen, 0)
+          ];
+          const rib=new THREE.Line(new THREE.BufferGeometry().setFromPoints(ribPts),new THREE.LineBasicMaterial({color:0xd4a820}));
+          fg.add(rib);
+        }
+        // Arc connecting ribs
+        const arcPts=[];
+        for(let ai=0;ai<=20;ai++){const at=-fanSpan/2+(ai/20)*fanSpan; arcPts.push(new THREE.Vector3(Math.sin(at)*ribLen,Math.cos(at)*ribLen,0));}
+        fg.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(arcPts),new THREE.LineBasicMaterial({color:0xd4a820})));
+        lg.add(fg);
+      });
+    }
+
+    // ── SPRINKLES (balls scattered on top+sides)
+    if(S.touches.has('sprinkles')){
+      const spProps={
+        [0xd4a820]:{rough:0.05,metal:0.95,emissive:0xaa7000,ei:0.35},
+        [0xc8c8d0]:{rough:0.02,metal:1.0, emissive:0x888890,ei:0.2 },
+        [0xffffff]:{rough:0.12,metal:0.15,emissive:0xddeeff,ei:0.18},
+        [0x60a8e0]:{rough:0.15,metal:0.08,emissive:0x1060c0,ei:0.4 },
+        [0xe04040]:{rough:0.12,metal:0.06,emissive:0xaa0010,ei:0.45},
+      };
+      const pp=spProps[S.sprinkleCol]||{rough:0.2,metal:0.1,emissive:0x000000,ei:0};
+      const mkSp=()=>mkMat(S.sprinkleCol,pp.rough,pp.metal,{emissive:new THREE.Color(pp.emissive),emissiveIntensity:pp.ei});
+      for(let i=0;i<80;i++){
+        const angle=Math.random()*Math.PI*2, rr=Math.random()*(tc.r*0.9);
+        const rnd=Math.random(), sz=rnd<0.15?0.028+Math.random()*0.016:rnd<0.55?0.014+Math.random()*0.01:0.006+Math.random()*0.006;
+        const m=new THREE.Mesh(new THREE.SphereGeometry(sz,10,8),mkSp());
+        m.position.set(Math.cos(angle)*rr, topY+0.068+sz, Math.sin(angle)*rr);
+        lg.add(m);
+      }
+      for(let i=0;i<55;i++){
+        const angle=Math.random()*Math.PI*2, yFrac=Math.random();
+        const rnd=Math.random(), sz=rnd<0.2?0.022+Math.random()*0.012:rnd<0.6?0.012+Math.random()*0.008:0.005+Math.random()*0.005;
+        const m=new THREE.Mesh(new THREE.SphereGeometry(sz,10,8),mkSp());
+        m.position.set(Math.cos(angle)*(tc.r+0.055+sz), topY-tc.h*0.85*yFrac+sz, Math.sin(angle)*(tc.r+0.055+sz));
+        lg.add(m);
+      }
+    }
+
+    // ── EDIBLE FLOWERS
+    if(S.touches.has('flowers')){
+      const fc=[0xff88aa,0xffaacc,0xaa66cc,0xffcc66,0xff7766];
+      for(let fi=0;fi<5;fi++){
+        const angle=(fi/5)*Math.PI*2+0.8, rr=tc.r*(0.28+Math.random()*0.4);
+        const fg=new THREE.Group();
+        fg.position.set(Math.cos(angle)*rr, topY+0.1, Math.sin(angle)*rr);
+        for(let p=0;p<5;p++){
+          const pa=(p/5)*Math.PI*2;
+          const petal=new THREE.Mesh(new THREE.SphereGeometry(0.042,8,6),mkMat(fc[fi%fc.length],0.5,0,{transparent:true,opacity:0.9}));
+          petal.position.set(Math.cos(pa)*0.065,0,Math.sin(pa)*0.065);
+          petal.scale.set(1,0.35,1); fg.add(petal);
+        }
+        const centre=new THREE.Mesh(new THREE.SphereGeometry(0.032,8,6),mkMat(0xffee44,0.4));
+        centre.position.set(0,0.02,0); fg.add(centre);
+        lg.add(fg);
+      }
+    }
+
+    // ── HAPPY BIRTHDAY TOPPER (canvas cursive text on reflective plane — like real silver topper)
+    if(S.touches.has('hbd')){
+      // Single centre stick
+      const stickMat=mkMat(0xd8d8e0,0.05,0.92,{emissive:new THREE.Color(0x404050),emissiveIntensity:0.15});
+      const stick=new THREE.Mesh(new THREE.CylinderGeometry(0.016,0.016,0.75,10),stickMat);
+      stick.position.set(0, topY+0.5, 0); lg.add(stick);
+      // Bow on stick
+      [-1,1].forEach(side=>{
+        const bow=new THREE.Mesh(new THREE.TorusGeometry(0.055,0.014,6,12,Math.PI),mkMat(0xe0e8f0,0.1,0.7));
+        bow.position.set(side*0.06, topY+0.26, 0);
+        bow.rotation.z=side*0.5; lg.add(bow);
+      });
+      // Canvas "Happy Birthday" cursive text topper
+      const hc=document.createElement('canvas'); hc.width=512; hc.height=256;
+      const hx=hc.getContext('2d');
+      hx.clearRect(0,0,512,256);
+      // Silver metallic background
+      const bgGrad=hx.createLinearGradient(0,0,512,256);
+      bgGrad.addColorStop(0,'rgba(195,205,215,0.96)');
+      bgGrad.addColorStop(0.5,'rgba(225,232,240,0.98)');
+      bgGrad.addColorStop(1,'rgba(190,200,212,0.96)');
+      hx.fillStyle=bgGrad;
+      roundRect(hx,8,8,496,240,18); hx.fill();
+      // Dark border for definition
+      hx.strokeStyle='rgba(80,90,110,0.7)'; hx.lineWidth=2.5;
+      roundRect(hx,8,8,496,240,18); hx.stroke();
+      // Inner rule lines
+      hx.strokeStyle='rgba(80,90,110,0.25)'; hx.lineWidth=1;
+      hx.beginPath(); hx.moveTo(30,42); hx.lineTo(482,42); hx.stroke();
+      hx.beginPath(); hx.moveTo(30,214); hx.lineTo(482,214); hx.stroke();
+      // TEXT — dark chocolate, fully visible
+      hx.font='italic bold 72px Georgia, serif';
+      hx.fillStyle='#1a0c04';
+      hx.textAlign='center'; hx.textBaseline='middle';
+      hx.fillText('Happy',256,88);
+      hx.font='italic bold 65px Georgia, serif';
+      hx.fillText('Birthday',256,178);
+      // Subtle metallic shine — much lighter than before
+      const shine=hx.createLinearGradient(0,0,0,256);
+      shine.addColorStop(0,'rgba(255,255,255,0.15)');
+      shine.addColorStop(0.5,'rgba(255,255,255,0)');
+      hx.fillStyle=shine; hx.fillRect(0,0,512,256);
+      const htex=new THREE.CanvasTexture(hc);
+      const hbdPlane=new THREE.Mesh(new THREE.PlaneGeometry(tc.r*1.6,tc.r*0.8),new THREE.MeshStandardMaterial({map:htex,transparent:true,roughness:0.05,metalness:0.85,side:THREE.DoubleSide}));
+      hbdPlane.position.set(0, topY+0.9, 0);
+      hbdPlane.name='hbdTopper'; lg.add(hbdPlane);
+    }
+
+    // ── NAME ON CAKE (top or front side placement)
+    if(S.cakeName && S.namePlacement!=='board'){
+      const cvs2=document.createElement('canvas'); cvs2.width=512; cvs2.height=128;
+      const ctx2=cvs2.getContext('2d');
+      ctx2.clearRect(0,0,512,128);
+      ctx2.fillStyle='rgba(255,245,215,0.9)';
+      roundRect(ctx2,8,16,496,96,16); ctx2.fill();
+      ctx2.strokeStyle='rgba(180,130,20,0.65)'; ctx2.lineWidth=2;
+      roundRect(ctx2,8,16,496,96,16); ctx2.stroke();
+      ctx2.strokeStyle='rgba(180,130,20,0.3)'; ctx2.lineWidth=1;
+      ctx2.beginPath(); ctx2.moveTo(28,34); ctx2.lineTo(484,34); ctx2.stroke();
+      ctx2.beginPath(); ctx2.moveTo(28,94); ctx2.lineTo(484,94); ctx2.stroke();
+      const fontSize=S.cakeName.length>12?36:S.cakeName.length>8?42:50;
+      ctx2.font=`italic ${fontSize}px Georgia, serif`;
+      ctx2.fillStyle='#3a1a04'; ctx2.textAlign='center'; ctx2.textBaseline='middle';
+      ctx2.fillText(S.cakeName,256,66);
+      ctx2.fillStyle='rgba(180,130,20,0.7)'; ctx2.font='14px serif';
+      ctx2.fillText('✦',30,64); ctx2.fillText('✦',482,64);
+      const tex=new THREE.CanvasTexture(cvs2);
+      const nameW=tc.r*1.3, nameH=nameW/4;
+      const nameMesh=new THREE.Mesh(new THREE.PlaneGeometry(nameW,nameH),new THREE.MeshStandardMaterial({map:tex,transparent:true,roughness:0.4,metalness:0.05,side:THREE.DoubleSide}));
+      if(S.namePlacement==='top'){ nameMesh.rotation.x=-Math.PI/2; nameMesh.position.set(0,topY+0.12,0); }
+      else { nameMesh.position.set(0,topY*0.35,tc.r+0.07); }
+      nameMesh.name='nameLabel'; lg.add(nameMesh);
+    }
+
+    // ── CANDLE + FLAME
+    const candleCol=S.flavor==='vanilla'?0xffe87a:0xff4472;
+    const candle=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,0.35,12),mkMat(candleCol,0.6));
+    candle.position.set(0, topY+0.26, 0); lg.add(candle);
+    const flame=new THREE.Mesh(new THREE.SphereGeometry(0.055,10,8),mkMat(0xffcc44,0.2,0,{emissive:new THREE.Color(0xffaa00),emissiveIntensity:2.4}));
+    flame.position.set(0, topY+0.5, 0); flame.name='flame'; lg.add(flame);
+    const flameLight=new THREE.PointLight(0xffaa40,1.8,3.5);
+    flameLight.position.set(0, topY+0.54, 0); flameLight.name='fLight'; lg.add(flameLight);
+  }
+
+  cakeGrp.position.set(0,-yOff/2,0);
+  scene.add(cakeGrp);
+
+  const fSceneCol=FL[S.flavor];
+  scene.fog.color.set(fSceneCol.fogCol);
+  scene.children.filter(c=>c.isDirectionalLight).forEach((l,i)=>{ if(i===0)l.color.set(fSceneCol.l1); if(i===1)l.color.set(fSceneCol.l2); });
+}
+
+window.rebuild=rebuild;
+
+function onResize(){
+  const w=document.querySelector('.canvas-wrap');
+  renderer.setSize(w.clientWidth,w.clientHeight,false);
+  camera.aspect=w.clientWidth/w.clientHeight; camera.updateProjectionMatrix();
+}
+
+let T=0;
+function loop(){
+  requestAnimationFrame(loop); T+=0.016;
+  ry+=(ty-ry)*0.065; rx+=(tx-rx)*0.065;
+  if(!drag) ty+=0.004;
+  if(cakeGrp){
+    cakeGrp.rotation.y=ry; cakeGrp.rotation.x=rx;
+    cakeGrp.traverse(c=>{
+      if(c.name==='flame') c.scale.setScalar(0.92+Math.sin(T*8+Math.random()*0.3)*0.13);
+      if(c.name==='fLight') c.intensity=1.5+Math.sin(T*9)*0.5;
+      if(c.name==='star') c.rotation.y=T*2;
+      if(c.name==='hbdTopper') c.rotation.y=ry; // always face camera
+    });
+  }
+  renderer.render(scene,camera);
+}
+
+// ── CAKE REFERENCE CAROUSEL ──
+var _refIdx = 0;
+var _refImages = [
+  { src:'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-1.jpeg', cap:'2-Tier · White Cream · Gold Drips · Name on Board' },
+  { src:'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-2.jpeg', cap:'1-Tier · Chocolate Frosting' },
+  { src:'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-3.jpeg', cap:'3-Tier · Flowers · Sprinkles' }
+];
+
+function refGoTo(i) {
+  _refIdx = (i + _refImages.length) % _refImages.length;
+  var slides = document.getElementById('ref-slides');
+  if (slides) slides.style.transform = 'translateX(-' + (_refIdx * 100) + '%)';
+  var dots = document.getElementById('ref-dots');
+  if (dots) {
+    Array.from(dots.children).forEach(function(d, di) {
+      d.style.width      = di === _refIdx ? '18px' : '6px';
+      d.style.borderRadius = di === _refIdx ? '2px' : '50%';
+      d.style.background   = di === _refIdx ? 'var(--gold)' : 'rgba(201,160,64,.28)';
+    });
+  }
+}
+
+function refSlide(dir) { refGoTo(_refIdx + dir); }
+
+// Touch swipe support
+(function() {
+  var startX = 0;
+  document.addEventListener('touchstart', function(e) {
+    var el = e.target.closest('#ref-carousel');
+    if (el) startX = e.touches[0].clientX;
+  }, { passive: true });
+  document.addEventListener('touchend', function(e) {
+    var el = e.target.closest('#ref-carousel');
+    if (!el) return;
+    var diff = startX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) refSlide(diff > 0 ? 1 : -1);
+  });
+})();
+
+function openRefLightbox(i) {
+  _refIdx = i;
+  var lb    = document.getElementById('ref-lightbox');
+  var img   = document.getElementById('ref-lb-img');
+  var cap   = document.getElementById('ref-lb-cap');
+  if (!lb || !img) return;
+  img.src           = _refImages[i].src;
+  cap.textContent   = _refImages[i].cap;
+  lb.style.display  = 'flex';
+  refGoTo(i);
+}
+
+function closeRefLightbox() {
+  var lb = document.getElementById('ref-lightbox');
+  if (lb) lb.style.display = 'none';
+}
+
+function refLbNav(dir) {
+  var i = (_refIdx + dir + _refImages.length) % _refImages.length;
+  var img = document.getElementById('ref-lb-img');
+  var cap = document.getElementById('ref-lb-cap');
+  if (img) img.src = _refImages[i].src;
+  if (cap) cap.textContent = _refImages[i].cap;
+  _refIdx = i;
+  refGoTo(i);
+}
+// Set cake delivery date min = today + 7 days
+(function(){
+  var inp = document.getElementById('cake-delivery-date');
+  if (inp) {
+    var d = new Date(); d.setDate(d.getDate() + 7);
+    inp.min = d.toISOString().split('T')[0];
+  }
+})();
+
+// change to:
+function initCakeGL() {
+  if (window._cakeGLInited) return;
+  window._cakeGLInited = true;
+  initGL();
 }
 </script>
 </body>
