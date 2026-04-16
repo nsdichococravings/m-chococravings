@@ -10,7 +10,6 @@
 
 <title>NSDI ChocoCravings</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"> </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -594,6 +593,361 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 @keyframes spin{to{transform:rotate(360deg)}}
 .loading-txt{font-size:14px;color:var(--dim); font-family: 'Cormorant Garamond', serif;font-size: 18px;font-weight: 600;letter-spacing: 0.5px;}
 
+/* ══ CAKE STUDIO — DUSTY ROSE LUXURY ══ */
+#page-cake-studio {
+  background: #f0e4de;
+}
+#page-cake-studio .panel {
+  background: linear-gradient(180deg, #f0e4de 0%, #ead8d0 60%, #e8d2ca 100%);
+  border-left: 1px solid rgba(201,160,64,.2);
+  padding: 28px 20px;
+  gap: 28px;
+}
+
+/* Section headers */
+#page-cake-studio .sh-dot {
+  background: #c9a040;
+  box-shadow: 0 0 5px rgba(201,160,64,.5);
+}
+#page-cake-studio .sh-text {
+  font-size: 10.5px;
+  letter-spacing: .85em;
+  color: rgba(88, 2, 88, 0.6);
+}
+#page-cake-studio .sh-line {
+  background: linear-gradient(to right, rgba(201,160,64,.4), transparent);
+}
+
+/* ── FLAVOUR CARDS ── */
+#page-cake-studio .fcard {
+  background: #faf2ef;
+  border: 1px solid rgba(201,160,64,.18);
+  padding: 17px 17px 14px 20px;
+  box-shadow: 0 2px 14px rgba(180,90,70,.08), 0 1px 0 rgba(255,255,255,.6);
+  transition: border-color .3s, box-shadow .3s, transform .2s;
+}
+#page-cake-studio .fcard::after {
+  content: '';
+  position: absolute;
+  top: 10px; right: 12px;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: transparent;
+  transition: all .3s;
+  pointer-events: none;
+}
+#page-cake-studio .fcard.active::after {
+  background: #6e0977;
+  box-shadow: 0 0 8px rgba(110,9,119,.55);
+}
+#page-cake-studio .fcard:hover {
+  border-color: rgba(201,160,64,.42);
+  box-shadow: 0 8px 28px rgba(180,90,70,.12), 0 1px 0 rgba(255,255,255,.8);
+  transform: translateY(-2px);
+}
+#page-cake-studio .fcard.active {
+  background: #fff8f5;
+  border: 1.5px solid rgba(201,160,64,.6);
+  box-shadow: 0 10px 36px rgba(180,90,70,.14), 0 1px 0 rgba(255,255,255,.9);
+}
+#page-cake-studio .fcard::before {
+  background: linear-gradient(180deg, var(--card-accent,#c9a040), rgba(180,130,40,.5));
+  width: 3px;
+  box-shadow: 1px 0 8px rgba(201,160,64,.25);
+}
+#page-cake-studio .fswatch {
+  width: 34px; height: 34px;
+  border: 1.5px solid rgba(201,160,64,.3);
+  box-shadow: 0 3px 10px rgba(0,0,0,.1), inset 0 1px 0 rgba(255,255,255,.5);
+}
+#page-cake-studio .ftitle {
+  font-size: 17px;
+  font-weight: 600;
+  color: #2a0e08;
+  letter-spacing: .01em;
+}
+#page-cake-studio .fsub {
+  font-size: 8px;
+  letter-spacing: .2em;
+  color: rgba(180,90,70,.6);
+  margin-top: 2px;
+}
+#page-cake-studio .fdesc {
+  font-size: 11.5px;
+  color: #8a5a4a;
+  line-height: 1.65;
+  margin-top: 6px;
+}
+#page-cake-studio .fcard[data-f="vanilla"] .ftag {
+  border-color: rgba(201,160,64,.32);
+  color: rgba(160,100,30,.85);
+  background: rgba(201,160,64,.1);
+}
+#page-cake-studio .fcard[data-f="chocberry"] .ftag {
+  border-color: rgba(192,64,112,.28);
+  color: rgba(160,50,90,.85);
+  background: rgba(192,64,112,.08);
+}
+
+/* ── FROSTING BUTTONS ── */
+#page-cake-studio .fbtn {
+  background: #f5ece8;
+  border: 1px solid rgba(201,160,64,.18);
+  padding: 13px 8px 11px;
+  box-shadow: 0 2px 8px rgba(180,90,70,.07), 0 1px 0 rgba(255,255,255,.5);
+  transition: all .25s;
+}
+#page-cake-studio .fbtn:hover {
+  border-color: rgba(201,160,64,.38);
+  background: #faf2ef;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(180,90,70,.12);
+}
+#page-cake-studio .fbtn.active {
+  background: #fff8f5;
+  border: 1.5px solid rgba(201,160,64,.58);
+  box-shadow: 0 6px 22px rgba(180,90,70,.14), inset 0 1px 0 rgba(255,255,255,.9);
+}
+#page-cake-studio .frost-swatch {
+  width: 38px; height: 38px;
+  box-shadow: 0 3px 12px rgba(0,0,0,.1), inset 0 1px 0 rgba(255,255,255,.4);
+}
+#page-cake-studio .frost-name {
+  font-size: 7.5px;
+  letter-spacing: .2em;
+  color: #b08070;
+}
+#page-cake-studio .fbtn.active .frost-name {
+  color: rgba(160,100,30,.9);
+}
+
+/* ── PILLS (Tiers / Sizes / Weights) ── */
+#page-cake-studio .pill {
+  background: #f5ece8;
+  border: 1px solid rgba(201,160,64,.18);
+  color: #b08878;
+  box-shadow: 0 1px 6px rgba(180,90,70,.07), 0 1px 0 rgba(255,255,255,.5);
+  transition: all .22s;
+}
+#page-cake-studio .pill:hover {
+  border-color: rgba(110,9,119,.28);
+  color: #6e0977;
+  background: #faf2ef;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(110,9,119,.1);
+}
+#page-cake-studio .pill.active {
+  background: #fff8f5;
+  border: 1.5px solid rgba(201,160,64,.58);
+  color: #8a5c18;
+  box-shadow: 0 6px 20px rgba(180,90,70,.14), inset 0 1px 0 rgba(255,255,255,.9);
+}
+#page-cake-studio .pill-big {
+  color: #2a0e08;
+  font-size: 22px;
+}
+#page-cake-studio .pill.active .pill-big {
+  color: #1a0c04;
+}
+#page-cake-studio .pill-sub {
+  font-size: 7.5px;
+  letter-spacing: .15em;
+  color: #c09080;
+}
+#page-cake-studio .pill.active .pill-sub {
+  color: rgba(201,160,64,.7);
+}
+
+/* ── FINISHING TOUCH CHIPS ── */
+#page-cake-studio .tchip {
+  background: #f5ece8;
+  border: 1px solid rgba(201,160,64,.18);
+  color: #b08878;
+  font-size: 8px;
+  letter-spacing: .12em;
+  box-shadow: 0 1px 5px rgba(180,90,70,.07), 0 1px 0 rgba(255,255,255,.5);
+  transition: all .2s;
+}
+#page-cake-studio .tchip::before {
+  border: 1px solid rgba(201,160,64,.28);
+  background: transparent;
+}
+#page-cake-studio .tchip:hover {
+  border-color: rgba(110,9,119,.3);
+  color: #6e0977;
+  background: #faf2ef;
+  box-shadow: 0 4px 12px rgba(110,9,119,.09);
+}
+#page-cake-studio .tchip.active {
+  background: #fff8f5;
+  border: 1.5px solid rgba(201,160,64,.52);
+  color: #8a5c18;
+  box-shadow: 0 4px 14px rgba(180,90,70,.12);
+}
+#page-cake-studio .tchip.active::before {
+  background: #c9a040;
+  border-color: #c9a040;
+  box-shadow: 0 0 6px rgba(201,160,64,.55);
+}
+#page-cake-studio .toy-sub {
+  background: rgba(250,242,239,.7);
+  border: 1px solid rgba(201,160,64,.22);
+}
+#page-cake-studio .topt, #page-cake-studio .sopt {
+  background: #faf2ef;
+  border: 1px solid rgba(201,160,64,.22);
+  color: #b08878;
+}
+#page-cake-studio .topt:hover, #page-cake-studio .sopt:hover {
+  border-color: rgba(110,9,119,.3);
+  color: #6e0977;
+  background: #fff8f5;
+}
+#page-cake-studio .topt.active, #page-cake-studio .sopt.active {
+  border-color: rgba(201,160,64,.55);
+  color: #8a5c18;
+  background: #fff8f5;
+}
+
+/* ── NAME INPUT ── */
+#page-cake-studio .name-input-wrap {
+  background: #fff8f5;
+  border: 1px solid rgba(201,160,64,.28);
+  box-shadow: 0 2px 10px rgba(180,90,70,.07), inset 0 1px 0 rgba(255,255,255,.8);
+}
+#page-cake-studio .name-input-wrap:focus-within {
+  border-color: #6e0977;
+  box-shadow: 0 0 0 3px rgba(110,9,119,.1), 0 4px 16px rgba(180,90,70,.1);
+}
+#page-cake-studio .name-input {
+  color: #2a0e08;
+  font-size: 16px;
+}
+#page-cake-studio .name-input::placeholder {
+  color: rgba(180,120,100,.45);
+}
+#page-cake-studio .name-char-count {
+  color: rgba(180,120,100,.45);
+}
+
+/* ── PLACEMENT BUTTONS ── */
+#page-cake-studio .pplace {
+  background: #f5ece8;
+  border: 1px solid rgba(201,160,64,.2);
+  color: #b08878;
+  box-shadow: 0 1px 5px rgba(180,90,70,.07);
+}
+#page-cake-studio .pplace:hover {
+  border-color: rgba(110,9,119,.28);
+  color: #6e0977;
+  background: #faf2ef;
+  transform: translateY(-1px);
+}
+#page-cake-studio .pplace.active {
+  background: #fff8f5;
+  border: 1.5px solid rgba(201,160,64,.52);
+  color: #8a5c18;
+  box-shadow: 0 4px 14px rgba(180,90,70,.12);
+}
+#page-cake-studio .pplace-sub {
+  color: #c0a090;
+}
+
+/* ── QTY ROW ── */
+#page-cake-studio .qty-row {
+  border: 1px solid rgba(201,160,64,.28);
+  background: #fff8f5;
+  box-shadow: 0 2px 10px rgba(180,90,70,.08), inset 0 1px 0 rgba(255,255,255,.9);
+}
+#page-cake-studio .qbtn {
+  background: #f5ece8;
+  color: #c9a040;
+  font-size: 22px;
+}
+#page-cake-studio .qbtn:hover {
+  background: #fae8e0;
+}
+#page-cake-studio .qval {
+  background: #fff8f5;
+  color: #2a0e08;
+  border-color: rgba(201,160,64,.28);
+  letter-spacing: .3em;
+}
+
+/* ── PRICE BLOCK ── */
+#page-cake-studio .price-block {
+  background: linear-gradient(135deg, rgba(255,248,245,.95) 0%, rgba(245,236,232,.8) 100%);
+  border: 1px solid rgba(201,160,64,.32);
+  box-shadow: 0 4px 20px rgba(180,90,70,.1), inset 0 1px 0 rgba(255,255,255,.9);
+}
+#page-cake-studio .price-lbl {
+  color: rgba(180,100,70,.55);
+  letter-spacing: .65em;
+  font-size: 7px;
+}
+#page-cake-studio .price-amount {
+  font-size: 40px;
+  color: #2a0e08;
+}
+#page-cake-studio .price-amount .sym {
+  color: rgba(160,100,40,.6);
+}
+
+/* ── DATE INPUT ── */
+#page-cake-studio #cake-delivery-date {
+  background: #fff8f5;
+  border: 1px solid rgba(201,160,64,.28);
+  color: #eedad5;
+  font-family: 'Jost', sans-serif;
+  font-size: 13px;
+  border-radius: 2px;
+  box-shadow: 0 2px 10px rgba(180,90,70,.07), inset 0 1px 0 rgba(255,255,255,.8);
+  color-scheme: light;
+}
+#page-cake-studio #cake-delivery-date::-webkit-calendar-picker-indicator {
+  opacity: .5;
+  cursor: pointer;
+  filter: invert(30%) sepia(60%) saturate(400%) hue-rotate(340deg);
+}
+#page-cake-studio #cake-delivery-date::placeholder {
+  color: rgba(180,120,100,.5);
+}
+#page-cake-studio #cake-delivery-date:focus {
+  border-color: #6e0977;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(110,9,119,.1);
+}
+#page-cake-studio #cake-date-ph {
+  color: rgba(180,120,100,.5);
+}
+
+/* ── ADD TO CART CTA ── */
+#page-cake-studio .cta {
+  background: linear-gradient(135deg,
+    #c9a040 0%, #8a5c18 40%,
+    #c9a040 70%, #6e0977 100%);
+  background-size: 220% 100%;
+  background-position: 0%;
+  color: #fdf4dc;
+  letter-spacing: .6em;
+  font-size: 9.5px;
+  padding: 20px 24px;
+  box-shadow:
+    0 8px 32px rgba(180,90,70,.22),
+    0 4px 12px rgba(110,9,119,.18),
+    inset 0 1px 0 rgba(255,255,255,.2),
+    inset 0 -1px 0 rgba(0,0,0,.08);
+  border-top: 1px solid rgba(255,255,255,.18);
+  transition: all .45s;
+}
+#page-cake-studio .cta:hover {
+  background-position: 100%;
+  letter-spacing: .75em;
+  box-shadow:
+    0 14px 42px rgba(180,90,70,.28),
+    0 6px 18px rgba(110,9,119,.25);
+}
+
 /* ── PWA MOBILE FULL SCREEN ── */
 @media (max-width: 480px) {
   body {
@@ -712,7 +1066,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
   --bg-mid:#130905;
   --bg-raised:#1c0f07;
   --panel:#160c05;
-  --panel-raised:#1e1008;
+  --panel-raised:#f0e8ed;
   --gold:#c9a040;
   --gold-bright:#e0bc5a;
   --gold-dim:#8a6820;
@@ -1063,10 +1417,10 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
       
 
       <!-- CUSTOM BROWNIE SLAB CARD -->
-      <div onclick="showPage('custom-order')" style="margin:0 16px 16px;position:relative;border-radius:18px;overflow:hidden;cursor:pointer;height:130px">
+      <div onclick="showPage('custom-order')" style="margin:0 16px 20px;position:relative;border-radius:18px;overflow:hidden;cursor:pointer;height:220px">
 
         <!-- Real photo background -->
-        <img src="https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-1.jpeg"
+        <img src="https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/brownieCard.jpeg"
           style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 60%">
 
         <!-- Dark gradient overlay -->
@@ -1078,13 +1432,11 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
         <!-- Content -->
         <div style="position:relative;z-index:2;padding:16px 18px;height:100%;display:flex;align-items:center;justify-content:space-between">
           <div>
-            <div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:6px">NSDI · Made to Order</div>
-            <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:#fff;line-height:1.1;text-shadow:0 2px 10px rgba(0,0,0,.4)">Custom Brownie<br><span style="font-style:italic;background:linear-gradient(90deg,#f9c8ff,#ffb3f0,#ffd6b0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Slab & Creations</span></div>
-            <div style="font-size:10px;color:rgba(255,255,255,.65);margin-top:5px">Birthday · Anniversary · Baby Shower</div>
-          </div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:#fff;line-height:1.1;text-shadow:0 2px 12px rgba(0,0,0,.4)">Custom Brownie<br><span style="font-style:italic;background:linear-gradient(90deg,#f9c8ff,#ffb3f0,#ffd6b0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Slab & Creations</span></div>
+         </div>
           <!-- CTA arrow -->
           <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0">
-            <div style="font-size:28px">🍫</div>
+            <div style="font-size:28px"></div>
             <div style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border-radius:20px;padding:4px 10px">
               <span style="font-size:9px;font-weight:700;color:#fff">Design</span>
               <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2L7 5L3 8" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -1851,107 +2203,45 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
         </svg>
         </div>
         <div class="studio" style="display:grid;grid-template-areas:'canvas' 'panel';grid-template-columns:1fr;grid-template-rows:55vw 1fr">
-        <div class="canvas-wrap">
-    <canvas id="cake-canvas"></canvas>
-    <div class="canvas-ui">
-      <div class="cbracket tl"></div><div class="cbracket tr"></div>
-      <div class="cbracket bl"></div><div class="cbracket br"></div>
-      <div class="hint-pill">Drag · Rotate · Zoom</div>
-      <div class="cake-label">
-        <div class="cake-label-name" id="clabel">Vanilla Pineapple</div>
-        <div class="cake-label-rule"></div>
+        <div class="canvas-wrap" id="cs-photo-wrap"
+          onmouseenter="csPauseScroll()"
+          onmouseleave="csResumeScroll()"
+          ontouchstart="csPauseScroll()"
+          onclick="csOpenLightbox()">        
+
+        <!-- Main photo -->
+        <img id="cs-photo-main" src="https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-1.jpeg"
+          style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;transition:opacity .5s ease">
+        <!-- Crossfade layer -->
+        <img id="cs-photo-fade" src=""
+          style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;opacity:0;transition:opacity .5s ease;pointer-events:none">
+
+        <!-- Dark vignette overlay -->
+        <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.12) 0%,transparent 40%,transparent 55%,rgba(0,0,0,.72) 100%);pointer-events:none;z-index:1"></div>
+
+        <!-- Top-left: brand pill -->
+        <div style="position:absolute;top:14px;left:14px;z-index:3;display:flex;align-items:center;gap:6px;background:rgba(10,5,1,.65);border:1px solid rgba(201,160,64,.3);backdrop-filter:blur(10px);padding:5px 12px">
+          <div style="width:5px;height:5px;border-radius:50%;background:#e0bc5a;box-shadow:0 0 6px rgba(201,160,64,.8);animation:pulse 1.5s infinite"></div>
+          <div style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:.35em;color:rgba(201,160,64,.9);text-transform:uppercase">Live Preview</div>
+        </div>
+
+        <!-- Top-right: photo counter -->
+        <div id="cs-photo-counter" style="position:absolute;top:14px;right:14px;z-index:3;font-family:'Cinzel',serif;font-size:8px;letter-spacing:.2em;color:rgba(240,220,170,.6);background:rgba(0,0,0,.45);backdrop-filter:blur(8px);padding:4px 10px;border:1px solid rgba(201,160,64,.15)">1 / 1</div>
+
+        <!-- Prev / Next arrows (shown when multiple matching photos) -->
+        <div onclick="csPhotoNav(-1)" id="cs-photo-prev" style="display:none;position:absolute;left:10px;top:50%;transform:translateY(-50%);z-index:4;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.5);border:1px solid rgba(201,160,64,.3);display:none;align-items:center;justify-content:center;font-size:18px;color:#e0bc5a;cursor:pointer;backdrop-filter:blur(6px)">‹</div>
+        <div onclick="csPhotoNav(1)"  id="cs-photo-next" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);z-index:4;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.5);border:1px solid rgba(201,160,64,.3);display:none;align-items:center;justify-content:center;font-size:18px;color:#e0bc5a;cursor:pointer;backdrop-filter:blur(6px)">›</div>
+
+        <!-- Corner brackets for luxury feel -->
+        <div class="cbracket tl" style="z-index:2"></div>
+        <div class="cbracket tr" style="z-index:2"></div>
+        <div class="cbracket bl" style="z-index:2"></div>
+        <div class="cbracket br" style="z-index:2"></div>
       </div>
-    </div>
   </div>
 
   <!-- PANEL -->
-  <!-- PANEL -->
   <div class="panel">
-    <!-- REAL EXAMPLE CAROUSEL -->
-    <div>
-      <div class="sh"><div class="sh-dot"></div><div class="sh-text">Real Examples</div><div class="sh-line"></div></div>
-
-      <!-- CAROUSEL STRIP -->
-      <div style="position:relative;overflow:hidden;border-radius:4px" id="ref-carousel">
-        <!-- SLIDES -->
-        <div id="ref-slides" style="display:flex;transition:transform .4s cubic-bezier(.16,1,.3,1);will-change:transform">
-
-          <!-- Slide 1 -->
-          <div class="ref-slide" style="min-width:100%;position:relative;flex-shrink:0">
-            <img src="https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-1.jpeg"
-              style="width:100%;height:170px;object-fit:cover;display:block"
-              onerror="this.parentElement.parentElement.style.display='none'">
-            <div style="position:absolute;inset:0;background:linear-gradient(transparent 45%,rgba(0,0,0,.7))"></div>
-            <!-- Labels -->
-            <div style="position:absolute;top:14%;right:6%;background:rgba(0,0,0,.65);color:#e0bc5a;font-size:7.5px;letter-spacing:.18em;padding:3px 8px;backdrop-filter:blur(4px)">Faux Balls ✦</div>
-            <div style="position:absolute;top:36%;left:4%;background:rgba(0,0,0,.65);color:#e0bc5a;font-size:7.5px;letter-spacing:.18em;padding:3px 8px;backdrop-filter:blur(4px)">Gold Leaf ✦</div>
-            <div style="position:absolute;top:58%;right:6%;background:rgba(0,0,0,.65);color:#e0bc5a;font-size:7.5px;letter-spacing:.18em;padding:3px 8px;backdrop-filter:blur(4px)">Gold Drips ✦</div>
-            <div style="position:absolute;bottom:22%;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.65);color:#e0bc5a;font-size:7.5px;letter-spacing:.18em;padding:3px 8px;backdrop-filter:blur(4px);white-space:nowrap">Name on Board ✦</div>
-            <!-- Caption -->
-            <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 8px">
-              <div style="font-family:'Cormorant Garamond',serif;font-size:12px;font-style:italic;color:rgba(240,220,170,.9)">2-Tier · White Cream · Gold Drips</div>
-            </div>
-            <!-- Tap to view -->
-            <div onclick="openRefLightbox(0)" style="position:absolute;top:8px;right:8px;background:rgba(201,160,64,.18);border:1px solid rgba(201,160,64,.45);color:#e0bc5a;font-size:7px;letter-spacing:.22em;padding:4px 10px;cursor:pointer;backdrop-filter:blur(6px)">TAP TO VIEW</div>
-          </div>
-
-          <!-- Slide 2 — add your second real photo here -->
-          <div class="ref-slide" style="min-width:100%;position:relative;flex-shrink:0">
-            <img src="https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-2.jpeg"
-              style="width:100%;height:170px;object-fit:cover;display:block"
-              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-            <div style="display:none;width:100%;height:170px;background:#1e1008;align-items:center;justify-content:center;flex-direction:column;gap:8px">
-              <div style="font-size:28px">🎂</div>
-              <div style="font-size:9px;letter-spacing:.2em;color:var(--text-soft)">COMING SOON</div>
-            </div>
-            <div style="position:absolute;inset:0;background:linear-gradient(transparent 45%,rgba(0,0,0,.7))"></div>
-            <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 8px">
-              <div style="font-family:'Cormorant Garamond',serif;font-size:12px;font-style:italic;color:rgba(240,220,170,.9)">1-Tier · Chocolate Frosting</div>
-            </div>
-            <div onclick="openRefLightbox(1)" style="position:absolute;top:8px;right:8px;background:rgba(201,160,64,.18);border:1px solid rgba(201,160,64,.45);color:#e0bc5a;font-size:7px;letter-spacing:.22em;padding:4px 10px;cursor:pointer;backdrop-filter:blur(6px)">TAP TO VIEW</div>
-          </div>
-
-          <!-- Slide 3 -->
-          <div class="ref-slide" style="min-width:100%;position:relative;flex-shrink:0">
-            <img src="https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-3.jpeg"
-              style="width:100%;height:170px;object-fit:cover;display:block"
-              onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-            <div style="display:none;width:100%;height:170px;background:#1e1008;align-items:center;justify-content:center;flex-direction:column;gap:8px">
-              <div style="font-size:28px">🎂</div>
-              <div style="font-size:9px;letter-spacing:.2em;color:var(--text-soft)">COMING SOON</div>
-            </div>
-            <div style="position:absolute;inset:0;background:linear-gradient(transparent 45%,rgba(0,0,0,.7))"></div>
-            <div style="position:absolute;bottom:0;left:0;right:0;padding:10px 10px 8px">
-              <div style="font-family:'Cormorant Garamond',serif;font-size:12px;font-style:italic;color:rgba(240,220,170,.9)">3-Tier · Flowers · Sprinkles</div>
-            </div>
-            <div onclick="openRefLightbox(2)" style="position:absolute;top:8px;right:8px;background:rgba(201,160,64,.18);border:1px solid rgba(201,160,64,.45);color:#e0bc5a;font-size:7px;letter-spacing:.22em;padding:4px 10px;cursor:pointer;backdrop-filter:blur(6px)">TAP TO VIEW</div>
-          </div>
-
-        </div>
-
-        <!-- PREV / NEXT ARROWS -->
-        <div onclick="refSlide(-1)" style="position:absolute;left:6px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.55);border:1px solid rgba(201,160,64,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#e0bc5a;backdrop-filter:blur(6px);z-index:2">‹</div>
-        <div onclick="refSlide(1)"  style="position:absolute;right:6px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.55);border:1px solid rgba(201,160,64,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#e0bc5a;backdrop-filter:blur(6px);z-index:2">›</div>
-      </div>
-
-      <!-- DOTS -->
-      <div id="ref-dots" style="display:flex;justify-content:center;gap:6px;margin-top:9px">
-        <div onclick="refGoTo(0)" style="width:18px;height:4px;border-radius:2px;background:var(--gold);cursor:pointer;transition:all .3s"></div>
-        <div onclick="refGoTo(1)" style="width:6px;height:4px;border-radius:50%;background:rgba(201,160,64,.28);cursor:pointer;transition:all .3s"></div>
-        <div onclick="refGoTo(2)" style="width:6px;height:4px;border-radius:50%;background:rgba(201,160,64,.28);cursor:pointer;transition:all .3s"></div>
-      </div>
-    </div>
-
-    <!-- LIGHTBOX OVERLAY -->
-    <div id="ref-lightbox" onclick="closeRefLightbox()" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.94);backdrop-filter:blur(12px);align-items:center;justify-content:center;flex-direction:column;gap:14px">
-      <img id="ref-lb-img" src="" style="max-width:95vw;max-height:80vh;object-fit:contain;border:1px solid rgba(201,160,64,.25)">
-      <div id="ref-lb-cap" style="font-family:'Cormorant Garamond',serif;font-size:14px;font-style:italic;color:rgba(240,220,170,.7);letter-spacing:.08em"></div>
-      <div style="font-size:8px;letter-spacing:.35em;color:rgba(201,160,64,.45)">TAP ANYWHERE TO CLOSE</div>
-      <!-- prev/next in lightbox -->
-      <div onclick="event.stopPropagation();refLbNav(-1)" style="position:fixed;left:12px;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;background:rgba(201,160,64,.12);border:1px solid rgba(201,160,64,.3);display:flex;align-items:center;justify-content:center;font-size:22px;color:#e0bc5a;cursor:pointer">‹</div>
-      <div onclick="event.stopPropagation();refLbNav(1)"  style="position:fixed;right:12px;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;background:rgba(201,160,64,.12);border:1px solid rgba(201,160,64,.3);display:flex;align-items:center;justify-content:center;font-size:22px;color:#e0bc5a;cursor:pointer">›</div>
-    </div>
-
     
     <!-- Flavour -->
     <div>
@@ -1964,11 +2254,9 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
             <div class="fswatch"></div>
             <div>
               <div class="ftitle">Vanilla Pineapple</div>
-              <div class="fsub">Tropical · Bright · Caramelised</div>
             </div>
           </div>
           <div class="fdesc">Soft vanilla sponge, pineapple compote filling between layers, whipped cream frosting.</div>
-          <div class="ftags"><span class="ftag">Eggless</span><span class="ftag">Vanilla Bean</span><span class="ftag">Pineapple</span></div>
         </div>
 
         <div class="fcard" data-f="chocberry" onclick="setFlavor('chocberry')">
@@ -1976,12 +2264,10 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
             <div class="fswatch"></div>
             <div>
               <div class="ftitle">Chocolate Strawberry</div>
-              <div class="fsub">Decadent · Fruity · Velvety</div>
             </div>
           </div>
           <div class="fdesc">Rich chocolate sponge, fresh strawberry cream filling, finished with your chosen frosting.</div>
-          <div class="ftags"><span class="ftag">Eggless</span><span class="ftag">Dark Sponge</span><span class="ftag">Strawberry</span></div>
-        </div>
+         </div>
 
       </div>
     </div>
@@ -2012,16 +2298,6 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
         <button class="pill active" onclick="setTiers(this,1)"><span class="pill-icon">▬</span>Single</button>
         <button class="pill" onclick="setTiers(this,2)"><span class="pill-icon">▬▬</span>Two Tier</button>
         <button class="pill" onclick="setTiers(this,3)"><span class="pill-icon">▬▬▬</span>Three Tier</button>
-      </div>
-    </div>
-
-    <!-- Size -->
-    <div>
-      <div class="sh"><div class="sh-dot"></div><div class="sh-text">Serves</div><div class="sh-line"></div></div>
-      <div class="pill-row" id="cs-sizes">
-        <button class="pill" onclick="setSize(this,6,699)"><div class="pill-big">6"</div><div class="pill-sub">8–10 pax</div></button>
-        <button class="pill active" onclick="setSize(this,8,999)"><div class="pill-big">8"</div><div class="pill-sub">12–16 pax</div></button>
-        <button class="pill" onclick="setSize(this,10,1499)"><div class="pill-big">10"</div><div class="pill-sub">20–24 pax</div></button>
       </div>
     </div>
 
@@ -2103,7 +2379,6 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
         <input type="date" id="cake-delivery-date" min=""
           style="width:100%;background:var(--panel-raised);border:1px solid var(--border);padding:13px 14px;color:var(--text);font-family:'Jost',sans-serif;font-size:13px;outline:none;color-scheme:dark;-webkit-text-fill-color:transparent"
           oninput="this.style.webkitTextFillColor='var(--text)';document.getElementById('cake-date-ph').style.display='none';document.getElementById('cake-date-err').style.display='none'">
-        <div id="cake-date-ph" style="position:absolute;top:50%;left:14px;transform:translateY(-50%);font-size:12px;color:var(--text-soft);pointer-events:none">📅 Select delivery date</div>
       </div>
       <div id="cake-date-err" style="display:none;font-size:10px;color:#ff6b6b;margin-top:6px;letter-spacing:.05em">⚠️ Please select a date at least 7 days from today</div>
     </div>
@@ -4974,10 +5249,8 @@ async function loadCakeStudioConfig() {
         return '<div class="fcard' + (isActive ? ' active' : '') + '" data-f="' + f.key + '" onclick="setFlavor(\'' + f.key + '\')">'
           + '<div class="fcard-head"><div class="fswatch"></div><div>'
           + '<div class="ftitle">' + f.name + '</div>'
-          + '<div class="fsub">' + (f.subtitle || '') + '</div>'
           + '</div></div>'
           + '<div class="fdesc">' + (f.description || '') + '</div>'
-          + '<div class="ftags">' + tags + '</div>'
           + '</div>';
       }).join('');
 
@@ -9205,7 +9478,9 @@ function rebuild(){
 window.rebuild=rebuild;
 
 function onResize(){
+  if (!renderer) return;
   const w=document.querySelector('.canvas-wrap');
+  if (!w) return;
   renderer.setSize(w.clientWidth,w.clientHeight,false);
   camera.aspect=w.clientWidth/w.clientHeight; camera.updateProjectionMatrix();
 }
@@ -9226,14 +9501,6 @@ function loop(){
   }
   renderer.render(scene,camera);
 }
-
-// ── CAKE REFERENCE CAROUSEL ──
-var _refIdx = 0;
-var _refImages = [
-  { src:'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-1.jpeg', cap:'2-Tier · White Cream · Gold Drips · Name on Board' },
-  { src:'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-2.jpeg', cap:'1-Tier · Chocolate Frosting' },
-  { src:'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-3.jpeg', cap:'3-Tier · Flowers · Sprinkles' }
-];
 
 function refGoTo(i) {
   _refIdx = (i + _refImages.length) % _refImages.length;
@@ -9283,15 +9550,6 @@ function closeRefLightbox() {
   if (lb) lb.style.display = 'none';
 }
 
-function refLbNav(dir) {
-  var i = (_refIdx + dir + _refImages.length) % _refImages.length;
-  var img = document.getElementById('ref-lb-img');
-  var cap = document.getElementById('ref-lb-cap');
-  if (img) img.src = _refImages[i].src;
-  if (cap) cap.textContent = _refImages[i].cap;
-  _refIdx = i;
-  refGoTo(i);
-}
 // Set cake delivery date min = today + 7 days
 (function(){
   var inp = document.getElementById('cake-delivery-date');
@@ -9301,11 +9559,291 @@ function refLbNav(dir) {
   }
 })();
 
-// change to:
+
+function csPhotoNav(dir) {
+  _csPhotoIdx = (_csPhotoIdx + dir + _csCurrentPhotos.length) % _csCurrentPhotos.length;
+  // Pause briefly on manual nav then resume
+  csPauseScroll();
+  setTimeout(csResumeScroll, 4000);
+  csUpdatePhoto();
+}
+
+// ── LIGHTBOX ──
+function csOpenLightbox() {
+  var photo = _csCurrentPhotos[_csPhotoIdx];
+  if (!photo) return;
+  csPauseScroll();
+
+  var lb = document.getElementById('cs-lightbox');
+  if (lb) { lb.remove(); }
+
+  var el = document.createElement('div');
+  el.id  = 'cs-lightbox';
+  el.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.96);backdrop-filter:blur(14px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;animation:csFadeIn .25s ease';
+
+  el.innerHTML =
+    '<style>@keyframes csFadeIn{from{opacity:0}to{opacity:1}}</style>'
+
+    // Close tap zone
+    + '<div onclick="csCloseLightbox()" style="position:absolute;inset:0;z-index:0"></div>'
+
+    // Prev
+    + '<div onclick="event.stopPropagation();csLbNav(-1)" style="position:fixed;left:12px;top:50%;transform:translateY(-50%);z-index:2;width:42px;height:42px;border-radius:50%;background:rgba(201,160,64,.12);border:1px solid rgba(201,160,64,.3);display:flex;align-items:center;justify-content:center;font-size:22px;color:#e0bc5a;cursor:pointer">‹</div>'
+
+    // Next
+    + '<div onclick="event.stopPropagation();csLbNav(1)" style="position:fixed;right:12px;top:50%;transform:translateY(-50%);z-index:2;width:42px;height:42px;border-radius:50%;background:rgba(201,160,64,.12);border:1px solid rgba(201,160,64,.3);display:flex;align-items:center;justify-content:center;font-size:22px;color:#e0bc5a;cursor:pointer">›</div>'
+
+    // Image
+    + '<img id="cs-lb-img" src="' + photo.url + '" style="position:relative;z-index:1;max-width:94vw;max-height:82vh;object-fit:contain;border:1px solid rgba(201,160,64,.22);box-shadow:0 0 60px rgba(0,0,0,.8)">'
+
+    // Tags
+    + '<div id="cs-lb-tags" style="position:relative;z-index:1;display:flex;flex-wrap:wrap;justify-content:center;gap:6px">'
+    + (photo.tags || []).map(function(t){
+        return '<div style="font-family:\'Cinzel\',serif;font-size:7px;letter-spacing:.25em;text-transform:uppercase;padding:4px 12px;background:rgba(201,160,64,.12);border:1px solid rgba(201,160,64,.3);color:#e0bc5a">' + t + '</div>';
+      }).join('')
+    + '</div>'
+
+    // Hint
+    + '<div style="position:relative;z-index:1;font-family:\'Cinzel\',serif;font-size:7.5px;letter-spacing:.4em;color:rgba(201,160,64,.35);text-transform:uppercase">Tap anywhere to close</div>'
+
+    // Dots
+    + '<div id="cs-lb-dots" style="position:relative;z-index:1;display:flex;gap:6px">'
+    + _csCurrentPhotos.map(function(p, i) {
+        return '<div onclick="event.stopPropagation();csLbNav(' + (i - _csPhotoIdx) + ')" style="width:' + (i===_csPhotoIdx?'18':'6') + 'px;height:4px;border-radius:' + (i===_csPhotoIdx?'2':'50%') + 'px;background:' + (i===_csPhotoIdx?'var(--gold)':'rgba(201,160,64,.25)') + ';cursor:pointer;transition:all .3s"></div>';
+      }).join('')
+    + '</div>';
+
+  document.body.appendChild(el);
+}
+
+function csCloseLightbox() {
+  var lb = document.getElementById('cs-lightbox');
+  if (lb) lb.remove();
+  csResumeScroll();
+}
+function csLbNav(dir) {
+  _csPhotoIdx = (_csPhotoIdx + dir + _csCurrentPhotos.length) % _csCurrentPhotos.length;
+  var photo   = _csCurrentPhotos[_csPhotoIdx];
+  var img     = document.getElementById('cs-lb-img');
+  var tags    = document.getElementById('cs-lb-tags');
+  var dots    = document.getElementById('cs-lb-dots');
+
+  if (img) img.src = photo.url;
+  if (tags) tags.innerHTML = (photo.tags || []).map(function(t){
+    return '<div style="font-family:\'Cinzel\',serif;font-size:7px;letter-spacing:.25em;text-transform:uppercase;padding:4px 12px;background:rgba(201,160,64,.12);border:1px solid rgba(201,160,64,.3);color:#e0bc5a">' + t + '</div>';
+  }).join('');
+  if (dots) dots.innerHTML = _csCurrentPhotos.map(function(p, i) {
+    return '<div onclick="event.stopPropagation();csLbNav(' + (i - _csPhotoIdx) + ')" style="width:' + (i===_csPhotoIdx?'18':'6') + 'px;height:4px;border-radius:' + (i===_csPhotoIdx?'2':'50%') + 'px;background:' + (i===_csPhotoIdx?'var(--gold)':'rgba(201,160,64,.25)') + ';cursor:pointer;transition:all .3s"></div>';
+  }).join('');
+
+  csUpdatePhoto();
+}
+
+function csUpdatePhoto() {
+  _csCurrentPhotos = csGetMatchingPhotos();
+  if (_csCurrentPhotos.length === 0) return;
+  if (_csPhotoIdx >= _csCurrentPhotos.length) _csPhotoIdx = 0;
+
+  var photo   = _csCurrentPhotos[_csPhotoIdx];
+  var mainImg = document.getElementById('cs-photo-main');
+  var fadeImg = document.getElementById('cs-photo-fade');
+
+  if (mainImg && fadeImg) {
+    fadeImg.src           = photo.url;
+    fadeImg.style.opacity = '0';
+    setTimeout(function() {
+      fadeImg.style.opacity = '1';
+      setTimeout(function() {
+        mainImg.src           = photo.url;
+        fadeImg.style.opacity = '0';
+      }, 500);
+    }, 50);
+  }
+
+  // Title
+  var titleEl  = document.getElementById('cs-photo-title');
+  var flavNames = { vanilla:'Vanilla Pineapple', chocberry:'Chocolate Strawberry' };
+  if (titleEl) titleEl.textContent = flavNames[S.flavor] || S.flavor;
+
+  // Chips
+  csUpdateChips();
+
+  // Counter
+  var counter = document.getElementById('cs-photo-counter');
+  if (counter) counter.textContent = (_csPhotoIdx + 1) + ' / ' + _csCurrentPhotos.length;
+
+  // Arrows
+  var showArrows = _csCurrentPhotos.length > 1;
+  var prev = document.getElementById('cs-photo-prev');
+  var next = document.getElementById('cs-photo-next');
+  if (prev) prev.style.display = showArrows ? 'flex' : 'none';
+  if (next) next.style.display = showArrows ? 'flex' : 'none';
+
+  // Restart auto scroll when photos change
+  //csStartAutoScroll();
+}
+
+// ── CAKE STUDIO AUTO SCROLL ──
+var _csAutoTimer = null;
+var _csIsPaused  = false;
+
+function csStartAutoScroll() {
+  csStopAutoScroll();
+  if (_csCurrentPhotos.length <= 1) return;
+  _csAutoTimer = setInterval(function() {
+    if (_csIsPaused) return;
+    _csPhotoIdx = (_csPhotoIdx + 1) % _csCurrentPhotos.length;
+    var photo   = _csCurrentPhotos[_csPhotoIdx];
+    var mainImg = document.getElementById('cs-photo-main');
+    var fadeImg = document.getElementById('cs-photo-fade');
+    if (mainImg && fadeImg) {
+      fadeImg.src           = photo.url;
+      fadeImg.style.opacity = '0';
+      setTimeout(function() {
+        fadeImg.style.opacity = '1';
+        setTimeout(function() {
+          mainImg.src           = photo.url;
+          fadeImg.style.opacity = '0';
+        }, 500);
+      }, 50);
+    }
+    var counter = document.getElementById('cs-photo-counter');
+    if (counter) counter.textContent = (_csPhotoIdx + 1) + ' / ' + _csCurrentPhotos.length;
+    csUpdateChips();
+  }, 3200);
+}
+
+function csStopAutoScroll() {
+  if (_csAutoTimer) { clearInterval(_csAutoTimer); _csAutoTimer = null; }
+}
+
+function csPauseScroll()  { _csIsPaused = true; }
+function csResumeScroll() { _csIsPaused = false; }
+
+// ── CAKE STUDIO PHOTO SYSTEM ──
+var _csPhotoIdx = 0;
+var _csCurrentPhotos = [];
+
+// Photo library — add more as you upload to Supabase
+// Key format: flavor_frosting_tiers (use 'any' as wildcard)
+var CS_PHOTO_MAP = [
+  // Your uploaded reference
+  { flavor:'any',      frost:'fresh',  tiers:'any', url:'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-1.jpeg',
+    tags:['Gold Drips','Faux Balls','Gold Leaf','2 Tier'] },
+
+    { flavor:'any', frost:'any', tiers:'any',
+    url:'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-2.jpeg',
+    tags:['Chocolate Frosting','1 Tier'] },
+
+  { flavor:'any', frost:'any', tiers:'any',
+    url:'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-3.jpeg',
+    tags:['Flowers','Sprinkles','3 Tier'] },
+  // Add more as you upload — examples:
+  // { flavor:'vanilla',  frost:'fresh',  tiers:2, url:'...cake-fresh-2tier.jpeg', tags:['Fresh Cream'] },
+  // { flavor:'chocberry',frost:'choc',   tiers:1, url:'...cake-choc-1tier.jpeg',  tags:['Chocolate'] },
+  // { flavor:'any',      frost:'truffle',tiers:'any', url:'...cake-truffle.jpeg', tags:['Truffle Dark'] },
+];
+
+function csGetMatchingPhotos() {
+  var matches = CS_PHOTO_MAP.filter(function(p) {
+    var flavorMatch = p.flavor === 'any' || p.flavor === S.flavor;
+    var frostMatch  = p.frost  === 'any' || p.frost  === S.frostType;
+    var tiersMatch  = p.tiers  === 'any' || p.tiers  === S.tiers;
+    return flavorMatch && frostMatch && tiersMatch;
+  });
+
+  // Fallback: try flavor + frost only
+  if (matches.length === 0) {
+    matches = CS_PHOTO_MAP.filter(function(p) {
+      return (p.flavor === 'any' || p.flavor === S.flavor) &&
+             (p.frost  === 'any' || p.frost  === S.frostType);
+    });
+  }
+
+  // Final fallback: show all
+  if (matches.length === 0) matches = CS_PHOTO_MAP;
+  return matches;
+}
+
+function csUpdatePhoto() {
+  _csCurrentPhotos = csGetMatchingPhotos();
+  if (_csCurrentPhotos.length === 0) return;
+
+  // Keep same index if possible
+  if (_csPhotoIdx >= _csCurrentPhotos.length) _csPhotoIdx = 0;
+
+  var photo = _csCurrentPhotos[_csPhotoIdx];
+  var mainImg = document.getElementById('cs-photo-main');
+  var fadeImg = document.getElementById('cs-photo-fade');
+
+  // Crossfade
+  if (mainImg && fadeImg) {
+    fadeImg.src     = photo.url;
+    fadeImg.style.opacity = '0';
+    setTimeout(function() {
+      fadeImg.style.opacity = '1';
+      setTimeout(function() {
+        mainImg.src = photo.url;
+        fadeImg.style.opacity = '0';
+      }, 500);
+    }, 50);
+  }
+
+  // Update title
+  var titleEl = document.getElementById('cs-photo-title');
+  if (titleEl) {
+    var flavNames = { vanilla:'Vanilla Pineapple', chocberry:'Chocolate Strawberry' };
+    titleEl.textContent = flavNames[S.flavor] || S.flavor;
+  }
+
+  // Update chips
+  csUpdateChips();
+
+  // Counter
+  var counter = document.getElementById('cs-photo-counter');
+  if (counter) counter.textContent = (_csPhotoIdx + 1) + ' / ' + _csCurrentPhotos.length;
+
+  // Show/hide arrows
+  var showArrows = _csCurrentPhotos.length > 1;
+  var prev = document.getElementById('cs-photo-prev');
+  var next = document.getElementById('cs-photo-next');
+  if (prev) prev.style.display = showArrows ? 'flex' : 'none';
+  if (next) next.style.display = showArrows ? 'flex' : 'none';
+}
+
+function csUpdateChips() {
+  var el = document.getElementById('cs-photo-chips');
+  if (!el) return;
+
+  var frostNames  = { fresh:'Fresh Cream', choc:'Chocolate Frosting', truffle:'Truffle Dark' };
+  var chips = [
+    frostNames[S.frostType] || S.frostType,
+    S.tiers + ' Tier',
+    S.size + '"',
+    S.weight
+  ];
+
+  // Add active finishing touches
+  var touchNames = { goldLeaf:'Gold Leaf', fauxBalls:'Faux Balls', chocDrips:'Choc Drips', hbd:'HBD Topper', flowers:'Flowers', sprinkles:'Sprinkles' };
+  S.touches.forEach(function(t) {
+    if (touchNames[t]) chips.push(touchNames[t]);
+  });
+
+  el.innerHTML = chips.map(function(c) {
+    return '<div style="font-family:\'Cinzel\',serif;font-size:7px;letter-spacing:.18em;text-transform:uppercase;padding:4px 10px;background:rgba(201,160,64,.15);border:1px solid rgba(201,160,64,.3);color:#e0bc5a;backdrop-filter:blur(6px)">' + c + '</div>';
+  }).join('');
+}
+
+function csPhotoNav(dir) {
+  _csPhotoIdx = (_csPhotoIdx + dir + _csCurrentPhotos.length) % _csCurrentPhotos.length;
+  csUpdatePhoto();
+}
+
 function initCakeGL() {
   if (window._cakeGLInited) return;
   window._cakeGLInited = true;
-  initGL();
+  csUpdatePhoto();
+  setTimeout(csStartAutoScroll, 500);
 }
 </script>
 </body>
