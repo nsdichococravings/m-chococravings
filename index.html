@@ -599,9 +599,13 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 }
 #page-cake-studio .panel {
   background: linear-gradient(180deg, #f0e4de 0%, #ead8d0 60%, #e8d2ca 100%);
-  border-left: 1px solid rgba(201,160,64,.2);
-  padding: 28px 20px;
-  gap: 28px;
+  border-left: none;
+  border-top: 1px solid rgba(201,160,64,.2);
+  padding: 24px 18px 32px;
+  gap: 26px;
+  overflow-y: visible;
+  height: auto;
+  min-height: unset;
 }
 
 /* Section headers */
@@ -1365,9 +1369,30 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
           <!-- Dark gradient overlay for text readability -->
           <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(10,0,25,.85) 0%,rgba(60,5,80,.7) 50%,rgba(0,0,0,.2) 100%)"></div>
 
-          <!-- Shimmer sweep -->
-          <div style="position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.06) 50%,transparent 60%);animation:hmShimmer 5s ease-in-out infinite;pointer-events:none"></div>
-
+          <!-- Luxury traced border + gold dust -->
+          <div style="position:absolute;inset:0;z-index:2;pointer-events:none">
+            <svg style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 400 220" fill="none">
+              <rect x="4" y="4" width="392" height="212" rx="22"
+                stroke="url(#luxGrad)" stroke-width="1.5"
+                stroke-dasharray="600" stroke-dashoffset="600"
+                style="animation:borderTrace 3s ease forwards"/>
+              <defs>
+                <linearGradient id="luxGrad" x1="0" y1="0" x2="400" y2="220" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%"   stop-color="rgba(249,200,255,0)"/>
+                  <stop offset="30%"  stop-color="rgba(249,200,255,.7)"/>
+                  <stop offset="60%"  stop-color="rgba(255,214,176,.8)"/>
+                  <stop offset="100%" stop-color="rgba(201,160,64,.5)"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <div style="position:absolute;top:15%;left:18%;width:2px;height:2px;border-radius:50%;background:rgba(255,214,176,.8);animation:dustRise 3.5s ease-in-out infinite 0s"></div>
+            <div style="position:absolute;top:30%;left:35%;width:3px;height:3px;border-radius:50%;background:rgba(201,160,64,.7);animation:dustRise 3.5s ease-in-out infinite .6s"></div>
+            <div style="position:absolute;top:20%;left:55%;width:2px;height:2px;border-radius:50%;background:rgba(249,200,255,.8);animation:dustRise 3.5s ease-in-out infinite 1.2s"></div>
+            <div style="position:absolute;top:35%;left:72%;width:3px;height:3px;border-radius:50%;background:rgba(255,214,176,.7);animation:dustRise 3.5s ease-in-out infinite 1.8s"></div>
+            <div style="position:absolute;top:25%;left:85%;width:2px;height:2px;border-radius:50%;background:rgba(201,160,64,.8);animation:dustRise 3.5s ease-in-out infinite .4s"></div>
+            <div style="position:absolute;top:40%;left:50%;width:2px;height:2px;border-radius:50%;background:rgba(249,200,255,.6);animation:dustRise 3.5s ease-in-out infinite 2.2s"></div>
+            <div style="position:absolute;top:10%;left:65%;width:3px;height:3px;border-radius:50%;background:rgba(255,214,176,.7);animation:dustRise 3.5s ease-in-out infinite 1s"></div>
+          </div>
           <!-- Grain -->
           <div style="position:absolute;inset:0;opacity:.05;background-image:url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E');pointer-events:none"></div>
 
@@ -1424,15 +1449,26 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
           style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 60%">
 
         <!-- Dark gradient overlay -->
-        <div style="position:absolute;inset:0;background:linear-gradient(105deg,rgba(10,0,25,.88) 0%,rgba(80,5,90,.75) 50%,rgba(0,0,0,.2) 100%)"></div>
-
-        <!-- Shimmer -->
-        <div style="position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.06) 50%,transparent 60%);animation:hmShimmer 5s ease-in-out infinite;pointer-events:none"></div>
-
+        <div style="position:absolute;inset:0;background:linear-gradient(105deg,rgba(20,8,0,.88) 0%,rgba(80,35,5,.78) 50%,rgba(0,0,0,.15) 100%)"></div>
+        <!-- Gold foil sweep -->
+        <div style="position:absolute;inset:0;z-index:2;overflow:hidden;pointer-events:none">
+          <div style="position:absolute;top:0;left:-100%;width:40%;height:100%;background:linear-gradient(105deg,transparent 30%,rgba(201,160,64,.18) 50%,rgba(255,220,120,.22) 55%,rgba(201,160,64,.12) 65%,transparent 80%);transform:skewX(-12deg);animation:foilSweep 3.5s ease-in-out infinite"></div>
+          <div style="position:absolute;inset:0;border:1.5px solid rgba(201,160,64,.25);border-radius:18px;animation:borderGlow 3s ease-in-out infinite"></div>
+          <div style="position:absolute;top:10px;left:10px;right:10px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,160,64,.4),transparent)"></div>
+          <div style="position:absolute;bottom:10px;left:10px;right:10px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,160,64,.4),transparent)"></div>
+          <!-- Chocolate crack lines -->
+          <svg style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 400 220" preserveAspectRatio="none">
+            <path d="M160,0 L190,55 L150,80 L210,130 L176,220" fill="none" stroke="rgba(201,160,64,.35)" stroke-width="1.2" stroke-dasharray="200" stroke-dashoffset="200" style="animation:crackGrow 2.5s ease forwards .3s"/>
+            <path d="M260,0 L236,40 L280,75 L244,110 L270,155 L240,220" fill="none" stroke="rgba(201,160,64,.25)" stroke-width=".8" stroke-dasharray="200" stroke-dashoffset="200" style="animation:crackGrow 2.5s ease forwards .8s"/>
+            <path d="M190,55 L240,60 L230,72" fill="none" stroke="rgba(201,160,64,.3)" stroke-width=".8" stroke-dasharray="60" stroke-dashoffset="60" style="animation:crackGrow 1.5s ease forwards .9s"/>
+            <path d="M210,130 L260,138" fill="none" stroke="rgba(201,160,64,.25)" stroke-width=".7" stroke-dasharray="40" stroke-dashoffset="40" style="animation:crackGrow 1s ease forwards 1.4s"/>
+          </svg>
+          <div style="position:absolute;top:12px;right:12px;font-size:9px;font-weight:700;letter-spacing:2px;color:rgba(201,160,64,.6);text-transform:uppercase">Fresh Baked</div>
+        </div>
         <!-- Content -->
         <div style="position:relative;z-index:2;padding:16px 18px;height:100%;display:flex;align-items:center;justify-content:space-between">
           <div>
-            <div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:#fff;line-height:1.1;text-shadow:0 2px 12px rgba(0,0,0,.4)">Custom Brownie<br><span style="font-style:italic;background:linear-gradient(90deg,#f9c8ff,#ffb3f0,#ffd6b0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Slab & Creations</span></div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:#fff;line-height:1.1;text-shadow:0 2px 12px rgba(0,0,0,.4)">Custom Brownie<br><span style="font-style:italic;background:linear-gradient(90deg,#ffd6b0,#ffb347,#c9a040);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Slab & Creations</span></div>
          </div>
           <!-- CTA arrow -->
           <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0">
@@ -1444,9 +1480,32 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
           </div>
         </div>
       </div>
-
+      
       <!-- HOME HERO KEYFRAMES -->
       <style>
+       @keyframes borderTrace {
+          0%   { stroke-dashoffset: 600; }
+          100% { stroke-dashoffset: 0; }
+        }
+        @keyframes dustRise {
+          0%   { transform: translateY(0)    translateX(0);  opacity: 0; }
+          20%  { opacity: .6; }
+          80%  { opacity: .3; }
+          100% { transform: translateY(-60px) translateX(8px); opacity: 0; }
+        }
+      @keyframes foilSweep {
+        0%   { left:-100%; }
+        100% { left:200%; }
+      }
+      @keyframes borderGlow {
+        0%,100% { opacity:.4; }
+        50%      { opacity:1; }
+      }
+      @keyframes crackGrow {
+        0%   { stroke-dashoffset:200; }
+        100% { stroke-dashoffset:0; }
+      }
+
       @keyframes hmBlob {
         0%,100% { transform:translate(0,0) scale(1); }
         50%      { transform:translate(-18px,22px) scale(1.12); }
@@ -2202,12 +2261,12 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
             <path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         </div>
-        <div class="studio" style="display:grid;grid-template-areas:'canvas' 'panel';grid-template-columns:1fr;grid-template-rows:55vw 1fr">
         <div class="canvas-wrap" id="cs-photo-wrap"
+          style="height:55vw;min-height:240px;max-height:380px;width:100%;position:relative;overflow:hidden"
           onmouseenter="csPauseScroll()"
           onmouseleave="csResumeScroll()"
           ontouchstart="csPauseScroll()"
-          onclick="csOpenLightbox()">        
+          onclick="csOpenLightbox()">       
 
         <!-- Main photo -->
         <img id="cs-photo-main" src="https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-1.jpeg"
@@ -2237,12 +2296,8 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
         <div class="cbracket tr" style="z-index:2"></div>
         <div class="cbracket bl" style="z-index:2"></div>
         <div class="cbracket br" style="z-index:2"></div>
-      </div>
-  </div>
-
-  <!-- PANEL -->
-  <div class="panel">
-    
+     </div><!-- closes canvas-wrap -->
+    <div class="panel">
     <!-- Flavour -->
     <div>
       <div class="sh"><div class="sh-dot"></div><div class="sh-text">Flavour</div><div class="sh-line"></div></div>
@@ -2350,7 +2405,7 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
       <div class="name-input-wrap">
         <span class="name-input-icon">✍️</span>
         <input class="name-input" id="cake-name-input" type="text" maxlength="18"
-          placeholder="e.g. Happy Birthday Priya"
+          placeholder="e.g. Happy Birthday Diya"
           oninput="setName(this.value)"/>
         <span class="name-char-count" id="name-cc">0/18</span>
       </div>
@@ -5680,8 +5735,8 @@ function showPage(name){
 if (name === 'cake-studio') {
   loadCakeStudioConfig();
   setTimeout(function(){ 
+    window._cakeGLInited = false; // reset so initCakeGL reruns
     if (typeof initCakeGL === 'function') initCakeGL();
-    if (typeof onResize === 'function') onResize();
   }, 300);
 }
   if (name === 'explore') {
@@ -6726,7 +6781,8 @@ async function loadLiveTrackingData() {
     var pct = Math.round((progress / 6) * 100);
     var date = o.created_at ? new Date(o.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short'}) : '';
 
-    return '<div onclick="openTrackingDetail(\'' + o.id + '\',\'' + o.order_number + '\',\'' + o.status + '\',\'' + o.total + '\',\'' + date + '\',\'' + itemName.replace(/'/g,"\\'") + '\',\'' + itemDesc.replace(/'/g,"\\'") + '\')" style="background:var(--card);border:1px solid var(--bdr);border-radius:18px;padding:16px;cursor:pointer;transition:all .2s" >'
+    console.log('Order row — id:', o.id, 'order_number:', o.order_number);
+    return '<div onclick="openTrackingDetail(\'' + o.order_number + '\',\'' + o.order_number + '\',\'' + o.status + '\',\'' + o.total + '\',\'' + date + '\',\'' + itemName.replace(/'/g,"\\'") + '\',\'' + itemDesc.replace(/'/g,"\\'") + '\')" style="background:var(--card);border:1px solid var(--bdr);border-radius:18px;padding:16px;cursor:pointer;transition:all .2s" >'
       + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">'
       + '<div>'
       + '<div style="font-size:13px;font-weight:700;color:var(--pl)">' + o.order_number + '</div>'
@@ -6805,72 +6861,171 @@ async function openTrackingDetail(orderId, orderNum, status, total, date, itemNa
   document.getElementById('td-tracking-steps').innerHTML =
     '<div style="text-align:center;padding:20px;color:var(--dim)">Loading...</div>';
 
-  try {
-    var results = await Promise.all([
-      db.from('order_status_history')
-        .select('to_status,from_status,created_at,note')
-        .eq('order_id', orderId)
-        .order('created_at', { ascending: true }),
-      db.from('order_items')
-        .select('product_name,tier,egg_type,pack_label,quantity,unit_price,topping_price,line_total,toppings')
-        .eq('order_id', orderId)
-    ]);
+  // ── HELPER ──
+  var tdItem = function(icon, label, value, full) {
+    if (!value || value === 'null' || value === 'undefined' || value === 'None' || value === 'none') return '';
+    return '<div style="background:var(--card);border:0.5px solid var(--bdr);border-radius:12px;padding:10px 12px'
+      + (full ? ';grid-column:1/-1' : '') + '">'
+      + '<div style="font-size:15px;margin-bottom:3px">' + icon + '</div>'
+      + '<div style="font-size:9px;color:var(--dim);letter-spacing:.5px;text-transform:uppercase;margin-bottom:3px">' + label + '</div>'
+      + '<div style="font-size:13px;font-weight:600;color:var(--white)">' + value + '</div>'
+      + '</div>';
+  };
 
-    var history = results[0].data || [];
-    var items   = results[1].data || [];
+  var fmtDelivery = function(d) {
+    if (!d) return null;
+    try { return new Date(d).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}); }
+    catch(e) { return d; }
+  };
 
-    // ── Build items HTML ──
+try {
+    // ── ALWAYS resolve UUID from order_number ──
+    var realOrderId = null;
+
+    var { data: orderRow, error: orderErr } = await db
+      .from('orders')
+      .select('id')
+      .eq('order_number', orderId)
+      .maybeSingle();
+
+    console.log('UUID resolve — input:', orderId, '→ row:', orderRow, 'err:', orderErr);
+
+    if (orderRow && orderRow.id) {
+      realOrderId = orderRow.id;
+    } else {
+      // fallback: orderId might already be a UUID if called from elsewhere
+      realOrderId = orderId;
+    }
+
+    console.log('realOrderId confirmed:', realOrderId);
+
+    // ── Sequential queries using confirmed UUID ──
+    var histRes = await db
+      .from('order_status_history')
+      .select('to_status,from_status,created_at,note')
+      .eq('order_id', realOrderId)
+      .order('created_at', { ascending: true });
+
+    var itemRes = await db
+      .from('order_items')
+      .select('product_name,tier,egg_type,pack_label,quantity,unit_price,line_total')
+      .eq('order_id', realOrderId);
+
+    var cakeRes = await db
+      .from('cake_custom_orders')
+      .select('*')
+      .eq('order_id', realOrderId)
+      .maybeSingle();
+
+    var customRes = await db
+      .from('custom_orders')
+      .select('*')
+      .eq('order_id', realOrderId)
+      .maybeSingle();
+
+    var history    = histRes.data   || [];
+    var items      = itemRes.data   || [];
+    var cakeData   = cakeRes.data   || null;
+    var customData = customRes.data || null;
+
+    console.log('Results — cakeData:', cakeData, 'customData:', customData, 'items:', items.length);
+
     var itemsHtml = '';
 
-    // Check for cake custom order
-    var cakeData = null;
-    try {
-      var { data: cakeRow } = await db
-        .from('cake_custom_orders')
-        .select('*')
-        .eq('order_id', orderId)
-        .maybeSingle();
-      cakeData = cakeRow;
-    } catch(e) {}
-
     if (cakeData) {
-      var finishingLabels = {
-        goldLeaf:  '✦ Gold Leaf',
-        flowers:   '🌸 Edible Flowers',
-        fauxBalls: '🟡 Faux Balls',
-        chocDrips: '🍫 Chocolate Drips',
-        hbd:       '🎂 HBD Topper',
-        toys:      '🧸 Toys',
-        sprinkles: '✨ Sprinkles'
-      };
-      var touches     = cakeData.finishing || [];
-      var touchLabels = touches.map(function(t){ return finishingLabels[t] || t; }).join('  ·  ');
+      // ══ CAKE STUDIO ORDER ══
       var frostNames  = { fresh:'Fresh Cream', choc:'Chocolate Frosting', truffle:'Truffle Dark' };
       var flavorNames = { vanilla:'Vanilla Pineapple 🍋', chocberry:'Chocolate Strawberry 🍓' };
+      var touchMap    = {
+        goldLeaf:'✦ Gold Leaf', flowers:'🌸 Flowers', fauxBalls:'🟡 Faux Balls',
+        chocDrips:'🍫 Choc Drips', hbd:'🎂 HBD Topper', toys:'🧸 Toys', sprinkles:'✨ Sprinkles'
+      };
+      var touches = Array.isArray(cakeData.finishing) ? cakeData.finishing : [];
+      var touchStr = touches.map(function(t){ return touchMap[t] || t; }).join('  ·  ');
 
-      itemsHtml = '<div style="margin-bottom:18px">'
-        + '<div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:12px">🎂 Your Custom Cake</div>'
-
-        + '<div style="background:linear-gradient(135deg,rgba(201,160,64,.12),rgba(201,160,64,.05));border:1px solid rgba(201,160,64,.28);border-radius:14px;padding:13px 15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">'
-        + '<div style="font-family:\'Fraunces\',serif;font-size:22px;font-weight:300;color:#e0bc5a">₹' + (cakeData.total_price || total) + '</div>'
-        + '<div style="font-size:11px;color:var(--dim)">Qty: ' + (cakeData.qty || 1) + '</div>'
+      itemsHtml =
+        '<div style="margin-bottom:16px">'
+        + '<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:10px">🎂 Cake Configuration</div>'
+        + '<div style="background:linear-gradient(135deg,rgba(110,9,119,.1),rgba(156,12,161,.05));border:0.5px solid rgba(110,9,119,.25);border-radius:14px;padding:13px 15px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">'
+        + '<div>'
+        + '<div style="font-size:11px;color:var(--dim);margin-bottom:3px">Total Price</div>'
+        + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:26px;font-weight:700;color:var(--pl)">₹' + (cakeData.total_price || total) + '</div>'
         + '</div>'
+        + '<div style="text-align:right">'
+        + '<div style="font-size:11px;color:var(--dim);margin-bottom:3px">Qty</div>'
+        + '<div style="font-size:18px;font-weight:700;color:var(--white)">× ' + (cakeData.qty || 1) + '</div>'
+        + '</div>'
+        + '</div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+        + tdItem('🍰', 'Flavour',      flavorNames[cakeData.flavour_key]  || cakeData.flavour_key  || '—')
+        + tdItem('🍦', 'Frosting',     frostNames[cakeData.frosting_key]  || cakeData.frosting_key || '—')
+        + tdItem('🏗️', 'Tiers',        (cakeData.tier_count || '—') + ' Tier')
+        + tdItem('⚖️', 'Weight',       cakeData.weight_key || '—')
+        + tdItem('📐', 'Size',          cakeData.size_inches ? cakeData.size_inches + '"' : null)
+        + tdItem('✍️', 'Name on Cake',  cakeData.cake_name ? '"' + cakeData.cake_name + '" — ' + (cakeData.name_placement || 'top') : null)
+        + tdItem('📅', 'Delivery Date', fmtDelivery(cakeData.delivery_date))
+        + (touchStr
+          ? '<div style="background:var(--card);border:0.5px solid var(--bdr);border-radius:12px;padding:10px 12px;grid-column:1/-1">'
+            + '<div style="font-size:9px;color:var(--dim);letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px">Finishing Touches</div>'
+            + '<div style="font-size:12px;color:var(--white);line-height:1.8">' + touchStr + '</div>'
+            + '</div>'
+          : '')
+        + '</div>'
+        + '</div>';
 
-        + '<div style="display:flex;flex-direction:column;gap:7px">'
-        + _cakeDetailRow('🍰 Flavour',    flavorNames[cakeData.flavour_key]  || cakeData.flavour_key)
-        + _cakeDetailRow('🍦 Frosting',   frostNames[cakeData.frosting_key]  || cakeData.frosting_key)
-        + _cakeDetailRow('🏗️ Tiers',      cakeData.tier_count + '-Tier')
-        + _cakeDetailRow('📐 Size',       cakeData.size_inches + '"')
-        + _cakeDetailRow('⚖️ Weight',     cakeData.weight_key)
-        + (touchLabels     ? _cakeDetailRow('✨ Finishes',    touchLabels)               : '')
-        + (cakeData.toy_theme      ? _cakeDetailRow('🧸 Toy Theme',   cakeData.toy_theme)        : '')
-        + (cakeData.sprinkle_color ? _cakeDetailRow('🎨 Sprinkles',   cakeData.sprinkle_color)   : '')
-        + (cakeData.cake_name      ? _cakeDetailRow('✍️ Name on Cake','"' + cakeData.cake_name + '" — ' + (cakeData.name_placement || 'top')) : '')
-        + (cakeData.delivery_date  ? _cakeDetailRow('📅 Delivery',    cakeData.delivery_date)    : '')
-        + '</div></div>';
+    } else if (customData) {
+      // ══ CUSTOM BROWNIE / SLAB ORDER ══
+      var flavNames2  = { vanilla:'Vanilla Pineapple 🍋', chocberry:'Chocolate Strawberry 🍓' };
+      var coFlavour   = flavNames2[customData.flavour_key] || customData.flavour  || '—';
+      var coEgg       = (customData.egg_preference || 'eggless') === 'eggless' ? '💚 Eggless' : '❤️ With Egg';
+      var coTopper    = customData.topper_type && customData.topper_type !== 'None'
+                          ? customData.topper_type + (customData.topper_style ? ' · ' + customData.topper_style : '')
+                            + (customData.topper_name ? ' — "' + customData.topper_name + '"' : '')
+                          : null;
+      var estPriceStr = (customData.est_price_lo && customData.est_price_hi)
+                          ? '₹' + customData.est_price_lo + ' – ₹' + customData.est_price_hi
+                          : '₹' + total;
+
+      itemsHtml =
+        '<div style="margin-bottom:16px">'
+        + '<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:10px">🎂 Custom Order Details</div>'
+        + '<div style="background:linear-gradient(135deg,rgba(110,9,119,.1),rgba(156,12,161,.05));border:0.5px solid rgba(110,9,119,.25);border-radius:14px;padding:13px 15px;margin-bottom:10px">'
+        + '<div style="font-size:11px;color:var(--dim);margin-bottom:3px">Estimated Price</div>'
+        + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:26px;font-weight:700;color:var(--pl)">' + estPriceStr + '</div>'
+        + '<div style="font-size:10px;color:var(--faint);margin-top:2px">Final price confirmed via WhatsApp</div>'
+        + '</div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'
+        + tdItem('🎉', 'Occasion',   customData.occasion  || '—')
+        + tdItem('▬',  'Shape',      customData.shape     || '—')
+        + tdItem('🎨', 'Theme',      customData.theme     || '—')
+        + tdItem('⚖️', 'Weight',     customData.weight_kg || '—')
+        + tdItem('🍰', 'Layers',     customData.layers    || '—')
+        + tdItem('🍫', 'Flavour',    coFlavour)
+        + tdItem('🥚', 'Egg Pref',   coEgg)
+        + tdItem('🍯', 'Drizzle',    customData.drizzle && customData.drizzle !== 'None' ? customData.drizzle : null)
+        + tdItem('🟡', 'Faux Ball',  customData.faux_ball || customData.Faux_ball || null)
+        + tdItem('🦋', 'Butterfly',  customData.butterfly && customData.butterfly !== 'None' ? customData.butterfly : null)
+        + tdItem('✨', 'Topper',     coTopper)
+        + tdItem('📅', 'Delivery',   fmtDelivery(customData.delivery_date))
+        + '</div>'
+        + (customData.brownie_message
+          ? '<div style="background:var(--card);border:0.5px solid var(--bdr);border-radius:12px;padding:11px 13px;margin-bottom:10px">'
+            + '<div style="font-size:9px;color:var(--dim);letter-spacing:.5px;text-transform:uppercase;margin-bottom:5px">Message on Cake</div>'
+            + '<div style="font-size:13px;font-style:italic;color:var(--white);line-height:1.6">"' + customData.brownie_message + '"</div>'
+            + '</div>'
+          : '')
+        + (customData.special_notes
+          ? '<div style="background:var(--card);border:0.5px solid var(--bdr);border-radius:12px;padding:11px 13px;margin-bottom:10px">'
+            + '<div style="font-size:9px;color:var(--dim);letter-spacing:.5px;text-transform:uppercase;margin-bottom:5px">Special Instructions</div>'
+            + '<div style="font-size:12px;font-style:italic;color:var(--dim);line-height:1.7">' + customData.special_notes + '</div>'
+            + '</div>'
+          : '')
+        + '</div>';
 
     } else if (items && items.length > 0) {
-      itemsHtml = '<div style="margin-bottom:18px">'
+      // ══ REGULAR BROWNIE ORDER ══
+      itemsHtml =
+        '<div style="margin-bottom:18px">'
         + '<div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:10px">🛒 Order Items</div>'
         + items.map(function(item) {
             var egg   = item.egg_type === 'eggless' ? '💚 Eggless' : '❤️ With Egg';
@@ -6888,12 +7043,13 @@ async function openTrackingDetail(orderId, orderNum, status, total, date, itemNa
               + '</div>'
               + '</div>'
               + '<div style="font-size:16px;font-weight:700;color:var(--pl);margin-left:12px">₹' + price + '</div>'
-              + '</div></div>';
+              + '</div>'
+              + '</div>';
           }).join('')
         + '</div>';
     }
 
-    // ── Build tracking steps ──
+    // ── BUILD TRACKING STEPS ──
     var tempEl = document.createElement('div');
     tempEl.id  = 'tracking-steps';
     document.body.appendChild(tempEl);
@@ -6907,8 +7063,9 @@ async function openTrackingDetail(orderId, orderNum, status, total, date, itemNa
       + stepsContent;
 
   } catch(e) {
+    console.error('openTrackingDetail error:', e);
     document.getElementById('td-tracking-steps').innerHTML =
-      '<div style="color:var(--dim);font-size:12px">Could not load order details</div>';
+      '<div style="color:var(--dim);font-size:12px;padding:20px 0">Could not load order details · ' + e.message + '</div>';
   }
 
   var pg = document.getElementById('page-tracking');
@@ -7323,53 +7480,147 @@ function showCustomOrderDetail(orderNum, status) {
     showToast('Custom order details not available');
     return;
   }
-  document.getElementById('cod-order-num').textContent = orderNum;
 
-  var statusLabels = {
-    pending:'⏳ Pending', confirmed:'✅ Confirmed', baking:'🍫 Baking',
-    packed:'📦 Packed', out_for_delivery:'🚚 Out for Delivery',
-    delivered:'🎉 Delivered', cancelled:'❌ Cancelled'
+  // ── STATUS CONFIG ──
+  var statusMap = {
+    pending:           { label:'⏳ Pending Confirmation', bg:'rgba(245,158,11,.1)',  border:'rgba(245,158,11,.3)',  color:'#b45309', dot:'#f59e0b', pulse:true  },
+    confirmed:         { label:'✅ Confirmed',             bg:'rgba(34,197,94,.1)',   border:'rgba(34,197,94,.3)',   color:'#15803d', dot:'#22c55e', pulse:false },
+    baking:            { label:'🍫 Being Prepared',        bg:'rgba(239,68,68,.1)',   border:'rgba(239,68,68,.3)',   color:'#b91c1c', dot:'#ef4444', pulse:true  },
+    packed:            { label:'📦 Packed',                bg:'rgba(59,130,246,.1)',  border:'rgba(59,130,246,.3)',  color:'#1d4ed8', dot:'#3b82f6', pulse:false },
+    out_for_delivery:  { label:'🚚 Out for Delivery',      bg:'rgba(99,102,241,.1)',  border:'rgba(99,102,241,.3)',  color:'#4338ca', dot:'#6366f1', pulse:true  },
+    delivered:         { label:'🎉 Delivered',             bg:'rgba(34,197,94,.1)',   border:'rgba(34,197,94,.3)',   color:'#15803d', dot:'#22c55e', pulse:false },
+    cancelled:         { label:'❌ Cancelled',             bg:'rgba(244,114,182,.1)', border:'rgba(244,114,182,.3)', color:'#be185d', dot:'#f472b6', pulse:false },
   };
-  document.getElementById('cod-status').textContent = statusLabels[status] || status;
+  var sc = statusMap[status] || statusMap.pending;
 
-  var rows = [
-    ['🎉 Occasion',      co.occasion],
-    ['▬  Shape',         co.shape],
-    ['🎨 Theme',         co.theme],
-    ['⚖️ Weight',        co.weight_kg],
-    ['🍰 Layers',        co.layers],
-    ['🍫 Flavour',       co.flavour],
-    ['🥚 Egg',           co.egg_preference],
-    ['🟡 Faux Ball',     co.faux_ball   || co.Faux_ball   || '—'],
-    ['🦋 Butterfly',     co.butterfly   || '—'],
-    ['✨ Topper',        co.topper_type ? co.topper_type + (co.topper_style ? ' · ' + co.topper_style : '') : '—'],
-    ['📝 Name on Topper',co.topper_name || '—'],
-    ['💬 Brownie Message', co.brownie_message || '—'],
-    ['📅 Delivery Date', co.delivery_date ? new Date(co.delivery_date).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'}) : '—'],
-    ['📋 Special Notes', co.special_notes || '—'],
-  ];
+  // ── HELPERS ──
+  var fmtDate = function(d) {
+    if (!d) return '—';
+    return new Date(d).toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' });
+  };
 
-  var priceRow = '';
-  if (co.est_price_lo && co.est_price_hi) {
-    priceRow = '<div style="background:rgba(107,47,206,.1);border:1px solid rgba(107,47,206,.25);border-radius:14px;padding:14px 16px;margin-bottom:4px">'
-      + '<div style="font-size:11px;color:var(--dim);margin-bottom:4px">Estimated Price</div>'
-      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:26px;font-weight:700;color:var(--gold)">₹' + co.est_price_lo + ' – ₹' + co.est_price_hi + '</div>'
-      + '<div style="font-size:11px;color:var(--faint);margin-top:3px">Final price confirmed via WhatsApp</div>'
+  var detailItem = function(icon, label, value, full) {
+    if (!value || value === 'null' || value === 'undefined' || value === 'None') return '';
+    return '<div style="background:var(--card);border:0.5px solid var(--bdr);border-radius:12px;padding:10px 12px' + (full ? ';grid-column:1/-1' : '') + '">'
+      + '<div style="font-size:16px;margin-bottom:4px">' + icon + '</div>'
+      + '<div style="font-size:9px;color:var(--dim);letter-spacing:.5px;text-transform:uppercase;margin-bottom:3px">' + label + '</div>'
+      + '<div style="font-size:13px;font-weight:600;color:var(--white)">' + value + '</div>'
       + '</div>';
+  };
+
+  // ── FINISHING TOUCHES ──
+  var touchLabels = {
+    goldLeaf:'✦ Gold Leaf', fauxBalls:'🟡 Faux Balls',
+    chocDrips:'🍫 Choc Drips', hbd:'🎂 HBD Topper',
+    flowers:'🌸 Flowers', sprinkles:'✨ Sprinkles', toys:'🧸 Toys'
+  };
+  var touches = co.finishing || co.touches || [];
+  if (typeof touches === 'string') {
+    try { touches = JSON.parse(touches); } catch(e) { touches = []; }
   }
+  var touchChips = touches.length > 0
+    ? touches.map(function(t) {
+        return '<div style="padding:4px 10px;border-radius:20px;background:rgba(110,9,119,.1);border:0.5px solid rgba(110,9,119,.25);font-size:10px;color:var(--pl);font-weight:600">'
+          + (touchLabels[t] || t) + '</div>';
+      }).join('')
+    : '<div style="font-size:12px;color:var(--faint)">None selected</div>';
 
-  var html = priceRow + rows.filter(function(r){ return r[1] && r[1] !== '—'; }).map(function(r) {
-    return '<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:10px 14px;background:var(--card);border:1px solid var(--bdr);border-radius:12px">'
-      + '<div style="font-size:12px;color:var(--dim);flex-shrink:0;margin-right:12px">' + r[0] + '</div>'
-      + '<div style="font-size:12px;font-weight:600;color:var(--white);text-align:right">' + r[1] + '</div>'
-      + '</div>';
-  }).join('');
+  // ── FLAVOUR / FROST DISPLAY NAMES ──
+  var flavNames  = { vanilla:'Vanilla Pineapple 🍋', chocberry:'Chocolate Strawberry 🍓' };
+  var frostNames = { fresh:'Fresh Cream', choc:'Chocolate Frosting', truffle:'Truffle Dark' };
 
-  html += '<div onclick="window.open(\'https://wa.me/+918973141898\',\'_blank\')" '
-    + 'style="padding:14px;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;font-size:13px;font-weight:700;border-radius:14px;cursor:pointer;text-align:center;margin-top:4px">'
-    + '📲 Contact us on WhatsApp</div>';
+  var flavour  = flavNames[co.flavour_key]  || co.flavour  || co.flavour_key  || '—';
+  var frosting = frostNames[co.frosting_key]|| co.frosting || co.frosting_key || '—';
+  var tiers    = co.tier_count  ? co.tier_count + ' Tier'  : (co.tiers || '—');
+  var weight   = co.weight_key  || co.weight_kg || '—';
+  var occasion = co.occasion    || '—';
+  var egg      = (co.egg_preference || co.egg || 'eggless') === 'eggless' ? '💚 Eggless' : '❤️ With Egg';
+  var placement= co.name_placement ? ({ top:'Top Surface', front:'Front Side', board:'Base Board' }[co.name_placement] || co.name_placement) : null;
+  var cakeName = co.cake_name   || co.topper_name   || null;
+  var message  = co.brownie_message || co.brownie_msg || null;
+  var notes    = co.special_notes   || null;
+  var delDate  = fmtDate(co.delivery_date);
+  var estLo    = co.est_price_lo || co.est_price_lo || null;
+  var estHi    = co.est_price_hi || co.est_price_hi || null;
+  var priceStr = (estLo && estHi) ? '₹' + estLo + ' – ₹' + estHi : '—';
+  var placedOn = co.created_at  ? new Date(co.created_at).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }) : '—';
 
-  document.getElementById('cod-body').innerHTML = html;
+  // ── BUILD HTML ──
+  document.getElementById('cod-order-num').textContent = orderNum;
+  document.getElementById('cod-status').textContent    = sc.label;
+  document.getElementById('cod-status').style.cssText  =
+    'font-size:11px;font-weight:700;padding:5px 13px;border-radius:20px;'
+    + 'background:' + sc.bg + ';border:0.5px solid ' + sc.border + ';color:' + sc.color;
+
+  document.getElementById('cod-body').innerHTML =
+
+    // ── PRICE BLOCK ──
+    '<div style="background:linear-gradient(135deg,rgba(110,9,119,.1),rgba(156,12,161,.05));border:0.5px solid rgba(110,9,119,.25);border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">'
+    + '<div>'
+    + '<div style="font-size:11px;color:var(--dim);margin-bottom:4px">Estimated Price</div>'
+    + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:28px;font-weight:700;color:var(--pl)">' + priceStr + '</div>'
+    + '<div style="font-size:10px;color:var(--faint);margin-top:2px">Final price confirmed via WhatsApp</div>'
+    + '</div>'
+    + '<div style="text-align:right">'
+    + '<div style="font-size:11px;color:var(--dim);margin-bottom:4px">Placed on</div>'
+    + '<div style="font-size:12px;font-weight:600;color:var(--white)">' + placedOn + '</div>'
+    + '</div>'
+    + '</div>'
+
+    // ── CAKE CONFIG GRID ──
+    + '<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:10px">Cake Configuration</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">'
+    + detailItem('🎉', 'Occasion',  occasion)
+    + detailItem('🍰', 'Flavour',   flavour)
+    + detailItem('🍦', 'Frosting',  frosting)
+    + detailItem('🏗️', 'Tiers',     tiers)
+    + detailItem('⚖️', 'Weight',    weight)
+    + detailItem('🥚', 'Egg Pref',  egg)
+    + (cakeName ? detailItem('✍️', 'Name on Cake', '"' + cakeName + '"' + (placement ? ' · ' + placement : '')) : '')
+
+    // Finishing touches — full width
+    + '<div style="background:var(--card);border:0.5px solid var(--bdr);border-radius:12px;padding:10px 12px;grid-column:1/-1">'
+    + '<div style="font-size:9px;color:var(--dim);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px">Finishing Touches</div>'
+    + '<div style="display:flex;flex-wrap:wrap;gap:6px">' + touchChips + '</div>'
+    + '</div>'
+    + '</div>'
+
+    // ── DELIVERY DATE ──
+    + '<div style="background:rgba(201,160,64,.07);border:0.5px solid rgba(201,160,64,.3);border-radius:14px;padding:12px 14px;margin-bottom:12px">'
+    + '<div style="font-size:11px;font-weight:700;color:#92400e;margin-bottom:4px">📅 Requested Delivery Date</div>'
+    + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:700;color:var(--white)">' + delDate + '</div>'
+    + '<div style="font-size:10px;color:var(--dim);margin-top:3px">Custom cakes need min 7 days · NSDI will confirm via WhatsApp</div>'
+    + '</div>'
+
+    // ── BROWNIE MESSAGE ──
+    + (message
+      ? '<div style="background:var(--card);border:0.5px solid var(--bdr);border-radius:14px;padding:12px 14px;margin-bottom:12px">'
+        + '<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:6px">Message on Cake</div>'
+        + '<div style="font-size:13px;font-style:italic;color:var(--white);line-height:1.6">"' + message + '"</div>'
+        + '</div>'
+      : '')
+
+    // ── SPECIAL NOTES ──
+    + (notes
+      ? '<div style="background:var(--card);border:0.5px solid var(--bdr);border-radius:14px;padding:12px 14px;margin-bottom:12px">'
+        + '<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin-bottom:6px">Special Instructions</div>'
+        + '<div style="font-size:12px;font-style:italic;color:var(--dim);line-height:1.7">' + notes + '</div>'
+        + '</div>'
+      : '')
+
+    // ── NO CANCELLATION NOTICE ──
+    + '<div style="background:rgba(244,114,182,.06);border:0.5px solid rgba(244,114,182,.2);border-radius:12px;padding:11px 14px;margin-bottom:14px;font-size:11px;color:var(--dim);line-height:1.7">'
+    + '<span style="color:var(--pink);font-weight:700">⚠️ No Cancellation</span> · '
+    + 'Custom cakes are made specially for you and cannot be cancelled once confirmed. Contact us within 1 hour for urgent changes.'
+    + '</div>'
+
+    // ── WHATSAPP BUTTON ──
+    + '<div onclick="window.open(\'https://wa.me/+918973141898\',\'_blank\')" '
+    + 'style="padding:14px;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;'
+    + 'font-size:13px;font-weight:700;border-radius:14px;cursor:pointer;'
+    + 'display:flex;align-items:center;justify-content:center;gap:8px">'
+    + '📲 Contact NSDI on WhatsApp</div>';
+
   document.getElementById('cod-overlay').style.display = 'block';
   document.getElementById('cod-sheet').style.display   = 'block';
 }
@@ -9727,6 +9978,10 @@ var _csCurrentPhotos = [];
 // Photo library — add more as you upload to Supabase
 // Key format: flavor_frosting_tiers (use 'any' as wildcard)
 var CS_PHOTO_MAP = [
+
+  { flavor:'any', frost:'any', tiers:'any',
+    url:'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/diya.jpeg',
+    tags:['Flowers','Sprinkles','4 Tier'] },
   // Your uploaded reference
   { flavor:'any',      frost:'fresh',  tiers:'any', url:'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-1.jpeg',
     tags:['Gold Drips','Faux Balls','Gold Leaf','2 Tier'] },
@@ -9737,6 +9992,26 @@ var CS_PHOTO_MAP = [
 
   { flavor:'any', frost:'any', tiers:'any',
     url:'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-3.jpeg',
+    tags:['Flowers','Sprinkles','3 Tier'] },
+
+    { flavor:'any', frost:'any', tiers:'any',
+    url:'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-4.jpeg',
+    tags:['Flowers','Sprinkles','3 Tier'] },
+
+    { flavor:'any', frost:'any', tiers:'any',
+    url:'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-5.jpeg',
+    tags:['Flowers','Sprinkles','3 Tier'] },
+
+    { flavor:'any', frost:'any', tiers:'any',
+    url:'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-6.jpeg',
+    tags:['Flowers','Sprinkles','3 Tier'] },
+
+    { flavor:'any', frost:'any', tiers:'any',
+    url:'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-7.jpeg',
+    tags:['Flowers','Sprinkles','3 Tier'] },
+
+    { flavor:'any', frost:'any', tiers:'any',
+    url:'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-8.jpeg',
     tags:['Flowers','Sprinkles','3 Tier'] },
   // Add more as you upload — examples:
   // { flavor:'vanilla',  frost:'fresh',  tiers:2, url:'...cake-fresh-2tier.jpeg', tags:['Fresh Cream'] },
