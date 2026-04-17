@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-title" content="ChocoCravings">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <title>NSDI ChocoCravings</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"> </script>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
@@ -1876,14 +1876,6 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
             <div style="font-size:18px;margin-bottom:3px">📱</div>
             <div style="font-size:11px;font-weight:600;color:var(--dim)">UPI / GPay</div>
           </div>
-          <div class="cart-pay-opt" onclick="selCartPay(this,'card')" style="padding:10px;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;cursor:pointer;text-align:center">
-            <div style="font-size:18px;margin-bottom:3px">💳</div>
-            <div style="font-size:11px;font-weight:600;color:var(--dim)">Card</div>
-          </div>
-          <div class="cart-pay-opt" onclick="selCartPay(this,'netbanking')" style="padding:10px;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;cursor:pointer;text-align:center">
-            <div style="font-size:18px;margin-bottom:3px">🏦</div>
-            <div style="font-size:11px;font-weight:600;color:var(--dim)">Net Banking</div>
-          </div>
         </div>
         <!-- DELIVERY INFO -->
         <div style="background:rgba(107,47,206,.08);border:1px solid rgba(107,47,206,.2);border-radius:12px;padding:11px 14px;margin-bottom:10px;font-size:11px;color:var(--dim);line-height:1.7">
@@ -2072,12 +2064,160 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
         <!-- PAYMENT -->
         <div class="ck-section">
           <div class="ck-label">💳 Payment Method</div>
-          <div class="pay-opts">
-            <div class="pay-opt on" onclick="selPay(this,'cod')"><div class="pay-ico">💵</div><div class="pay-lbl">Cash on Delivery</div></div>
-            <div class="pay-opt" onclick="selPay(this,'upi')"><div class="pay-ico">📱</div><div class="pay-lbl">UPI / GPay</div></div>
-            <div class="pay-opt" onclick="selPay(this,'card')"><div class="pay-ico">💳</div><div class="pay-lbl">Card</div></div>
-            <div class="pay-opt" onclick="selPay(this,'netbanking')"><div class="pay-ico">🏦</div><div class="pay-lbl">Net Banking</div></div>
+
+          <!-- TIER NOTICE -->
+          <div id="ck-tier-notice" style="display:none;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;line-height:1.6;border:0.5px solid"></div>
+
+          <!-- PAYMENT TABS -->
+          <div style="display:flex;gap:8px;margin-bottom:16px">
+            <div id="tab-upi" onclick="selPayTab('upi')"
+              style="flex:1;padding:11px 8px;border-radius:12px;border:1px solid #6e0977;background:rgba(110,9,119,.06);text-align:center;cursor:pointer;transition:all .2s">
+              <div style="font-size:16px;margin-bottom:4px">📱</div>
+              <div style="font-size:11px;font-weight:600;color:#6e0977">UPI / QR</div>
+              <div style="font-size:9px;color:rgba(110,9,119,.6);font-family:'Cinzel',serif;letter-spacing:.5px;margin-top:2px">Preferred</div>
+            </div>
+            <div id="tab-cod" onclick="selPayTab('cod')"
+              style="flex:1;padding:11px 8px;border-radius:12px;border:0.5px solid rgba(110,9,119,.15);background:#fff;text-align:center;cursor:pointer;transition:all .2s;display:none">
+              <div style="font-size:16px;margin-bottom:4px">💵</div>
+              <div style="font-size:11px;font-weight:600;color:#1a0820">Cash on Delivery</div>
+              <div style="font-size:9px;color:#b89abf;font-family:'Cinzel',serif;letter-spacing:.5px;margin-top:2px">Gold+ only</div>
+            </div>
           </div>
+
+          <!-- UPI PANEL -->
+          <div id="upi-panel">
+
+            <!-- Step indicators -->
+            <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:18px">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+                <div id="step1-circle" style="width:28px;height:28px;border-radius:50%;background:rgba(110,9,119,.1);border:0.5px solid #6e0977;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#6e0977">1</div>
+                <div style="font-size:9px;color:#b89abf;font-family:'Cinzel',serif;letter-spacing:.5px">Scan</div>
+              </div>
+              <div style="width:28px;height:1px;background:rgba(110,9,119,.15);margin-bottom:14px"></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+                <div id="step2-circle" style="width:28px;height:28px;border-radius:50%;background:rgba(110,9,119,.1);border:0.5px solid rgba(110,9,119,.3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#b89abf">2</div>
+                <div style="font-size:9px;color:#b89abf;font-family:'Cinzel',serif;letter-spacing:.5px">Pay</div>
+              </div>
+              <div style="width:28px;height:1px;background:rgba(110,9,119,.15);margin-bottom:14px"></div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+                <div id="step3-circle" style="width:28px;height:28px;border-radius:50%;background:transparent;border:0.5px solid rgba(110,9,119,.2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#b89abf">3</div>
+                <div style="font-size:9px;color:#b89abf;font-family:'Cinzel',serif;letter-spacing:.5px">Confirm</div>
+              </div>
+            </div>
+
+            <!-- Amount card -->
+            <div style="background:#fff;border:0.5px solid rgba(110,9,119,.2);border-radius:14px;padding:13px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <div style="font-family:'Cinzel',serif;font-size:8px;letter-spacing:2px;color:#b89abf;text-transform:uppercase;margin-bottom:4px">Amount to Pay</div>
+                <div style="font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:400;color:#6e0977" id="upi-amt-display">₹0</div>
+                <div style="font-size:10px;color:#b89abf;margin-top:2px" id="upi-amt-note">Full payment</div>
+              </div>
+              <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;padding:6px 12px;border-radius:20px;background:rgba(110,9,119,.08);border:0.5px solid rgba(110,9,119,.2);color:#6e0977" id="upi-order-num">CC-XXXXXX</div>
+            </div>
+
+            <!-- QR Code -->
+            <div style="background:#fff;border:0.5px solid rgba(110,9,119,.2);border-radius:16px;padding:16px;margin-bottom:14px;text-align:center">
+              <div style="font-family:'Cinzel',serif;font-size:8px;letter-spacing:2.5px;color:#b89abf;text-transform:uppercase;margin-bottom:12px">Scan with any UPI App</div>
+
+              <!-- QR Frame -->
+              <div style="width:160px;height:160px;margin:0 auto 12px;border:1.5px solid rgba(110,9,119,.25);border-radius:14px;padding:8px;background:#fff;position:relative;display:flex;align-items:center;justify-content:center">
+                <!-- Corner brackets -->
+                <div style="position:absolute;top:4px;left:4px;width:14px;height:14px;border-top:2px solid #6e0977;border-left:2px solid #6e0977;border-radius:3px 0 0 0"></div>
+                <div style="position:absolute;top:4px;right:4px;width:14px;height:14px;border-top:2px solid #6e0977;border-right:2px solid #6e0977;border-radius:0 3px 0 0"></div>
+                <div style="position:absolute;bottom:4px;left:4px;width:14px;height:14px;border-bottom:2px solid #6e0977;border-left:2px solid #6e0977;border-radius:0 0 0 3px"></div>
+                <div style="position:absolute;bottom:4px;right:4px;width:14px;height:14px;border-bottom:2px solid #6e0977;border-right:2px solid #6e0977;border-radius:0 0 3px 0"></div>
+                <img src="https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/QR_Code.jpeg"
+                  style="width:136px;height:136px;object-fit:contain;border-radius:8px"
+                  onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                <div style="display:none;flex-direction:column;align-items:center;gap:6px;color:#b89abf">
+                  <div style="font-size:32px">📱</div>
+                  <div style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1px">QR Code</div>
+                </div>
+              </div>
+
+              <!-- App chips -->
+              <div style="display:flex;gap:6px;justify-content:center;margin-bottom:10px">
+                <div style="padding:5px 11px;border-radius:20px;border:0.5px solid rgba(110,9,119,.15);background:#fdf8ff;font-size:10px;color:#7a4a80">📱 GPay</div>
+                <div style="padding:5px 11px;border-radius:20px;border:0.5px solid rgba(110,9,119,.15);background:#fdf8ff;font-size:10px;color:#7a4a80">📲 PhonePe</div>
+                <div style="padding:5px 11px;border-radius:20px;border:0.5px solid rgba(110,9,119,.15);background:#fdf8ff;font-size:10px;color:#7a4a80">💜 Paytm</div>
+              </div>
+              <div style="font-size:10px;color:#b89abf">Open app → Scan QR → Enter amount → Pay</div>
+            </div>
+
+            <!-- Divider -->
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+              <div style="flex:1;height:0.5px;background:rgba(110,9,119,.12)"></div>
+              <div style="font-size:10px;color:#b89abf;font-family:'Cinzel',serif;letter-spacing:1px">or pay using UPI ID</div>
+              <div style="flex:1;height:0.5px;background:rgba(110,9,119,.12)"></div>
+            </div>
+
+            <!-- UPI ID row -->
+            <div style="background:#fff;border:0.5px solid rgba(110,9,119,.2);border-radius:12px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+              <div>
+                <div style="font-family:'Cinzel',serif;font-size:8px;letter-spacing:1.5px;color:#b89abf;text-transform:uppercase;margin-bottom:4px">UPI ID</div>
+                <div style="font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:500;color:#6e0977">sakthivel033-1@okaxis</div>
+              </div>
+              <div id="copy-upi-btn" onclick="copyUpiId()"
+                style="padding:7px 14px;border-radius:20px;border:0.5px solid rgba(110,9,119,.25);background:rgba(110,9,119,.06);font-size:11px;font-weight:600;color:#6e0977;cursor:pointer;transition:all .2s">
+                Copy
+              </div>
+            </div>
+
+            <!-- Silver advance block -->
+            <div id="ck-advance-block" style="display:none;border:0.5px solid rgba(150,150,180,.35);border-radius:14px;padding:14px;margin-bottom:16px;background:rgba(150,150,180,.04)">
+              <div style="font-family:'Cormorant Garamond',serif;font-size:16px;color:#1a0820;margin-bottom:4px">Silver privilege</div>
+              <div style="font-size:11px;color:#7a4a80;margin-bottom:12px;line-height:1.6">Confirm with 50% now. Balance collected on delivery.</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div id="advance-full-btn" onclick="selAdvance('full')"
+                  style="border-radius:10px;padding:11px 8px;text-align:center;cursor:pointer;border:1px solid #6e0977;background:rgba(110,9,119,.06)">
+                  <div style="font-size:11px;color:#6e0977;font-weight:600">Pay in full</div>
+                  <div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:#6e0977;margin-top:3px" id="advance-full-amt">₹0</div>
+                </div>
+                <div id="advance-partial-btn" onclick="selAdvance('partial')"
+                  style="border-radius:10px;padding:11px 8px;text-align:center;cursor:pointer;border:0.5px solid rgba(110,9,119,.15);background:#fff">
+                  <div style="font-size:11px;color:#1a0820;font-weight:600">50% advance</div>
+                  <div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:#6e0977;margin-top:3px" id="advance-partial-amt">₹0</div>
+                </div>
+              </div>
+              <div id="advance-balance-note" style="display:none;margin-top:10px;padding:9px 12px;border-radius:8px;background:#f5ecd4;border:0.5px solid rgba(201,160,64,.3);font-size:11px;color:#7a5c18">
+                ✦ Balance <strong id="advance-balance-amt">₹0</strong> collected at your doorstep
+              </div>
+            </div>
+
+            <!-- UTR Input -->
+            <div style="margin-bottom:16px">
+              <div style="font-family:'Cinzel',serif;font-size:8px;letter-spacing:2px;color:#b89abf;text-transform:uppercase;margin-bottom:8px">
+                Enter UTR / Transaction ID after payment
+              </div>
+              <input id="utr-input" type="text" maxlength="22"
+                placeholder="12-digit UTR number"
+                oninput="onUtrInput(this.value)"
+                style="width:100%;background:#fff;border:0.5px solid rgba(110,9,119,.2);border-radius:12px;padding:13px 15px;font-size:14px;color:#1a0820;outline:none;font-family:'DM Sans',sans-serif;transition:border-color .2s">
+              <div style="font-size:10px;color:#b89abf;margin-top:6px;line-height:1.6">
+                Find UTR in your UPI app under <strong style="color:#7a4a80">Payment History</strong> after paying
+              </div>
+              <div id="utr-valid-msg" style="display:none;font-size:11px;color:#15803d;margin-top:6px;font-weight:600">
+                ✓ Valid UTR — tap below to place your order
+              </div>
+              <div id="utr-err-msg" style="display:none;font-size:11px;color:#be185d;margin-top:6px">
+                ⚠ UTR must be at least 10 digits
+              </div>
+            </div>
+
+          </div><!-- /upi-panel -->
+
+          <!-- COD PANEL -->
+          <div id="cod-panel" style="display:none">
+            <div style="background:#fff;border:0.5px solid rgba(34,197,94,.2);border-radius:14px;padding:16px;text-align:center">
+              <div style="font-size:32px;margin-bottom:10px">💵</div>
+              <div style="font-family:'Cormorant Garamond',serif;font-size:18px;color:#1a0820;margin-bottom:6px">Cash on Delivery</div>
+              <div style="font-size:12px;color:#7a4a80;line-height:1.7">
+                Pay <strong style="font-family:'Cormorant Garamond',serif;font-size:16px;color:#6e0977" id="cod-amt-display">₹0</strong> in cash when your order arrives.<br>
+                Our delivery partner will collect the amount.
+              </div>
+            </div>
+          </div>
+
         </div>
 
         <!-- ORDER SUMMARY -->
@@ -4583,8 +4723,12 @@ async function submitCustomOrder() {
     topping_total:     extra,
     delivery_fee:      0,
     total:             estTotal,
-    payment_method:    'cod',
-    payment_status:    'pending',
+    payment_method:    currentPayMethod,
+    payment_status:    currentPayTab === 'cod' ? 'pending' : 'pending_verification',
+    utr_number:        currentPayTab === 'upi'  ? currentUtrValue : null,
+    amount_paid:       currentAdvanceMode === 'partial' ? Math.ceil(currentOrderTotal / 2) : (currentPayTab === 'cod' ? 0 : currentOrderTotal),
+    balance_due:       currentAdvanceMode === 'partial' ? (currentOrderTotal - Math.ceil(currentOrderTotal / 2)) : (currentPayTab === 'cod' ? currentOrderTotal : 0),
+    is_partial_payment: currentAdvanceMode === 'partial',
     status:            'pending',
     egg_preference:    egg2 === 'Eggless' ? 'eggless' : 'egg',
     special_notes:     'Custom slab order — see custom_orders table',
@@ -4849,7 +4993,12 @@ async function saveAddress() {
     var el = document.getElementById(id); if(el) el.value = '';
   });
   showToast(window._editingAddressId ? 'Address updated! ✅' : 'Address saved! ✅');
-  window._editingAddressId = null;
+  window._editingAddressId       = null;
+  window._editingAddressOriginal = null;
+  var cancelBtn = document.getElementById('addr-cancel-btn');
+  if (cancelBtn) cancelBtn.remove();
+  var saveBtn = document.querySelector('#add-addr-form button[onclick="saveAddress()"]');
+  if (saveBtn) saveBtn.textContent = 'Save Address';
   var saveBtn = document.querySelector('#add-addr-form button');
   if (saveBtn) saveBtn.textContent = 'Save Address';
   document.getElementById('add-addr-form').style.display = 'none';
@@ -5097,6 +5246,9 @@ function showToast(msg) {
 
 const SUPABASE_URL = 'https://yjbfditboewwpgyqzryd.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqYmZkaXRib2V3d3BneXF6cnlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNTgwNjcsImV4cCI6MjA4ODczNDA2N30.08Tvq71w2DBeWZrZb-IaiKfoI-2P_1MPJygzSPiRq24';
+
+const NSDI_UPI_ID  = 'sakthivel033-1@okaxis';
+const NSDI_QR_URL  = 'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/QR_Code.jpeg';
 
 // Init Supabase client
 const { createClient } = supabase;
@@ -5725,8 +5877,21 @@ function showPage(name){
   if (name === 'custom-order') {
     setTimeout(updateBrowniePreview, 100);
   }
-  if (name === 'checkout') {
+ if (name === 'checkout') {
     setTimeout(loadCheckoutAddresses, 100);
+    setTimeout(loadTierPaymentOptions, 200);
+    setTimeout(function() {
+      currentUtrValue      = '';
+      currentAdvanceMode   = 'full';
+      currentPayTab        = 'upi';
+      currentPayMethod     = 'upi';
+      var utrInput = document.getElementById('utr-input');
+      if (utrInput) utrInput.value = '';
+      var orderNumEl = document.getElementById('upi-order-num');
+      if (orderNumEl) orderNumEl.textContent = genOrderNum().slice(0, 10) + '…';
+      updateAdvanceAmounts();
+      updatePlaceBtn();
+    }, 300);
   }
   if (name === 'tracking') {
     setTimeout(loadLiveTrackingData, 100);
@@ -6368,6 +6533,8 @@ function buildOwnerMsg(order) {
     + "Address: " + order.delivery_address + ", " + order.city + " " + (order.pincode || "") + nl
     + "Items:" + nl + items + nl
     + "Total: Rs." + order.total + nl
+    + (order.utr_number ? "UTR: " + order.utr_number + nl : "")
+    + "Payment: " + (order.payment_status === 'pending_verification' ? 'UPI — Verify UTR ✓' : 'Cash on Delivery') + nl
     + "Payment: " + order.payment_method.toUpperCase() + nl
     + (order.special_notes ? "Notes: " + order.special_notes + nl : "")
     + "Time: " + fmtDate(order.created_at) + nl
@@ -6410,6 +6577,14 @@ async function placeOrder() {
   errEl.style.display = 'none';
 
   // Show loader
+  // ── VALIDATE UTR FOR UPI ──
+  if (currentPayTab === 'upi' && currentUtrValue.length < 10) {
+    showToast('⚠ Please enter your UTR number after paying');
+    var utrInput = document.getElementById('utr-input');
+    if (utrInput) utrInput.focus();
+    return;
+  }
+
   const overlay = document.getElementById('loading-overlay');
   overlay.classList.add('show');
   document.getElementById('place-btn').disabled = true;
@@ -6423,22 +6598,38 @@ async function placeOrder() {
     if (savedUser && savedUser.db_id) customerId = savedUser.db_id;
   } catch(e){}
 
+  // ── Snapshot payment state at order time ──
+  var isPartialPayment = (currentAdvanceMode === 'partial' && currentUser && currentUser.loyalty_tier === 'silver');
+  var amountPaidNow    = isPartialPayment
+    ? Math.ceil(currentOrderTotal / 2)
+    : (currentPayTab === 'cod' ? 0 : currentOrderTotal);
+  var balanceDueNow    = isPartialPayment
+    ? (currentOrderTotal - amountPaidNow)
+    : (currentPayTab === 'cod' ? currentOrderTotal : 0);
+
+  console.log('Payment snapshot — tab:', currentPayTab, 'utr:', currentUtrValue, 'advance:', currentAdvanceMode, 'amtPaid:', amountPaidNow);
+
   const orderData = {
-    order_number: orderNum,
-    customer_id: customerId,
-    customer_name: name,
-    customer_phone: phone.startsWith('+') ? phone : '+91' + phone.replace(/^0/,''),
-    customer_email: email || null,
-    delivery_address: address,
-    delivery_city: city, delivery_pincode: pin || null,
-    subtotal: subtotal,
-    topping_total: currentOrderTotal - subtotal,
-    delivery_fee: 0,
-    total: currentOrderTotal,
-    payment_method: currentPayMethod,
-    special_notes: notes || null,
-    status: 'pending',
-    created_at: new Date().toISOString()
+    order_number:       orderNum,
+    customer_id:        customerId,
+    customer_name:      name,
+    customer_phone:     phone.startsWith('+') ? phone : '+91' + phone.replace(/^0/,''),
+    customer_email:     email || null,
+    delivery_address:   address,
+    delivery_city:      city,
+    delivery_pincode:   pin || null,
+    subtotal:           subtotal,
+    topping_total:      currentOrderTotal - subtotal,
+    delivery_fee:       0,
+    total:              currentOrderTotal,
+    payment_method:     currentPayTab === 'cod' ? 'cod' : 'upi',
+    payment_status:     currentPayTab === 'cod' ? 'pending' : 'pending_verification',
+    utr_number:         currentPayTab === 'upi' && currentUtrValue ? currentUtrValue : null,
+    amount_paid:        amountPaidNow,
+    balance_due:        balanceDueNow,
+    is_partial_payment: isPartialPayment,
+    status:             'pending',
+    created_at:         new Date().toISOString()
   };
 
   // Keep items reference for WhatsApp message (not inserted into orders table)
@@ -7160,7 +7351,8 @@ async function loadProducts() {
       var query = db
         .from('products')
         .select('id, name, sku, tier, egg_type, category, description, is_featured, product_variants(id, pack_label, weight_grams, price)')
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .neq('product_type', 'accessory');
 
       // Filter by user egg preference
       if (userPref) {
@@ -7261,8 +7453,41 @@ var PRODUCT_IMAGES = {
   'PREM-EL-SEEDNUTS':     'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/PREM-EL-SEEDNUTS.jpeg',
   'PREM-EL-WALNUT':     'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/PREM-EL-WALNUT.jpeg',
   'PREM-EL-HAZEL':     'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/PREM-EL-HAZEL.jpeg',
-  'PREM-EL-NUTS':     'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/PREM-EL-NUTS.jpeg'
+  'PREM-EL-NUTS':     'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/PREM-EL-NUTS.jpeg',
+
+// ── VIBE STORE ACCESSORIES ──
+// ── BALLOONS ──
+'BB-1':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/BB-1.jpeg',
+'BG':      'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/BG.jpeg',
+'BGR':     'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/BGR.jpeg',
+'BP':      'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/BP.jpeg',
+'BPG':     'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/BPG.jpeg',
+'BPP':     'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/BPP.jpeg',
+'BR':      'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/BR.jpeg',
+'BSB':     'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/BSB.jpeg',
+'Buble-1': 'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/Buble-1.jpeg',
+'BW':      'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/BW.jpeg',
+'BY':      'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/BY.jpeg',
+// ── BACKDROPS ──
+'BD-1':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/BD-1.jpeg',
+'BD-2':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/BD-2.jpeg',
+'BD-3':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/BD-3.jpeg',
+'BD-4':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/BD-4.jpeg',
+'BD-5':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/BD-5.jpeg',
+'BD-6':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/BD-6.jpeg',
+'BD-7':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/BD-7.jpeg',
+'BD-8':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/BD-8.jpeg',
+// ── HANGING & BANNERS ──
+'Hang':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/Hang.jpeg',
+'HBD1':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/HBD1.jpeg',
+'HBD2':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/HBD2.jpeg',
+'HBD3':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/HBD3.jpeg',
+'HBD4':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/HBD4.jpeg',
+'HBD5':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/HBD5.jpeg',
+'HBD6':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/HBD6.jpeg',
+'HBD7':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/HBD7.jpeg',
 };
+
 
 function getProductImage(sku) {
   if (!sku) return null;
@@ -7948,9 +8173,17 @@ function getUserEggPref() {
 history.replaceState({ page: 'home' }, '', '#home');
 
 function editAddress(a) {
-  // Show the form and pre-fill with existing data
   var f = document.getElementById('add-addr-form');
   if (f) f.style.display = 'block';
+
+  // Store original values for cancel
+  window._editingAddressOriginal = {
+    address_line1: a.address_line1 || '',
+    address_line2: a.address_line2 || '',
+    city:          a.city          || '',
+    pincode:       a.pincode       || '',
+    label:         a.label         || 'Home'
+  };
 
   // Pre-fill fields
   var setInp = function(id, val) { var el = document.getElementById(id); if (el) el.value = val || ''; };
@@ -7966,7 +8199,7 @@ function editAddress(a) {
     c.style.borderColor = 'var(--bdr)';
     c.style.color       = 'var(--dim)';
   });
-  var labelMap = { 'Home':'Home', 'Office':'Office', 'Other':'Other', 'home':'Home', 'office':'Office', 'other':'Other' };
+  var labelMap = { 'Home':'Home','Office':'Office','Other':'Other','home':'Home','office':'Office','other':'Other' };
   var matchChip = document.querySelector('.addr-chip[onclick*="' + (labelMap[label] || 'Home') + '"]');
   if (matchChip) {
     matchChip.style.background  = 'rgba(107,47,206,.15)';
@@ -7976,13 +8209,57 @@ function editAddress(a) {
   var labelEl = document.getElementById('addr-label');
   if (labelEl) labelEl.value = labelMap[label] || 'Home';
 
-  // Store editing ID and change save button to Update
   window._editingAddressId = a.id;
+
+  // Update save button
   var saveBtn = document.querySelector('#add-addr-form button[onclick="saveAddress()"]');
   if (saveBtn) saveBtn.textContent = 'Update Address';
 
-  // Scroll form into view
+  // Add cancel button if not already there
+  var existing = document.getElementById('addr-cancel-btn');
+  if (!existing) {
+    var cancelBtn = document.createElement('button');
+    cancelBtn.id        = 'addr-cancel-btn';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.onclick   = cancelAddressEdit;
+    cancelBtn.style.cssText = 'width:100%;padding:12px;background:var(--card);border:1.5px solid var(--bdr);color:var(--dim);border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;margin-top:6px';
+    var formDiv = document.getElementById('add-addr-form');
+    if (formDiv) formDiv.appendChild(cancelBtn);
+  }
+
   f.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function cancelAddressEdit() {
+  var orig = window._editingAddressOriginal;
+  if (orig) {
+    // Restore original values
+    var setInp = function(id, val) { var el = document.getElementById(id); if (el) el.value = val || ''; };
+    setInp('addr-line1', orig.address_line1);
+    setInp('addr-line2', orig.address_line2);
+    setInp('addr-city',  orig.city);
+    setInp('addr-pin',   orig.pincode);
+    var labelEl = document.getElementById('addr-label');
+    if (labelEl) labelEl.value = orig.label;
+  }
+
+  // Reset state
+  window._editingAddressId       = null;
+  window._editingAddressOriginal = null;
+
+  // Hide form
+  var f = document.getElementById('add-addr-form');
+  if (f) f.style.display = 'none';
+
+  // Remove cancel button
+  var cancelBtn = document.getElementById('addr-cancel-btn');
+  if (cancelBtn) cancelBtn.remove();
+
+  // Reset save button text
+  var saveBtn = document.querySelector('#add-addr-form button[onclick="saveAddress()"]');
+  if (saveBtn) saveBtn.textContent = 'Save Address';
+
+  showToast('Changes discarded');
 }
 // ── ACCESSORY CATEGORY EMOJIS ──
 var ACC_EMOJIS = {
@@ -8034,9 +8311,9 @@ async function loadAccessories() {
   try {
     var { data: products, error } = await db
     .from('products')
-    .select('id,name,sku,description,accessory_category,is_featured,product_type,product_variants(id,pack_label,price,weight_grams,pieces)')
+    .select('id,name,sku,description,accessory_category,is_featured,product_type,image_url,product_variants(id,pack_label,price,weight_grams,pieces)')
     .eq('is_active', true)
-    .in('sku', ['ACC-BALLOON-01','ACC-CANDLE-01','ACC-DECOR-01','ACC-BANNER-01','ACC-RETURN-01','ACC-PROPS-01']);
+    .in('product_type', ['accessory','bundle']);
 
   console.log('VIBE STORE:', products, error);
     if (!products || products.length === 0) {
@@ -8082,11 +8359,15 @@ function vsRenderGrid(products) {
     var nameFirst = nameParts.slice(0, nameParts.length - 1).join(' ');
     var nameLast  = nameParts[nameParts.length - 1];
 
-    var imgUrl = getProductImage(p.sku);
-    var imgContent = imgUrl
-      ? '<img src="' + imgUrl + '" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'">'
-        + '<span class="vs-pemoji" style="display:none">' + emoji + '</span>'
-      : '<span class="vs-pemoji">' + emoji + '</span>';
+    // Build image URL — prefer stored image_url, then SKU-based storage path
+    var imgUrl = p.image_url
+      || getProductImage(p.sku)
+      || ('https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/' + p.sku + '.jpeg');
+
+    var imgContent = '<img src="' + imgUrl + '" '
+      + 'style="width:100%;height:100%;object-fit:cover;object-position:center" '
+      + 'onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
+      + '<span class="vs-pemoji" style="display:none">' + emoji + '</span>';
 
     if (isWide) {
       return '<div class="vs-pcard vs-pcard-wide" data-acc-cat="' + cat + '" onclick="openVsDetail(\'' + p.id + '\')">'
@@ -10120,6 +10401,228 @@ function initCakeGL() {
   csUpdatePhoto();
   setTimeout(csStartAutoScroll, 500);
 }
+
+// ── UPI PAYMENT STATE ──
+var currentUtrValue     = '';
+var currentAdvanceMode  = 'full';
+var currentPayableAmount = 0;
+var currentPayTab       = 'upi';
+
+// ── COPY UPI ID ──
+function copyUpiId() {
+  var btn = document.getElementById('copy-upi-btn');
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(NSDI_UPI_ID);
+  } else {
+    var el = document.createElement('textarea');
+    el.value = NSDI_UPI_ID;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+  }
+  btn.textContent = 'Copied ✓';
+  btn.style.background = 'rgba(34,197,94,.1)';
+  btn.style.borderColor = 'rgba(34,197,94,.3)';
+  btn.style.color = '#15803d';
+  setTimeout(function() {
+    btn.textContent = 'Copy';
+    btn.style.background = '';
+    btn.style.borderColor = '';
+    btn.style.color = '#6e0977';
+  }, 2000);
+}
+
+// ── SELECT PAY TAB ──
+function selPayTab(tab) {
+  currentPayTab = tab;
+  var upiPanel = document.getElementById('upi-panel');
+  var codPanel = document.getElementById('cod-panel');
+  var tabUpi   = document.getElementById('tab-upi');
+  var tabCod   = document.getElementById('tab-cod');
+
+  if (tab === 'upi') {
+    upiPanel.style.display = 'block';
+    codPanel.style.display = 'none';
+    tabUpi.style.border      = '1px solid #6e0977';
+    tabUpi.style.background  = 'rgba(110,9,119,.06)';
+    tabUpi.querySelector('div:nth-child(2)').style.color = '#6e0977';
+    if (tabCod.style.display !== 'none') {
+      tabCod.style.border     = '0.5px solid rgba(110,9,119,.15)';
+      tabCod.style.background = '#fff';
+      tabCod.querySelector('div:nth-child(2)').style.color = '#1a0820';
+    }
+    currentPayMethod = 'upi';
+  } else {
+    codPanel.style.display  = 'block';
+    upiPanel.style.display  = 'none';
+    tabCod.style.border     = '1px solid #6e0977';
+    tabCod.style.background = 'rgba(110,9,119,.06)';
+    tabCod.querySelector('div:nth-child(2)').style.color = '#6e0977';
+    tabUpi.style.border     = '0.5px solid rgba(110,9,119,.15)';
+    tabUpi.style.background = '#fff';
+    tabUpi.querySelector('div:nth-child(2)').style.color = '#1a0820';
+    currentPayMethod = 'cod';
+    document.getElementById('cod-amt-display').textContent = '₹' + currentOrderTotal;
+  }
+
+  updatePlaceBtn();
+}
+
+// ── UTR INPUT HANDLER ──
+function onUtrInput(val) {
+  currentUtrValue = val.trim().replace(/\s/g, '');
+  var valid   = currentUtrValue.length >= 10;
+  var errMsg  = document.getElementById('utr-err-msg');
+  var validMsg= document.getElementById('utr-valid-msg');
+  var input   = document.getElementById('utr-input');
+  var step2   = document.getElementById('step2-circle');
+  var step3   = document.getElementById('step3-circle');
+
+  if (currentUtrValue.length > 0 && !valid) {
+    errMsg.style.display  = 'block';
+    validMsg.style.display = 'none';
+    input.style.borderColor = 'rgba(190,24,93,.4)';
+    step2.style.background = 'rgba(190,24,93,.1)';
+    step2.style.color      = '#be185d';
+    step3.style.background = 'transparent';
+  } else if (valid) {
+    errMsg.style.display   = 'none';
+    validMsg.style.display = 'block';
+    input.style.borderColor = '#6e0977';
+    step2.style.background = 'rgba(34,197,94,.12)';
+    step2.style.color      = '#15803d';
+    step3.style.background = 'rgba(110,9,119,.1)';
+    step3.style.borderColor = '#6e0977';
+    step3.style.color       = '#6e0977';
+  } else {
+    errMsg.style.display   = 'none';
+    validMsg.style.display = 'none';
+    input.style.borderColor = 'rgba(110,9,119,.2)';
+    step2.style.background = 'rgba(110,9,119,.1)';
+    step2.style.color      = '#b89abf';
+    step3.style.background = 'transparent';
+    step3.style.color      = '#b89abf';
+  }
+  updatePlaceBtn();
+}
+
+// ── ADVANCE MODE ──
+function selAdvance(mode) {
+  currentAdvanceMode = mode;
+  var fullBtn  = document.getElementById('advance-full-btn');
+  var halfBtn  = document.getElementById('advance-partial-btn');
+  var balNote  = document.getElementById('advance-balance-note');
+
+  if (mode === 'full') {
+    fullBtn.style.border     = '1px solid #6e0977';
+    fullBtn.style.background = 'rgba(110,9,119,.06)';
+    halfBtn.style.border     = '0.5px solid rgba(110,9,119,.15)';
+    halfBtn.style.background = '#fff';
+    balNote.style.display    = 'none';
+    currentPayableAmount     = currentOrderTotal;
+  } else {
+    halfBtn.style.border     = '1px solid #6e0977';
+    halfBtn.style.background = 'rgba(110,9,119,.06)';
+    fullBtn.style.border     = '0.5px solid rgba(110,9,119,.15)';
+    fullBtn.style.background = '#fff';
+    balNote.style.display    = 'block';
+    currentPayableAmount     = Math.ceil(currentOrderTotal / 2);
+  }
+
+  document.getElementById('upi-amt-display').textContent = '₹' + currentPayableAmount;
+  document.getElementById('advance-balance-amt').textContent = '₹' + (currentOrderTotal - currentPayableAmount);
+  updatePlaceBtn();
+}
+
+// ── UPDATE PLACE BUTTON ──
+function updatePlaceBtn() {
+  var btn = document.getElementById('place-btn');
+  if (!btn) return;
+  if (currentPayTab === 'cod') {
+    btn.textContent       = 'Place Order — Cash on Delivery';
+    btn.disabled          = false;
+    btn.style.background  = 'linear-gradient(135deg,#15803d,#16a34a)';
+  } else {
+    var utrOk = currentUtrValue.length >= 10;
+    btn.disabled         = !utrOk;
+    btn.style.background = utrOk
+      ? 'linear-gradient(135deg,#6e0977,#9c0ca1)'
+      : 'linear-gradient(135deg,#b89abf,#b89abf)';
+    btn.textContent = utrOk
+      ? 'Confirm Payment & Place Order'
+      : 'Enter UTR to Place Order';
+  }
+}
+
+// ── TIER PAYMENT OPTIONS LOADER ──
+async function loadTierPaymentOptions() {
+  if (!currentUser || !currentUser.db_id) return;
+
+  var { data: cust } = await db
+    .from('customers')
+    .select('loyalty_tier')
+    .eq('id', currentUser.db_id)
+    .single();
+
+  var tier = (cust && cust.loyalty_tier) ? cust.loyalty_tier.toLowerCase() : 'bronze';
+  currentUser.loyalty_tier = tier;
+
+  var notice   = document.getElementById('ck-tier-notice');
+  var codTab   = document.getElementById('tab-cod');
+  var advBlock = document.getElementById('ck-advance-block');
+
+  // ── RESET ALL ──
+  if (codTab)   codTab.style.display   = 'none';
+  if (advBlock) advBlock.style.display = 'none';
+  if (notice)   notice.style.display   = 'none';
+
+  // ── BRONZE — UPI only, no notice ──
+  if (tier === 'bronze') return;
+
+  // ── SILVER — 50% advance option ──
+  if (tier === 'silver') {
+    if (advBlock) advBlock.style.display = 'block';
+    if (notice) {
+      notice.style.cssText = 'border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;line-height:1.6;border:0.5px solid rgba(150,150,180,.35);background:rgba(150,150,180,.06);color:#4a4a7a;display:block';
+      notice.innerHTML = '🥈 <strong>Silver member</strong> — Pay 50% advance to confirm your order!';
+    }
+    updateAdvanceAmounts();
+    return;
+  }
+
+  // ── GOLD — UPI + COD ──
+  if (tier === 'gold') {
+    if (codTab) codTab.style.display = 'flex';
+    if (notice) {
+      notice.style.cssText = 'border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;line-height:1.6;border:0.5px solid rgba(201,160,64,.35);background:rgba(201,160,64,.07);color:#7a5c18;display:block';
+      notice.innerHTML = '🥇 <strong>Gold member</strong> — Cash on Delivery unlocked for you!';
+    }
+    return;
+  }
+
+  // ── PLATINUM — UPI + COD + priority ──
+  if (tier === 'platinum') {
+    if (codTab) codTab.style.display = 'flex';
+    if (notice) {
+      notice.style.cssText = 'border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;line-height:1.6;border:0.5px solid rgba(110,9,119,.3);background:rgba(110,9,119,.06);color:#4a0550;display:block';
+      notice.innerHTML = '💎 <strong>Platinum member</strong> — All privileges + priority fulfilment!';
+    }
+    return;
+  }
+}
+
+// ── UPDATE ADVANCE AMOUNTS ──
+function updateAdvanceAmounts() {
+  var half = Math.ceil(currentOrderTotal / 2);
+  var el;
+  el = document.getElementById('advance-full-amt');    if (el) el.textContent = '₹' + currentOrderTotal;
+  el = document.getElementById('advance-partial-amt'); if (el) el.textContent = '₹' + half;
+  el = document.getElementById('advance-balance-amt'); if (el) el.textContent = '₹' + (currentOrderTotal - half);
+  el = document.getElementById('upi-amt-display');     if (el) el.textContent = '₹' + currentOrderTotal;
+  currentPayableAmount = currentOrderTotal;
+}
+
 </script>
 </body>
 </html>
