@@ -7469,8 +7469,7 @@ var PRODUCT_IMAGES = {
 'BW':      'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/BW.jpeg',
 'BY':      'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/BY.jpeg',
 // ── BACKDROPS ──
-'BD-1':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/BD-1.jpeg',
-'BD-2':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/BD-2.jpeg',
+'BD-1':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/BD-2.jpeg',
 'BD-3':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/BD-3.jpeg',
 'BD-4':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/BD-4.jpeg',
 'BD-5':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/BD-5.jpeg',
@@ -7486,6 +7485,8 @@ var PRODUCT_IMAGES = {
 'HBD5':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/HBD5.jpeg',
 'HBD6':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/HBD6.jpeg',
 'HBD7':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/HBD7.jpeg',
+'HBD8':    'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/HBD8.jpeg',
+
 };
 
 
@@ -8353,8 +8354,8 @@ function vsRenderGrid(products) {
     var bg       = VS_BG[cat]    || VS_BG.accessories;
     var catLabel = VS_CAT_LABELS[cat] || 'Accessories';
     var isFeatured = p.is_featured;
-    var isWide   = (i === 2 || i === 4); // every 3rd card is wide
-
+    //var isWide   = (i === 2 || i === 4); // every 3rd card is wide
+    var isWide = false;
     var nameParts = p.name.split(' ');
     var nameFirst = nameParts.slice(0, nameParts.length - 1).join(' ');
     var nameLast  = nameParts[nameParts.length - 1];
