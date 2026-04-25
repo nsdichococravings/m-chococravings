@@ -2701,7 +2701,14 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
     }
 
       </style>
-
+    <div style="margin-top:8px">
+      <button id="flavour-base-edit-btn" onclick="openFlavourSheet()"
+        style="padding:7px 14px;border-radius:20px;border:1px solid rgba(110,9,119,.15);
+        background:transparent;color:rgba(110,9,119,.45);font-size:11px;font-weight:600;
+        cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s">
+        + Add Loaded Base
+      </button>
+    </div>
       <div style="padding:18px 22px;display:flex;flex-direction:column;gap:20px;padding-bottom:30px">
 
         <!-- OCCASION -->
@@ -2717,7 +2724,19 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
             <div class="cust-chip" data-group="occasion" data-val="Baby Shower" onclick="selChip(this,'occasion')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
               <div style="font-size:20px;margin-bottom:4px">👶</div><div style="font-size:11px;font-weight:600;color:var(--dim)">Baby Shower</div>
             </div>
+            <div class="cust-chip" data-group="occasion" data-val="My Own" onclick="selChip(this,'occasion');toggleOccasionInput(this)" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+              <div style="font-size:20px;margin-bottom:4px">✨</div><div style="font-size:11px;font-weight:600;color:var(--dim)">My Own</div>
           </div>
+          </div>
+        </div>
+        <div id="occasion-custom-wrap" style="display:none;margin-top:10px">
+            <input type="text" id="occasion-custom-input" maxlength="30"
+              placeholder="e.g. Retirement, Farewell, Festival..."
+              style="width:100%;background:rgba(255,255,255,.06);border:1.5px solid var(--p);
+              border-radius:12px;padding:12px 14px;color:var(--white);
+              font-family:'DM Sans',sans-serif;font-size:13px;outline:none"
+              oninput="customSelections.occasion = this.value.trim() || 'My Own'">
+            <div style="font-size:10px;color:var(--faint);margin-top:4px">Max 30 characters</div>
         </div>
 
         <!-- SHAPE -->
@@ -3704,6 +3723,103 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
         </button>
       </div>
     </div>
+    <!-- FLAVOUR BASE SHEET -->
+    <div id="fbv-overlay" onclick="cancelFlavourSheet()"
+      style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.55);z-index:2500;backdrop-filter:blur(4px)"></div>
+
+    <div id="fbv-sheet"
+      style="display:none;position:absolute;bottom:0;left:0;right:0;
+      background:#fff;border-radius:20px 20px 0 0;z-index:2501;
+      padding:0 0 28px;font-family:'DM Sans',sans-serif;overflow:hidden">
+
+      <!-- Purple gradient top strip -->
+      <div style="height:3px;background:linear-gradient(90deg,#6e0977,#9c0ca1,#c84fd0)"></div>
+
+      <!-- Header -->
+      <div style="padding:16px 18px 12px;border-bottom:1px solid rgba(110,9,119,.08)">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(110,9,119,.4);margin-bottom:4px">Classic Dark · Couverture</div>
+            <div style="font-size:17px;font-weight:700;color:#1a0820;line-height:1.2">Pick your <span style="color:#6e0977;font-style:italic">loaded base</span></div>
+          </div>
+          <div onclick="cancelFlavourSheet()"
+            style="width:34px;height:34px;border-radius:50%;background:rgba(110,9,119,.07);
+            border:1px solid rgba(110,9,119,.15);display:flex;align-items:center;
+            justify-content:center;font-size:14px;cursor:pointer;color:#6e0977">✕</div>
+        </div>
+      </div>
+
+      <!-- Options Grid -->
+      <div style="padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+
+        <div class="fbv-opt" data-val="Plain" onclick="selFbv(this)"
+          style="padding:12px 11px;border-radius:14px;background:linear-gradient(135deg,rgba(110,9,119,.1),rgba(156,12,161,.05));border:1.5px solid #6e0977;cursor:pointer;position:relative;transition:all .2s">
+          <div class="fbv-chk" style="position:absolute;top:8px;right:8px;width:16px;height:16px;border-radius:50%;background:#6e0977;border:1.5px solid #6e0977;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff">✓</div>
+          <div style="font-size:20px;margin-bottom:6px">🍫</div>
+          <div class="fbv-title" style="font-size:12px;font-weight:700;color:#6e0977;margin-bottom:2px;line-height:1.2">Plain Classic</div>
+          <div style="font-size:9px;color:rgba(110,9,119,.5);line-height:1.4">Pure chocolate, no add-ins</div>
+        </div>
+
+        <div class="fbv-opt" data-val="Nuts Loaded" onclick="selFbv(this)"
+          style="padding:12px 11px;border-radius:14px;background:#fff;border:1px solid rgba(110,9,119,.12);cursor:pointer;position:relative;transition:all .2s">
+          <div class="fbv-chk" style="position:absolute;top:8px;right:8px;width:16px;height:16px;border-radius:50%;background:transparent;border:1.5px solid rgba(110,9,119,.2);display:flex;align-items:center;justify-content:center;font-size:9px;color:transparent">✓</div>
+          <div style="font-size:20px;margin-bottom:6px">🥜</div>
+          <div class="fbv-title" style="font-size:12px;font-weight:700;color:#1a0820;margin-bottom:2px;line-height:1.2">Nuts Loaded</div>
+          <div style="font-size:9px;color:#888;line-height:1.4">Roasted mixed nuts</div>
+        </div>
+
+        <div class="fbv-opt" data-val="Seeds Loaded" onclick="selFbv(this)"
+          style="padding:12px 11px;border-radius:14px;background:#fff;border:1px solid rgba(110,9,119,.12);cursor:pointer;position:relative;transition:all .2s">
+          <div class="fbv-chk" style="position:absolute;top:8px;right:8px;width:16px;height:16px;border-radius:50%;background:transparent;border:1.5px solid rgba(110,9,119,.2);display:flex;align-items:center;justify-content:center;font-size:9px;color:transparent">✓</div>
+          <div style="font-size:20px;margin-bottom:6px">🌿</div>
+          <div class="fbv-title" style="font-size:12px;font-weight:700;color:#1a0820;margin-bottom:2px;line-height:1.2">Seeds Loaded</div>
+          <div style="font-size:9px;color:#888;line-height:1.4">Healthy seeds blend</div>
+        </div>
+
+        <div class="fbv-opt" data-val="Hazelnut Loaded" onclick="selFbv(this)"
+          style="padding:12px 11px;border-radius:14px;background:#fff;border:1px solid rgba(110,9,119,.12);cursor:pointer;position:relative;transition:all .2s">
+          <div class="fbv-chk" style="position:absolute;top:8px;right:8px;width:16px;height:16px;border-radius:50%;background:transparent;border:1.5px solid rgba(110,9,119,.2);display:flex;align-items:center;justify-content:center;font-size:9px;color:transparent">✓</div>
+          <div style="font-size:20px;margin-bottom:6px">🌰</div>
+          <div class="fbv-title" style="font-size:12px;font-weight:700;color:#1a0820;margin-bottom:2px;line-height:1.2">Hazelnut Loaded</div>
+          <div style="font-size:9px;color:#888;line-height:1.4">Roasted hazelnuts</div>
+        </div>
+
+        <div class="fbv-opt" data-val="Walnut Loaded" onclick="selFbv(this)"
+          style="padding:12px 11px;border-radius:14px;background:#fff;border:1px solid rgba(110,9,119,.12);cursor:pointer;position:relative;transition:all .2s">
+          <div class="fbv-chk" style="position:absolute;top:8px;right:8px;width:16px;height:16px;border-radius:50%;background:transparent;border:1.5px solid rgba(110,9,119,.2);display:flex;align-items:center;justify-content:center;font-size:9px;color:transparent">✓</div>
+          <div style="font-size:20px;margin-bottom:6px">🪨</div>
+          <div class="fbv-title" style="font-size:12px;font-weight:700;color:#1a0820;margin-bottom:2px;line-height:1.2">Walnut Loaded</div>
+          <div style="font-size:9px;color:#888;line-height:1.4">California walnuts</div>
+        </div>
+
+        <div class="fbv-opt" data-val="Dark Choco Loaded" onclick="selFbv(this)"
+          style="padding:12px 11px;border-radius:14px;background:#fff;border:1px solid rgba(110,9,119,.12);cursor:pointer;position:relative;transition:all .2s">
+          <div class="fbv-chk" style="position:absolute;top:8px;right:8px;width:16px;height:16px;border-radius:50%;background:transparent;border:1.5px solid rgba(110,9,119,.2);display:flex;align-items:center;justify-content:center;font-size:9px;color:transparent">✓</div>
+          <div style="font-size:20px;margin-bottom:6px">🍫</div>
+          <div class="fbv-title" style="font-size:12px;font-weight:700;color:#1a0820;margin-bottom:2px;line-height:1.2">Dark Choco Loaded</div>
+          <div style="font-size:9px;color:#888;line-height:1.4">Extra dark chips inside</div>
+        </div>
+
+      </div>
+      <!-- Selected badge -->
+      <div style="margin:0 14px 12px;display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(110,9,119,.06);border-radius:10px;border:1px solid rgba(110,9,119,.15)">
+        <div style="width:6px;height:6px;border-radius:50%;background:#6e0977;flex-shrink:0"></div>
+        <div style="font-size:11px;color:#6e0977;font-weight:600;flex:1" id="fbv-badge-lbl">Plain Classic selected</div>
+        <div style="font-size:10px;color:rgba(110,9,119,.4);font-weight:500">Edit anytime</div>
+      </div>
+
+      <!-- Buttons -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 14px">
+        <button onclick="cancelFlavourSheet()"
+          style="padding:13px;background:transparent;border:1.5px solid rgba(110,9,119,.2);
+          color:rgba(110,9,119,.6);font-size:12px;font-weight:600;border-radius:12px;
+          cursor:pointer;font-family:'DM Sans',sans-serif">Cancel</button>
+        <button onclick="confirmFlavourBase()"
+          style="padding:13px;background:linear-gradient(135deg,#6e0977,#9c0ca1);
+          color:#fff;font-size:12px;font-weight:700;border:none;border-radius:12px;
+          cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:.3px">Confirm ✓</button>
+      </div>
+    </div>
     </div><!-- /screen -->
   </div><!-- /phone -->
   <div class="toast" id="toast">✓ Added to cart!</div>
@@ -4317,6 +4433,25 @@ function selChip(el, group) {
   var lbl = el.querySelector('div:last-child');
   if (lbl) lbl.style.color = 'var(--pl)';
   customSelections[group] = el.getAttribute('data-val');
+
+  // ── Hide occasion input if switching away from My Own ──
+  if (group === 'occasion' && el.getAttribute('data-val') !== 'My Own') {
+    var wrap = document.getElementById('occasion-custom-wrap');
+    if (wrap) wrap.style.display = 'none';
+  }
+
+  // Inside selChip(), after setting customSelections[group]:
+  if (group === 'flavour') {
+    var val = el.getAttribute('data-val');
+    if (val === 'Classic Dark Chocolate' || val === 'Couverture Belgian') {
+      setTimeout(openFlavourSheet, 200);
+    } else {
+      _fbvSelected = 'Plain';
+      customSelections.flavourBase = 'Plain';
+      updateFlavourEditBtn();
+    }
+  }
+
   updateBrowniePreview();
 }
 
@@ -4745,6 +4880,7 @@ async function submitCustomOrder() {
       order_id:        ord.id,
       customer_id:     user.db_id,
       occasion:        customSelections.occasion,
+      loaded_base:     customSelections.flavourBase || 'Plain',
       shape:           customSelections.shape,
       theme:           customSelections.theme,
       weight_kg:       customSelections.serves,
@@ -4785,6 +4921,9 @@ async function submitCustomOrder() {
       + '⚖️ Weight: ' + srv + '\n'
       + '🍰 Layers: ' + customConfig.layers + '\n'
       + '🍫 Flavour: ' + customSelections.flavour + '\n'
+      + (customSelections.flavourBase && customSelections.flavourBase !== 'Plain'
+      ? '🥜 Loaded Base: ' + customSelections.flavourBase + '\n'
+      : '')
       + '🥚 Egg: ' + egg2 + '\n'
       + '📅 Delivery: ' + dateStr + '\n'
       + (msgVal   ? '✍️ Brownie Msg: ' + msgVal + '\n' : '')
@@ -5316,6 +5455,25 @@ function selVar(el,i){
   document.querySelectorAll('.vrow').forEach(r=>{r.classList.remove('on');r.querySelector('.vchk').textContent='';});
   el.classList.add('on'); el.querySelector('.vchk').textContent='✓'; varIdx=i;
   resetToppings(); refreshPrices();
+  
+  // ── Disable toppings for Assorted Brownie (index 10) ──
+  var isAssorted = i === 10;
+  var toplistWrap = document.getElementById('toplist-wrap');
+  var ttotal      = document.querySelector('.ttotal');
+  var toppingLabel = document.getElementById('toppings-anchor');
+
+  if (toplistWrap) {
+    toplistWrap.style.pointerEvents = isAssorted ? 'none' : 'auto';
+    toplistWrap.style.opacity       = isAssorted ? '0.35' : '1';
+  }
+  if (ttotal) {
+    ttotal.style.opacity = isAssorted ? '0.35' : '1';
+  }
+  if (toppingLabel) {
+    toppingLabel.innerHTML = isAssorted
+      ? '🍯 Toppings <span class="dlabel-badge">Not available for Assorted</span>'
+      : '🍯 Add Toppings <span class="dlabel-badge">Optional · tap to select</span>';
+  }
 }
 function selPack(el,i){
   document.querySelectorAll('.pcrd').forEach(c=>c.classList.remove('on'));
@@ -6578,12 +6736,35 @@ async function placeOrder() {
 
   // Show loader
   // ── VALIDATE UTR FOR UPI ──
-  if (currentPayTab === 'upi' && currentUtrValue.length < 10) {
+  var codPanelVisible = document.getElementById('cod-panel') && document.getElementById('cod-panel').style.display !== 'none';
+  if (!codPanelVisible && currentPayTab !== 'cod' && currentUtrValue.length < 10) {
     showToast('⚠ Please enter your UTR number after paying');
     var utrInput = document.getElementById('utr-input');
     if (utrInput) utrInput.focus();
     return;
   }
+
+  // ── DUPLICATE UTR CHECK ──
+if (currentPayTab === 'upi' && currentUtrValue) {
+  var { data: existing } = await db
+    .from('orders')
+    .select('order_number')
+    .eq('utr_number', currentUtrValue)
+    .maybeSingle();
+
+  if (existing) {
+    overlay.classList.remove('show');
+    document.getElementById('place-btn').disabled = false;
+    showToast('⚠️ This UTR is already used for ' + existing.order_number);
+    var utrInput = document.getElementById('utr-input');
+    if (utrInput) {
+      utrInput.style.borderColor = 'rgba(190,24,93,.4)';
+      var errMsg = document.getElementById('utr-err-msg');
+      if (errMsg) { errMsg.textContent = '⚠ UTR already used — enter correct transaction ID'; errMsg.style.display = 'block'; }
+    }
+    return; // ← stop order placement
+  }
+}
 
   const overlay = document.getElementById('loading-overlay');
   overlay.classList.add('show');
@@ -6861,6 +7042,12 @@ ownerWA.onclick = () => {
   }, 1000);
 };
 
+// ── Clear cart immediately on successful order ──
+cartItems = [];
+appliedPromo = null;
+currentOrderTotal = 0;
+try { localStorage.removeItem('cc_cart'); } catch(e) {}
+renderCart();
 showPage('success');
 insertNotification(data.id, 'order_placed', 'Order Placed! 🛒', 'Your order ' + orderNum + ' has been placed. We\'ll confirm it shortly.');
 // Inside placeOrder(), after successful order insert:
@@ -7149,6 +7336,7 @@ try {
         + '</div>'
         + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
         + tdItem('🍰', 'Flavour',      flavorNames[cakeData.flavour_key]  || cakeData.flavour_key  || '—')
+        + tdItem('🥜', 'Loaded Base',     customData.loaded_base && customData.loaded_base !== 'Plain' ? customData.loaded_base : null)
         + tdItem('🍦', 'Frosting',     frostNames[cakeData.frosting_key]  || cakeData.frosting_key || '—')
         + tdItem('🏗️', 'Tiers',        (cakeData.tier_count || '—') + ' Tier')
         + tdItem('⚖️', 'Weight',       cakeData.weight_key || '—')
@@ -7341,6 +7529,21 @@ function openDetail(el) {
     if (heroEmoji) heroEmoji.textContent = getEmojiForProduct(data.name || '');
 
     showPage('detail');
+
+    // ── Handle assorted toppings lock on open ──
+    var isAssorted = vi === 10;
+    var toplistWrap = document.getElementById('toplist-wrap');
+    var toppingLabel = document.getElementById('toppings-anchor');
+    if (toplistWrap) {
+      toplistWrap.style.pointerEvents = isAssorted ? 'none' : 'auto';
+      toplistWrap.style.opacity       = isAssorted ? '0.35' : '1';
+    }
+    if (toppingLabel) {
+      toppingLabel.innerHTML = isAssorted
+        ? '🍯 Toppings <span class="dlabel-badge">Not available for Assorted</span>'
+        : '🍯 Add Toppings <span class="dlabel-badge">Optional · tap to select</span>';
+    }
+
 }
 
 async function loadProducts() {
@@ -7989,6 +8192,12 @@ async function openCustomOrderSheet(orderNum, readOnly) {
     setCoeChip('layers',   co.layers);
     setCoeChip('egg',      co.egg_preference);
     setCoeChip('drizzle',  co.drizzle);
+    
+if (co.loaded_base) {
+  _fbvSelected = co.loaded_base;
+  customSelections.flavourBase = co.loaded_base;
+  updateFlavourEditBtn();
+}
 
     // Pre-fill text inputs
     var setVal = function(id, val) {
@@ -8121,6 +8330,13 @@ async function saveCustomOrderEdit() {
 // ── Handle mobile back button ──
 window.addEventListener('popstate', function(e) {
 
+      // ── Cake studio lightbox ──
+  var lb = document.getElementById('cs-lightbox');
+  if (lb) {
+    csCloseLightbox();
+    return;
+  }
+
   // Close notification sheet if open
   var notifSheet = document.getElementById('notif-sheet');
   if (notifSheet && notifSheet.style.display !== 'none') {
@@ -8146,12 +8362,21 @@ window.addEventListener('popstate', function(e) {
     closeCustomOrderDetail();
     return;
   }
+
+  // Close flavour base sheet if open
+  var fbvSheet = document.getElementById('fbv-sheet');
+  if (fbvSheet && fbvSheet.style.display !== 'none') {
+    cancelFlavourSheet();
+    return;
+  }
+
   // Close custom order edit if open
   var coeSheet = document.getElementById('coe-sheet');
   if (coeSheet && coeSheet.style.display !== 'none') {
     closeCustomOrderEdit();
     return;
   }
+
   var page = (e.state && e.state.page) || 'home';
   setNav(page);
   try { localStorage.setItem('cc_last_page', page); } catch(e2) {}
@@ -10147,6 +10372,7 @@ function csOpenLightbox() {
     + '</div>';
 
   document.body.appendChild(el);
+  history.pushState({ page: 'cake-studio', sheet: 'lightbox' }, '', '#cake-studio'); // ← add this
 }
 
 function csCloseLightbox() {
@@ -10436,75 +10662,62 @@ function copyUpiId() {
 
 // ── SELECT PAY TAB ──
 function selPayTab(tab) {
-  currentPayTab = tab;
+  currentPayTab    = tab;
+  currentPayMethod = tab;
+
   var upiPanel = document.getElementById('upi-panel');
   var codPanel = document.getElementById('cod-panel');
   var tabUpi   = document.getElementById('tab-upi');
   var tabCod   = document.getElementById('tab-cod');
 
   if (tab === 'upi') {
-    upiPanel.style.display = 'block';
-    codPanel.style.display = 'none';
-    tabUpi.style.border      = '1px solid #6e0977';
-    tabUpi.style.background  = 'rgba(110,9,119,.06)';
-    tabUpi.querySelector('div:nth-child(2)').style.color = '#6e0977';
-    if (tabCod.style.display !== 'none') {
-      tabCod.style.border     = '0.5px solid rgba(110,9,119,.15)';
-      tabCod.style.background = '#fff';
-      tabCod.querySelector('div:nth-child(2)').style.color = '#1a0820';
-    }
-    currentPayMethod = 'upi';
+    if (upiPanel) upiPanel.style.display = 'block';
+    if (codPanel) codPanel.style.display = 'none';
+    if (tabUpi) { tabUpi.style.border = '1px solid #6e0977'; tabUpi.style.background = 'rgba(110,9,119,.06)'; }
+    if (tabCod) { tabCod.style.border = '0.5px solid rgba(110,9,119,.15)'; tabCod.style.background = '#fff'; }
   } else {
-    codPanel.style.display  = 'block';
-    upiPanel.style.display  = 'none';
-    tabCod.style.border     = '1px solid #6e0977';
-    tabCod.style.background = 'rgba(110,9,119,.06)';
-    tabCod.querySelector('div:nth-child(2)').style.color = '#6e0977';
-    tabUpi.style.border     = '0.5px solid rgba(110,9,119,.15)';
-    tabUpi.style.background = '#fff';
-    tabUpi.querySelector('div:nth-child(2)').style.color = '#1a0820';
-    currentPayMethod = 'cod';
-    document.getElementById('cod-amt-display').textContent = '₹' + currentOrderTotal;
+    if (codPanel) codPanel.style.display = 'block';
+    if (upiPanel) upiPanel.style.display = 'none';
+    if (tabCod) { tabCod.style.border = '1px solid #6e0977'; tabCod.style.background = 'rgba(110,9,119,.06)'; }
+    if (tabUpi) { tabUpi.style.border = '0.5px solid rgba(110,9,119,.15)'; tabUpi.style.background = '#fff'; }
+    var codAmt = document.getElementById('cod-amt-display');
+    if (codAmt) codAmt.textContent = '₹' + currentOrderTotal;
   }
 
+  console.log('selPayTab called — tab:', tab, 'currentPayTab:', currentPayTab);
   updatePlaceBtn();
 }
 
 // ── UTR INPUT HANDLER ──
 function onUtrInput(val) {
-  currentUtrValue = val.trim().replace(/\s/g, '');
-  var valid   = currentUtrValue.length >= 10;
-  var errMsg  = document.getElementById('utr-err-msg');
-  var validMsg= document.getElementById('utr-valid-msg');
-  var input   = document.getElementById('utr-input');
-  var step2   = document.getElementById('step2-circle');
-  var step3   = document.getElementById('step3-circle');
+  currentUtrValue = val.trim().replace(/\s/g, '').toUpperCase();
+  var input    = document.getElementById('utr-input');
+  var errMsg   = document.getElementById('utr-err-msg');
+  var validMsg = document.getElementById('utr-valid-msg');
 
-  if (currentUtrValue.length > 0 && !valid) {
-    errMsg.style.display  = 'block';
-    validMsg.style.display = 'none';
-    input.style.borderColor = 'rgba(190,24,93,.4)';
-    step2.style.background = 'rgba(190,24,93,.1)';
-    step2.style.color      = '#be185d';
-    step3.style.background = 'transparent';
-  } else if (valid) {
-    errMsg.style.display   = 'none';
-    validMsg.style.display = 'block';
-    input.style.borderColor = '#6e0977';
-    step2.style.background = 'rgba(34,197,94,.12)';
-    step2.style.color      = '#15803d';
-    step3.style.background = 'rgba(110,9,119,.1)';
-    step3.style.borderColor = '#6e0977';
-    step3.style.color       = '#6e0977';
-  } else {
+  // ── FORMAT VALIDATION ──
+  var upiTxn  = /^\d{12}$/.test(currentUtrValue);           // 12-digit UPI ref
+  var neftUtr = /^[A-Z]{4}\d{18}$/.test(currentUtrValue);  // NEFT: 4 alpha + 18 digits
+  var impsUtr = /^[A-Z0-9]{12,22}$/.test(currentUtrValue); // IMPS/general
+
+  var isValidFormat = upiTxn || neftUtr || impsUtr;
+
+  if (currentUtrValue.length === 0) {
     errMsg.style.display   = 'none';
     validMsg.style.display = 'none';
     input.style.borderColor = 'rgba(110,9,119,.2)';
-    step2.style.background = 'rgba(110,9,119,.1)';
-    step2.style.color      = '#b89abf';
-    step3.style.background = 'transparent';
-    step3.style.color      = '#b89abf';
+  } else if (!isValidFormat) {
+    errMsg.textContent     = '⚠ Invalid format — enter 12-digit UPI ref or 22-char NEFT UTR';
+    errMsg.style.display   = 'block';
+    validMsg.style.display = 'none';
+    input.style.borderColor = 'rgba(190,24,93,.4)';
+  } else {
+    errMsg.style.display   = 'none';
+    validMsg.textContent   = '✓ Valid format — tap below to place order';
+    validMsg.style.display = 'block';
+    input.style.borderColor = '#6e0977';
   }
+
   updatePlaceBtn();
 }
 
@@ -10541,16 +10754,16 @@ function updatePlaceBtn() {
   var btn = document.getElementById('place-btn');
   if (!btn) return;
   if (currentPayTab === 'cod') {
-    btn.textContent       = 'Place Order — Cash on Delivery';
-    btn.disabled          = false;
-    btn.style.background  = 'linear-gradient(135deg,#15803d,#16a34a)';
+    btn.textContent      = 'Place Order — Cash on Delivery';
+    btn.disabled         = false;
+    btn.style.background = 'linear-gradient(135deg,#15803d,#16a34a)';
   } else {
-    var utrOk = currentUtrValue.length >= 10;
+    var utrOk            = currentUtrValue.length >= 10;
     btn.disabled         = !utrOk;
     btn.style.background = utrOk
       ? 'linear-gradient(135deg,#6e0977,#9c0ca1)'
       : 'linear-gradient(135deg,#b89abf,#b89abf)';
-    btn.textContent = utrOk
+    btn.textContent      = utrOk
       ? 'Confirm Payment & Place Order'
       : 'Enter UTR to Place Order';
   }
@@ -10622,6 +10835,93 @@ function updateAdvanceAmounts() {
   el = document.getElementById('advance-balance-amt'); if (el) el.textContent = '₹' + (currentOrderTotal - half);
   el = document.getElementById('upi-amt-display');     if (el) el.textContent = '₹' + currentOrderTotal;
   currentPayableAmount = currentOrderTotal;
+}
+function toggleOccasionInput(el) {
+  var wrap = document.getElementById('occasion-custom-wrap');
+  var isMyOwn = el.getAttribute('data-val') === 'My Own';
+  if (wrap) wrap.style.display = isMyOwn ? 'block' : 'none';
+  if (!isMyOwn) {
+    var inp = document.getElementById('occasion-custom-input');
+    if (inp) inp.value = '';
+  }
+}
+
+// ── FLAVOUR BASE VARIANT SHEET ──
+var _fbvSelected = 'Plain';
+
+function openFlavourSheet() {
+  selFbvUI(_fbvSelected);
+  document.getElementById('fbv-overlay').style.display = 'block';
+  document.getElementById('fbv-sheet').style.display   = 'block';
+  history.pushState({ page: 'custom-order', sheet: 'fbv' }, '', '#custom-order');
+}
+
+function closeFlavourSheet() {
+  document.getElementById('fbv-overlay').style.display = 'none';
+  document.getElementById('fbv-sheet').style.display   = 'none';
+}
+
+function cancelFlavourSheet() {
+  selFbvUI(_fbvSelected); // revert UI to last confirmed
+  closeFlavourSheet();
+}
+
+function selFbv(el) {
+  selFbvUI(el.getAttribute('data-val'));
+}
+
+function selFbvUI(val) {
+  document.querySelectorAll('.fbv-opt').forEach(function(opt) {
+    var isOn = opt.getAttribute('data-val') === val;
+    opt.style.background  = isOn ? 'linear-gradient(135deg,rgba(110,9,119,.1),rgba(156,12,161,.05))' : '#fff';
+    opt.style.borderColor = isOn ? '#6e0977' : 'rgba(110,9,119,.12)';
+    opt.style.borderWidth = isOn ? '1.5px' : '1px';
+    var chk = opt.querySelector('.fbv-chk');
+    if (chk) {
+      chk.style.background   = isOn ? '#6e0977'               : 'transparent';
+      chk.style.borderColor  = isOn ? '#6e0977'               : 'rgba(110,9,119,.2)';
+      chk.style.color        = isOn ? '#fff'                  : 'transparent';
+    }
+    var title = opt.querySelector('.fbv-title');
+    if (title) title.style.color = isOn ? '#6e0977' : '#1a0820';
+  });
+
+  _fbvSelected = val;
+
+  // Update badge
+  var badge = document.getElementById('fbv-badge-lbl');
+  if (badge) badge.textContent = val + ' selected';
+}
+
+async function confirmFlavourBase() {
+  customSelections.flavourBase = _fbvSelected;
+  updateFlavourEditBtn();
+  closeFlavourSheet();
+
+  // ── 1. Save to Supabase if editing an existing order ──
+  if (window._editingOrderId && window._editingCustomId) {
+    try {
+      var { error } = await db
+        .from('custom_orders')
+        .update({ loaded_base: _fbvSelected })
+        .eq('id', window._editingCustomId);
+      if (error) console.warn('loaded_base save:', error.message);
+      else console.log('✅ loaded_base saved:', _fbvSelected);
+    } catch(e) {
+      console.warn('loaded_base update error:', e.message);
+    }
+  }
+  showToast('✦ ' + _fbvSelected + ' saved!');
+}
+
+function updateFlavourEditBtn() {
+  var editBtn = document.getElementById('flavour-base-edit-btn');
+  if (!editBtn) return;
+  var isPlain = !_fbvSelected || _fbvSelected === 'Plain';
+  editBtn.textContent    = isPlain ? '+ Add Loaded Base' : '✦ ' + _fbvSelected + ' · Edit';
+  editBtn.style.background   = isPlain ? 'transparent'           : 'rgba(110,9,119,.08)';
+  editBtn.style.borderColor  = isPlain ? 'rgba(110,9,119,.15)'   : 'rgba(110,9,119,.3)';
+  editBtn.style.color        = isPlain ? 'rgba(110,9,119,.45)'   : '#6e0977';
 }
 
 </script>
