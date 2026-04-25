@@ -4680,8 +4680,17 @@ function updateBrowniePreview() {
     var butterAdd  = BUTTERFLY_ADDON[butter]|| 0;
     var extra      = layerAdd + topperAdd + FauxAdd + butterAdd;
 
-    var lo = Math.round(base[0] + extra);
-    var hi = Math.round(base[1] + extra);
+    // Live loaded base price estimate
+    var loadedBaseLive = 0;
+    var fbvKey = customSelections.flavourBase || 'Plain';
+    var fbvLiveMap = {
+      'Plain':0, 'Nuts Loaded':80, 'Seeds Loaded':60,
+      'Hazelnut Loaded':100, 'Walnut Loaded':90, 'Dark Choco Loaded':70
+    };
+    loadedBaseLive = (fbvLiveMap[fbvKey] || 0) * kg;
+
+    var lo = Math.round(base[0] + extra + loadedBaseLive);
+    var hi = Math.round(base[1] + extra + loadedBaseLive);
 
     // Build breakdown hint
     var parts = [];
@@ -4810,7 +4819,7 @@ async function submitCustomOrder() {
 
   // Get sequential order number from DB
   var orderNum = genOrderNum();
-  
+
   // Calculate estimated price
   var egg2    = customSelections.egg    || 'Eggless';
   var srv     = customSelections.serves || '1 kg';
@@ -4880,6 +4889,7 @@ async function submitCustomOrder() {
       customer_id:     user.db_id,
       occasion:        customSelections.occasion,
       loaded_base:     customSelections.flavourBase || 'Plain',
+      loaded_base_price: loadedBasePrice,
       shape:           customSelections.shape,
       theme:           customSelections.theme,
       weight_kg:       customSelections.serves,
@@ -4971,8 +4981,25 @@ async function updateCustomOrder() {
   var butter = customSelections.butterfly  || 'None';
   var kg     = calcKg(srv);
   var base   = (PRICE_MAP[egg2] || PRICE_MAP['Eggless'])[srv] || [900,1300];
-  var extra  = (LAYER_ADDON[layers]||0)*kg + (TOPPER_ADDON[topper]||0) + (FauxBALL_ADDON[Faux]||0) + (BUTTERFLY_ADDON[butter]||0);
 
+    // ── Fetch loaded base price from Supabase ──
+    var loadedBasePrice = 0;
+    var loadedBase = customSelections.flavourBase || 'Plain';
+    try {
+      var { data: fbvRow } = await db
+        .from('flavour_base_pricing')
+        .select('price_per_kg')
+        .eq('base_key', loadedBase)
+        .eq('is_active', true)
+        .single();
+      if (fbvRow) loadedBasePrice = (fbvRow.price_per_kg || 0) * kg;
+    } catch(e) { console.warn('flavour base price fetch:', e.message); }
+
+    var extra  = (LAYER_ADDON[layers]||0)*kg 
+              + (TOPPER_ADDON[topper]||0) 
+              + (FauxBALL_ADDON[Faux]||0) 
+              + (BUTTERFLY_ADDON[butter]||0)
+              + loadedBasePrice;
   var customRow = {
     occasion:        customSelections.occasion,
     shape:           customSelections.shape,
