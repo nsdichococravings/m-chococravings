@@ -6692,7 +6692,7 @@ function buildOwnerMsg(order) {
     + "Items:" + nl + items + nl
     + "Total: Rs." + order.total + nl
     + (order.utr_number ? "UTR: " + order.utr_number + nl : "")
-    + "Payment: " + (order.payment_status === 'pending_verification' ? 'UPI — Verify UTR ✓' : 'Cash on Delivery') + nl
+    + "Payment: " + (order.payment_status === 'pending' ? 'UPI — Verify UTR ✓' : 'Cash on Delivery') + nl
     + "Payment: " + order.payment_method.toUpperCase() + nl
     + (order.special_notes ? "Notes: " + order.special_notes + nl : "")
     + "Time: " + fmtDate(order.created_at) + nl
