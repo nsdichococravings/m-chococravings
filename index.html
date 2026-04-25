@@ -6804,11 +6804,12 @@ if (currentPayTab === 'upi' && currentUtrValue) {
     delivery_fee:       0,
     total:              currentOrderTotal,
     payment_method:     currentPayTab === 'cod' ? 'cod' : 'upi',
-    payment_status:     currentPayTab === 'cod' ? 'pending' : 'pending_verification',
+    payment_status:     'pending',
     utr_number:         currentPayTab === 'upi' && currentUtrValue ? currentUtrValue : null,
     amount_paid:        amountPaidNow,
     balance_due:        balanceDueNow,
     is_partial_payment: isPartialPayment,
+    special_notes:      notes || null,
     status:             'pending',
     created_at:         new Date().toISOString()
   };
@@ -6820,6 +6821,7 @@ if (currentPayTab === 'upi' && currentUtrValue) {
     // 1. Save order to Supabase (without items field)
     const orderInsert = {...orderData};
     delete orderInsert.items;
+    console.log('📦 Inserting orderInsert:', JSON.stringify(orderInsert, null, 2));
     const { data, error } = await db.from('orders').insert([orderInsert]).select().single();
     if (error) throw error;
 
@@ -7076,21 +7078,8 @@ setTimeout(function() {
   } catch (err) {
     overlay.classList.remove('show');
     document.getElementById('place-btn').disabled = false;
-
-    // Fallback — still show success with WhatsApp only if Supabase not configured
-    if (SUPABASE_URL.includes('yjbfditboewwpgyqzryd')) {
-      document.getElementById('succ-order-id').textContent = orderNum;
-      document.getElementById('succ-total').textContent = '₹' + currentOrderTotal;
-      document.getElementById('succ-name').textContent = name;
-      document.getElementById('succ-pay').textContent = currentPayMethod.toUpperCase();
-      document.getElementById('succ-time').textContent = fmtDate(new Date().toISOString());
-      document.getElementById('succ-wa-btn').onclick = () => {
-        window.open(`https://wa.me/${NSDI_PHONE}?text=${buildOwnerMsg({...orderData, created_at: new Date().toISOString()})}`, '_blank');
-      };
-      showPage('success');
-    } else {
-      alert('Order failed: ' + err.message + `\nPlease try again or call ${NSDI_PHONE}`);
-    }
+    console.error('❌ placeOrder error:', err.message, err);
+    alert('Order failed: ' + (err.message || JSON.stringify(err)) + '\n\nPlease call ' + NSDI_PHONE);
   }
 }
 
