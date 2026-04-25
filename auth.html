@@ -1093,7 +1093,7 @@ var forgotCountdownTimer = null;
 
 async function sendResetEmail(email) {
   return await db.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin + '/auth.html?reset=true'
+    redirectTo: window.location.origin + '/auth.html'
   });
 }
 
@@ -1179,28 +1179,22 @@ async function doResendReset() {
   }
 }
 
-// ── HANDLE PASSWORD RESET REDIRECT ──
-// When user clicks the link in email, they land back on auth.html?reset=true
-// Supabase auto-sets the session — show a new password form
-(async function checkReset() {
-  const params = new URLSearchParams(window.location.search);
-  if (params.get('reset') !== 'true') return;
-
-  // Get the session Supabase set from the reset link
-  const { data: { session } } = await db.auth.getSession();
-  if (!session) return;
-
-  // Show reset password UI
-  showPage('pg-reset');
-})();
-
+// ── HANDLE PASSWORD RECOVERY ──
+// Supabase fires PASSWORD_RECOVERY when user arrives from reset email link
+db.auth.onAuthStateChange(function(event, session) {
+  if (event === 'PASSWORD_RECOVERY') {
+    showPage('pg-reset');
+  }
+});
 
 // ── SESSION RESTORE ──
 (async function() {
   try {
+    // Don't redirect if this is a password recovery link
+    if (window.location.hash.includes('type=recovery')) return;
+
     const { data: { session } } = await db.auth.getSession();
     if (session) {
-      // Already logged in — redirect to app
       window.location.href = 'index.html';
     }
   } catch(e) { console.log('Session check:', e); }
