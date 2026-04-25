@@ -2835,7 +2835,13 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
             <div class="cust-chip on" data-group="flavour" data-val="Classic Dark Chocolate" onclick="selChip(this,'flavour')" style="padding:12px;border-radius:12px;background:rgba(107,47,206,.15);border:1.5px solid var(--p);cursor:pointer">
               <div style="font-size:12px;font-weight:700;color:var(--pl)">Classic Dark</div>
               <div style="font-size:10px;color:var(--dim);margin-top:2px">Rich & fudgy</div>
-              <div style="font-size:9px;color:var(--p);margin-top:4px;font-weight:600">+ Choose loaded base →</div>
+              <!-- Loaded base indicator — shown inside chip -->
+              <div id="fbv-inline-classic" onclick="event.stopPropagation();openFlavourSheet()"
+                style="margin-top:6px;padding:4px 8px;border-radius:8px;
+                background:rgba(110,9,119,.12);border:1px dashed rgba(110,9,119,.3);
+                font-size:9px;font-weight:700;color:var(--pl);text-align:center">
+                🥜 + Choose loaded base
+              </div>
             </div>
             <div class="cust-chip" data-group="flavour" data-val="Couverture Belgian" onclick="selChip(this,'flavour')" style="padding:12px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer">
               <div style="font-size:12px;font-weight:700;color:var(--white)">Couverture</div>
@@ -10939,13 +10945,23 @@ function updateFlavourEditBtn() {
   if (selBadge)  selBadge.style.display  = isPlain ? 'none' : 'flex';
   if (badgeName) badgeName.textContent   = _fbvSelected;
 
-  // Emoji per type
+  // ── Update inline indicators inside flavour chips ──
   var emojiMap = {
-    'Nuts Loaded':'🥜', 'Seeds Loaded':'🌿', 'Hazelnut Loaded':'🌰',
-    'Walnut Loaded':'🪨', 'Dark Choco Loaded':'🍫', 'Plain':'🍫'
+    'Plain':'➕', 'Nuts Loaded':'🥜', 'Seeds Loaded':'🌿',
+    'Hazelnut Loaded':'🌰', 'Walnut Loaded':'🪨', 'Dark Choco Loaded':'🍫'
   };
-  var iconEl = selBadge && selBadge.querySelector('div:first-child');
-  if (iconEl) iconEl.textContent = emojiMap[_fbvSelected] || '🥜';
+  var inlineText = isPlain
+    ? '🥜 + Choose loaded base'
+    : (emojiMap[_fbvSelected] || '🥜') + ' ' + _fbvSelected + ' · Change';
+
+  var inlineStyle = isPlain
+    ? 'margin-top:6px;padding:4px 8px;border-radius:8px;background:rgba(110,9,119,.12);border:1px dashed rgba(110,9,119,.3);font-size:9px;font-weight:700;color:var(--pl);text-align:center'
+    : 'margin-top:6px;padding:4px 8px;border-radius:8px;background:rgba(110,9,119,.25);border:1px solid rgba(110,9,119,.5);font-size:9px;font-weight:700;color:var(--pl);text-align:center';
+
+  ['fbv-inline-classic','fbv-inline-couverture'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) { el.textContent = inlineText; el.style.cssText = inlineStyle; }
+  });
 }
 
 </script>
