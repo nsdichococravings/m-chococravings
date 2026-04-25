@@ -3843,7 +3843,118 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
           cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:.3px">Confirm ✓</button>
       </div>
     </div>
+    <!-- SLAB OR PIECES SHEET -->
+<div id="sop-overlay" onclick="closeSopSheet()"
+  style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.6);z-index:2500;backdrop-filter:blur(4px)"></div>
+
+<div id="sop-sheet"
+  style="display:none;position:absolute;bottom:0;left:0;right:0;
+  background:var(--d2);border-radius:22px 22px 0 0;
+  border-top:1px solid var(--bdr2);z-index:2501;padding:0 0 32px;
+  font-family:'DM Sans',sans-serif">
+
+  <div style="width:40px;height:4px;border-radius:2px;background:var(--faint);margin:14px auto 20px"></div>
+
+  <!-- Header -->
+  <div style="padding:0 22px 16px;border-bottom:1px solid var(--bdr)">
+    <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--white);margin-bottom:4px">How would you like it?</div>
+    <div style="font-size:12px;color:var(--dim)" id="sop-product-name">Classic Fudge Brownie</div>
+  </div>
+
+  <div style="padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+
+    <!-- SLAB option -->
+    <div id="sop-slab-btn" onclick="sopSelect('slab')"
+      style="display:flex;align-items:center;gap:14px;padding:16px;
+      border-radius:16px;border:1.5px solid var(--p);
+      background:rgba(107,47,206,.1);cursor:pointer;transition:all .2s">
+      <div style="width:44px;height:44px;border-radius:12px;
+        background:linear-gradient(135deg,var(--p),var(--p2));
+        display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🍫</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:700;color:var(--white)">Full Slab / Pack</div>
+        <div style="font-size:11px;color:var(--dim);margin-top:2px">Standard pack size as listed</div>
+      </div>
+      <div id="sop-slab-check"
+        style="width:22px;height:22px;border-radius:50%;
+        background:var(--p);border:1.5px solid var(--p);
+        display:flex;align-items:center;justify-content:center;
+        font-size:11px;color:#fff">✓</div>
+    </div>
+
+    <!-- PIECES option -->
+    <div id="sop-pieces-btn" onclick="sopSelect('pieces')"
+      style="display:flex;align-items:center;gap:14px;padding:16px;
+      border-radius:16px;border:1.5px solid var(--bdr);
+      background:var(--card);cursor:pointer;transition:all .2s">
+      <div style="width:44px;height:44px;border-radius:12px;
+        background:rgba(255,255,255,.07);
+        display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">✂️</div>
+      <div style="flex:1">
+        <div style="font-size:14px;font-weight:700;color:var(--white)">Cut into Pieces</div>
+        <div style="font-size:11px;color:var(--dim);margin-top:2px">Tell us how many pieces you want</div>
+      </div>
+      <div id="sop-pieces-check"
+        style="width:22px;height:22px;border-radius:50%;
+        background:transparent;border:1.5px solid var(--bdr);
+        display:flex;align-items:center;justify-content:center;
+        font-size:11px;color:transparent">✓</div>
+    </div>
+
+    <!-- Pieces count — shown when pieces selected -->
+    <div id="sop-pieces-wrap" style="display:none">
+      <div style="font-size:11px;font-weight:700;color:var(--dim);
+        letter-spacing:.5px;text-transform:uppercase;margin-bottom:10px">
+        How many pieces?
+      </div>
+      <!-- Quick chips -->
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <div class="sop-pc-chip" onclick="sopSetPieces(this,4)"
+          style="padding:8px 16px;border-radius:20px;border:1.5px solid var(--bdr);
+          background:var(--card);font-size:13px;font-weight:600;color:var(--dim);cursor:pointer">4 pcs</div>
+        <div class="sop-pc-chip" onclick="sopSetPieces(this,6)"
+          style="padding:8px 16px;border-radius:20px;border:1.5px solid var(--bdr);
+          background:var(--card);font-size:13px;font-weight:600;color:var(--dim);cursor:pointer">6 pcs</div>
+        <div class="sop-pc-chip" onclick="sopSetPieces(this,8)"
+          style="padding:8px 16px;border-radius:20px;border:1.5px solid var(--bdr);
+          background:var(--card);font-size:13px;font-weight:600;color:var(--dim);cursor:pointer">8 pcs</div>
+        <div class="sop-pc-chip" onclick="sopSetPieces(this,12)"
+          style="padding:8px 16px;border-radius:20px;border:1.5px solid var(--bdr);
+          background:var(--card);font-size:13px;font-weight:600;color:var(--dim);cursor:pointer">12 pcs</div>
+        <div class="sop-pc-chip" onclick="sopSetPieces(this,'custom')"
+          style="padding:8px 16px;border-radius:20px;border:1.5px solid var(--bdr);
+          background:var(--card);font-size:13px;font-weight:600;color:var(--dim);cursor:pointer">Other</div>
+      </div>
+      <!-- Custom input -->
+      <div id="sop-custom-wrap" style="display:none;margin-bottom:10px">
+        <input id="sop-custom-input" type="number" min="1" max="50"
+          placeholder="Enter number of pieces"
+          oninput="_sopPieces=parseInt(this.value)||0"
+          style="width:100%;background:var(--card);border:1.5px solid var(--bdr);
+          border-radius:12px;padding:12px 14px;color:var(--white);
+          font-family:'DM Sans',sans-serif;font-size:14px;outline:none">
+      </div>
+      <!-- Disclaimer -->
+      <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);
+        border-radius:12px;padding:11px 13px;font-size:11px;color:var(--dim);line-height:1.7">
+        ⚠️ <strong style="color:var(--gold)">Please note:</strong> We'll try our best to match your requested piece count. Actual pieces may vary slightly depending on the slab size and cut.
+      </div>
+    </div>
+
+    <!-- Add to Cart button -->
+    <button id="sop-confirm-btn" onclick="sopConfirm()"
+      style="width:100%;padding:15px;
+      background:linear-gradient(135deg,var(--p),var(--p2));
+      color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;
+      border:none;border-radius:16px;cursor:pointer;margin-top:4px">
+      🛒 Add to Cart
+    </button>
+
+  </div>
+</div>
+
     </div><!-- /screen -->
+
   </div><!-- /phone -->
   <div class="toast" id="toast">✓ Added to cart!</div>
 </div>
@@ -4466,12 +4577,12 @@ function selChip(el, group) {
   // Inside selChip(), after setting customSelections[group]:
   if (group === 'flavour') {
     var val = el.getAttribute('data-val');
+    // Reset loaded base when switching flavour
+    _fbvSelected = 'Plain';
+    customSelections.flavourBase = 'Plain';
+    updateFlavourEditBtn(); // ← hide indicator from previous chip first
     if (val === 'Classic Dark Chocolate' || val === 'Couverture Belgian') {
       setTimeout(openFlavourSheet, 200);
-    } else {
-      _fbvSelected = 'Plain';
-      customSelections.flavourBase = 'Plain';
-      updateFlavourEditBtn();
     }
   }
 
@@ -6491,6 +6602,26 @@ function quickAddCart(btn) {
   var existing = cartItems.find(function(i) {
     return i.sku === sku2 && (i.pack || i.pack_label) === pack2;
   });
+
+  // ── Show slab/pieces choice sheet instead of direct add ──
+  openSopSheet({
+    product_name: name,
+    name:         name,
+    tier:         tier2,
+    egg:          egg2,
+    egg_type:     egg2,
+    pack:         pack2,
+    pack_label:   pack2,
+    qty:          1,
+    quantity:     1,
+    base_price:   price2,
+    topping_price:0,
+    toppings:     [],
+    line_total:   price2,
+    sku:          sku2
+  });
+  return; // don't add directly
+
   if (existing) {
     existing.qty = (existing.qty || 1) + 1;
   } else {
@@ -6709,14 +6840,19 @@ function fmtDate(d) {
 function buildOwnerMsg(order) {
   var nl = "\n";
   var items = order.items.map(function(i) {
-    var nm  = i.product_name || i.product_name || 'Brownie';
-    var eg  = i.egg  || i.egg_type     || 'eggless';
-    var pk  = i.pack || i.pack_label   || '4pcs';
-    var qt  = i.qty  || i.quantity     || 1;
-    var line = "- " + nm + " (" + i.tier + ") " + eg + " " + pk + " x" + qt;
-    if (i.toppings && i.toppings.length) line += nl + "  Toppings: " + i.toppings.join(", ");
-    return line;
-  }).join(nl);
+  var nm   = i.product_name || 'Brownie';
+  var eg   = i.egg  || i.egg_type  || 'eggless';
+  var pk   = i.pack || i.pack_label || '4pcs';
+  var qt   = i.qty  || i.quantity  || 1;
+  var line = "- " + nm + " (" + i.tier + ") " + eg + " " + pk + " x" + qt;
+  if (i.toppings && i.toppings.length) 
+    line += nl + "  Toppings: " + i.toppings.join(", ");
+  if (i.cut_pieces)
+    line += nl + "  ✂️ Cut into approx " + i.cut_pieces + " pieces (best effort)";
+  else
+    line += nl + "  🍫 Full slab / standard pack";
+  return line;
+}).join(nl);
   var msg = "🔔 *NEW ORDER: " + order.order_number + "*" + nl
     + "Customer: " + order.customer_name + nl
     + "Phone: " + order.customer_phone + nl
@@ -6737,7 +6873,8 @@ function buildCustomerMsg(order) {
   var msg = "Order Confirmed: " + order.order_number + nl
     + "Hi " + order.customer_name + "!" + nl
     + "Your ChocoCravings order is placed!" + nl
-    + "Item: " + (order.items[0].product_name) + " " + (order.items[0].pack || order.items[0].pack_label) + nl
+    + "Item: " + (order.items[0].product_name) + " " + (order.items[0].pack || order.items[0].pack_label) 
+    + (order.items[0].cut_pieces ? " · ✂️ ~" + order.items[0].cut_pieces + " pcs cut" : " · 🍫 Full slab") + nl
     + "Total: Rs." + order.total + nl
     + "Payment: " + order.payment_method.toUpperCase() + nl
     + "Delivery: " + order.delivery_address + ", " + order.city + nl
@@ -6982,8 +7119,10 @@ if (currentPayTab === 'upi' && currentUtrValue) {
         base_price: i.base_price || 0,
         topping_price: i.topping_price || 0,
         line_total: (i.base_price || 0) * (i.qty || 1) + (i.topping_price || 0),
-        toppings: i.toppings && i.toppings.length ? JSON.stringify(i.toppings) : null
-      };
+        toppings: i.toppings && i.toppings.length ? JSON.stringify(i.toppings) : null,
+        cut_preference:  i.cut_pieces ? 'pieces' : 'slab',   // ← new
+        cut_pieces:      i.cut_pieces || null                 // ← new
+      };  
     }));
     if (itemRows.length > 0) {
       const { error: itemsError } = await db.from('order_items').insert(itemRows);
@@ -10945,25 +11084,165 @@ function updateFlavourEditBtn() {
   if (selBadge)  selBadge.style.display  = isPlain ? 'none' : 'flex';
   if (badgeName) badgeName.textContent   = _fbvSelected;
 
-  // ── Update inline indicators inside flavour chips ──
   var emojiMap = {
     'Plain':'➕', 'Nuts Loaded':'🥜', 'Seeds Loaded':'🌿',
     'Hazelnut Loaded':'🌰', 'Walnut Loaded':'🪨', 'Dark Choco Loaded':'🍫'
   };
+
   var inlineText = isPlain
     ? '🥜 + Choose loaded base'
     : (emojiMap[_fbvSelected] || '🥜') + ' ' + _fbvSelected + ' · Change';
 
-  var inlineStyle = isPlain
-    ? 'margin-top:6px;padding:4px 8px;border-radius:8px;background:rgba(110,9,119,.12);border:1px dashed rgba(110,9,119,.3);font-size:9px;font-weight:700;color:var(--pl);text-align:center'
-    : 'margin-top:6px;padding:4px 8px;border-radius:8px;background:rgba(110,9,119,.25);border:1px solid rgba(110,9,119,.5);font-size:9px;font-weight:700;color:var(--pl);text-align:center';
+  var activeStyle = isPlain
+    ? 'margin-top:6px;padding:4px 8px;border-radius:8px;background:rgba(110,9,119,.12);border:1px dashed rgba(110,9,119,.3);font-size:9px;font-weight:700;color:var(--pl);text-align:center;display:block'
+    : 'margin-top:6px;padding:4px 8px;border-radius:8px;background:rgba(110,9,119,.25);border:1px solid rgba(110,9,119,.5);font-size:9px;font-weight:700;color:var(--pl);text-align:center;display:block';
 
-  ['fbv-inline-classic','fbv-inline-couverture'].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (el) { el.textContent = inlineText; el.style.cssText = inlineStyle; }
-  });
+  var hiddenStyle = 'display:none';
+
+  // ── Find which flavour chip is currently active ──
+  var activeFlavour = customSelections.flavour || 'Classic Dark Chocolate';
+  var isClassic     = activeFlavour === 'Classic Dark Chocolate';
+  var isCouverture  = activeFlavour === 'Couverture Belgian';
+
+  var classicEl    = document.getElementById('fbv-inline-classic');
+  var couvertureEl = document.getElementById('fbv-inline-couverture');
+
+  // Show indicator only in the active chip, hide in the other
+  if (classicEl) {
+    classicEl.textContent = inlineText;
+    classicEl.style.cssText = isClassic ? activeStyle : hiddenStyle;
+  }
+  if (couvertureEl) {
+    couvertureEl.textContent = inlineText;
+    couvertureEl.style.cssText = isCouverture ? activeStyle : hiddenStyle;
+  }
+}
+// ── SLAB OR PIECES SHEET ──
+var _sopItem    = null;  // pending cart item
+var _sopMode    = 'slab'; // 'slab' or 'pieces'
+var _sopPieces  = 0;
+
+function openSopSheet(item) {
+  _sopItem   = item;
+  _sopMode   = 'slab';
+  _sopPieces = 0;
+
+  // Reset UI
+  var nameEl = document.getElementById('sop-product-name');
+  if (nameEl) nameEl.textContent = item.product_name || item.name || 'Brownie';
+  sopSelect('slab');
+
+  document.getElementById('sop-overlay').style.display = 'block';
+  document.getElementById('sop-sheet').style.display   = 'block';
 }
 
+function closeSopSheet() {
+  document.getElementById('sop-overlay').style.display = 'none';
+  document.getElementById('sop-sheet').style.display   = 'none';
+  _sopItem   = null;
+  _sopMode   = 'slab';
+  _sopPieces = 0;
+}
+
+function sopSelect(mode) {
+  _sopMode = mode;
+
+  var slabBtn    = document.getElementById('sop-slab-btn');
+  var piecesBtn  = document.getElementById('sop-pieces-btn');
+  var slabCheck  = document.getElementById('sop-slab-check');
+  var piecesCheck= document.getElementById('sop-pieces-check');
+  var piecesWrap = document.getElementById('sop-pieces-wrap');
+
+  if (mode === 'slab') {
+    slabBtn.style.borderColor   = 'var(--p)';
+    slabBtn.style.background    = 'rgba(107,47,206,.1)';
+    slabCheck.style.background  = 'var(--p)';
+    slabCheck.style.borderColor = 'var(--p)';
+    slabCheck.style.color       = '#fff';
+
+    piecesBtn.style.borderColor   = 'var(--bdr)';
+    piecesBtn.style.background    = 'var(--card)';
+    piecesCheck.style.background  = 'transparent';
+    piecesCheck.style.borderColor = 'var(--bdr)';
+    piecesCheck.style.color       = 'transparent';
+
+    piecesWrap.style.display = 'none';
+  } else {
+    piecesBtn.style.borderColor   = 'var(--p)';
+    piecesBtn.style.background    = 'rgba(107,47,206,.1)';
+    piecesCheck.style.background  = 'var(--p)';
+    piecesCheck.style.borderColor = 'var(--p)';
+    piecesCheck.style.color       = '#fff';
+
+    slabBtn.style.borderColor   = 'var(--bdr)';
+    slabBtn.style.background    = 'var(--card)';
+    slabCheck.style.background  = 'transparent';
+    slabCheck.style.borderColor = 'var(--bdr)';
+    slabCheck.style.color       = 'transparent';
+
+    piecesWrap.style.display = 'block';
+  }
+}
+
+function sopSetPieces(el, val) {
+  document.querySelectorAll('.sop-pc-chip').forEach(function(c) {
+    c.style.background  = 'var(--card)';
+    c.style.borderColor = 'var(--bdr)';
+    c.style.color       = 'var(--dim)';
+  });
+  el.style.background  = 'rgba(107,47,206,.15)';
+  el.style.borderColor = 'var(--p)';
+  el.style.color       = 'var(--pl)';
+
+  var customWrap = document.getElementById('sop-custom-wrap');
+  if (val === 'custom') {
+    customWrap.style.display = 'block';
+    _sopPieces = 0;
+  } else {
+    customWrap.style.display = 'none';
+    _sopPieces = val;
+  }
+}
+
+function sopConfirm() {
+  if (!_sopItem) return;
+
+  // Validate pieces
+  if (_sopMode === 'pieces' && (!_sopPieces || _sopPieces < 1)) {
+    showToast('Please select or enter number of pieces', true);
+    return;
+  }
+
+  // Add mode info to item
+  var item = Object.assign({}, _sopItem);
+  if (_sopMode === 'pieces') {
+    item.cut_pieces    = _sopPieces;
+    item.pack_label    = _sopPieces + ' pcs (cut)';
+    item.pack          = _sopPieces + ' pcs (cut)';
+    item.special_notes = 'Customer requested approx ' + _sopPieces + ' pieces cut';
+  } else {
+    item.cut_pieces    = null;
+    item.special_notes = null;
+  }
+
+  // Check if already in cart
+  var existing = cartItems.find(function(i) {
+    return i.sku === item.sku && i.pack_label === item.pack_label;
+  });
+  if (existing) {
+    existing.qty = (existing.qty || 1) + 1;
+  } else {
+    cartItems.push(item);
+  }
+
+  renderCart();
+
+  var badge = document.getElementById('cart-badge');
+  if (badge) { badge.classList.add('bump'); setTimeout(function(){ badge.classList.remove('bump'); }, 200); }
+
+  showToast('✓ ' + item.product_name + ' added!');
+  closeSopSheet();
+}
 </script>
 </body>
 </html>
