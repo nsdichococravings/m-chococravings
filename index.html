@@ -4859,7 +4859,7 @@ async function submitCustomOrder() {
     delivery_fee:      0,
     total:             estTotal,
     payment_method:    currentPayMethod,
-    payment_status:    currentPayTab === 'cod' ? 'pending' : 'pending_verification',
+    payment_status:    'pending',
     utr_number:        currentPayTab === 'upi'  ? currentUtrValue : null,
     amount_paid:       currentAdvanceMode === 'partial' ? Math.ceil(currentOrderTotal / 2) : (currentPayTab === 'cod' ? 0 : currentOrderTotal),
     balance_due:       currentAdvanceMode === 'partial' ? (currentOrderTotal - Math.ceil(currentOrderTotal / 2)) : (currentPayTab === 'cod' ? currentOrderTotal : 0),
