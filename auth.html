@@ -1191,7 +1191,8 @@ db.auth.onAuthStateChange(function(event, session) {
 (async function() {
   try {
     // Don't redirect if this is a password recovery link
-    if (window.location.hash.includes('type=recovery')) return;
+    if (window.location.hash.includes('type=recovery') || 
+    window.location.hash.includes('access_token')) return;
 
     const { data: { session } } = await db.auth.getSession();
     if (session) {
