@@ -2701,14 +2701,29 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
     }
 
       </style>
-    <div style="margin-top:8px">
-      <button id="flavour-base-edit-btn" onclick="openFlavourSheet()"
-        style="padding:7px 14px;border-radius:20px;border:1px solid rgba(110,9,119,.15);
-        background:transparent;color:rgba(110,9,119,.45);font-size:11px;font-weight:600;
-        cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s">
-        + Add Loaded Base
-      </button>
-    </div>
+    <div style="margin-top:10px" id="flavour-base-wrap">
+
+  <!-- Shown when nothing selected yet -->
+        <div id="fbv-empty-hint" style="display:flex;align-items:center;gap:8px;padding:10px 13px;background:rgba(110,9,119,.06);border:1px dashed rgba(110,9,119,.25);border-radius:12px;cursor:pointer" onclick="openFlavourSheet()">
+          <span style="font-size:16px">🥜</span>
+          <div style="flex:1">
+            <div style="font-size:11px;font-weight:700;color:var(--pl)">Add Loaded Base <span style="font-weight:400;color:var(--faint)">(optional)</span></div>
+            <div style="font-size:10px;color:var(--faint);margin-top:1px">Nuts · Seeds · Hazelnut · Walnut · Dark Chips</div>
+          </div>
+          <div style="font-size:11px;color:var(--p);font-weight:700">+ Add →</div>
+        </div>
+
+        <!-- Shown after selection -->
+        <div id="fbv-selected-badge" style="display:none;align-items:center;gap:10px;padding:11px 14px;background:rgba(110,9,119,.1);border:1.5px solid rgba(110,9,119,.3);border-radius:12px;cursor:pointer" onclick="openFlavourSheet()">
+          <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--p),var(--p2));display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🥜</div>
+          <div style="flex:1">
+            <div style="font-size:10px;color:var(--faint);letter-spacing:.5px;text-transform:uppercase;margin-bottom:2px">Loaded Base</div>
+            <div style="font-size:13px;font-weight:700;color:var(--white)" id="fbv-badge-name">Plain Classic</div>
+          </div>
+          <div style="font-size:10px;color:var(--pl);font-weight:600;border:1px solid rgba(110,9,119,.3);padding:4px 10px;border-radius:20px">Change</div>
+        </div>
+
+      </div>
       <div style="padding:18px 22px;display:flex;flex-direction:column;gap:20px;padding-bottom:30px">
 
         <!-- OCCASION -->
@@ -2820,10 +2835,12 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
             <div class="cust-chip on" data-group="flavour" data-val="Classic Dark Chocolate" onclick="selChip(this,'flavour')" style="padding:12px;border-radius:12px;background:rgba(107,47,206,.15);border:1.5px solid var(--p);cursor:pointer">
               <div style="font-size:12px;font-weight:700;color:var(--pl)">Classic Dark</div>
               <div style="font-size:10px;color:var(--dim);margin-top:2px">Rich & fudgy</div>
+              <div style="font-size:9px;color:var(--p);margin-top:4px;font-weight:600">+ Choose loaded base →</div>
             </div>
             <div class="cust-chip" data-group="flavour" data-val="Couverture Belgian" onclick="selChip(this,'flavour')" style="padding:12px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer">
               <div style="font-size:12px;font-weight:700;color:var(--white)">Couverture</div>
               <div style="font-size:10px;color:var(--dim);margin-top:2px">Premium Belgian</div>
+              <div style="font-size:9px;color:var(--p);margin-top:4px;font-weight:600">+ Choose loaded base →</div>
             </div>
             <div class="cust-chip" data-group="flavour" data-val="Double Chocolate" onclick="selChip(this,'flavour')" style="padding:12px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer">
               <div style="font-size:12px;font-weight:700;color:var(--white)">Double Chocolate</div>
@@ -4792,26 +4809,8 @@ async function submitCustomOrder() {
   var dateStr = new Date(dateVal).toLocaleDateString('en-IN', { day:'numeric', month:'long', year:'numeric' });
 
   // Get sequential order number from DB
-  var orderNum = 'CC-CUST0001';
-  try {
-    var { data: seqData } = await db.rpc('generate_custom_order_number');
-    if (seqData) orderNum = seqData;
-  } catch(e) {
-    // Fallback: get max existing and increment
-    try {
-      var { data: maxData } = await db.from('orders')
-        .select('order_number')
-        .like('order_number', 'CC-CUST%')
-        .order('order_number', { ascending: false })
-        .limit(1)
-        .single();
-      if (maxData) {
-        var num = parseInt(maxData.order_number.replace('CC-CUST','')) || 0;
-        orderNum = 'CC-CUST' + String(num + 1).padStart(4, '0');
-      }
-    } catch(e2) {}
-  }
-
+  var orderNum = genOrderNum();
+  
   // Calculate estimated price
   var egg2    = customSelections.egg    || 'Eggless';
   var srv     = customSelections.serves || '1 kg';
@@ -6660,8 +6659,8 @@ function selPay(el, method) {
 
 // ── GENERATE ORDER NUMBER ──
 function genOrderNum() {
-  const ts = Date.now().toString().slice(-6);
-  const rand = Math.floor(Math.random() * 100).toString().padStart(2,'0');
+  const ts   = Date.now().toString().slice(-8);
+  const rand = Math.floor(Math.random() * 9000 + 1000).toString();
   return 'CC-' + ts + rand;
 }
 
@@ -10904,13 +10903,22 @@ async function confirmFlavourBase() {
 }
 
 function updateFlavourEditBtn() {
-  var editBtn = document.getElementById('flavour-base-edit-btn');
-  if (!editBtn) return;
-  var isPlain = !_fbvSelected || _fbvSelected === 'Plain';
-  editBtn.textContent    = isPlain ? '+ Add Loaded Base' : '✦ ' + _fbvSelected + ' · Edit';
-  editBtn.style.background   = isPlain ? 'transparent'           : 'rgba(110,9,119,.08)';
-  editBtn.style.borderColor  = isPlain ? 'rgba(110,9,119,.15)'   : 'rgba(110,9,119,.3)';
-  editBtn.style.color        = isPlain ? 'rgba(110,9,119,.45)'   : '#6e0977';
+  var isPlain   = !_fbvSelected || _fbvSelected === 'Plain';
+  var emptyHint = document.getElementById('fbv-empty-hint');
+  var selBadge  = document.getElementById('fbv-selected-badge');
+  var badgeName = document.getElementById('fbv-badge-name');
+
+  if (emptyHint) emptyHint.style.display = isPlain ? 'flex' : 'none';
+  if (selBadge)  selBadge.style.display  = isPlain ? 'none' : 'flex';
+  if (badgeName) badgeName.textContent   = _fbvSelected;
+
+  // Emoji per type
+  var emojiMap = {
+    'Nuts Loaded':'🥜', 'Seeds Loaded':'🌿', 'Hazelnut Loaded':'🌰',
+    'Walnut Loaded':'🪨', 'Dark Choco Loaded':'🍫', 'Plain':'🍫'
+  };
+  var iconEl = selBadge && selBadge.querySelector('div:first-child');
+  if (iconEl) iconEl.textContent = emojiMap[_fbvSelected] || '🥜';
 }
 
 </script>
