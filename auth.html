@@ -1056,9 +1056,6 @@ async function copyID() {
 }
 
 
-
-
-
 // ── RESET PASSWORD (after clicking email link) ──
 async function doResetPassword() {
   const pw  = document.getElementById('reset-pw').value;
@@ -1078,15 +1075,27 @@ async function doResetPassword() {
       return;
     }
 
-    toast('✅ Password updated! Signing you in...');
-    setTimeout(() => window.location.href = 'index.html', 1200);
+    // ── Sign out recovery session, force fresh login ──
+    await db.auth.signOut();
+    localStorage.removeItem('cc_user');
+
+    toast('✅ Password updated! Please sign in with your new password.');
+    setTimeout(() => {
+      // Go to login page with success message
+      showPage('pg-login');
+      // Pre-fill a success hint
+      var sub = document.querySelector('#pg-login .auth-sub');
+      if (sub) {
+        sub.textContent = '✅ Password updated! Sign in with your new password.';
+        sub.style.color = '#4caf7d';
+      }
+    }, 1200);
 
   } catch(err) {
     toast(err.message || 'Failed to update password', true);
     if (btn) { btn.disabled = false; btn.textContent = '🔐 Update Password'; }
   }
 }
-
 
 // ── FORGOT PASSWORD ──
 var forgotCountdownTimer = null;
