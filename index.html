@@ -2846,7 +2846,12 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
             <div class="cust-chip" data-group="flavour" data-val="Couverture Belgian" onclick="selChip(this,'flavour')" style="padding:12px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer">
               <div style="font-size:12px;font-weight:700;color:var(--white)">Couverture</div>
               <div style="font-size:10px;color:var(--dim);margin-top:2px">Premium Belgian</div>
-              <div style="font-size:9px;color:var(--p);margin-top:4px;font-weight:600">+ Choose loaded base →</div>
+              <div id="fbv-inline-couverture" onclick="event.stopPropagation();openFlavourSheet()"
+                style="display:none;margin-top:6px;padding:4px 8px;border-radius:8px;
+                background:rgba(110,9,119,.12);border:1px dashed rgba(110,9,119,.3);
+                font-size:9px;font-weight:700;color:var(--pl);text-align:center">
+                🥜 + Choose loaded base
+              </div>
             </div>
             <div class="cust-chip" data-group="flavour" data-val="Double Chocolate" onclick="selChip(this,'flavour')" style="padding:12px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer">
               <div style="font-size:12px;font-weight:700;color:var(--white)">Double Chocolate</div>
