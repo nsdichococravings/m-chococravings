@@ -2119,92 +2119,65 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
             <div style="background:#fff;border:0.5px solid rgba(110,9,119,.2);border-radius:16px;padding:16px;margin-bottom:14px;text-align:center">
               <div style="font-family:'Cinzel',serif;font-size:8px;letter-spacing:2.5px;color:#b89abf;text-transform:uppercase;margin-bottom:12px">Scan with any UPI App</div>
 
-              <!-- QR Frame -->
-              <div style="width:160px;height:160px;margin:0 auto 12px;border:1.5px solid rgba(110,9,119,.25);border-radius:14px;padding:8px;background:#fff;position:relative;display:flex;align-items:center;justify-content:center">
+              <!-- Tappable QR — opens UPI deep link -->
+              <div onclick="openUpiDeepLink()" id="qr-tap-zone"
+                style="width:240px;height:240px;margin:0 auto 12px;border:1.5px solid rgba(110,9,119,.25);
+                border-radius:14px;background:#fff;position:relative;overflow:hidden;cursor:pointer;
+                transition:transform .2s,box-shadow .2s"
+                onmousedown="this.style.transform='scale(.97)'" onmouseup="this.style.transform='scale(1)'"
+                ontouchstart="this.style.transform='scale(.97)'" ontouchend="this.style.transform='scale(1)'">
                 <!-- Corner brackets -->
-                <div style="position:absolute;top:4px;left:4px;width:14px;height:14px;border-top:2px solid #6e0977;border-left:2px solid #6e0977;border-radius:3px 0 0 0"></div>
-                <div style="position:absolute;top:4px;right:4px;width:14px;height:14px;border-top:2px solid #6e0977;border-right:2px solid #6e0977;border-radius:0 3px 0 0"></div>
-                <div style="position:absolute;bottom:4px;left:4px;width:14px;height:14px;border-bottom:2px solid #6e0977;border-left:2px solid #6e0977;border-radius:0 0 0 3px"></div>
-                <div style="position:absolute;bottom:4px;right:4px;width:14px;height:14px;border-bottom:2px solid #6e0977;border-right:2px solid #6e0977;border-radius:0 0 3px 0"></div>
-                <img src="https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/QR_Code.jpeg"
-                  style="width:136px;height:136px;object-fit:contain;border-radius:8px"
-                  onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-                <div style="display:none;flex-direction:column;align-items:center;gap:6px;color:#b89abf">
-                  <div style="font-size:32px">📱</div>
-                  <div style="font-size:10px;font-family:'Cinzel',serif;letter-spacing:1px">QR Code</div>
+                <div style="position:absolute;top:8px;left:8px;width:18px;height:18px;border-top:2.5px solid #6e0977;border-left:2.5px solid #6e0977;border-radius:3px 0 0 0;z-index:2"></div>
+                <div style="position:absolute;top:8px;right:8px;width:18px;height:18px;border-top:2.5px solid #6e0977;border-right:2.5px solid #6e0977;border-radius:0 3px 0 0;z-index:2"></div>
+                <div style="position:absolute;bottom:8px;left:8px;width:18px;height:18px;border-bottom:2.5px solid #6e0977;border-left:2.5px solid #6e0977;border-radius:0 0 0 3px;z-index:2"></div>
+                <div style="position:absolute;bottom:8px;right:8px;width:18px;height:18px;border-bottom:2.5px solid #6e0977;border-right:2.5px solid #6e0977;border-radius:0 0 3px 0;z-index:2"></div>
+                <!-- Tap hint overlay -->
+                <div id="qr-tap-hint" style="position:absolute;inset:0;background:rgba(110,9,119,.55);z-index:3;
+                  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
+                  opacity:0;transition:opacity .2s;pointer-events:none">
+                  <div style="font-size:28px">📱</div>
+                  <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:.2em;color:#fff;text-transform:uppercase">Open UPI App</div>
                 </div>
+                <img src="https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/QR_Code.jpeg"
+                  style="position:absolute;top:-25%;left:-5%;width:110%;height:auto;object-fit:cover"
+                  onerror="this.style.display='none'">
+              </div>
+
+              <!-- Tap to pay hint -->
+              <div style="font-size:11px;color:#6e0977;font-weight:700;margin-bottom:4px;cursor:pointer" onclick="openUpiDeepLink()">
+                👆 Tap QR to open UPI app directly
               </div>
 
               <!-- App chips -->
-              <div style="display:flex;gap:6px;justify-content:center;margin-bottom:10px">
-                <div style="padding:5px 11px;border-radius:20px;border:0.5px solid rgba(110,9,119,.15);background:#fdf8ff;font-size:10px;color:#7a4a80">📱 GPay</div>
-                <div style="padding:5px 11px;border-radius:20px;border:0.5px solid rgba(110,9,119,.15);background:#fdf8ff;font-size:10px;color:#7a4a80">📲 PhonePe</div>
-                <div style="padding:5px 11px;border-radius:20px;border:0.5px solid rgba(110,9,119,.15);background:#fdf8ff;font-size:10px;color:#7a4a80">💜 Paytm</div>
+              <div style="display:flex;gap:6px;justify-content:center;margin-bottom:10px;margin-top:8px">
+                <div onclick="openUpiDeepLink('gpay')" style="padding:7px 14px;border-radius:20px;border:0.5px solid rgba(110,9,119,.2);background:#fdf8ff;font-size:11px;color:#7a4a80;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all .2s" onmousedown="this.style.background='rgba(110,9,119,.1)'" onmouseup="this.style.background='#fdf8ff'">📱 GPay</div>
+                <div onclick="openUpiDeepLink('phonepe')" style="padding:7px 14px;border-radius:20px;border:0.5px solid rgba(110,9,119,.2);background:#fdf8ff;font-size:11px;color:#7a4a80;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all .2s">📲 PhonePe</div>
+                <div onclick="openUpiDeepLink('paytm')" style="padding:7px 14px;border-radius:20px;border:0.5px solid rgba(110,9,119,.2);background:#fdf8ff;font-size:11px;color:#7a4a80;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all .2s">💜 Paytm</div>
               </div>
               <div style="font-size:10px;color:#b89abf">Open app → Scan QR → Enter amount → Pay</div>
             </div>
 
-            <!-- Divider -->
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-              <div style="flex:1;height:0.5px;background:rgba(110,9,119,.12)"></div>
-              <div style="font-size:10px;color:#b89abf;font-family:'Cinzel',serif;letter-spacing:1px">or pay using UPI ID</div>
-              <div style="flex:1;height:0.5px;background:rgba(110,9,119,.12)"></div>
-            </div>
-
-            <!-- UPI ID row -->
-            <div style="background:#fff;border:0.5px solid rgba(110,9,119,.2);border-radius:12px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
-              <div>
-                <div style="font-family:'Cinzel',serif;font-size:8px;letter-spacing:1.5px;color:#b89abf;text-transform:uppercase;margin-bottom:4px">UPI ID</div>
-                <div style="font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:500;color:#6e0977">sakthivel033-1@okaxis</div>
+            <!-- Post-payment UTR helper banner (hidden until return from UPI app) -->
+            <div id="utr-paste-banner" style="display:none;background:linear-gradient(135deg,rgba(110,9,119,.12),rgba(156,12,161,.06));
+              border:1px solid rgba(110,9,119,.3);border-radius:14px;padding:14px 16px;margin-bottom:16px">
+              <div style="font-size:12px;font-weight:700;color:#6e0977;margin-bottom:6px">💳 Payment done? Get your UTR</div>
+              <div style="font-size:11px;color:#7a4a80;margin-bottom:10px;line-height:1.6">
+                Open GPay/PhonePe → <strong>Transaction History</strong> → tap the payment → copy the <strong>UPI Ref / Transaction ID</strong>
               </div>
-              <div id="copy-upi-btn" onclick="copyUpiId()"
-                style="padding:7px 14px;border-radius:20px;border:0.5px solid rgba(110,9,119,.25);background:rgba(110,9,119,.06);font-size:11px;font-weight:600;color:#6e0977;cursor:pointer;transition:all .2s">
-                Copy
-              </div>
-            </div>
-
-            <!-- Silver advance block -->
-            <div id="ck-advance-block" style="display:none;border:0.5px solid rgba(150,150,180,.35);border-radius:14px;padding:14px;margin-bottom:16px;background:rgba(150,150,180,.04)">
-              <div style="font-family:'Cormorant Garamond',serif;font-size:16px;color:#1a0820;margin-bottom:4px">Silver privilege</div>
-              <div style="font-size:11px;color:#7a4a80;margin-bottom:12px;line-height:1.6">Confirm with 50% now. Balance collected on delivery.</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                <div id="advance-full-btn" onclick="selAdvance('full')"
-                  style="border-radius:10px;padding:11px 8px;text-align:center;cursor:pointer;border:1px solid #6e0977;background:rgba(110,9,119,.06)">
-                  <div style="font-size:11px;color:#6e0977;font-weight:600">Pay in full</div>
-                  <div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:#6e0977;margin-top:3px" id="advance-full-amt">₹0</div>
-                </div>
-                <div id="advance-partial-btn" onclick="selAdvance('partial')"
-                  style="border-radius:10px;padding:11px 8px;text-align:center;cursor:pointer;border:0.5px solid rgba(110,9,119,.15);background:#fff">
-                  <div style="font-size:11px;color:#1a0820;font-weight:600">50% advance</div>
-                  <div style="font-family:'Cormorant Garamond',serif;font-size:20px;color:#6e0977;margin-top:3px" id="advance-partial-amt">₹0</div>
-                </div>
-              </div>
-              <div id="advance-balance-note" style="display:none;margin-top:10px;padding:9px 12px;border-radius:8px;background:#f5ecd4;border:0.5px solid rgba(201,160,64,.3);font-size:11px;color:#7a5c18">
-                ✦ Balance <strong id="advance-balance-amt">₹0</strong> collected at your doorstep
+              <div style="display:flex;gap:8px">
+                <button onclick="pasteUtrFromClipboard()"
+                  style="flex:1;padding:11px;background:linear-gradient(135deg,#6e0977,#9c0ca1);color:#fff;
+                  font-size:12px;font-weight:700;border:none;border-radius:10px;cursor:pointer;
+                  display:flex;align-items:center;justify-content:center;gap:5px">
+                  📋 Paste UTR from Clipboard
+                </button>
+                <button onclick="document.getElementById('utr-paste-banner').style.display='none'"
+                  style="padding:11px 14px;background:transparent;border:1px solid rgba(110,9,119,.25);
+                  color:#b89abf;font-size:11px;border-radius:10px;cursor:pointer">
+                  Skip
+                </button>
               </div>
             </div>
-
-            <!-- UTR Input -->
-            <div style="margin-bottom:16px">
-              <div style="font-family:'Cinzel',serif;font-size:8px;letter-spacing:2px;color:#b89abf;text-transform:uppercase;margin-bottom:8px">
-                Enter UTR / Transaction ID after payment
-              </div>
-              <input id="utr-input" type="text" maxlength="22"
-                placeholder="12-digit UTR number"
-                oninput="onUtrInput(this.value)"
-                style="width:100%;background:#fff;border:0.5px solid rgba(110,9,119,.2);border-radius:12px;padding:13px 15px;font-size:14px;color:#1a0820;outline:none;font-family:'DM Sans',sans-serif;transition:border-color .2s">
-              <div style="font-size:10px;color:#b89abf;margin-top:6px;line-height:1.6">
-                Find UTR in your UPI app under <strong style="color:#7a4a80">Payment History</strong> after paying
-              </div>
-              <div id="utr-valid-msg" style="display:none;font-size:11px;color:#15803d;margin-top:6px;font-weight:600">
-                ✓ Valid UTR — tap below to place your order
-              </div>
-              <div id="utr-err-msg" style="display:none;font-size:11px;color:#be185d;margin-top:6px">
-                ⚠ UTR must be at least 10 digits
-              </div>
-            </div>
-
-          </div><!-- /upi-panel -->
 
           <!-- COD PANEL -->
           <div id="cod-panel" style="display:none">
@@ -6186,6 +6159,7 @@ function showPage(name){
  if (name === 'checkout') {
     setTimeout(loadCheckoutAddresses, 100);
     setTimeout(loadTierPaymentOptions, 200);
+    window._upiOrderNote = null; // ← ADD THIS LINE
     setTimeout(function() {
       currentUtrValue      = '';
       currentAdvanceMode   = 'full';
@@ -6703,28 +6677,23 @@ function doAddCart(btn){
   var base = getPrice();
   var grand = (base + topTotal) * qty;
   // Check if same item already in cart — just increase qty
-  var existing = cartItems.find(function(i){
-    return i.sku === sku && (i.pack || i.pack_label) === packLabel;
-  });
-  if (existing) {
-    existing.qty = (existing.qty || 1) + qty;
-  } else {
-    cartItems.push({
-      product_name: name,
-      tier: tier,
-      egg: currentEgg,
-      egg_type: currentEgg,
-      pack: packLabel,
-      pack_label: packLabel,
-      qty: qty,
-      quantity: qty,
-      base_price: base,
+  // ── Show slab/pieces sheet instead of direct add ──
+    openSopSheet({
+      product_name:  name,
+      name:          name,
+      tier:          tier,
+      egg:           currentEgg,
+      egg_type:      currentEgg,
+      pack:          packLabel,
+      pack_label:    packLabel,
+      qty:           qty,
+      quantity:      qty,
+      base_price:    base,
       topping_price: topTotal,
-      toppings: Object.keys(topAdds),
-      line_total: grand,
-      sku: sku
+      toppings:      Object.keys(topAdds),
+      line_total:    (base + topTotal) * qty,
+      sku:           sku
     });
-  }
 
   // Update dots
   renderCart();
@@ -8880,13 +8849,13 @@ function renderAccGrid(products) {
     var isFeatured = p.is_featured;
 
     var imgSection = imgUrl
-      ? '<div style="width:100%;height:120px;position:relative;overflow:hidden">'
-        + '<img src="' + imgUrl + '" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
+      ? '<div style="width:220px;height:220px;margin:0 auto 12px;border:1.5px solid rgba(110,9,119,.25);border-radius:14px;padding:0;background:#fff;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden">'
+        + '<img src="' + imgUrl + '" style="width:170%;height:170%;object-fit:cover;object-position:center 20%;transform:translate(-15%,-10%);border-radius:4px;flex-shrink:0" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
         + '<div style="display:none;width:100%;height:100%;background:' + gradient + ';align-items:center;justify-content:center;font-size:44px">' + emoji + '</div>'
         + '<div style="position:absolute;inset:0;background:linear-gradient(to bottom,transparent 40%,rgba(0,0,0,.4))"></div>'
         + (isFeatured ? '<div style="position:absolute;top:8px;left:8px;background:rgba(255,110,180,.3);color:#ffb3f0;border:1px solid rgba(255,110,180,.4);font-size:9px;font-weight:700;padding:3px 8px;border-radius:8px">POPULAR</div>' : '')
         + '</div>'
-      : '<div style="width:100%;height:120px;display:flex;align-items:center;justify-content:center;font-size:46px;background:' + gradient + ';position:relative">'
+      : '<div style="width:220px;height:220px;margin:0 auto 12px;border:1.5px solid rgba(110,9,119,.25);border-radius:14px;padding:0;background:#fff;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden">'
         + emoji
         + (isFeatured ? '<div style="position:absolute;top:8px;left:8px;background:rgba(255,110,180,.3);color:#ffb3f0;border:1px solid rgba(255,110,180,.4);font-size:9px;font-weight:700;padding:3px 8px;border-radius:8px">POPULAR</div>' : '')
         + '</div>';
@@ -11248,6 +11217,123 @@ function sopConfirm() {
   showToast('✓ ' + item.product_name + ' added!');
   closeSopSheet();
 }
+
+// ── UPI DEEP LINK ──
+function openUpiDeepLink(app) {
+  // ── Desktop guard ──
+  var isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+  if (!isMobile) {
+    showToast('💡 UPI apps only work on mobile — scan the QR code instead');
+    return;
+  }
+
+  var amt  = currentOrderTotal || 0;
+  var vpa  = NSDI_UPI_ID;
+  var name = encodeURIComponent('NSDI ChocoCravings');
+  // Cache order note so it doesn't regenerate on each tap
+  if (!window._upiOrderNote) window._upiOrderNote = encodeURIComponent('ChocoCravings Order');
+  var base = 'pa=' + vpa + '&pn=' + name + '&am=' + amt + '&cu=INR&tn=' + window._upiOrderNote;
+
+  // Show hint overlay briefly
+  var hint = document.getElementById('qr-tap-hint');
+  if (hint) { hint.style.opacity = '1'; setTimeout(function(){ hint.style.opacity = '0'; }, 800); }
+
+  var url;
+  if (app === 'gpay') {
+    url = 'tez://upi/pay?' + base;
+  } else if (app === 'phonepe') {
+    url = 'phonepe://pay?' + base;
+  } else if (app === 'paytm') {
+    url = 'paytmmp://pay?' + base;
+  } else {
+    url = 'upi://pay?' + base;
+  }
+
+  _upiPaymentInitiated = true;
+
+  // Use iframe trick to avoid console errors on failed scheme launch
+  var iframe = document.createElement('iframe');
+  iframe.style.display = 'none';
+  document.body.appendChild(iframe);
+  try {
+    iframe.src = url;
+  } catch(e) {}
+  setTimeout(function(){ 
+    try { document.body.removeChild(iframe); } catch(e) {}
+  }, 2000);
+
+  // Fallback: if still on page after 2s, user may not have the app
+  setTimeout(function() {
+    if (document.visibilityState === 'visible' && _upiPaymentInitiated) {
+      showToast('App not found — try another UPI app or scan QR');
+    }
+  }, 2500);
+}
+
+var _upiPaymentInitiated = false;
+
+// Detect return from UPI app
+document.addEventListener('visibilitychange', function() {
+  if (document.visibilityState === 'visible' && _upiPaymentInitiated) {
+    _upiPaymentInitiated = false;
+    // Show UTR paste banner after brief delay
+    setTimeout(function() {
+      var banner = document.getElementById('utr-paste-banner');
+      if (banner) banner.style.display = 'block';
+      // Auto-try clipboard read
+      setTimeout(pasteUtrFromClipboard, 600);
+    }, 500);
+  }
+});
+
+// ── PASTE UTR FROM CLIPBOARD ──
+async function pasteUtrFromClipboard() {
+  try {
+    var text = await navigator.clipboard.readText();
+    if (!text) { showToast('Clipboard is empty — paste manually'); return; }
+
+    text = text.trim().replace(/\s/g, '').toUpperCase();
+
+    // Check if it looks like a UTR / UPI ref
+    var isUtr = /^\d{12}$/.test(text) ||
+                /^[A-Z]{4}\d{18}$/.test(text) ||
+                /^[A-Z0-9]{10,22}$/.test(text);
+
+    if (isUtr) {
+      var utrInput = document.getElementById('utr-input');
+      if (utrInput) {
+        utrInput.value = text;
+        onUtrInput(text); // trigger validation
+        utrInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Flash green
+        utrInput.style.borderColor = '#15803d';
+        utrInput.style.background  = 'rgba(21,128,61,.06)';
+        setTimeout(function(){
+          utrInput.style.borderColor = '#6e0977';
+          utrInput.style.background  = '#fff';
+        }, 2000);
+        showToast('✅ UTR pasted: ' + text.slice(0,6) + '••••••');
+        // Hide banner
+        var banner = document.getElementById('utr-paste-banner');
+        if (banner) banner.style.display = 'none';
+      }
+    } else {
+      showToast('Couldn\'t detect UTR — please paste manually');
+      var utrInput = document.getElementById('utr-input');
+      if (utrInput) utrInput.focus();
+    }
+  } catch(e) {
+    // Clipboard permission denied — focus input for manual paste
+    showToast('Tap the UTR field and paste manually');
+    var utrInput = document.getElementById('utr-input');
+    if (utrInput) {
+      utrInput.focus();
+      utrInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+}
+
+
 </script>
 </body>
 </html>
