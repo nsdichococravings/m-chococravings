@@ -11230,27 +11230,54 @@ function openUpiDeepLink(app) {
   var vpa  = NSDI_UPI_ID;
   var name = encodeURIComponent('NSDI ChocoCravings');
   if (!window._upiOrderNote) window._upiOrderNote = encodeURIComponent('ChocoCravings Order');
-  var base = 'pa=' + vpa + '&pn=' + name + '&am=' + amt + '&cu=INR&tn=' + window._upiOrderNote;
 
-  // Show hint overlay briefly
   var hint = document.getElementById('qr-tap-hint');
   if (hint) { hint.style.opacity = '1'; setTimeout(function(){ hint.style.opacity = '0'; }, 800); }
 
-  var url;
-  if (app === 'gpay') {
-    url = 'tez://upi/pay?' + base;
-  } else if (app === 'phonepe') {
-    url = 'phonepe://pay?' + base;
-  } else if (app === 'paytm') {
-    url = 'paytmmp://pay?' + base;
-  } else {
-    url = 'upi://pay?' + base;
-  }
-
   _upiPaymentInitiated = true;
 
-  // ── Direct navigation — no iframe, no sandbox ──
-  window.location.href = url;
+  // ── Use Android intent scheme — treated as real payment, not collect ──
+  var params = 'pa=' + vpa
+    + '&pn=' + name
+    + '&am=' + amt
+    + '&cu=INR'
+    + '&tn=' + window._upiOrderNote
+    + '&mode=00'        // 00 = UPI QR mode (proper payment, no collect limits)
+    + '&purpose=00';    // 00 = merchant payment
+
+  var intentUrl, fallbackUrl;
+  fallbackUrl = 'upi://pay?' + params;
+
+  if (app === 'gpay') {
+    // GPay intent scheme
+    intentUrl = 'intent://upi/pay?' + params
+      + '#Intent;scheme=tez;package=com.google.android.apps.nbu.paisa.user;end';
+  } else if (app === 'phonepe') {
+    intentUrl = 'intent://pay?' + params
+      + '#Intent;scheme=phonepe;package=com.phonepe.app;end';
+  } else if (app === 'paytm') {
+    intentUrl = 'intent://pay?' + params
+      + '#Intent;scheme=paytmmp;package=net.one97.paytm;end';
+  } else {
+    // Generic — shows app chooser with all UPI apps
+    intentUrl = 'intent://pay?' + params
+      + '#Intent;scheme=upi;action=android.intent.action.VIEW;'
+      + 'category=android.intent.category.BROWSABLE;end';
+  }
+
+  // Try intent first, fallback to upi:// if intent fails
+  try {
+    window.location.href = intentUrl;
+  } catch(e) {
+    window.location.href = fallbackUrl;
+  }
+
+  // If still on page after 2.5s, try fallback
+  setTimeout(function() {
+    if (document.visibilityState === 'visible' && _upiPaymentInitiated) {
+      window.location.href = fallbackUrl;
+    }
+  }, 2500);
 }
 
 var _upiPaymentInitiated = false;
