@@ -11220,7 +11220,6 @@ function sopConfirm() {
 
 // ── UPI DEEP LINK ──
 function openUpiDeepLink(app) {
-  // ── Desktop guard ──
   var isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
   if (!isMobile) {
     showToast('💡 UPI apps only work on mobile — scan the QR code instead');
@@ -11230,7 +11229,6 @@ function openUpiDeepLink(app) {
   var amt  = currentOrderTotal || 0;
   var vpa  = NSDI_UPI_ID;
   var name = encodeURIComponent('NSDI ChocoCravings');
-  // Cache order note so it doesn't regenerate on each tap
   if (!window._upiOrderNote) window._upiOrderNote = encodeURIComponent('ChocoCravings Order');
   var base = 'pa=' + vpa + '&pn=' + name + '&am=' + amt + '&cu=INR&tn=' + window._upiOrderNote;
 
@@ -11251,23 +11249,8 @@ function openUpiDeepLink(app) {
 
   _upiPaymentInitiated = true;
 
-  // Use iframe trick to avoid console errors on failed scheme launch
-  var iframe = document.createElement('iframe');
-  iframe.style.display = 'none';
-  document.body.appendChild(iframe);
-  try {
-    iframe.src = url;
-  } catch(e) {}
-  setTimeout(function(){ 
-    try { document.body.removeChild(iframe); } catch(e) {}
-  }, 2000);
-
-  // Fallback: if still on page after 2s, user may not have the app
-  setTimeout(function() {
-    if (document.visibilityState === 'visible' && _upiPaymentInitiated) {
-      showToast('App not found — try another UPI app or scan QR');
-    }
-  }, 2500);
+  // ── Direct navigation — no iframe, no sandbox ──
+  window.location.href = url;
 }
 
 var _upiPaymentInitiated = false;
