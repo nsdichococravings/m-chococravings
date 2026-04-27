@@ -8749,8 +8749,8 @@ function vsRenderGrid(products) {
         + '</div>';
     }
 
-    return '<div class="vs-pcard" data-acc-cat="' + cat + '" onclick="openVsDetail(\'' + p.id + '\')">'
-      + '<div class="vs-pimg" style="background:' + bg + '">'
+    return '<div class="vs-pcard" data-acc-cat="' + cat + '">'
+      + '<div class="vs-pimg" style="background:' + bg + ';cursor:pointer" onclick="openVsDetail(\'' + p.id + '\')">'
       + imgContent
       + (isFeatured ? '<div class="vs-ptag vs-ptag-p">POPULAR</div>' : '')
       + '</div>'
@@ -8870,7 +8870,7 @@ function renderAccGrid(products) {
       + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:18px;font-weight:700;color:#ffb3f0">₹' + price + '</div>'
       + '<div style="font-size:9px;color:rgba(255,255,255,.35);margin-top:1px">' + pack + '</div>'
       + '</div>'
-      + '<button onclick="event.stopPropagation();quickAddAccToCart(this,\'' + p.id + '\',\'' + p.name.replace(/'/g,"\\'") + '\',' + price + ',\'' + (p.sku||'') + '\',\'' + pack + '\')" '
+      + '<button class="vs-padd" onclick="event.stopPropagation();vsAddToCart(this,\'' + p.id + '\',\'' + p.name.replace(/'/g,"\\'") + '\',' + price + ',\'' + (p.sku||'') + '\',\'' + pack + '\')">+</button>'
       + 'style="width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#9c0ca1,#6e0977);border:none;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s">+</button>'
       + '</div>'
       + '</div>'
