@@ -1030,6 +1030,19 @@ async function doLogin() {
     };
     localStorage.setItem('cc_user', JSON.stringify(sessionUser));
 
+        // ── Save Supabase session explicitly for Samsung browser ──
+    try {
+      var rawSession = data.session;
+      if (rawSession) {
+        localStorage.setItem('cc_sb_session', JSON.stringify({
+          access_token:  rawSession.access_token,
+          refresh_token: rawSession.refresh_token,
+          expires_at:    rawSession.expires_at,
+          user_email:    email
+        }));
+      }
+    } catch(e) {}
+
     toast('✓ Welcome back, ' + sessionUser.name + '! 🍫');
     setTimeout(() => window.location.href = 'index.html', 800);
     //loadProfileData(); // Optional: Preload profile data for dashboard
