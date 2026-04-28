@@ -2479,6 +2479,9 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
         <input type="date" id="cake-delivery-date" min=""
           style="width:100%;background:var(--panel-raised);border:1px solid var(--border);padding:13px 14px;color:var(--text);font-family:'Jost',sans-serif;font-size:13px;outline:none;color-scheme:dark;-webkit-text-fill-color:transparent"
           oninput="this.style.webkitTextFillColor='var(--text)';document.getElementById('cake-date-ph').style.display='none';document.getElementById('cake-date-err').style.display='none'">
+          <div id="coe-date-ph" style="position:absolute;top:50%;left:14px;transform:translateY(-50%);font-size:13px;color:var(--faint);pointer-events:none">
+              📅 Select delivery date
+            </div>
       </div>
       <div id="cake-date-err" style="display:none;font-size:10px;color:#ff6b6b;margin-top:6px;letter-spacing:.05em">⚠️ Please select a date at least 7 days from today</div>
     </div>
