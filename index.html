@@ -2084,100 +2084,32 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
             </div>
           </div>
 
-          <!-- UPI PANEL -->
-          <div id="upi-panel">
-
-            <!-- Step indicators -->
-            <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:18px">
-              <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-                <div id="step1-circle" style="width:28px;height:28px;border-radius:50%;background:rgba(110,9,119,.1);border:0.5px solid #6e0977;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#6e0977">1</div>
-                <div style="font-size:9px;color:#b89abf;font-family:'Cinzel',serif;letter-spacing:.5px">Scan</div>
-              </div>
-              <div style="width:28px;height:1px;background:rgba(110,9,119,.15);margin-bottom:14px"></div>
-              <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-                <div id="step2-circle" style="width:28px;height:28px;border-radius:50%;background:rgba(110,9,119,.1);border:0.5px solid rgba(110,9,119,.3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#b89abf">2</div>
-                <div style="font-size:9px;color:#b89abf;font-family:'Cinzel',serif;letter-spacing:.5px">Pay</div>
-              </div>
-              <div style="width:28px;height:1px;background:rgba(110,9,119,.15);margin-bottom:14px"></div>
-              <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
-                <div id="step3-circle" style="width:28px;height:28px;border-radius:50%;background:transparent;border:0.5px solid rgba(110,9,119,.2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#b89abf">3</div>
-                <div style="font-size:9px;color:#b89abf;font-family:'Cinzel',serif;letter-spacing:.5px">Confirm</div>
-              </div>
+          <!-- Razorpay Pay Button -->
+          <div id="rzp-pay-section" style="margin-bottom:18px">
+            <button onclick="openRazorpay()"
+              style="width:100%;padding:16px;
+              background:linear-gradient(135deg,#528FF0,#3366CC);
+              color:#fff;font-family:'DM Sans',sans-serif;
+              font-size:14px;font-weight:700;border:none;border-radius:14px;
+              cursor:pointer;display:flex;align-items:center;justify-content:center;
+              gap:10px;box-shadow:0 4px 20px rgba(82,143,240,.4);
+              transition:all .2s" id="rzp-btn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke="white" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              Pay ₹<span id="rzp-amt-btn">0</span> — GPay / PhonePe / Card / UPI
+            </button>
+            <div style="font-size:10px;color:#b89abf;text-align:center;margin-top:6px">
+              No limits · All UPI apps · Cards · Netbanking · Instant verification
             </div>
+          </div>
 
-            <!-- Amount card -->
-            <div style="background:#fff;border:0.5px solid rgba(110,9,119,.2);border-radius:14px;padding:13px 16px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
-              <div>
-                <div style="font-family:'Cinzel',serif;font-size:8px;letter-spacing:2px;color:#b89abf;text-transform:uppercase;margin-bottom:4px">Amount to Pay</div>
-                <div style="font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:400;color:#6e0977" id="upi-amt-display">₹0</div>
-                <div style="font-size:10px;color:#b89abf;margin-top:2px" id="upi-amt-note">Full payment</div>
-              </div>
-              <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:1px;padding:6px 12px;border-radius:20px;background:rgba(110,9,119,.08);border:0.5px solid rgba(110,9,119,.2);color:#6e0977" id="upi-order-num">CC-XXXXXX</div>
-            </div>
-
-            <!-- QR Code -->
-            <div style="background:#fff;border:0.5px solid rgba(110,9,119,.2);border-radius:16px;padding:16px;margin-bottom:14px;text-align:center">
-              <div style="font-family:'Cinzel',serif;font-size:8px;letter-spacing:2.5px;color:#b89abf;text-transform:uppercase;margin-bottom:12px">Scan with any UPI App</div>
-
-              <!-- Tappable QR — opens UPI deep link -->
-              <div onclick="openUpiDeepLink()" id="qr-tap-zone"
-                style="width:240px;height:240px;margin:0 auto 12px;border:1.5px solid rgba(110,9,119,.25);
-                border-radius:14px;background:#fff;position:relative;overflow:hidden;cursor:pointer;
-                transition:transform .2s,box-shadow .2s"
-                onmousedown="this.style.transform='scale(.97)'" onmouseup="this.style.transform='scale(1)'"
-                ontouchstart="this.style.transform='scale(.97)'" ontouchend="this.style.transform='scale(1)'">
-                <!-- Corner brackets -->
-                <div style="position:absolute;top:8px;left:8px;width:18px;height:18px;border-top:2.5px solid #6e0977;border-left:2.5px solid #6e0977;border-radius:3px 0 0 0;z-index:2"></div>
-                <div style="position:absolute;top:8px;right:8px;width:18px;height:18px;border-top:2.5px solid #6e0977;border-right:2.5px solid #6e0977;border-radius:0 3px 0 0;z-index:2"></div>
-                <div style="position:absolute;bottom:8px;left:8px;width:18px;height:18px;border-bottom:2.5px solid #6e0977;border-left:2.5px solid #6e0977;border-radius:0 0 0 3px;z-index:2"></div>
-                <div style="position:absolute;bottom:8px;right:8px;width:18px;height:18px;border-bottom:2.5px solid #6e0977;border-right:2.5px solid #6e0977;border-radius:0 0 3px 0;z-index:2"></div>
-                <!-- Tap hint overlay -->
-                <div id="qr-tap-hint" style="position:absolute;inset:0;background:rgba(110,9,119,.55);z-index:3;
-                  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;
-                  opacity:0;transition:opacity .2s;pointer-events:none">
-                  <div style="font-size:28px">📱</div>
-                  <div style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:.2em;color:#fff;text-transform:uppercase">Open UPI App</div>
-                </div>
-                <img src="https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/QR_Code.jpeg"
-                  style="position:absolute;top:-25%;left:-5%;width:110%;height:auto;object-fit:cover"
-                  onerror="this.style.display='none'">
-              </div>
-
-              <!-- Tap to pay hint -->
-              <div style="font-size:11px;color:#6e0977;font-weight:700;margin-bottom:4px;cursor:pointer" onclick="openUpiDeepLink()">
-                👆 Tap QR to open UPI app directly
-              </div>
-
-              <!-- App chips -->
-              <div style="display:flex;gap:6px;justify-content:center;margin-bottom:10px;margin-top:8px">
-                <div onclick="openUpiDeepLink('gpay')" style="padding:7px 14px;border-radius:20px;border:0.5px solid rgba(110,9,119,.2);background:#fdf8ff;font-size:11px;color:#7a4a80;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all .2s" onmousedown="this.style.background='rgba(110,9,119,.1)'" onmouseup="this.style.background='#fdf8ff'">📱 GPay</div>
-                <div onclick="openUpiDeepLink('phonepe')" style="padding:7px 14px;border-radius:20px;border:0.5px solid rgba(110,9,119,.2);background:#fdf8ff;font-size:11px;color:#7a4a80;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all .2s">📲 PhonePe</div>
-                <div onclick="openUpiDeepLink('paytm')" style="padding:7px 14px;border-radius:20px;border:0.5px solid rgba(110,9,119,.2);background:#fdf8ff;font-size:11px;color:#7a4a80;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all .2s">💜 Paytm</div>
-              </div>
-              <div style="font-size:10px;color:#b89abf">Open app → Scan QR → Enter amount → Pay</div>
-            </div>
-
-            <!-- Post-payment UTR helper banner (hidden until return from UPI app) -->
-            <div id="utr-paste-banner" style="display:none;background:linear-gradient(135deg,rgba(110,9,119,.12),rgba(156,12,161,.06));
-              border:1px solid rgba(110,9,119,.3);border-radius:14px;padding:14px 16px;margin-bottom:16px">
-              <div style="font-size:12px;font-weight:700;color:#6e0977;margin-bottom:6px">💳 Payment done? Get your UTR</div>
-              <div style="font-size:11px;color:#7a4a80;margin-bottom:10px;line-height:1.6">
-                Open GPay/PhonePe → <strong>Transaction History</strong> → tap the payment → copy the <strong>UPI Ref / Transaction ID</strong>
-              </div>
-              <div style="display:flex;gap:8px">
-                <button onclick="pasteUtrFromClipboard()"
-                  style="flex:1;padding:11px;background:linear-gradient(135deg,#6e0977,#9c0ca1);color:#fff;
-                  font-size:12px;font-weight:700;border:none;border-radius:10px;cursor:pointer;
-                  display:flex;align-items:center;justify-content:center;gap:5px">
-                  📋 Paste UTR from Clipboard
-                </button>
-                <button onclick="document.getElementById('utr-paste-banner').style.display='none'"
-                  style="padding:11px 14px;background:transparent;border:1px solid rgba(110,9,119,.25);
-                  color:#b89abf;font-size:11px;border-radius:10px;cursor:pointer">
-                  Skip
-                </button>
-              </div>
-            </div>
+          <!-- Divider -->
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+            <div style="flex:1;height:0.5px;background:rgba(110,9,119,.12)"></div>
+            <div style="font-size:10px;color:#b89abf;font-family:'Cinzel',serif;letter-spacing:1px">or pay by scanning QR manually</div>
+            <div style="flex:1;height:0.5px;background:rgba(110,9,119,.12)"></div>
+          </div>
 
           <!-- COD PANEL -->
           <div id="cod-panel" style="display:none">
@@ -6877,16 +6809,6 @@ async function placeOrder() {
   }
   errEl.style.display = 'none';
 
-  // Show loader
-  // ── VALIDATE UTR FOR UPI ──
-  var codPanelVisible = document.getElementById('cod-panel') && document.getElementById('cod-panel').style.display !== 'none';
-  if (!codPanelVisible && currentPayTab !== 'cod' && currentUtrValue.length < 10) {
-    showToast('⚠ Please enter your UTR number after paying');
-    var utrInput = document.getElementById('utr-input');
-    if (utrInput) utrInput.focus();
-    return;
-  }
-
   // ── DUPLICATE UTR CHECK ──
 if (currentPayTab === 'upi' && currentUtrValue) {
   var { data: existing } = await db
@@ -11343,6 +11265,140 @@ async function pasteUtrFromClipboard() {
   }
 }
 
+// ── RAZORPAY CHECKOUT ──
+const RAZORPAY_KEY_ID = 'rzp_live_XXXXXXXXXXXXXXX'; // ← paste your key here
+
+async function openRazorpay() {
+  var btn = document.getElementById('rzp-btn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Opening payment...'; }
+
+  try {
+    // 1. Validate form first
+    var name    = document.getElementById('ck-name').value.trim();
+    var phone   = document.getElementById('ck-phone').value.trim();
+    var address = document.getElementById('ck-address').value.trim();
+    var city    = document.getElementById('ck-city').value.trim();
+    if (!name || !phone || !address || !city) {
+      document.getElementById('ck-err').style.display = 'block';
+      if (btn) { btn.disabled = false; btn.innerHTML = 'Pay ₹<span id="rzp-amt-btn">' + currentOrderTotal + '</span> — GPay / PhonePe / Card / UPI'; }
+      return;
+    }
+    document.getElementById('ck-err').style.display = 'none';
+
+    // 2. Create Razorpay order via Supabase Edge Function
+    var orderNum = genOrderNum();
+    var { data: { session } } = await db.auth.getSession();
+
+    var response = await fetch(
+      'https://yjbfditboewwpgyqzryd.supabase.co/functions/v1/create-razorpay-order',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + (session ? session.access_token : '')
+        },
+        body: JSON.stringify({
+          amount:  currentOrderTotal,
+          receipt: orderNum,
+          notes: {
+            customer_name:  name,
+            customer_phone: phone,
+            order_number:   orderNum
+          }
+        })
+      }
+    );
+
+    var rzpOrder = await response.json();
+    if (!rzpOrder.id) throw new Error(rzpOrder.error || 'Could not create payment order');
+
+    // 3. Open Razorpay checkout
+    var options = {
+      key:         RAZORPAY_KEY_ID,
+      amount:      rzpOrder.amount,
+      currency:    'INR',
+      name:        'NSDI ChocoCravings',
+      description: 'Order ' + orderNum,
+      image:       'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/Original_on_transparent.png',
+      order_id:    rzpOrder.id,
+      prefill: {
+        name:    name,
+        contact: phone.replace(/[^0-9]/g,'')
+      },
+      theme: { color: '#6e0977' },
+      modal: {
+        ondismiss: function() {
+          if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = 'Pay ₹<span id="rzp-amt-btn">' + currentOrderTotal + '</span> — GPay / PhonePe / Card / UPI';
+          }
+          showToast('Payment cancelled');
+        }
+      },
+      handler: async function(rzpResponse) {
+        // ── Payment successful ──
+        var paymentId = rzpResponse.razorpay_payment_id;
+        var rzpOrderId = rzpResponse.razorpay_order_id;
+        var signature  = rzpResponse.razorpay_signature;
+
+        showToast('✅ Payment successful! Placing order...');
+
+        // Auto-fill UTR field with Razorpay payment ID
+        var utrInput = document.getElementById('utr-input');
+        if (utrInput) {
+          utrInput.value = paymentId;
+          onUtrInput(paymentId);
+        }
+
+        // Store payment details
+        currentUtrValue   = paymentId;
+        currentPayTab     = 'upi';
+        currentPayMethod  = 'razorpay';
+
+        // Show success state on button
+        if (btn) {
+          btn.style.background = 'linear-gradient(135deg,#15803d,#16a34a)';
+          btn.innerHTML = '✅ Payment verified — ₹' + currentOrderTotal;
+        }
+
+        // Auto place order after brief delay
+        setTimeout(async function() {
+          await placeOrder();
+        }, 800);
+      }
+    };
+
+    var rzp = new Razorpay(options);
+
+    rzp.on('payment.failed', function(resp) {
+      showToast('❌ Payment failed — ' + (resp.error.description || 'Try again'));
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = 'Pay ₹<span id="rzp-amt-btn">' + currentOrderTotal + '</span> — GPay / PhonePe / Card / UPI';
+      }
+    });
+
+    rzp.open();
+
+  } catch(e) {
+    console.error('Razorpay error:', e);
+    showToast('Error: ' + e.message);
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = 'Pay ₹<span id="rzp-amt-btn">' + currentOrderTotal + '</span> — GPay / PhonePe / Card / UPI';
+    }
+  }
+}
+
+// Keep rzp-amt-btn in sync with order total
+var _origGoToCheckout = goToCheckout;
+goToCheckout = function() {
+  _origGoToCheckout();
+  setTimeout(function(){
+    var el = document.getElementById('rzp-amt-btn');
+    if (el) el.textContent = currentOrderTotal;
+  }, 400);
+};
 
 </script>
 </body>
