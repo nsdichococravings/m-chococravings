@@ -4858,7 +4858,18 @@ async function submitCustomOrder() {
   var base    = (PRICE_MAP[egg2] || PRICE_MAP['Eggless'])[srv] || [900,1300];
   var extra   = (LAYER_ADDON[layers]||0)*kg + (TOPPER_ADDON[topper]||0) + (FauxBALL_ADDON[Faux]||0) + (BUTTERFLY_ADDON[butter]||0);
   var estTotal = Math.round((base[0]+base[1])/2 + extra);
-
+   // ── Fetch loaded base price from Supabase ──
+  var loadedBasePrice = 0;
+  var loadedBase = customSelections.flavourBase || 'Plain';
+  try {
+    var { data: fbvRow } = await db
+      .from('flavour_base_pricing')
+      .select('price_per_kg')
+      .eq('base_key', loadedBase)
+      .eq('is_active', true)
+      .single();
+    if (fbvRow) loadedBasePrice = (fbvRow.price_per_kg || 0) * kg;
+  } catch(e) { console.warn('flavour base price fetch:', e.message); }
   // Build detailed custom config JSON
   var customConfig = {
     type: 'custom_slab',
@@ -5009,18 +5020,7 @@ async function updateCustomOrder() {
   var kg     = calcKg(srv);
   var base   = (PRICE_MAP[egg2] || PRICE_MAP['Eggless'])[srv] || [900,1300];
 
-    // ── Fetch loaded base price from Supabase ──
-    var loadedBasePrice = 0;
-    var loadedBase = customSelections.flavourBase || 'Plain';
-    try {
-      var { data: fbvRow } = await db
-        .from('flavour_base_pricing')
-        .select('price_per_kg')
-        .eq('base_key', loadedBase)
-        .eq('is_active', true)
-        .single();
-      if (fbvRow) loadedBasePrice = (fbvRow.price_per_kg || 0) * kg;
-    } catch(e) { console.warn('flavour base price fetch:', e.message); }
+   
 
     var extra  = (LAYER_ADDON[layers]||0)*kg 
               + (TOPPER_ADDON[topper]||0) 
