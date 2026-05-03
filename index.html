@@ -6829,7 +6829,8 @@ if (currentPayTab === 'upi' && currentUtrValue) {
     .maybeSingle();
 
   if (existing) {
-    overlay.classList.remove('show');
+    var _ov = document.getElementById('loading-overlay');
+    if (_ov) _ov.classList.remove('show');
     overlay.classList.remove('show');
     var placeBtn = document.getElementById('place-btn');
     if (placeBtn) placeBtn.disabled = false;
@@ -6845,7 +6846,7 @@ if (currentPayTab === 'upi' && currentUtrValue) {
 }
 
   const overlay = document.getElementById('loading-overlay');
-  overlay.classList.add('show');
+  if (overlay) overlay.classList.add('show');
   var _pb = document.getElementById('place-btn'); if (_pb) _pb.disabled = false;
 
   const orderNum = genOrderNum();
