@@ -7163,7 +7163,7 @@ setTimeout(function() {
 
   } catch (err) {
     overlay.classList.remove('show');
-    document.getElementById('place-btn').disabled = false;
+    var _pb=document.getElementById('place-btn');if(_pb)_pb.disabled=false;
     console.error('❌ placeOrder error:', err.message, err);
     alert('Order failed: ' + (err.message || JSON.stringify(err)) + '\n\nPlease call ' + NSDI_PHONE);
   }
