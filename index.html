@@ -6789,21 +6789,33 @@ function buildCustomerMsg(order) {
 
 // ── PLACE ORDER (Supabase) ──
 async function placeOrder() {
-  // Validate
-  const name = document.getElementById('ck-name').value.trim();
-  const phone = document.getElementById('ck-phone').value.trim();
-  const address = document.getElementById('ck-address').value.trim();
-  const city = document.getElementById('ck-city').value.trim();
-  const email = document.getElementById('ck-email').value.trim();
-  const pin = document.getElementById('ck-pin').value.trim();
-  const notes = document.getElementById('ck-notes').value.trim();
-  const errEl = document.getElementById('ck-err');
 
-  if (!name || !phone || !address || !city) {
-    errEl.style.display = 'block';
+  // Restore cached form values if fields were cleared
+  if (window._ckFormCache) {
+    var setIfEmpty = function(id, val) {
+      var el = document.getElementById(id);
+      if (el && !el.value.trim() && val) el.value = val;
+    };
+    setIfEmpty('ck-name',    window._ckFormCache.name);
+    setIfEmpty('ck-phone',   window._ckFormCache.phone);
+    setIfEmpty('ck-address', window._ckFormCache.address);
+    setIfEmpty('ck-city',    window._ckFormCache.city);
+    setIfEmpty('ck-email',   window._ckFormCache.email);
+    setIfEmpty('ck-pin',     window._ckFormCache.pin);
+    setIfEmpty('ck-notes',   window._ckFormCache.notes);
+  }
+
+  const name    = document.getElementById('ck-name').value.trim()    || (currentUser && currentUser.name)  || '';
+  const phone   = document.getElementById('ck-phone').value.trim()   || (currentUser && currentUser.phone) || '';
+  const address = document.getElementById('ck-address').value.trim() || 'To be confirmed';
+  const city    = document.getElementById('ck-city').value.trim()    || (currentUser && currentUser.city)  || 'Salem';
+  const errEl   = document.getElementById('ck-err');
+
+  if (!name || !phone) {
+    if (errEl) errEl.style.display = 'block';
     return;
   }
-  errEl.style.display = 'none';
+  if (errEl) errEl.style.display = 'none';
 
   // ── DUPLICATE UTR CHECK ──
 if (currentPayTab === 'upi' && currentUtrValue) {
@@ -11319,7 +11331,18 @@ async function openRazorpay() {
       order_id:    rzpOrder.id,
       prefill: {
         name:    name,
-        contact: phone.replace(/[^0-9]/g,'')
+        contact: phone.replace(/[^0-9]/g,'').replace(/^91/, '').slice(-10),
+        email:   document.getElementById('ck-email').value.trim() || ''
+      },
+       config: {
+        display: {
+          blocks: {
+            utib: { name: 'Pay via UPI', instruments: [{ method: 'upi' }] },
+            other: { name: 'Other methods', instruments: [{ method: 'card' }, { method: 'netbanking' }] }
+          },
+          sequence: ['block.utib', 'block.other'],
+          preferences: { show_default_blocks: true }
+        }
       },
       theme: { color: '#6e0977' },
       modal: {
@@ -11448,6 +11471,17 @@ async function openRazorpay() {
         btn.innerHTML = 'Pay ₹<span id="rzp-amt-btn">' + currentOrderTotal + '</span> · GPay · PhonePe · Card · UPI';
       }
     });
+
+        // Store form values globally so placeOrder can use them after payment
+    window._ckFormCache = {
+      name:    document.getElementById('ck-name').value.trim(),
+      phone:   document.getElementById('ck-phone').value.trim(),
+      address: document.getElementById('ck-address').value.trim(),
+      city:    document.getElementById('ck-city').value.trim(),
+      email:   document.getElementById('ck-email').value.trim(),
+      pin:     document.getElementById('ck-pin').value.trim(),
+      notes:   document.getElementById('ck-notes').value.trim()
+    };
 
     rzp.open();
 
