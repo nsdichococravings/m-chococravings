@@ -6873,7 +6873,7 @@ if (currentPayTab === 'upi' && currentUtrValue) {
     order_number:       orderNum,
     customer_id:        customerId,
     customer_name:      name,
-    customer_phone:     phone.startsWith('+') ? phone : '+91' + phone.replace(/^0/,''),
+    customer_phone:     phone.startsWith('+') ? phone : phone.replace(/^0/,''),
     customer_email:     email || null,
     delivery_address:   address,
     delivery_city:      city,
