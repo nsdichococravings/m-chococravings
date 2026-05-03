@@ -6791,19 +6791,27 @@ function buildCustomerMsg(order) {
 async function placeOrder() {
 
   // Restore cached form values if fields were cleared
-  if (window._ckFormCache) {
-    var setIfEmpty = function(id, val) {
-      var el = document.getElementById(id);
-      if (el && !el.value.trim() && val) el.value = val;
-    };
-    setIfEmpty('ck-name',    window._ckFormCache.name);
-    setIfEmpty('ck-phone',   window._ckFormCache.phone);
-    setIfEmpty('ck-address', window._ckFormCache.address);
-    setIfEmpty('ck-city',    window._ckFormCache.city);
-    setIfEmpty('ck-email',   window._ckFormCache.email);
-    setIfEmpty('ck-pin',     window._ckFormCache.pin);
-    setIfEmpty('ck-notes',   window._ckFormCache.notes);
-  }
+  // Restore from sessionStorage first (survives mobile app switching)
+    if (!window._ckFormCache) {
+      try {
+        var _sc = sessionStorage.getItem('cc_ck_cache');
+        if (_sc) window._ckFormCache = JSON.parse(_sc);
+      } catch(e) {}
+    }
+    if (window._ckFormCache) {
+      var cache = window._ckFormCache;
+      var setVal = function(id, val) {
+        var el = document.getElementById(id);
+        if (el && val) el.value = val;
+      };
+      setVal('ck-name',    cache.name);
+      setVal('ck-phone',   cache.phone);
+      setVal('ck-address', cache.address);
+      setVal('ck-city',    cache.city);
+      setVal('ck-email',   cache.email);
+      setVal('ck-pin',     cache.pin);
+      setVal('ck-notes',   cache.notes);
+    }
 
   const name    = document.getElementById('ck-name').value.trim()    || (currentUser && currentUser.name)  || '';
   const phone   = document.getElementById('ck-phone').value.trim()   || (currentUser && currentUser.phone) || '';
@@ -6873,7 +6881,7 @@ if (currentPayTab === 'upi' && currentUtrValue) {
     order_number:       orderNum,
     customer_id:        customerId,
     customer_name:      name,
-    customer_phone:     phone.startsWith('+') ? phone : '+91' + phone.replace(/^0/,''),
+    customer_phone:     phone.startsWith('+') ? phone : phone.replace(/^0/,''),
     customer_email:     email || null,
     delivery_address:   address,
     delivery_city:      city,
@@ -7137,6 +7145,8 @@ currentOrderTotal = 0;
 try { localStorage.removeItem('cc_cart'); } catch(e) {}
 renderCart();
 showPage('success');
+try { sessionStorage.removeItem('cc_ck_cache'); } catch(e) {}
+window._ckFormCache = null;
 insertNotification(data.id, 'order_placed', 'Order Placed! 🛒', 'Your order ' + orderNum + ' has been placed. We\'ll confirm it shortly.');
 // Inside placeOrder(), after successful order insert:
 var cakeItems = cartItems.filter(function(i){ return i.product_type === 'custom_cake' && i.cake_config; });
@@ -11486,15 +11496,17 @@ async function openRazorpay() {
     });
 
         // Store form values globally so placeOrder can use them after payment
-    window._ckFormCache = {
-      name:    document.getElementById('ck-name').value.trim(),
-      phone:   document.getElementById('ck-phone').value.trim(),
-      address: document.getElementById('ck-address').value.trim(),
-      city:    document.getElementById('ck-city').value.trim(),
-      email:   document.getElementById('ck-email').value.trim(),
-      pin:     document.getElementById('ck-pin').value.trim(),
-      notes:   document.getElementById('ck-notes').value.trim()
-    };
+      window._ckFormCache = {
+        name:    document.getElementById('ck-name').value.trim(),
+        phone:   document.getElementById('ck-phone').value.trim(),
+        address: document.getElementById('ck-address').value.trim(),
+        city:    document.getElementById('ck-city').value.trim(),
+        email:   document.getElementById('ck-email').value.trim(),
+        pin:     document.getElementById('ck-pin').value.trim(),
+        notes:   document.getElementById('ck-notes').value.trim()
+      };
+      // Also save to sessionStorage so mobile doesn't lose it
+      try { sessionStorage.setItem('cc_ck_cache', JSON.stringify(window._ckFormCache)); } catch(e) {}
 
     rzp.open();
 
