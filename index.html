@@ -528,7 +528,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 .os-total-row{display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--bdr)}
 .os-total-lbl{font-size:14px;font-weight:700;color:var(--white)}
 .os-total-val{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:var(--pl)}
-.place-btn{width:100%;padding:17px;background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;border:none;border-radius:16px;cursor:pointer;transition:all .2s;margin-top:16px;display:flex;align-items:center;justify-content:center;gap:8px}
+.place-btn{position:sticky;bottom:16px;width:100%;padding:17px;background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;border:none;border-radius:16px;cursor:pointer;transition:all .2s;margin-top:16px;display:flex;align-items:center;justify-content:center;gap:8px}
 .place-btn:active{transform:scale(.97)}
 .place-btn:disabled{opacity:.5;cursor:not-allowed}
 .ck-err{color:var(--pink);font-size:12px;margin-top:6px;display:none}
@@ -2085,22 +2085,24 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
           </div>
 
           <!-- Razorpay Pay Button -->
-          <div id="rzp-pay-section" style="margin-bottom:18px">
-            <button onclick="openRazorpay()"
-              style="width:100%;padding:16px;
-              background:linear-gradient(135deg,#528FF0,#3366CC);
-              color:#fff;font-family:'DM Sans',sans-serif;
-              font-size:14px;font-weight:700;border:none;border-radius:14px;
-              cursor:pointer;display:flex;align-items:center;justify-content:center;
-              gap:10px;box-shadow:0 4px 20px rgba(82,143,240,.4);
-              transition:all .2s" id="rzp-btn">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke="white" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-              Pay ₹<span id="rzp-amt-btn">0</span> — GPay / PhonePe / Card / UPI
+          <button onclick="openRazorpay()"
+            style="width:100%;padding:18px;
+            background:linear-gradient(135deg,#1a0030 0%,#6e0977 50%,#9c0ca1 100%);
+            background-size:200% 100%;
+            color:#fff;font-family:'Cormorant Garamond',serif;
+            font-size:16px;font-weight:700;letter-spacing:1px;
+            border:none;border-radius:16px;cursor:pointer;
+            display:flex;align-items:center;justify-content:center;
+            gap:10px;
+            box-shadow:0 8px 32px rgba(110,9,119,.5),inset 0 1px 0 rgba(255,255,255,.15);
+            transition:all .3s" id="rzp-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            Pay ₹<span id="rzp-amt-btn">0</span>
             </button>
-            <div style="font-size:10px;color:#b89abf;text-align:center;margin-top:6px">
-              No limits · All UPI apps · Cards · Netbanking · Instant verification
+            <div style="font-size:10px;color:#b89abf;text-align:center;margin-top:6px;letter-spacing:.5px">
+            🔒 Secured by Razorpay · GPay · PhonePe · Cards · UPI
             </div>
           </div>
 
@@ -2165,9 +2167,7 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
         </div>
 
         <div class="ck-err" id="ck-err">⚠️ Please fill all required fields</div>
-        <button class="place-btn" id="place-btn" onclick="placeOrder()">
-          🎉 Confirm &amp; Place Order
-        </button>
+       
       </div>
       <div style="height:20px"></div>
     </div><!-- /checkout -->
