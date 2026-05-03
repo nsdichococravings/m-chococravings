@@ -11565,6 +11565,43 @@ async function sendWhatsAppSilent(phone, message) {
   }
 }
 
+function buildOwnerMsgPlain(order) {
+  var nl = "\n";
+  var items = (order.items || []).map(function(i) {
+    var line = '- ' + (i.product_name||'Brownie') + ' (' + (i.tier||'premium') + ') '
+      + (i.egg||i.egg_type||'eggless') + ' ' + (i.pack||i.pack_label||'4pcs') + ' x' + (i.qty||1);
+    if (i.toppings && i.toppings.length) line += nl + '  Toppings: ' + i.toppings.join(', ');
+    if (i.cut_pieces) line += nl + '  ✂️ Cut into ~' + i.cut_pieces + ' pieces';
+    return line;
+  }).join(nl);
+  return '🔔 NEW ORDER: ' + (order.order_number||'') + nl
+    + 'Customer: ' + (order.customer_name||'') + nl
+    + 'Phone: ' + (order.customer_phone||'') + nl
+    + 'Address: ' + (order.delivery_address||'') + ', ' + (order.delivery_city||'') + ' ' + (order.delivery_pincode||'') + nl
+    + 'Items:' + nl + items + nl
+    + 'Total: Rs.' + order.total + nl
+    + (order.utr_number ? 'Payment ID: ' + order.utr_number + nl : '')
+    + 'Payment: ' + (order.payment_method||'').toUpperCase() + nl
+    + (order.special_notes ? 'Notes: ' + order.special_notes + nl : '')
+    + 'Time: ' + new Date().toLocaleString('en-IN') + nl
+    + 'Reply: CONFIRM ' + order.order_number;
+}
+
+function buildCustomerMsgPlain(order) {
+  var nl = "\n";
+  var firstItem = order.items && order.items[0] ? order.items[0] : {};
+  return 'Order Confirmed: ' + (order.order_number||'') + nl
+    + 'Hi ' + (order.customer_name||'') + '!' + nl
+    + 'Your ChocoCravings order is placed!' + nl
+    + 'Item: ' + (firstItem.product_name||'Brownie') + ' ' + (firstItem.pack||firstItem.pack_label||'4pcs') + nl
+    + 'Total: Rs.' + order.total + nl
+    + 'Payment: ' + (order.payment_method||'').toUpperCase() + nl
+    + 'Delivery: ' + (order.delivery_address||'') + ', ' + (order.delivery_city||'') + nl
+    + "We'll WhatsApp you once confirmed! 🚀" + nl
+    + 'Questions? Call: +91 89731 41898' + nl
+    + 'Happy to serve fresh!! - NSDI ChocoCravings';
+}
+
 </script>
 </body>
 </html>
