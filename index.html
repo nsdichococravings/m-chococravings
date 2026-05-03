@@ -11476,9 +11476,19 @@ async function openRazorpay() {
         }
 
         window.open = _origOpen;
+        // Fade and remove overlay
         overlay.style.transition = 'opacity .6s ease';
         overlay.style.opacity = '0';
-        setTimeout(function() { overlay.remove(); }, 600);
+        setTimeout(function() { 
+          overlay.remove();
+        }, 600);
+
+        // Reset pay button
+        var rzpBtn = document.getElementById('rzp-btn');
+        if (rzpBtn) {
+          rzpBtn.disabled = false;
+          rzpBtn.innerHTML = 'Pay ₹<span id="rzp-amt-btn">' + currentOrderTotal + '</span> · PhonePe · Card · UPI';
+        }  
 
       }, 5000);
       }
@@ -11490,7 +11500,7 @@ async function openRazorpay() {
       showToast('❌ Payment failed — ' + (resp.error.description || 'Try again'));
       if (btn) {
         btn.disabled = false;
-        btn.innerHTML = 'Pay ₹<span id="rzp-amt-btn">' + currentOrderTotal + '</span> · GPay · PhonePe · Card · UPI';
+        btn.innerHTML = 'Pay ₹<span id="rzp-amt-btn">' + currentOrderTotal + '</span> · PhonePe · Card · UPI';
       }
     });
 
