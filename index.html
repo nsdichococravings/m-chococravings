@@ -11331,7 +11331,18 @@ async function openRazorpay() {
       order_id:    rzpOrder.id,
       prefill: {
         name:    name,
-        contact: phone.replace(/[^0-9]/g,'')
+        contact: phone.replace(/[^0-9]/g,'').replace(/^91/, '').slice(-10),
+        email:   document.getElementById('ck-email').value.trim() || ''
+      },
+       config: {
+        display: {
+          blocks: {
+            utib: { name: 'Pay via UPI', instruments: [{ method: 'upi' }] },
+            other: { name: 'Other methods', instruments: [{ method: 'card' }, { method: 'netbanking' }] }
+          },
+          sequence: ['block.utib', 'block.other'],
+          preferences: { show_default_blocks: true }
+        }
       },
       theme: { color: '#6e0977' },
       modal: {
