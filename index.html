@@ -11325,7 +11325,7 @@ async function openRazorpay() {
           'Authorization': 'Bearer ' + (session ? session.access_token : '')
         },
         body: JSON.stringify({
-          amount:  currentOrderTotal,
+          amount: Math.max(1, Math.round(currentOrderTotal)),
           receipt: orderNum,
           notes: { customer_name: name, customer_phone: phone, order_number: orderNum }
         })
@@ -11345,7 +11345,6 @@ async function openRazorpay() {
       order_id:    rzpOrder.id,
       prefill: {
         name:    name,
-        contact: (window._ckFormCache && window._ckFormCache.phone || phone).replace(/[^0-9]/g,'').replace(/^0+/,'').replace(/^91/,'').slice(-10),
         email: document.getElementById('ck-email').value.trim() || (currentUser && currentUser.email) || 'customer@chococravings.in'
       },
        config: {
