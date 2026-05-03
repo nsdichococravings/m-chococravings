@@ -6809,6 +6809,9 @@ async function placeOrder() {
   const phone   = document.getElementById('ck-phone').value.trim()   || (currentUser && currentUser.phone) || '';
   const address = document.getElementById('ck-address').value.trim() || 'To be confirmed';
   const city    = document.getElementById('ck-city').value.trim()    || (currentUser && currentUser.city)  || 'Salem';
+  const email   = document.getElementById('ck-email')  ? document.getElementById('ck-email').value.trim()  : (window._ckFormCache && window._ckFormCache.email  || '');
+  const pin     = document.getElementById('ck-pin')    ? document.getElementById('ck-pin').value.trim()    : (window._ckFormCache && window._ckFormCache.pin    || '');
+  const notes   = document.getElementById('ck-notes')  ? document.getElementById('ck-notes').value.trim()  : (window._ckFormCache && window._ckFormCache.notes  || '');
   const errEl   = document.getElementById('ck-err');
 
   if (!name || !phone) {
@@ -6843,7 +6846,7 @@ if (currentPayTab === 'upi' && currentUtrValue) {
 
   const overlay = document.getElementById('loading-overlay');
   overlay.classList.add('show');
-  document.getElementById('place-btn').disabled = false;
+  var _pb = document.getElementById('place-btn'); if (_pb) _pb.disabled = false;
 
   const orderNum = genOrderNum();
   const subtotal = cartItems.reduce((s,i) => s + i.base_price * i.qty, 0);
@@ -11331,8 +11334,8 @@ async function openRazorpay() {
       order_id:    rzpOrder.id,
       prefill: {
         name:    name,
-        contact: phone.replace(/[^0-9]/g,'').replace(/^91/, '').slice(-10),
-        email:   document.getElementById('ck-email').value.trim() || ''
+        contact: (window._ckFormCache && window._ckFormCache.phone || phone).replace(/[^0-9]/g,'').replace(/^0+/,'').replace(/^91/,'').slice(-10),
+        email: document.getElementById('ck-email').value.trim() || (currentUser && currentUser.email) || 'customer@chococravings.in'
       },
        config: {
         display: {
@@ -11436,27 +11439,36 @@ async function openRazorpay() {
         // ── Place order after 5s, then fade out overlay and go to success ──
         setTimeout(async function() {
         try {
-          // Ensure state is set correctly
+          console.log('=== STARTING placeOrder ===');
+          console.log('paymentId:', paymentId);
+          console.log('currentOrderTotal:', currentOrderTotal);
+          console.log('cartItems:', JSON.stringify(cartItems));
+          console.log('currentUser:', JSON.stringify(currentUser));
+          
           currentUtrValue  = paymentId;
           currentPayTab    = 'upi';
           currentPayMethod = 'razorpay';
 
+          // Check form cache
+          console.log('_ckFormCache:', JSON.stringify(window._ckFormCache));
+          
+          // Check form fields directly
+          console.log('ck-name:', document.getElementById('ck-name').value);
+          console.log('ck-phone:', document.getElementById('ck-phone').value);
+          console.log('ck-address:', document.getElementById('ck-address').value);
+          console.log('ck-city:', document.getElementById('ck-city').value);
+
           await placeOrder();
+          console.log('=== placeOrder COMPLETED ===');
         } catch(e) {
-          console.warn('placeOrder error:', e.message);
-          showToast('Order placed! Ref: ' + paymentId);
-          showPage('home');
+          console.error('=== placeOrder FAILED ===', e.message, e.stack);
+          showToast('Order error: ' + e.message);
         }
 
-        // Restore window.open
         window.open = _origOpen;
-
-        // Fade and remove overlay
         overlay.style.transition = 'opacity .6s ease';
         overlay.style.opacity = '0';
-        setTimeout(function() { 
-          overlay.remove(); 
-        }, 600);
+        setTimeout(function() { overlay.remove(); }, 600);
 
       }, 5000);
       }
