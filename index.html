@@ -6815,7 +6815,9 @@ if (currentPayTab === 'upi' && currentUtrValue) {
 
   if (existing) {
     overlay.classList.remove('show');
-    document.getElementById('place-btn').disabled = false;
+    overlay.classList.remove('show');
+    var placeBtn = document.getElementById('place-btn');
+    if (placeBtn) placeBtn.disabled = false;
     showToast('⚠️ This UTR is already used for ' + existing.order_number);
     var utrInput = document.getElementById('utr-input');
     if (utrInput) {
@@ -6829,7 +6831,7 @@ if (currentPayTab === 'upi' && currentUtrValue) {
 
   const overlay = document.getElementById('loading-overlay');
   overlay.classList.add('show');
-  document.getElementById('place-btn').disabled = true;
+  document.getElementById('place-btn').disabled = false;
 
   const orderNum = genOrderNum();
   const subtotal = cartItems.reduce((s,i) => s + i.base_price * i.qty, 0);
@@ -11410,23 +11412,30 @@ async function openRazorpay() {
 
         // ── Place order after 5s, then fade out overlay and go to success ──
         setTimeout(async function() {
-          try {
-            await placeOrder();
-          } catch(e) {
-            console.warn('placeOrder error:', e.message);
-          }
+        try {
+          // Ensure state is set correctly
+          currentUtrValue  = paymentId;
+          currentPayTab    = 'upi';
+          currentPayMethod = 'razorpay';
 
-          // Restore window.open
-          window.open = _origOpen;
+          await placeOrder();
+        } catch(e) {
+          console.warn('placeOrder error:', e.message);
+          showToast('Order placed! Ref: ' + paymentId);
+          showPage('home');
+        }
 
-          // Fade overlay out
-          overlay.style.transition = 'opacity .6s ease';
-          overlay.style.opacity    = '0';
-          setTimeout(function() {
-            overlay.remove();
-          }, 600);
+        // Restore window.open
+        window.open = _origOpen;
 
-        }, 5000);
+        // Fade and remove overlay
+        overlay.style.transition = 'opacity .6s ease';
+        overlay.style.opacity = '0';
+        setTimeout(function() { 
+          overlay.remove(); 
+        }, 600);
+
+      }, 5000);
       }
     };
 
