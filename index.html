@@ -2106,13 +2106,6 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
             </div>
           </div>
 
-          <!-- Divider -->
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-            <div style="flex:1;height:0.5px;background:rgba(110,9,119,.12)"></div>
-            <div style="font-size:10px;color:#b89abf;font-family:'Cinzel',serif;letter-spacing:1px">or pay by scanning QR manually</div>
-            <div style="flex:1;height:0.5px;background:rgba(110,9,119,.12)"></div>
-          </div>
-
           <!-- COD PANEL -->
           <div id="cod-panel" style="display:none">
             <div style="background:#fff;border:0.5px solid rgba(34,197,94,.2);border-radius:14px;padding:16px;text-align:center">
@@ -7093,13 +7086,18 @@ if (currentPayTab === 'upi' && currentUtrValue) {
 
     // 3. WhatsApp button — owner notification
     // 3. Auto-send WhatsApp to owner immediately
-window.open(`https://wa.me/${NSDI_PHONE}?text=${buildOwnerMsg(orderData)}`, '_blank');
+    // Silent WhatsApp to owner
+    await sendWhatsAppSilent(NSDI_PHONE, buildOwnerMsgPlain(orderData));
+    // Silent WhatsApp to customer
+    await sendWhatsAppSilent(phone, buildCustomerMsgPlain(orderData));
 
 // Auto-send WhatsApp confirmation to customer after 1.5s
-setTimeout(() => {
+// Auto-send WhatsApp confirmation to customer after 1.5s
+setTimeout(async () => {
   const custPhone = phone.replace(/[^0-9]/g,'');
   if (custPhone.length >= 10) {
-    window.open(`https://wa.me/${custPhone}?text=${buildCustomerMsg(orderData)}`, '_blank');
+    await sendWhatsAppSilent(NSDI_PHONE, buildOwnerMsgPlain(orderData));
+    await sendWhatsAppSilent(phone, buildCustomerMsgPlain(orderData));
   }
 }, 1500);
 
@@ -11276,19 +11274,17 @@ async function openRazorpay() {
   if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Opening payment...'; }
 
   try {
-    // 1. Validate form first
     var name    = document.getElementById('ck-name').value.trim();
     var phone   = document.getElementById('ck-phone').value.trim();
     var address = document.getElementById('ck-address').value.trim();
     var city    = document.getElementById('ck-city').value.trim();
     if (!name || !phone || !address || !city) {
       document.getElementById('ck-err').style.display = 'block';
-      if (btn) { btn.disabled = false; btn.innerHTML = 'Pay ₹<span id="rzp-amt-btn">' + currentOrderTotal + '</span> — GPay / PhonePe / Card / UPI'; }
+      if (btn) { btn.disabled = false; btn.innerHTML = 'Pay ₹<span id="rzp-amt-btn">' + currentOrderTotal + '</span> · GPay · PhonePe · Card · UPI'; }
       return;
     }
     document.getElementById('ck-err').style.display = 'none';
 
-    // 2. Create Razorpay order via Supabase Edge Function
     var orderNum = genOrderNum();
     var { data: { session } } = await db.auth.getSession();
 
@@ -11303,11 +11299,7 @@ async function openRazorpay() {
         body: JSON.stringify({
           amount:  currentOrderTotal,
           receipt: orderNum,
-          notes: {
-            customer_name:  name,
-            customer_phone: phone,
-            order_number:   orderNum
-          }
+          notes: { customer_name: name, customer_phone: phone, order_number: orderNum }
         })
       }
     );
@@ -11315,7 +11307,6 @@ async function openRazorpay() {
     var rzpOrder = await response.json();
     if (!rzpOrder.id) throw new Error(rzpOrder.error || 'Could not create payment order');
 
-    // 3. Open Razorpay checkout
     var options = {
       key:         RAZORPAY_KEY_ID,
       amount:      rzpOrder.amount,
@@ -11333,41 +11324,109 @@ async function openRazorpay() {
         ondismiss: function() {
           if (btn) {
             btn.disabled = false;
-            btn.innerHTML = 'Pay ₹<span id="rzp-amt-btn">' + currentOrderTotal + '</span> — GPay / PhonePe / Card / UPI';
+            btn.innerHTML = 'Pay ₹<span id="rzp-amt-btn">' + currentOrderTotal + '</span> · GPay · PhonePe · Card · UPI';
           }
           showToast('Payment cancelled');
         }
       },
       handler: async function(rzpResponse) {
-        // ── Payment successful ──
         var paymentId = rzpResponse.razorpay_payment_id;
-        var rzpOrderId = rzpResponse.razorpay_order_id;
-        var signature  = rzpResponse.razorpay_signature;
 
-        showToast('✅ Payment successful! Placing order...');
+        // Store for placeOrder
+        currentUtrValue  = paymentId;
+        currentPayTab    = 'upi';
+        currentPayMethod = 'razorpay';
 
-        // Auto-fill UTR field with Razorpay payment ID
-        var utrInput = document.getElementById('utr-input');
-        if (utrInput) {
-          utrInput.value = paymentId;
-          onUtrInput(paymentId);
-        }
+        // ── Temporarily override window.open to suppress WhatsApp popups ──
+        var _origOpen = window.open;
+        window.open = function() { return null; };
 
-        // Store payment details
-        currentUtrValue   = paymentId;
-        currentPayTab     = 'upi';
-        currentPayMethod  = 'razorpay';
+        // ── Show payment success overlay ──
+        var screenEl = document.querySelector('.screen') || document.body;
+        var overlay  = document.createElement('div');
+        overlay.id   = 'rzp-success-overlay';
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(10,0,20,.95);backdrop-filter:blur(16px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:28px;animation:fadeInRzp .3s ease';
+        overlay.innerHTML = `
+          <style>
+            @keyframes fadeInRzp { from{opacity:0;transform:scale(.96)} to{opacity:1;transform:scale(1)} }
+            @keyframes countDown { from{width:100%} to{width:0%} }
+          </style>
 
-        // Show success state on button
-        if (btn) {
-          btn.style.background = 'linear-gradient(135deg,#15803d,#16a34a)';
-          btn.innerHTML = '✅ Payment verified — ₹' + currentOrderTotal;
-        }
+          <div style="width:76px;height:76px;border-radius:50%;
+            background:linear-gradient(135deg,#15803d,#22c55e);
+            display:flex;align-items:center;justify-content:center;
+            font-size:36px;
+            box-shadow:0 0 0 10px rgba(34,197,94,.12),0 0 40px rgba(34,197,94,.25)">✓</div>
 
-        // Auto place order after brief delay
+          <div style="font-family:'Cormorant Garamond',serif;font-size:28px;
+            font-weight:700;color:#fff;text-align:center;line-height:1.2">
+            Payment<br>Successful!
+          </div>
+
+          <div style="font-size:12px;color:rgba(255,255,255,.5);text-align:center">
+            Placing your order automatically...
+          </div>
+
+          <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+            border-radius:18px;padding:18px 20px;width:100%;max-width:320px">
+            <div style="font-size:9px;font-weight:700;letter-spacing:2.5px;
+              text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:8px">
+              Transaction ID
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+              <div style="font-size:12px;font-weight:700;color:#e0bc5a;
+                letter-spacing:.3px;word-break:break-all;flex:1">
+                ${paymentId}
+              </div>
+              <button id="copy-txn-btn" onclick="copyTxnId('${paymentId}')"
+                style="flex-shrink:0;padding:8px 14px;
+                background:rgba(201,160,64,.15);
+                border:1px solid rgba(201,160,64,.35);
+                color:#e0bc5a;font-size:11px;font-weight:700;
+                border-radius:10px;cursor:pointer;white-space:nowrap">
+                📋 Copy
+              </button>
+            </div>
+          </div>
+
+          <div style="font-size:11px;color:rgba(255,255,255,.35);
+            text-align:center;max-width:260px;line-height:1.7">
+            Save this ID for your records.<br>
+            You'll receive order details on WhatsApp.
+          </div>
+
+          <div style="width:100%;max-width:320px;height:3px;
+            background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden">
+            <div id="rzp-countdown-bar" style="height:100%;
+              background:linear-gradient(90deg,#6e0977,#22c55e);
+              border-radius:2px;animation:countDown 5s linear forwards"></div>
+          </div>
+
+          <div style="font-size:10px;color:rgba(255,255,255,.25);letter-spacing:.5px">
+            Redirecting in 5 seconds...
+          </div>
+        `;
+        document.body.appendChild(overlay);
+
+        // ── Place order after 5s, then fade out overlay and go to success ──
         setTimeout(async function() {
-          await placeOrder();
-        }, 800);
+          try {
+            await placeOrder();
+          } catch(e) {
+            console.warn('placeOrder error:', e.message);
+          }
+
+          // Restore window.open
+          window.open = _origOpen;
+
+          // Fade overlay out
+          overlay.style.transition = 'opacity .6s ease';
+          overlay.style.opacity    = '0';
+          setTimeout(function() {
+            overlay.remove();
+          }, 600);
+
+        }, 5000);
       }
     };
 
@@ -11377,7 +11436,7 @@ async function openRazorpay() {
       showToast('❌ Payment failed — ' + (resp.error.description || 'Try again'));
       if (btn) {
         btn.disabled = false;
-        btn.innerHTML = 'Pay ₹<span id="rzp-amt-btn">' + currentOrderTotal + '</span> — GPay / PhonePe / Card / UPI';
+        btn.innerHTML = 'Pay ₹<span id="rzp-amt-btn">' + currentOrderTotal + '</span> · GPay · PhonePe · Card · UPI';
       }
     });
 
@@ -11388,8 +11447,34 @@ async function openRazorpay() {
     showToast('Error: ' + e.message);
     if (btn) {
       btn.disabled = false;
-      btn.innerHTML = 'Pay ₹<span id="rzp-amt-btn">' + currentOrderTotal + '</span> — GPay / PhonePe / Card / UPI';
+      btn.innerHTML = 'Pay ₹<span id="rzp-amt-btn">' + currentOrderTotal + '</span> · GPay · PhonePe · Card · UPI';
     }
+  }
+}
+
+function copyTxnId(id) {
+  var btn = document.getElementById('copy-txn-btn');
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(id);
+  } else {
+    var el = document.createElement('textarea');
+    el.value = id;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+  }
+  if (btn) {
+    btn.textContent       = '✓ Copied!';
+    btn.style.background  = 'rgba(34,197,94,.15)';
+    btn.style.borderColor = 'rgba(34,197,94,.35)';
+    btn.style.color       = '#22c55e';
+    setTimeout(function() {
+      btn.textContent       = '📋 Copy';
+      btn.style.background  = 'rgba(201,160,64,.15)';
+      btn.style.borderColor = 'rgba(201,160,64,.35)';
+      btn.style.color       = '#e0bc5a';
+    }, 2000);
   }
 }
 
@@ -11402,6 +11487,27 @@ goToCheckout = function() {
     if (el) el.textContent = currentOrderTotal;
   }, 400);
 };
+
+async function sendWhatsAppSilent(phone, message) {
+  try {
+    var { data: { session } } = await db.auth.getSession();
+    await fetch(
+      'https://yjbfditboewwpgyqzryd.supabase.co/functions/v1/send-whatsapp',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + (session ? session.access_token : '')
+        },
+        body: JSON.stringify({ phone: phone, message: message })
+      }
+    );
+  } catch(e) {
+    console.warn('WhatsApp silent send failed:', e.message);
+    // Fallback — open WhatsApp only if silent send fails
+    window.open('https://wa.me/' + phone.replace(/[^0-9]/g,'') + '?text=' + encodeURIComponent(message), '_blank');
+  }
+}
 
 </script>
 </body>
