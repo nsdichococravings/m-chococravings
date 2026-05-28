@@ -1772,18 +1772,11 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
         </div>
 
         <!-- TOPPINGS -->
+        <!-- TOPPINGS -->
         <div class="dlabel" id="toppings-anchor">🍯 Add Toppings <span class="dlabel-badge">Optional · tap to select</span></div>
         <div class="toplist" id="toplist-wrap">
-          <div class="trow" onclick="togTop(this,60,120,240,'Milk Ganache')"><div class="tl"><div class="tico">🍫</div><div><div class="tname">Milk Chocolate Ganache</div><div class="tdesc">Creamy milk choco drizzle</div></div></div><div class="tr-right"><div class="tprc" data-p="60,120,240">+₹60</div><div class="tchk"></div></div></div>
-          <div class="trow" onclick="togTop(this,45,90,180,'Dark Ganache')"><div class="tl"><div class="tico">🍫</div><div><div class="tname">Dark Chocolate Ganache</div><div class="tdesc">Rich dark chocolate coating</div></div></div><div class="tr-right"><div class="tprc" data-p="45,90,180">+₹45</div><div class="tchk"></div></div></div>
-          <div class="trow" onclick="togTop(this,70,140,280,'White Ganache')"><div class="tl"><div class="tico">🥛</div><div><div class="tname">White Chocolate Ganache</div><div class="tdesc">Smooth white chocolate</div></div></div><div class="tr-right"><div class="tprc" data-p="70,140,280">+₹70</div><div class="tchk"></div></div></div>
-          <div class="trow" onclick="togTop(this,55,110,190,'Nutella Topping')"><div class="tl"><div class="tico">🍯</div><div><div class="tname">Nutella</div><div class="tdesc">Hazelnut chocolate spread</div></div></div><div class="tr-right"><div class="tprc" data-p="55,110,190">+₹55</div><div class="tchk"></div></div></div>
-          <div class="trow" onclick="togTop(this,40,80,165,'Biscoff Topping')"><div class="tl"><div class="tico">🍪</div><div><div class="tname">Biscoff</div><div class="tdesc">Lotus caramelised biscuit spread</div></div></div><div class="tr-right"><div class="tprc" data-p="70,135,250">+₹70</div><div class="tchk"></div></div></div>
-          <div class="trow" onclick="togTop(this,105,160,320,'Ganache+Nuts')"><div class="tl"><div class="tico">🥜</div><div><div class="tname">Ganache + Nuts</div><div class="tdesc">Ganache drizzle + roasted nuts</div></div></div><div class="tr-right"><div class="tprc" data-p="105,160,320">+₹105</div><div class="tchk"></div></div></div>
-          <div class="trow" onclick="togTop(this,75,120,240,'Ganache+Oreo')"><div class="tl"><div class="tico">🖤</div><div><div class="tname">Ganache + Oreo</div><div class="tdesc">Crushed Oreo on top</div></div></div><div class="tr-right"><div class="tprc" data-p="75,120,240">+₹75</div><div class="tchk"></div></div></div>
-          <div class="trow" onclick="togTop(this,65,140,250,'Nutella+Hazelnut')"><div class="tl"><div class="tico">🌰</div><div><div class="tname">Nutella + Hazelnut</div><div class="tdesc">Double hazelnut indulgence</div></div></div><div class="tr-right"><div class="tprc" data-p="65,140,250">+₹65</div><div class="tchk"></div></div></div>
-          <div class="trow" onclick="togTop(this,130,260,520,'Ferrero Rocher')"><div class="tl"><div class="tico">✨</div><div><div class="tname">Ferrero Rocher</div><div class="tdesc">Premium chocolate truffles on top</div></div></div><div class="tr-right"><div class="tprc" data-p="130,260,520">+₹130</div><div class="tchk"></div></div></div>
-        </div><!-- /toplist-wrap -->
+          <div style="text-align:center;padding:14px;font-size:12px;color:var(--faint)">Loading toppings...</div>
+        </div>
         <div class="ttotal"><span class="ttl-lbl">Toppings total</span><span class="ttl-val" id="top-total">+₹0</span></div>
 
         <!-- CUSTOM BOX -->
@@ -5545,6 +5538,66 @@ function resetToppings(){
   document.querySelectorAll('.trow').forEach(r=>{r.classList.remove('on');r.querySelector('.tchk').textContent='';});
   const tt=document.getElementById('top-total'); if(tt) tt.textContent='+₹0';
 }
+
+async function loadToppings() {
+  var wrap = document.getElementById('toplist-wrap');
+  if (!wrap) return;
+
+  wrap.innerHTML = '<div style="text-align:center;padding:14px;font-size:12px;color:var(--faint)">Loading toppings...</div>';
+
+  try {
+    var { data: toppings, error } = await db
+      .from('toppings')
+      .select('name, description, emoji, price_4pcs, price_9pcs, price_16pcs')
+      .order('sort_order');
+
+    console.log('Toppings data:', toppings);
+    console.log('Toppings error:', error);
+
+    if (error) {
+      wrap.innerHTML = '<div style="font-size:12px;color:red;padding:10px">DB Error: ' + error.message + '</div>';
+      return;
+    }
+
+    if (!toppings || toppings.length === 0) {
+      wrap.innerHTML = '<div style="font-size:12px;color:var(--faint);padding:10px">0 rows returned — check is_active column</div>';
+      return;
+    }
+
+    topAdds = {}; topTotal = 0;
+    var ttEl = document.getElementById('top-total');
+    if (ttEl) ttEl.textContent = '+₹0';
+
+    wrap.innerHTML = toppings.map(function(t) {
+      var p4  = t.price_4pcs  || 0;
+      var p9  = t.price_9pcs  || 0;
+      var p16 = t.price_16pcs || 0;
+      var dataP = p4 + ',' + p9 + ',' + p16;
+      var safeName = (t.name || '').replace(/'/g, "\\'");
+
+      return '<div class="trow" onclick="togTop(this,' + p4 + ',' + p9 + ',' + p16 + ',\'' + safeName + '\')">'
+        + '<div class="tl">'
+        + '<div class="tico">' + (t.emoji || '🍫') + '</div>'
+        + '<div>'
+        + '<div class="tname">' + (t.name || '') + '</div>'
+        + '<div class="tdesc">' + (t.description || '') + '</div>'
+        + '</div>'
+        + '</div>'
+        + '<div class="tr-right">'
+        + '<div class="tprc" data-p="' + dataP + '">+₹' + p4 + '</div>'
+        + '<div class="tchk"></div>'
+        + '</div>'
+        + '</div>';
+    }).join('');
+
+    refreshPrices();
+
+  } catch(e) {
+    wrap.innerHTML = '<div style="font-size:12px;color:red;padding:10px">Exception: ' + e.message + '</div>';
+    console.error('loadToppings exception:', e);
+  }
+}
+
 function chgQty(d){
   qty=Math.max(1,qty+d);
   document.getElementById('qty-n').textContent=qty;
@@ -5638,12 +5691,12 @@ loadProducts();
 async function loadCakeStudioConfig() {
   try {
     var [flavRes, frostRes, tierRes, sizeRes, weightRes, touchRes] = await Promise.all([
-      db.from('cake_flavours').select('*').eq('is_active', true).order('sort_order'),
-      db.from('cake_frostings').select('*').eq('is_active', true).order('sort_order'),
-      db.from('cake_tiers').select('*').eq('is_active', true).order('sort_order'),
-      db.from('cake_sizes').select('*').eq('is_active', true).order('sort_order'),
-      db.from('cake_weights').select('*').eq('is_active', true).order('sort_order'),
-      db.from('cake_finishing_touches').select('*').eq('is_active', true).order('sort_order'),
+      db.from('cake_flavours').select('*').eq('is_active', null).order('sort_order'),
+      db.from('cake_frostings').select('*').eq('is_active', null).order('sort_order'),
+      db.from('cake_tiers').select('*').eq('is_active', null).order('sort_order'),
+      db.from('cake_sizes').select('*').eq('is_active', null).order('sort_order'),
+      db.from('cake_weights').select('*').eq('is_active', null).order('sort_order'),
+      db.from('cake_finishing_touches').select('*').eq('is_active', null).order('sort_order'),
     ]);
 
     var flavours = flavRes.data || [];
@@ -7614,6 +7667,7 @@ function openDetail(el) {
     if (heroEmoji) heroEmoji.textContent = getEmojiForProduct(data.name || '');
 
     showPage('detail');
+    loadToppings(); // ← ADD THIS LINE after showPage('detail')
 
     // ── Handle assorted toppings lock on open ──
     var isAssorted = vi === 10;
@@ -11622,6 +11676,7 @@ function buildCustomerMsgPlain(order) {
     + 'Questions? Call: +91 89731 41898' + nl
     + 'Happy to serve fresh!! - NSDI ChocoCravings';
 }
+
 
 </script>
 </body>
