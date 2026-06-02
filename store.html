@@ -116,10 +116,11 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 /* ── CHECKOUT SHEET ──────────────────────────────────────────── */
 #backdrop{position:fixed;inset:0;background:rgba(18,10,30,.52);z-index:300;display:none}
 #sheet{
-  position:fixed;bottom:0;left:50%;transform:translateX(-50%);
-  width:100%;max-width:480px;background:var(--paper);
+  position:fixed;bottom:0;left:0;right:0;
+  width:100%;background:var(--paper);
   border-radius:28px 28px 0 0;border-top:1.5px solid var(--rule);
   z-index:301;display:none;padding-bottom:env(safe-area-inset-bottom,20px);
+  max-height:90vh;overflow-y:auto;
 }
 .handle{display:flex;justify-content:center;padding:12px 0 0}
 .handle span{width:40px;height:4px;border-radius:2px;background:var(--rule);display:block}
@@ -256,7 +257,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 <div class="page active" id="pg-menu">
   <div class="pg-hdr">
     <div class="pg-hdr-row">
-      <div onclick="window.location.href='index.html'" style="width:34px;height:34px;border-radius:50%;border:1.5px solid rgba(18,10,30,0.09);display:flex;align-items:center;justify-content:center;font-size:18px;color:#120a1e;background:#fdf5e3;cursor:pointer;flex-shrink:0;margin-bottom:4px">‹</div>
+      <div onclick="goHome()" id="back-home-btn" style="width:34px;height:34px;border-radius:50%;border:1.5px solid rgba(18,10,30,0.09);display:flex;align-items:center;justify-content:center;font-size:18px;color:#120a1e;background:#fdf5e3;cursor:pointer;flex-shrink:0;margin-bottom:4px">‹</div>
       <div class="pg-hdr-left" style="margin-left:10px">
         <div class="sub">CHOCOCRAVINGS</div>
         <div class="title">On <em>Store</em></div>
@@ -688,16 +689,7 @@ async function openRazorpay() {
         name:  user ? (user.user_metadata && user.user_metadata.full_name) || '' : '',
         email: user ? user.email || 'customer@chococravings.in' : 'customer@chococravings.in',
       },
-      config: {
-        display: {
-          blocks: {
-            utib:  { name: 'Pay via UPI',    instruments: [{ method: 'upi' }] },
-            other: { name: 'Other methods',  instruments: [{ method: 'card' }, { method: 'netbanking' }] },
-          },
-          sequence: ['block.utib', 'block.other'],
-          preferences: { show_default_blocks: true },
-        }
-      },
+
       theme: { color: '#6e0977' },
       modal: {
         ondismiss: function() {
@@ -1090,6 +1082,20 @@ async function mgSaveItem(){
     alert('Error: ' + e.message);
   }
   btn.textContent = 'Save Item'; btn.disabled = false;
+}
+
+// ── GO HOME WITH LOADING ─────────────────────────────────────
+function goHome(){
+  var btn = document.getElementById('back-home-btn');
+  if(btn){ btn.innerHTML = '<div style="width:16px;height:16px;border:2px solid rgba(18,10,30,0.2);border-top-color:#6e0977;border-radius:50%;animation:spin .6s linear infinite"></div>'; }
+  // Add spin keyframe if not already added
+  if(!document.getElementById('spin-style')){
+    var s = document.createElement('style');
+    s.id = 'spin-style';
+    s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+    document.head.appendChild(s);
+  }
+  setTimeout(function(){ window.location.href = '/'; }, 400);
 }
 
 // ── INIT ──────────────────────────────────────────────────────
