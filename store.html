@@ -241,6 +241,14 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 .k-done{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.3);cursor:pointer}
 .k-done:active{transform:scale(.94)}
 
+/* ── SKELETON LOADER ─────────────────────────────────────────── */
+@keyframes sweep{0%{transform:translateX(-100%)}100%{transform:translateX(200%)}}
+@keyframes skPulse{0%,100%{opacity:.5}50%{opacity:1}}
+@keyframes fadeUpItem{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.sk-bone{position:relative;overflow:hidden;background:rgba(110,9,119,0.07);border-radius:6px}
+.sk-bone::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.55) 50%,transparent 60%);animation:sweep 1.6s ease-in-out infinite}
+.fade-up-item{animation:fadeUpItem .35s ease both}
+
 /* ── ANIMATIONS ──────────────────────────────────────────────── */
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @keyframes stamp{0%{transform:scale(1.4) rotate(-5deg);opacity:0}65%{transform:scale(.95) rotate(1deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
@@ -474,15 +482,39 @@ var MENU = {
   Desserts: {accent:'#6e0977', dot:'#b94dc7', cls:'desserts', items:[]},
 };
 
+function showSkeleton(){
+  var list  = document.getElementById('items-list');
+  var opacs = [1, 0.85, 0.65, 0.4];
+  var widths = [['52%','33%','38px'],['62%','40%','42px'],['44%','28%','36px'],['48%','30%','40px']];
+  var rows  = '';
+  opacs.forEach(function(op, i){
+    var w = widths[i];
+    rows += '<div style="display:flex;align-items:center;padding:16px 20px;border-bottom:1px solid rgba(110,9,119,0.06);opacity:'+op+'">'
+      + '<div style="flex:1">'
+      +   '<div class="sk-bone" style="height:17px;width:'+w[0]+';margin-bottom:9px"></div>'
+      +   '<div class="sk-bone" style="height:10px;width:'+w[1]+'"></div>'
+      + '</div>'
+      + '<div class="sk-bone" style="height:17px;width:'+w[2]+';margin-right:14px;border-radius:5px"></div>'
+      + '<div class="sk-bone" style="width:33px;height:33px;border-radius:50%"></div>'
+      + '</div>';
+  });
+  rows += '<div style="padding:14px 20px;display:flex;align-items:center;gap:8px;border-top:1px solid rgba(110,9,119,0.07)">'
+    + '<div style="width:6px;height:6px;border-radius:50%;background:#6e0977;animation:skPulse 1.2s ease-in-out infinite"></div>'
+    + '<div style="font-size:10px;letter-spacing:2px;color:#6e0977;font-weight:700;font-family:'Instrument Sans',sans-serif">PREPARING MENU...</div>'
+    + '</div>';
+  list.innerHTML = rows;
+  document.getElementById('cart-empty').style.display = 'none';
+}
+
 async function loadMenu(){
   if(!db) return;
+  showSkeleton();
   try {
     var res = await db.from('store_menu')
       .select('*')
       .eq('available', true)
       .order('sort_order', {ascending:true});
     if(res.error) throw res.error;
-    // Reset
     Object.keys(MENU).forEach(function(k){ MENU[k].items = []; });
     (res.data||[]).forEach(function(row){
       if(MENU[row.category]){
@@ -490,7 +522,10 @@ async function loadMenu(){
       }
     });
     renderItems();
-  } catch(e){ console.error('loadMenu', e); }
+  } catch(e){
+    console.error('loadMenu', e);
+    document.getElementById('items-list').innerHTML = '<div style="text-align:center;padding:40px 20px;font-family:Fraunces,serif;font-size:15px;color:#9a8aaa">Could not load menu.<br>Check connection.</div>';
+  }
 }
 
 // ── STATE ─────────────────────────────────────────────────────
@@ -540,10 +575,10 @@ function renderItems(){
 
   document.getElementById('items-list').innerHTML=c.items.map(function(item,i){
     var q=cart[item.id]||0;
-    var cls='item'+(q>0?' q-'+c.cls:'');
+    var cls='item fade-up-item'+(q>0?' q-'+c.cls:'');
     var remBtn=q>0?'<div class="btn-rem" onclick="rem(\''+item.id+'\')">−</div>':'';
     var qtyLbl=q>0?'<div class="qty qty-'+c.cls+'">'+q+'</div>':'';
-    return '<div class="'+cls+' anim-row" style="animation-delay:'+i*.04+'s" id="row-'+item.id+'">'
+    return '<div class="'+cls+'" style="animation-delay:'+delay+'" id="row-'+item.id+'">'
       +'<div class="item-info"><div class="item-name">'+item.name+'</div><div class="item-tag">'+item.tag+'</div></div>'
       +'<div class="item-price" id="ip-'+item.id+'">₹'+item.price+'</div>'
       +'<div class="ctrl">'+remBtn+qtyLbl+'<div class="btn-add add-'+c.cls+'" onclick="add(\''+item.id+'\')">+</div></div>'
