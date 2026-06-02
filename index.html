@@ -1325,14 +1325,14 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
       <div class="ntab" id="nav-profile" onclick="setNav('profile');checkAuth()">
         <div class="nicon">👤</div><div class="nlbl">Profile</div><div class="ndot"></div>
       </div>
-      <div class="ntab" id="onstore" onclick="window.location.href='/store'">
-        <div class="nicon" style="position:relative">🏪
-          <span style="position:absolute;top:-2px;right:-4px;width:9px;height:9px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 2px #fff">
-            <span style="display:block;width:9px;height:9px;border-radius:50%;background:#22c55e;animation:pulseLive 1.4s ease-in-out infinite;opacity:.6"></span>
-          </span>
-        </div>
-        <div class="nlbl">On Store</div>
+      <div class="ntab" id="nav-nstore" onclick="window.location.href='/store'">
+      <div class="nicon" style="position:relative;display:inline-block">☕
+        <span style="position:absolute;top:0;right:-4px;width:8px;height:8px;border-radius:50%;background:#22c55e;border:1.5px solid #fff;display:block">
+          <span style="display:block;width:5px;height:5px;border-radius:50%;background:#22c55e;animation:pulseLive 1.4s ease-in-out infinite;margin:auto;margin-top:0px"></span>
+        </span>
       </div>
+      <div class="nlbl">On Store</div>
+    </div>
     </div>
     <!-- ═══ HOME ═══ -->
     <div class="page active" id="page-home">
@@ -11688,6 +11688,18 @@ function buildCustomerMsgPlain(order) {
     + 'Happy to serve fresh!! - NSDI ChocoCravings';
 }
 
+// Prevent any badge on On Store nav
+var _origSetContent = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent').set;
+var nstoreEl = document.getElementById('nav-nstore');
+var observer = new MutationObserver(function(){
+  var ndot = document.querySelector('#nav-nstore .ndot');
+  if(ndot) ndot.textContent = '';
+  if(ndot) ndot.style.display = 'none';
+});
+window.addEventListener('load', function(){
+  var el = document.getElementById('nav-nstore');
+  if(el) observer.observe(el, {childList:true, subtree:true, characterData:true});
+});
 
 </script>
 </body>
