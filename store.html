@@ -500,7 +500,7 @@ function showSkeleton(){
   });
   rows += '<div style="padding:14px 20px;display:flex;align-items:center;gap:8px;border-top:1px solid rgba(110,9,119,0.07)">'
     + '<div style="width:6px;height:6px;border-radius:50%;background:#6e0977;animation:skPulse 1.2s ease-in-out infinite"></div>'
-    + '<div style="font-size:10px;letter-spacing:2px;color:#6e0977;font-weight:700;font-family:sans-serif">PREPARING MENU...</div>'
+    + '<div style="font-size:10px;letter-spacing:2px;color:#6e0977;font-weight:700;font-family:'Instrument Sans',sans-serif">PREPARING MENU...</div>'
     + '</div>';
   list.innerHTML = rows;
   document.getElementById('cart-empty').style.display = 'none';
@@ -573,12 +573,13 @@ function renderItems(){
   document.getElementById('sec-name').textContent=tab.toUpperCase();
   document.getElementById('sec-cnt').textContent=c.items.length+' items';
 
+  
   document.getElementById('items-list').innerHTML=c.items.map(function(item,i){
     var q=cart[item.id]||0;
     var cls='item fade-up-item'+(q>0?' q-'+c.cls:'');
     var remBtn=q>0?'<div class="btn-rem" onclick="rem(\''+item.id+'\')">−</div>':'';
     var qtyLbl=q>0?'<div class="qty qty-'+c.cls+'">'+q+'</div>':'';
-    return '<div class="'+cls+'" style="animation-delay:'+delay+'" id="row-'+item.id+'">'
+    return '<div class="'+cls+'" style="animation-delay:'+(i*0.07).toFixed(2)+'s" id="row-'+item.id+'">'
       +'<div class="item-info"><div class="item-name">'+item.name+'</div><div class="item-tag">'+item.tag+'</div></div>'
       +'<div class="item-price" id="ip-'+item.id+'">₹'+item.price+'</div>'
       +'<div class="ctrl">'+remBtn+qtyLbl+'<div class="btn-add add-'+c.cls+'" onclick="add(\''+item.id+'\')">+</div></div>'
