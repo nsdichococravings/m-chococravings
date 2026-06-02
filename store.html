@@ -573,6 +573,7 @@ function renderItems(){
   document.getElementById('sec-name').textContent=tab.toUpperCase();
   document.getElementById('sec-cnt').textContent=c.items.length+' items';
 
+  
   document.getElementById('items-list').innerHTML=c.items.map(function(item,i){
     var q=cart[item.id]||0;
     var cls='item fade-up-item'+(q>0?' q-'+c.cls:'');
