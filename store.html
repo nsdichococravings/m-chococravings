@@ -113,8 +113,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 .cart-cnt{font-family:'Fraunces',Georgia,serif;font-size:13px;color:rgba(255,255,255,.5);font-style:italic}
 .cart-lbl{flex:1;text-align:center;font-family:'Fraunces',Georgia,serif;font-size:18px;font-weight:900;color:#fff}
 .cart-tot{font-family:'Fraunces',Georgia,serif;font-size:17px;font-weight:900;color:#f5c430}
-#cart-empty{text-align:center;font-size:10px;color:var(--muted);letter-spacing:2px;font-weight:600;padding:14px 0 4px;position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:0;right:0}
-
+#cart-empty{text-align:center;font-size:10px;color:var(--muted);letter-spacing:2px;font-weight:600;padding:14px 0 4px;position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:0;right:0;pointer-events:none}
 /* ── CHECKOUT SHEET ──────────────────────────────────────────── */
 #backdrop{position:fixed;inset:0;background:rgba(18,10,30,.52);z-index:300;display:none}
 #sheet{
@@ -1305,40 +1304,73 @@ async function loadMyOrders(){
     var strip = document.getElementById('my-orders-strip');
     var list  = document.getElementById('my-orders-list');
     strip.style.display = 'block';
+    list.innerHTML = '';
 
     var statusConfig = {
-      pending:    {label:'Pending',   bg:'rgba(184,116,16,0.1)',  color:'#b87410'},
-      preparing:  {label:'Preparing', bg:'rgba(110,9,119,0.1)',   color:'#6e0977'},
-      ready:      {label:'Ready! ⭐', bg:'rgba(34,197,94,0.1)', color:'#15803d'},
-      collected:  {label:'Collected', bg:'rgba(18,10,30,0.06)',   color:'#9a8aaa'},
+      pending:   {label:'Pending',    bg:'rgba(184,116,16,0.1)',  color:'#b87410'},
+      preparing: {label:'Preparing',  bg:'rgba(110,9,119,0.1)',   color:'#6e0977'},
+      ready:     {label:'Ready! ⭐', bg:'rgba(34,197,94,0.1)', color:'#15803d'},
+      collected: {label:'Collected',  bg:'rgba(18,10,30,0.06)',   color:'#9a8aaa'},
     };
 
-    list.innerHTML = orders.map(function(o){
+    orders.forEach(function(o){
       var sc    = statusConfig[o.status] || statusConfig.pending;
       var items = (o.items||[]).map(function(i){ return i.name+(i.qty>1?' ×'+i.qty:''); }).join(', ');
-      return '<div onclick="viewOrder(''+o.id+'',''+o.token+'')" style="display:flex;align-items:center;padding:12px 14px;background:#fffbf2;border-radius:13px;border:1.5px solid rgba(194,96,122,0.1);cursor:pointer;gap:12px">'
-        + '<div style="flex:1;min-width:0">'
-        +   '<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">'
-        +     '<div style="font-family:'Fraunces',Georgia,serif;font-size:18px;font-weight:900;color:#120a1e">'+o.token+'</div>'
-        +     '<div style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:'+sc.bg+';color:'+sc.color+'">'+sc.label+'</div>'
-        +   '</div>'
-        +   '<div style="font-size:11px;color:#9a8aaa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+items+'</div>'
-        + '</div>'
-        + '<div style="font-family:'Fraunces',Georgia,serif;font-size:14px;font-weight:900;color:#c2607a;flex-shrink:0">₹'+o.total+'</div>'
-        + '<div style="font-size:16px;color:#9a8aaa;flex-shrink:0">›</div>'
-        + '</div>';
-    }).join('');
+
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;padding:11px 13px;background:#fffbf2;border-radius:12px;border:1.5px solid rgba(194,96,122,0.1);cursor:pointer;gap:10px;margin-bottom:7px';
+
+      var left = document.createElement('div');
+      left.style.cssText = 'flex:1;min-width:0';
+
+      var top = document.createElement('div');
+      top.style.cssText = 'display:flex;align-items:center;gap:7px;margin-bottom:2px';
+
+      var tok = document.createElement('div');
+      tok.style.cssText = 'font-family:Fraunces,Georgia,serif;font-size:16px;font-weight:900;color:#120a1e';
+      tok.textContent = o.token;
+
+      var badge = document.createElement('div');
+      badge.style.cssText = 'font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:'+sc.bg+';color:'+sc.color;
+      badge.textContent = sc.label;
+
+      top.appendChild(tok);
+      top.appendChild(badge);
+
+      var sub = document.createElement('div');
+      sub.style.cssText = 'font-size:10px;color:#9a8aaa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+      sub.textContent = items;
+
+      left.appendChild(top);
+      left.appendChild(sub);
+
+      var price = document.createElement('div');
+      price.style.cssText = 'font-family:Fraunces,Georgia,serif;font-size:13px;font-weight:900;color:#c2607a;flex-shrink:0';
+      price.textContent = '₹'+o.total;
+
+      var arrow = document.createElement('div');
+      arrow.style.cssText = 'font-size:14px;color:#9a8aaa;flex-shrink:0';
+      arrow.textContent = '›';
+
+      row.appendChild(left);
+      row.appendChild(price);
+      row.appendChild(arrow);
+      list.appendChild(row);
+
+      row.addEventListener('click', function(){ viewOrder(o.id, o.token, o.status); });
+    });
   } catch(e){ console.error('loadMyOrders', e); }
 }
 
-function viewOrder(id, token){
-  orderId      = id;
-  orderToken   = token;
+
+function viewOrder(id, token, status){
+  orderId    = id;
+  orderToken = token;
   document.getElementById('st-tok').textContent = 'TOKEN ' + token;
   goTo('pg-status');
-  updateStatusUI('pending'); // reset, realtime will update
+  updateStatusUI(status || 'pending');
   subscribeStatus(id);
-  // fetch current status
+  // refresh from DB in case status changed
   db.from('store_orders').select('status').eq('id',id).single().then(function(r){
     if(r.data) updateStatusUI(r.data.status);
   });
