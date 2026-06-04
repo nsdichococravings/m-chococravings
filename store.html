@@ -9,6 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,400&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
 <style>
 /* ── RESET ───────────────────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -250,6 +251,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 .sk-bone::after{content:'';position:absolute;inset:0;background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,0.55) 50%,transparent 60%);animation:sweep 1.6s ease-in-out infinite}
 .fade-up-item{animation:fadeUpItem .35s ease both}
 
+/* ── QR SCAN ANIMATION ───────────────────────────────────────── */
+@keyframes qrScan{0%,100%{top:0;opacity:1}50%{top:calc(100% - 2px);opacity:.7}}
+
 /* ── ANIMATIONS ──────────────────────────────────────────────── */
 @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @keyframes stamp{0%{transform:scale(1.4) rotate(-5deg);opacity:0}65%{transform:scale(.95) rotate(1deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
@@ -295,6 +299,12 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     </div>
   </div>
   <div id="cart-empty">TAP + TO ADD ITEMS</div>
+
+  <!-- Today's Orders -->
+  <div id="my-orders-strip" style="display:none;margin:0 16px 16px;border-top:1.5px solid rgba(194,96,122,0.12);padding-top:14px">
+    <div style="font-size:10px;letter-spacing:3px;color:#c2607a;font-weight:700;margin-bottom:10px;font-family:'Instrument Sans',sans-serif">YOUR ORDERS TODAY</div>
+    <div id="my-orders-list" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
 </div>
 
 <!-- ═══ PAGE: CONFIRM ════════════════════════════════════════ -->
@@ -464,8 +474,50 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     <div class="pay-lbl">PAY VIA</div>
     <div class="pay-opts">
       <div class="pay-opt on" id="pay-upi"  onclick="selPay('upi')">📱  UPI</div>
+      <div class="pay-opt"   id="pay-qr"   onclick="selPay('qr')">📷  Scan QR</div>
       <div class="pay-opt"   id="pay-cash" onclick="selPay('cash')">💵  Cash</div>
     </div>
+
+    <!-- QR Scanner panel -->
+    <div id="qr-panel" style="display:none;margin-bottom:16px">
+      <!-- Scanning state -->
+      <div id="qr-scan-state" style="background:#fdf5f8;border:1.5px solid rgba(194,96,122,0.2);border-radius:16px;overflow:hidden">
+        <div style="padding:12px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid rgba(194,96,122,0.1)">
+          <div style="width:7px;height:7px;border-radius:50%;background:#c2607a;animation:skPulse 1.2s ease-in-out infinite"></div>
+          <div style="font-size:10px;letter-spacing:2px;color:#c2607a;font-weight:700">POINT CAMERA AT STORE QR</div>
+        </div>
+        <div style="position:relative;background:#000;aspect-ratio:1">
+          <video id="qr-video" style="width:100%;height:100%;object-fit:cover;display:block" playsinline muted></video>
+          <canvas id="qr-canvas" style="display:none"></canvas>
+          <!-- Scan frame overlay -->
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
+            <div style="width:180px;height:180px;position:relative">
+              <div style="position:absolute;top:0;left:0;width:32px;height:32px;border-top:3px solid #c2607a;border-left:3px solid #c2607a;border-radius:4px 0 0 0"></div>
+              <div style="position:absolute;top:0;right:0;width:32px;height:32px;border-top:3px solid #c2607a;border-right:3px solid #c2607a;border-radius:0 4px 0 0"></div>
+              <div style="position:absolute;bottom:0;left:0;width:32px;height:32px;border-bottom:3px solid #c2607a;border-left:3px solid #c2607a;border-radius:0 0 0 4px"></div>
+              <div style="position:absolute;bottom:0;right:0;width:32px;height:32px;border-bottom:3px solid #c2607a;border-right:3px solid #c2607a;border-radius:0 0 4px 0"></div>
+              <div id="qr-scan-line" style="position:absolute;top:0;left:4px;right:4px;height:2px;background:rgba(194,96,122,0.7);animation:qrScan 1.8s ease-in-out infinite"></div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:10px 16px;text-align:center;font-size:11px;color:#9a8aaa">
+          Scan the UPI QR code at the store counter
+        </div>
+      </div>
+
+      <!-- Scanned success state -->
+      <div id="qr-scanned-state" style="display:none;background:#f0faf5;border:1.5px solid rgba(34,197,94,0.3);border-radius:16px;padding:16px;text-align:center">
+        <div style="font-size:28px;margin-bottom:8px">✓</div>
+        <div style="font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:700;color:#120a1e">QR Scanned!</div>
+        <div style="font-size:12px;color:#9a8aaa;margin-top:4px">Complete payment in your UPI app<br>then tap the button below</div>
+      </div>
+
+      <button onclick="confirmQRPay()" id="qr-paid-btn" style="display:none;width:100%;margin-top:12px;padding:17px;border-radius:14px;background:#c2607a;color:#fff;font-family:'Fraunces',Georgia,serif;font-size:18px;font-weight:900;border:none;cursor:pointer;box-shadow:0 6px 24px rgba(194,96,122,0.4);letter-spacing:0.3px">
+        I've Paid ✓
+      </button>
+      <div onclick="stopScanner()" style="text-align:center;margin-top:10px;font-size:12px;color:#9a8aaa;cursor:pointer;text-decoration:underline">Cancel</div>
+    </div>
+
     <button class="place-btn place-upi" id="place-btn" onclick="placeOrder()">Pay via UPI</button>
   </div>
 </div>
@@ -551,6 +603,7 @@ function goTo(id){
   history.pushState({pg:id},'','#'+id);
   if(id==='pg-kitchen') kitchenLoad();
   if(id==='pg-status')  checkNotifBanner();
+  if(id==='pg-menu')    loadMyOrders();
 }
 window.addEventListener('popstate',function(e){
   var pg=(e.state&&e.state.pg)||'pg-menu';
@@ -630,6 +683,7 @@ function openSheet(){
   history.pushState({pg:'pg-menu',sheet:true},'','#checkout');
 }
 function closeSheet(){
+  stopScanner();
   document.getElementById('backdrop').style.display='none';
   document.getElementById('sheet').style.display='none';
 }
@@ -637,9 +691,102 @@ function selPay(m){
   payMethod=m;
   document.getElementById('pay-upi').classList.toggle('on',m==='upi');
   document.getElementById('pay-cash').classList.toggle('on',m==='cash');
-  var btn=document.getElementById('place-btn');
-  btn.className='place-btn place-'+m;
-  btn.textContent=m==='upi'?'Pay ₹'+cartTotal()+' via UPI':'Place Order · Cash ₹'+cartTotal();
+  document.getElementById('pay-qr').classList.toggle('on',m==='qr');
+  var btn   = document.getElementById('place-btn');
+  var panel = document.getElementById('qr-panel');
+  if(m==='qr'){
+    btn.style.display = 'none';
+    panel.style.display = 'block';
+    // reset scanner state
+    document.getElementById('qr-scan-state').style.display='block';
+    document.getElementById('qr-scanned-state').style.display='none';
+    document.getElementById('qr-paid-btn').style.display='none';
+    startScanner();
+  } else {
+    btn.style.display = 'block';
+    panel.style.display = 'none';
+    btn.className='place-btn place-'+m;
+    btn.textContent=m==='upi'?'Pay ₹'+cartTotal()+' via UPI':'Place Order · Cash ₹'+cartTotal();
+  }
+}
+
+// ── QR SCANNER ────────────────────────────────────────────────
+var qrStream = null;
+var qrAnimFrame = null;
+
+function startScanner(){
+  var video  = document.getElementById('qr-video');
+  var canvas = document.getElementById('qr-canvas');
+  if(!navigator.mediaDevices){ alert('Camera not supported on this browser.'); return; }
+  navigator.mediaDevices.getUserMedia({ video:{ facingMode:'environment' }, audio:false })
+    .then(function(stream){
+      qrStream = stream;
+      video.srcObject = stream;
+      video.play();
+      video.addEventListener('loadedmetadata', function(){ scanFrame(video, canvas); });
+    })
+    .catch(function(err){
+      console.error('Camera error:', err);
+      alert('Camera access denied. Please allow camera access and try again.');
+      selPay('upi');
+    });
+}
+
+function scanFrame(video, canvas){
+  if(video.readyState === video.HAVE_ENOUGH_DATA){
+    canvas.width  = video.videoWidth;
+    canvas.height = video.videoHeight;
+    var ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    var img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    try {
+      var code = jsQR(img.data, img.width, img.height, { inversionAttempts:'dontInvert' });
+      if(code && code.data){
+        onQRDetected(code.data);
+        return;
+      }
+    } catch(e){}
+  }
+  qrAnimFrame = requestAnimationFrame(function(){ scanFrame(video, canvas); });
+}
+
+function onQRDetected(data){
+  stopScanner();
+  // Show scanned state
+  document.getElementById('qr-scan-state').style.display   = 'none';
+  document.getElementById('qr-scanned-state').style.display = 'block';
+  document.getElementById('qr-paid-btn').style.display      = 'block';
+  // Try to open the UPI deep link
+  try {
+    var url = data;
+    if(url.startsWith('upi://') || url.startsWith('tez://') || url.startsWith('phonepe://')){
+      window.location.href = url;
+    } else if(url.startsWith('http')){
+      window.open(url, '_blank');
+    }
+  } catch(e){ console.log('QR data:', data); }
+}
+
+function stopScanner(){
+  if(qrAnimFrame){ cancelAnimationFrame(qrAnimFrame); qrAnimFrame = null; }
+  if(qrStream){ qrStream.getTracks().forEach(function(t){ t.stop(); }); qrStream = null; }
+  var video = document.getElementById('qr-video');
+  if(video){ video.srcObject = null; }
+}
+
+async function confirmQRPay(){
+  var btn = document.getElementById('qr-paid-btn');
+  btn.textContent = 'Placing order…'; btn.disabled = true;
+  try {
+    var token = await getToken();
+    var data  = await insertStoreOrder(token, null, 'upi_qr', 'pending');
+    orderId = data.id; orderToken = token;
+    closeSheet();
+    showConfirm(token, cartEntries(), cartTotal());
+  } catch(err) {
+    console.error(err);
+    btn.textContent = "I've Paid ✓"; btn.disabled = false;
+  }
 }
 
 // ── PLACE ORDER ───────────────────────────────────────────────
@@ -1136,12 +1283,74 @@ function goHome(){
   setTimeout(function(){ window.location.href = '/'; }, 400);
 }
 
+// ── MY ORDERS TODAY ──────────────────────────────────────────
+async function loadMyOrders(){
+  if(!db) return;
+  try {
+    var user = null;
+    try { var s = await db.auth.getUser(); user = s.data.user; } catch(e){}
+    if(!user) return;
+
+    var today = new Date().toISOString().slice(0,10);
+    var res   = await db.from('store_orders')
+      .select('id,token,status,items,total,created_at')
+      .eq('customer_id', user.id)
+      .gte('created_at', today+'T00:00:00.000Z')
+      .order('created_at', {ascending:false})
+      .limit(5);
+
+    var orders = res.data || [];
+    if(!orders.length) return;
+
+    var strip = document.getElementById('my-orders-strip');
+    var list  = document.getElementById('my-orders-list');
+    strip.style.display = 'block';
+
+    var statusConfig = {
+      pending:    {label:'Pending',   bg:'rgba(184,116,16,0.1)',  color:'#b87410'},
+      preparing:  {label:'Preparing', bg:'rgba(110,9,119,0.1)',   color:'#6e0977'},
+      ready:      {label:'Ready! ⭐', bg:'rgba(34,197,94,0.1)', color:'#15803d'},
+      collected:  {label:'Collected', bg:'rgba(18,10,30,0.06)',   color:'#9a8aaa'},
+    };
+
+    list.innerHTML = orders.map(function(o){
+      var sc    = statusConfig[o.status] || statusConfig.pending;
+      var items = (o.items||[]).map(function(i){ return i.name+(i.qty>1?' ×'+i.qty:''); }).join(', ');
+      return '<div onclick="viewOrder(''+o.id+'',''+o.token+'')" style="display:flex;align-items:center;padding:12px 14px;background:#fffbf2;border-radius:13px;border:1.5px solid rgba(194,96,122,0.1);cursor:pointer;gap:12px">'
+        + '<div style="flex:1;min-width:0">'
+        +   '<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">'
+        +     '<div style="font-family:'Fraunces',Georgia,serif;font-size:18px;font-weight:900;color:#120a1e">'+o.token+'</div>'
+        +     '<div style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:'+sc.bg+';color:'+sc.color+'">'+sc.label+'</div>'
+        +   '</div>'
+        +   '<div style="font-size:11px;color:#9a8aaa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+items+'</div>'
+        + '</div>'
+        + '<div style="font-family:'Fraunces',Georgia,serif;font-size:14px;font-weight:900;color:#c2607a;flex-shrink:0">₹'+o.total+'</div>'
+        + '<div style="font-size:16px;color:#9a8aaa;flex-shrink:0">›</div>'
+        + '</div>';
+    }).join('');
+  } catch(e){ console.error('loadMyOrders', e); }
+}
+
+function viewOrder(id, token){
+  orderId      = id;
+  orderToken   = token;
+  document.getElementById('st-tok').textContent = 'TOKEN ' + token;
+  goTo('pg-status');
+  updateStatusUI('pending'); // reset, realtime will update
+  subscribeStatus(id);
+  // fetch current status
+  db.from('store_orders').select('status').eq('id',id).single().then(function(r){
+    if(r.data) updateStatusUI(r.data.status);
+  });
+}
+
 // ── INIT ──────────────────────────────────────────────────────
 window.addEventListener('load', function(){
   try{ if(typeof supabase !== 'undefined') db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY); }
   catch(e){ console.warn('Supabase init',e); }
   setTab('Coffee');
   loadMenu();
+  loadMyOrders();
   // Show kitchen button only for admins
   checkAdminBadge();
   // If opened directly at #pg-kitchen
