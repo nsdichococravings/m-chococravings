@@ -716,48 +716,65 @@ function selPay(m){
 // ── QR SCANNER ────────────────────────────────────────────────
 var qrStream    = null;
 var qrScanTimer = null;
+var qrDetector  = null;
 
 function startScanner(){
-  var video  = document.getElementById('qr-video');
-  var canvas = document.getElementById('qr-canvas');
+  var video = document.getElementById('qr-video');
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-    alert('Camera not supported. Please use Chrome on Android.');
+    alert('Camera not supported. Use Chrome on Android.');
     return;
   }
+  // Init BarcodeDetector (Chrome built-in — most reliable on Android)
+  if('BarcodeDetector' in window){
+    try { qrDetector = new BarcodeDetector({formats:['qr_code']}); } catch(e){}
+  }
+
   navigator.mediaDevices.getUserMedia({
-    video:{ facingMode:{ ideal:'environment' }, width:{ ideal:1280 }, height:{ ideal:720 } },
-    audio:false
+    video:{ facingMode:{ ideal:'environment' } }, audio:false
   })
   .then(function(stream){
     qrStream = stream;
     video.srcObject = stream;
     video.setAttribute('playsinline','');
-    video.setAttribute('autoplay','');
     video.muted = true;
-    video.play().catch(function(e){ console.warn('video play:', e); });
-    // Use interval — more reliable than rAF on mobile
-    qrScanTimer = setInterval(function(){ scanFrame(video, canvas); }, 200);
+    video.play().catch(function(){});
+    // Start scanning after video loads
+    video.addEventListener('loadeddata', function startScan(){
+      video.removeEventListener('loadeddata', startScan);
+      qrScanTimer = setInterval(function(){ scanFrame(video); }, 300);
+    });
   })
   .catch(function(err){
-    console.error('Camera error:', err);
-    alert('Camera access denied. Allow camera in browser settings and try again.');
+    console.error('Camera:', err);
+    alert('Camera access denied. Allow camera and try again.');
     selPay('upi');
   });
 }
 
-function scanFrame(video, canvas){
-  if(!video.videoWidth || video.readyState < 2) return;
+function scanFrame(video){
+  if(!video.videoWidth || video.paused || video.ended) return;
+  // Method 1: BarcodeDetector (Chrome built-in — fast & accurate)
+  if(qrDetector){
+    qrDetector.detect(video).then(function(codes){
+      if(codes && codes.length > 0){
+        onQRDetected(codes[0].rawValue);
+      }
+    }).catch(function(){});
+    return;
+  }
+  // Method 2: jsQR fallback via canvas
   try {
+    var canvas = document.getElementById('qr-canvas');
     canvas.width  = video.videoWidth;
     canvas.height = video.videoHeight;
-    var ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    var ctx  = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
     var img  = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    var code = jsQR(img.data, img.width, img.height, { inversionAttempts:'attemptBoth' });
-    if(code && code.data){
-      onQRDetected(code.data);
+    if(typeof jsQR === 'function'){
+      var code = jsQR(img.data, img.width, img.height, {inversionAttempts:'attemptBoth'});
+      if(code && code.data) onQRDetected(code.data);
     }
-  } catch(e){ console.warn('scanFrame:', e); }
+  } catch(e){}
 }
 
 function onQRDetected(data){
