@@ -113,7 +113,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 .cart-cnt{font-family:'Fraunces',Georgia,serif;font-size:13px;color:rgba(255,255,255,.5);font-style:italic}
 .cart-lbl{flex:1;text-align:center;font-family:'Fraunces',Georgia,serif;font-size:18px;font-weight:900;color:#fff}
 .cart-tot{font-family:'Fraunces',Georgia,serif;font-size:17px;font-weight:900;color:#f5c430}
-#cart-empty{text-align:center;font-size:10px;color:var(--muted);letter-spacing:2px;font-weight:600;padding:14px 0 4px;position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:0;right:0;pointer-events:none}
+#cart-empty{text-align:center;font-size:10px;color:var(--muted);letter-spacing:2px;font-weight:600;padding:14px 0 4px;position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:0;right:0}
+
 /* ── CHECKOUT SHEET ──────────────────────────────────────────── */
 #backdrop{position:fixed;inset:0;background:rgba(18,10,30,.52);z-index:300;display:none}
 #sheet{
@@ -330,6 +331,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     </div>
   </div>
   <div class="track-btn" onclick="goTo('pg-status')">Track Order Status →</div>
+  <div onclick="goTo('pg-menu')" style="display:block;margin:10px 16px 24px;padding:14px;text-align:center;border-radius:14px;font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:900;color:#fff;background:#c2607a;cursor:pointer;box-shadow:0 4px 20px rgba(194,96,122,0.35)">
+    + New Order
+  </div>
 </div>
 
 <!-- ═══ PAGE: STATUS ══════════════════════════════════════════ -->
@@ -710,43 +714,50 @@ function selPay(m){
 }
 
 // ── QR SCANNER ────────────────────────────────────────────────
-var qrStream = null;
-var qrAnimFrame = null;
+var qrStream    = null;
+var qrScanTimer = null;
 
 function startScanner(){
   var video  = document.getElementById('qr-video');
   var canvas = document.getElementById('qr-canvas');
-  if(!navigator.mediaDevices){ alert('Camera not supported on this browser.'); return; }
-  navigator.mediaDevices.getUserMedia({ video:{ facingMode:'environment' }, audio:false })
-    .then(function(stream){
-      qrStream = stream;
-      video.srcObject = stream;
-      video.play();
-      video.addEventListener('loadedmetadata', function(){ scanFrame(video, canvas); });
-    })
-    .catch(function(err){
-      console.error('Camera error:', err);
-      alert('Camera access denied. Please allow camera access and try again.');
-      selPay('upi');
-    });
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    alert('Camera not supported. Please use Chrome on Android.');
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({
+    video:{ facingMode:{ ideal:'environment' }, width:{ ideal:1280 }, height:{ ideal:720 } },
+    audio:false
+  })
+  .then(function(stream){
+    qrStream = stream;
+    video.srcObject = stream;
+    video.setAttribute('playsinline','');
+    video.setAttribute('autoplay','');
+    video.muted = true;
+    video.play().catch(function(e){ console.warn('video play:', e); });
+    // Use interval — more reliable than rAF on mobile
+    qrScanTimer = setInterval(function(){ scanFrame(video, canvas); }, 200);
+  })
+  .catch(function(err){
+    console.error('Camera error:', err);
+    alert('Camera access denied. Allow camera in browser settings and try again.');
+    selPay('upi');
+  });
 }
 
 function scanFrame(video, canvas){
-  if(video.readyState === video.HAVE_ENOUGH_DATA){
+  if(!video.videoWidth || video.readyState < 2) return;
+  try {
     canvas.width  = video.videoWidth;
     canvas.height = video.videoHeight;
     var ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    var img = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    try {
-      var code = jsQR(img.data, img.width, img.height, { inversionAttempts:'dontInvert' });
-      if(code && code.data){
-        onQRDetected(code.data);
-        return;
-      }
-    } catch(e){}
-  }
-  qrAnimFrame = requestAnimationFrame(function(){ scanFrame(video, canvas); });
+    var img  = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    var code = jsQR(img.data, img.width, img.height, { inversionAttempts:'attemptBoth' });
+    if(code && code.data){
+      onQRDetected(code.data);
+    }
+  } catch(e){ console.warn('scanFrame:', e); }
 }
 
 function onQRDetected(data){
@@ -767,10 +778,10 @@ function onQRDetected(data){
 }
 
 function stopScanner(){
-  if(qrAnimFrame){ cancelAnimationFrame(qrAnimFrame); qrAnimFrame = null; }
+  if(qrScanTimer){ clearInterval(qrScanTimer); qrScanTimer = null; }
   if(qrStream){ qrStream.getTracks().forEach(function(t){ t.stop(); }); qrStream = null; }
   var video = document.getElementById('qr-video');
-  if(video){ video.srcObject = null; }
+  if(video){ video.srcObject = null; video.load(); }
 }
 
 async function confirmQRPay(){
@@ -960,6 +971,9 @@ function showConfirm(token,entries,total){
   goTo('pg-confirm');
   requestNotifPermission();
   if(orderId) subscribeStatus(orderId);
+  // Reset cart so customer can place another order
+  cart = {};
+  updateBar();
 }
 
 function drawQR(data){
