@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChocoCravings Invoice</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ── Screen styles ── */
+  :root {
+    --choco: #3B1A08;
+    --choco-mid: #6B3A1F;
+    --gold: #C9962B;
+    --gold-light: #F0C96B;
+    --cream: #FDF6EC;
+    --ink: #1A0D05;
+    --muted: #8A6E58;
+    --border: #E8D5BB;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #1a0d05;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 32px 16px;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  /* ── Toolbar (hidden on print) ── */
+  .toolbar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .btn {
+    padding: 10px 28px;
+    border-radius: 50px;
+    border: none;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #C9962B, #F0C96B);
+    color: #1A0D05;
+    box-shadow: 0 4px 20px rgba(201,150,43,0.4);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(201,150,43,0.5); }
+
+  .btn-secondary {
+    background: transparent;
+    color: #F0C96B;
+    border: 1px solid rgba(240,201,107,0.4);
+  }
+  .btn-secondary:hover { background: rgba(240,201,107,0.08); }
+
+  /* ── Invoice Card (screen preview) ── */
+  .invoice-wrapper {
+    width: 100%;
+    max-width: 520px;
+    background: var(--cream);
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(201,150,43,0.2);
+  }
+
+  /* ── Header ── */
+  .inv-header {
+    background: var(--choco);
+    padding: 28px 32px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .inv-header::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(201,150,43,0.18) 0%, transparent 70%);
+  }
+
+  .inv-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, var(--gold), var(--gold-light), var(--gold), transparent);
+  }
+
+  .brand-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .brand-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-light));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(201,150,43,0.3);
+  }
+
+  .brand-text h1 {
+    font-family: 'Playfair Display', serif;
+    color: var(--cream);
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    line-height: 1;
+  }
+
+  .brand-text p {
+    color: var(--gold-light);
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 3px;
+    opacity: 0.85;
+  }
+
+  .inv-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .inv-meta-item label {
+    display: block;
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--gold);
+    opacity: 0.7;
+    margin-bottom: 2px;
+  }
+
+  .inv-meta-item span {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--cream);
+  }
+
+  /* ── Customer Section ── */
+  .inv-customer {
+    padding: 18px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    background: #FFF9F2;
+  }
+
+  .inv-customer-left h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-bottom: 3px;
+  }
+
+  .inv-customer-left p {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .inv-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+
+  .badge-paid { background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; }
+  .badge-pending { background: #FFF8E1; color: #F57F17; border: 1px solid #FFE082; }
+  .badge-cod { background: #E3F2FD; color: #1565C0; border: 1px solid #90CAF9; }
+
+  /* ── Items Table ── */
+  .inv-items {
+    padding: 0 32px;
+  }
+
+  .inv-items-header {
+    display: grid;
+    grid-template-columns: 1fr 40px 70px 70px;
+    gap: 8px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .inv-items-header span {
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+  }
+
+  .inv-items-header span:not(:first-child) { text-align: right; }
+
+  .inv-item {
+    display: grid;
+    grid-template-columns: 1fr 40px 70px 70px;
+    gap: 8px;
+    padding: 11px 0;
+    border-bottom: 1px dashed var(--border);
+    align-items: start;
+  }
+
+  .inv-item:last-child { border-bottom: none; }
+
+  .item-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+
+  .item-sub {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 2px;
+    line-height: 1.4;
+  }
+
+  .item-qty, .item-price, .item-total {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink);
+    text-align: right;
+    padding-top: 1px;
+  }
+
+  /* ── Totals ── */
+  .inv-totals {
+    padding: 16px 32px;
+    background: #FFF9F2;
+    border-top: 1px solid var(--border);
+  }
+
+  .totals-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+  }
+
+  .totals-row span {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .totals-row strong {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+
+  .totals-row.discount strong { color: #2E7D32; }
+  .totals-row.discount span::before { content: '🏷 '; }
+
+  .totals-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 8px 0;
+  }
+
+  .totals-grand {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--choco);
+    border-radius: 8px;
+    margin-top: 4px;
+  }
+
+  .totals-grand span {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gold-light);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .totals-grand strong {
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    font-family: 'Playfair Display', serif;
+  }
+
+  /* ── Notes ── */
+  .inv-notes {
+    padding: 12px 32px;
+    border-top: 1px dashed var(--border);
+  }
+
+  .inv-notes p {
+    font-size: 10px;
+    color: var(--muted);
+    line-height: 1.5;
+  }
+
+  .inv-notes strong {
+    color: var(--choco-mid);
+    font-weight: 600;
+  }
+
+  /* ── Footer ── */
+  .inv-footer {
+    background: var(--choco);
+    padding: 16px 32px;
+    text-align: center;
+  }
+
+  .inv-footer p {
+    font-size: 11px;
+    color: rgba(240,201,107,0.7);
+    margin-bottom: 4px;
+  }
+
+  .inv-footer .tagline {
+    font-family: 'Playfair Display', serif;
+    font-size: 13px;
+    color: var(--gold-light);
+    font-style: italic;
+  }
+
+  .inv-footer .social {
+    font-size: 10px;
+    color: rgba(253,246,236,0.45);
+    margin-top: 6px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ── Barcode-style order number ── */
+  .inv-barcode {
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border-top: 1px dashed var(--border);
+  }
+
+  .barcode-lines {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+    height: 28px;
+  }
+
+  .barcode-lines span {
+    display: block;
+    width: 2px;
+    background: var(--choco-mid);
+    border-radius: 1px;
+  }
+
+  .barcode-num {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ══════════════════════════════════════
+     PRINT STYLES
+  ══════════════════════════════════════ */
+  @media print {
+    body {
+      background: white;
+      padding: 0;
+      display: block;
+    }
+
+    .toolbar { display: none !important; }
+
+    .invoice-wrapper {
+      max-width: 100%;
+      box-shadow: none;
+      border-radius: 0;
+    }
+
+    /* Keep colors in print */
+    .inv-header, .inv-footer, .totals-grand {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    * {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    @page {
+      size: A5 portrait;
+      margin: 8mm;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- Toolbar (screen only) -->
+<div class="toolbar">
+  <button class="btn btn-primary" onclick="window.print()">🖨️ Print Invoice</button>
+  <button class="btn btn-secondary" onclick="savePDF()">⬇️ Save as PDF</button>
+</div>
+
+<!-- Invoice -->
+<div class="invoice-wrapper" id="invoice">
+
+  <!-- Header -->
+  <div class="inv-header">
+    <div class="brand-row">
+      <div class="brand-icon">🍫</div>
+      <div class="brand-text">
+        <h1>NSDI ChocoCravings</h1>
+        <p>Handcrafted Premium Brownies &amp; Cakes</p>
+      </div>
+    </div>
+    <div class="inv-meta">
+      <div class="inv-meta-item">
+        <label>Invoice No.</label>
+        <span id="inv-number">#CC-2025-00147</span>
+      </div>
+      <div class="inv-meta-item">
+        <label>Date &amp; Time</label>
+        <span id="inv-date">—</span>
+      </div>
+      <div class="inv-meta-item">
+        <label>Payment</label>
+        <span id="inv-payment">PhonePe / UPI</span>
+      </div>
+      <div class="inv-meta-item">
+        <label>Order Type</label>
+        <span id="inv-type">Home Delivery</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customer -->
+  <div class="inv-customer">
+    <div class="inv-customer-left">
+      <h3 id="cust-name">Ramya Krishnan</h3>
+      <p id="cust-addr">12, Saradha Nagar, Salem – 636 016<br>📞 +91 98765 43210</p>
+    </div>
+    <div class="inv-badge badge-paid" id="pay-status">✓ Paid</div>
+  </div>
+
+  <!-- Items -->
+  <div class="inv-items">
+    <div class="inv-items-header">
+      <span>Item</span>
+      <span>Qty</span>
+      <span>Rate</span>
+      <span>Total</span>
+    </div>
+
+    <div id="items-container">
+      <!-- Rendered by JS -->
+    </div>
+  </div>
+
+  <!-- Totals -->
+  <div class="inv-totals">
+    <div class="totals-row">
+      <span>Subtotal</span>
+      <strong id="subtotal">₹0</strong>
+    </div>
+    <div class="totals-row" id="delivery-row">
+      <span>Delivery</span>
+      <strong id="delivery">₹0</strong>
+    </div>
+    <div class="totals-row discount" id="discount-row" style="display:none">
+      <span>Discount</span>
+      <strong id="discount" style="color:#2E7D32">–₹0</strong>
+    </div>
+    <div class="totals-row" id="loyalty-row" style="display:none">
+      <span>🎁 Loyalty Points</span>
+      <strong id="loyalty" style="color:#7B4F2E">–₹0</strong>
+    </div>
+    <div class="totals-divider"></div>
+    <div class="totals-grand">
+      <span>Total Paid</span>
+      <strong id="grand-total">₹0</strong>
+    </div>
+  </div>
+
+  <!-- Special Notes -->
+  <div class="inv-notes" id="notes-section" style="display:none">
+    <p><strong>Special Notes:</strong> <span id="special-notes"></span></p>
+  </div>
+
+  <!-- Barcode Row -->
+  <div class="inv-barcode">
+    <div class="barcode-lines" id="barcode"></div>
+    <span class="barcode-num" id="barcode-num">CC-2025-00147</span>
+    <div class="barcode-lines" id="barcode2"></div>
+  </div>
+
+  <!-- Footer -->
+  <div class="inv-footer">
+    <p class="tagline">"Every bite is crafted with love 🍫"</p>
+    <p>Thank you for choosing NSDI ChocoCravings!</p>
+    <p class="social">@nsdi.chococravings &nbsp;·&nbsp; Salem, Tamil Nadu</p>
+  </div>
+
+</div>
+
+<script>
+// ─── Sample order data (replace with real order object from your app) ───
+const order = {
+  order_number: "CC-2025-00147",
+  created_at: new Date().toISOString(),
+  payment_method: "PhonePe / UPI",
+  payment_status: "paid",        // paid | pending | cod
+  delivery_type: "Home Delivery", // Home Delivery | Pickup
+  customer_name: "Ramya Krishnan",
+  customer_phone: "+91 98765 43210",
+  delivery_address: "12, Saradha Nagar, Salem – 636 016",
+  items: [
+    {
+      name: "Classic Dark Brownie",
+      variant: "Couverture · Walnut Crunch",
+      qty: 2,
+      unit_price: 180,
+    },
+    {
+      name: "Loaded Fudge Box",
+      variant: "Oreo Drizzle · Extra Fudge",
+      qty: 1,
+      unit_price: 349,
+    },
+    {
+      name: "Birthday Cake (1 kg)",
+      variant: "Chocolate Ganache · Sprinkles",
+      qty: 1,
+      unit_price: 899,
+    },
+  ],
+  delivery_charge: 40,
+  discount_amount: 50,
+  promo_code: "CHOCO10",
+  loyalty_points_used: 20,       // monetary value deducted
+  special_notes: "Less sweet please, add extra walnuts 🙏",
+};
+
+// ─── Render ───
+function renderInvoice(o) {
+  window._invoiceRendered = true;  // ← add this line
+  // Meta
+  document.getElementById('inv-number').textContent = '#' + o.order_number;
+  document.getElementById('inv-date').textContent = formatDate(o.created_at);
+  document.getElementById('inv-payment').textContent = o.payment_method;
+  document.getElementById('inv-type').textContent = o.delivery_type;
+  document.getElementById('barcode-num').textContent = o.order_number;
+  document.getElementById('barcode2').innerHTML = generateBarcode(o.order_number + '2');
+
+  // Customer
+  document.getElementById('cust-name').textContent = o.customer_name;
+  const addrLines = o.delivery_type === 'Pickup'
+    ? 'Outlet Pickup'
+    : `${o.delivery_address}<br>📞 ${o.customer_phone}`;
+  document.getElementById('cust-addr').innerHTML = addrLines;
+
+  // Payment badge
+  const badge = document.getElementById('pay-status');
+  if (o.payment_status === 'paid') {
+    badge.className = 'inv-badge badge-paid'; badge.textContent = '✓ Paid';
+  } else if (o.payment_status === 'cod') {
+    badge.className = 'inv-badge badge-cod'; badge.textContent = '💵 COD';
+  } else {
+    badge.className = 'inv-badge badge-pending'; badge.textContent = '⏳ Pending';
+  }
+
+  // Items
+  let subtotal = 0;
+  const container = document.getElementById('items-container');
+  container.innerHTML = o.items.map(item => {
+    const total = item.qty * item.unit_price;
+    subtotal += total;
+    return `
+      <div class="inv-item">
+        <div>
+          <div class="item-name">${item.name}</div>
+          ${item.variant ? `<div class="item-sub">${item.variant}</div>` : ''}
+        </div>
+        <div class="item-qty">${item.qty}</div>
+        <div class="item-price">₹${item.unit_price}</div>
+        <div class="item-total">₹${total}</div>
+      </div>`;
+  }).join('');
+
+  // Totals
+  document.getElementById('subtotal').textContent = '₹' + subtotal;
+
+  const delivery = o.delivery_charge || 0;
+  document.getElementById('delivery').textContent = delivery === 0 ? 'FREE' : '₹' + delivery;
+
+  let grandTotal = subtotal + delivery;
+
+  if (o.discount_amount > 0) {
+    document.getElementById('discount-row').style.display = 'flex';
+    document.getElementById('discount').textContent = `–₹${o.discount_amount}`;
+    if (o.promo_code) {
+      document.querySelector('#discount-row span').textContent = `Discount (${o.promo_code})`;
+    }
+    grandTotal -= o.discount_amount;
+  }
+
+  if (o.loyalty_points_used > 0) {
+    document.getElementById('loyalty-row').style.display = 'flex';
+    document.getElementById('loyalty').textContent = `–₹${o.loyalty_points_used}`;
+    grandTotal -= o.loyalty_points_used;
+  }
+
+  document.getElementById('grand-total').textContent = '₹' + grandTotal;
+
+  // Special notes
+  if (o.special_notes) {
+    document.getElementById('notes-section').style.display = 'block';
+    document.getElementById('special-notes').textContent = o.special_notes;
+  }
+
+  // Barcode visual
+  document.getElementById('barcode').innerHTML = generateBarcode(o.order_number);
+}
+
+function formatDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+    + ' · ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+}
+
+function generateBarcode(seed) {
+  // Pseudo barcode from string hash
+  let hash = 0;
+  for (let c of seed) hash = (hash * 31 + c.charCodeAt(0)) & 0xFFFFFF;
+  let html = '';
+  for (let i = 0; i < 24; i++) {
+    const bit = (hash >> i) & 1;
+    const h = bit ? [20, 24, 28][i % 3] : [12, 16][i % 2];
+    html += `<span style="height:${h}px;"></span>`;
+  }
+  return html;
+}
+
+function savePDF() {
+  // Trigger browser's print to PDF
+  window.print();
+}
+
+// ── Integration helper exposed globally ──
+// Call this from your app: window.printInvoice(orderObj)
+window.printInvoice = function(orderData) {
+  renderInvoice(orderData);
+  setTimeout(() => window.print(), 300);
+};
+
+// Wait for parent to pass real order data via printInvoice()
+// Only render demo if opened directly (no data passed)
+window.printInvoice = function(orderData) {
+  renderInvoice(orderData);
+  setTimeout(() => window.print(), 300);
+};
+
+// Fallback: render demo only if no data received within 1 second
+setTimeout(function() {
+  if (!window._invoiceRendered) renderInvoice(order);
+}, 1000);
+
+</script>
+</body>
+</html>
