@@ -6,7 +6,6 @@
 <title>ChocoCravings Invoice</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <!-- PDF + Supabase -->
-<script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
 <style>
@@ -654,6 +653,310 @@ function renderInvoice(o) {
   }
 }
 
+// ── Brand colors ─────────────────────────────────────────────
+var C = {
+  choco:     [59,  26,  8],    // #3B1A08
+  chocoMid:  [107, 58,  31],   // #6B3A1F
+  gold:      [201, 150, 43],   // #C9962B
+  goldLight: [240, 201, 107],  // #F0C96B
+  purple:    [110, 9,   119],  // #6E0977 — elegant brand purple
+  purpleL:   [180, 77,  199],  // #B44DC7 — light purple accent
+  cream:     [253, 246, 236],  // #FDF6EC
+  cream2:    [255, 249, 242],  // #FFF9F2
+  ink:       [26,  13,  5],    // #1A0D05
+  muted:     [138, 110, 88],   // #8A6E58
+  border:    [232, 213, 187],  // #E8D5BB
+  green:     [46,  125, 50],
+  blue:      [21,  101, 192],
+  orange:    [245, 127, 23],
+};
+
+// ── Brand logo (base64) ───────────────────────────────────────
+var LOGO_B64 = '/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAAwADADASIAAhEBAxEB/8QAGgAAAgMBAQAAAAAAAAAAAAAAAAEEBQYDCP/EACsQAAIBBAIABAUFAQAAAAAAAAECAwAEBRESISIxQVEGExRhcTJCgYKx8P/EABQBAQAAAAAAAAAAAAAAAAAAAAD/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwDxlRRTAJOgCT7CgVFWcODvnxjZJxFFaiSOPm7jZL71pRsnpST1117jby2ByWLy2Txd1EgusbdNa3KK4bUiuUIXX6uwfKgq6KbKysVZSrDogjRFKgKusRKcJNBkJ4LmG7XVxaF4dxyrogeZHRP7hv7a13TKAWAJCgnWz6VoPjm/S/yEEsUGJtovlaWHG25iiTRI8j2zdb5EknY78tBGivcpkmSH614YVk0scZKqheQE6VfIcgp/qvsK5Wl9d4XOCeFo5pLW55gSpzR2Unsg13wcl3Fbn6a2snJblylK8utff0IBpZtriS35T2tlHIX5u8XHkfz3s0HfILYZi2NzYidcikbTXKSc5ZJ23ykcFRpVC+LvXQbZ6G8/Wk+BYLC6uby3yapJAtu0scb3pt1Mo6Q6CNzI5HS6H5A3vOOOLsvsdee6BVPzWXv8xPHNfyiRooliTSBQqgdDr/t7PrUCignNlb9rZLdp9xICqjgvQIIPet+pptmMmwmBu3PztfM6Hi1vX+moFFBOsMpdWck0kYhkaYeMzRLJ/PiFQaKKD//Z';
+
+// ── Native branded PDF builder ────────────────────────────────
+function buildBrandedPDF(o) {
+  var { jsPDF } = window.jspdf;
+  var pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
+  var W = pdf.internal.pageSize.getWidth();  // 148mm
+  var y = 0;
+
+  // ── Helper: hex fill ──────────────────────────────────────
+  function fill(r,g,b)   { pdf.setFillColor(r,g,b); }
+  function stroke(r,g,b) { pdf.setDrawColor(r,g,b); }
+  function textC(r,g,b)  { pdf.setTextColor(r,g,b); }
+  function font(style, size) {
+    pdf.setFont('helvetica', style);
+    pdf.setFontSize(size);
+  }
+
+  // ── HEADER — dark choco background ───────────────────────
+  fill(...C.choco);
+  pdf.rect(0, 0, W, 52, 'F');
+
+  // Purple accent strip on left edge
+  fill(...C.purple);
+  pdf.rect(0, 0, 3, 52, 'F');
+
+  // Gold gradient bar at bottom of header
+  fill(...C.gold);
+  pdf.rect(0, 50, W, 2, 'F');
+
+  // Real brand logo image
+  try {
+    pdf.addImage('data:image/jpeg;base64,' + LOGO_B64, 'JPEG', 7, 8, 18, 18);
+  } catch(e) {
+    // Fallback: draw logo shape
+    fill(...C.gold);
+    pdf.circle(16, 17, 8, 'F');
+    fill(...C.purple);
+    pdf.rect(12, 13, 8, 8, 'F');
+    fill(...C.goldLight);
+    pdf.rect(14, 15, 4, 4, 'F');
+  }
+
+  // Brand name
+  font('bold', 16);
+  textC(...C.cream);
+  pdf.text('NSDI ChocoCravings', 30, 14);
+
+  font('normal', 7);
+  textC(...C.goldLight);
+  pdf.text('HANDCRAFTED PREMIUM BROWNIES & CAKES', 30, 19);
+
+  // Purple + gold divider line
+  fill(...C.purple);
+  pdf.rect(30, 21.5, 20, 0.5, 'F');
+  fill(...C.goldLight);
+  pdf.rect(51, 21.5, 65, 0.5, 'F');
+
+  // Meta grid — 2 cols
+  var metaItems = [
+    ['INVOICE NO.',  '#' + o.order_number],
+    ['DATE & TIME',  formatDatePDF(o.created_at)],
+    ['PAYMENT',      o.payment_method],
+    ['ORDER TYPE',   o.delivery_type],
+  ];
+  metaItems.forEach(function(m, i) {
+    var col = i % 2 === 0 ? 10 : W/2 + 4;
+    var row = 28 + Math.floor(i/2) * 11;
+    font('bold', 6);
+    textC(...C.goldLight);
+    pdf.text(m[0], col, row);
+    font('normal', 8);
+    textC(...C.cream);
+    pdf.text(m[1], col, row + 4.5);
+  });
+
+  y = 54;
+
+  // ── CUSTOMER SECTION ──────────────────────────────────────
+  fill(...C.cream2);
+  pdf.rect(0, y, W, 22, 'F');
+  stroke(...C.border);
+  pdf.setLineWidth(0.3);
+  pdf.line(0, y + 22, W, y + 22);
+
+  font('bold', 10);
+  textC(...C.ink);
+  pdf.text(o.customer_name || 'Walk-in Customer', 10, y + 8);
+
+  font('normal', 7.5);
+  textC(...C.muted);
+  if (o.delivery_type === 'On-Store Purchase') {
+    pdf.text('On-Store Purchase', 10, y + 14);
+    if (o.customer_phone && o.customer_phone !== '-') pdf.text('Ph: ' + o.customer_phone, 10, y + 19);
+  } else {
+    var addr = (o.delivery_address || '').substring(0, 55);
+    pdf.text(addr, 10, y + 14);
+    if (o.customer_phone) pdf.text('Ph: ' + o.customer_phone, 10, y + 19);
+  }
+
+  // Payment badge
+  var badgeLabel = o.payment_status === 'paid' ? 'PAID'
+    : (o.payment_status === 'cod' || o.payment_method === 'Cash') ? 'CASH'
+    : 'PENDING';
+  var badgeColor = badgeLabel === 'PAID'    ? C.green
+    : badgeLabel === 'CASH'    ? C.blue
+    : C.orange;
+  fill(...badgeColor);
+  pdf.roundedRect(W - 34, y + 5, 24, 8, 2, 2, 'F');
+  font('bold', 6.5);
+  textC(255,255,255);
+  pdf.text(badgeLabel, W - 22, y + 10.2, { align: 'center' });
+
+  y += 24;
+
+  // ── ITEMS TABLE ───────────────────────────────────────────
+  // Header row — purple accent
+  fill(...C.purple);
+  pdf.rect(0, y, W, 7, 'F');
+  font('bold', 6.5);
+  textC(240, 201, 107);  // gold text on purple
+  pdf.text('ITEM',  10, y + 4.8);
+  pdf.text('QTY',   W - 72, y + 4.8, { align: 'right' });
+  pdf.text('RATE',  W - 42, y + 4.8, { align: 'right' });
+  pdf.text('TOTAL', W - 10, y + 4.8, { align: 'right' });
+  y += 7;
+
+  // Item rows
+  var subtotal = 0;
+  o.items.forEach(function(item, idx) {
+    var rowH = item.variant ? 14 : 10;
+    // Alternating row bg
+    if (idx % 2 === 0) { fill(253,248,240); pdf.rect(0, y, W, rowH, 'F'); }
+
+    var lineTotal = item.qty * item.unit_price;
+    subtotal += lineTotal;
+
+    font('bold', 8.5);
+    textC(...C.ink);
+    pdf.text(item.name.substring(0, 30), 10, y + 6);
+
+    if (item.variant) {
+      font('normal', 6.5);
+      textC(...C.muted);
+      pdf.text(item.variant.substring(0, 40), 10, y + 11);
+    }
+
+    font('normal', 8.5);
+    textC(...C.ink);
+    pdf.text(String(item.qty),           W - 72, y + 6, { align: 'right' });
+    pdf.text('Rs.' + item.unit_price,    W - 42, y + 6, { align: 'right' });
+
+    font('bold', 8.5);
+    pdf.text('Rs.' + lineTotal,          W - 10, y + 6, { align: 'right' });
+
+    // Dashed divider
+    stroke(...C.border);
+    pdf.setLineWidth(0.2);
+    pdf.setLineDashPattern([1, 1], 0);
+    pdf.line(10, y + rowH, W - 10, y + rowH);
+    pdf.setLineDashPattern([], 0);
+
+    y += rowH;
+  });
+
+  y += 4;
+
+  // ── TOTALS ────────────────────────────────────────────────
+  fill(...C.cream2);
+  pdf.rect(0, y - 2, W, 50, 'F');
+  stroke(...C.border);
+  pdf.setLineWidth(0.3);
+  pdf.line(0, y - 2, W, y - 2);
+
+  function totalRow(label, value, bold, color) {
+    font(bold ? 'bold' : 'normal', 8);
+    textC(...(color || C.muted));
+    pdf.text(label, 10, y + 4);
+    font(bold ? 'bold' : 'normal', 8);
+    textC(...(color || C.ink));
+    pdf.text(value, W - 10, y + 4, { align: 'right' });
+    y += 7;
+  }
+
+  var grand = subtotal;
+  totalRow('Subtotal', 'Rs.' + subtotal, false);
+
+  var delivery = o.delivery_charge || 0;
+  totalRow('Delivery', delivery === 0 ? 'FREE' : 'Rs.' + delivery, false);
+  grand += delivery;
+
+  if (o.discount_amount > 0) {
+    totalRow('Discount' + (o.promo_code ? ' (' + o.promo_code + ')' : ''), '-Rs.' + o.discount_amount, false, C.green);
+    grand -= o.discount_amount;
+  }
+  if (o.loyalty_points_used > 0) {
+    totalRow('Loyalty Points', '-Rs.' + o.loyalty_points_used, false, C.chocoMid);
+    grand -= o.loyalty_points_used;
+  }
+
+  // Divider
+  stroke(...C.border);
+  pdf.setLineWidth(0.4);
+  pdf.line(10, y, W - 10, y);
+  y += 4;
+
+  // Grand total bar
+  fill(...C.choco);
+  pdf.roundedRect(8, y, W - 16, 13, 2, 2, 'F');
+  font('bold', 8);
+  textC(...C.goldLight);
+  pdf.text('TOTAL PAID', 16, y + 8.5);
+  font('bold', 13);
+  textC(255, 255, 255);
+  pdf.text('Rs.' + grand, W - 16, y + 8.5, { align: 'right' });
+  y += 18;
+
+  // ── SPECIAL NOTES ─────────────────────────────────────────
+  if (o.special_notes) {
+    font('bold', 7);
+    textC(...C.chocoMid);
+    pdf.text('Special Notes:', 10, y + 4);
+    font('normal', 7);
+    textC(...C.muted);
+    var noteLines = pdf.splitTextToSize(o.special_notes, W - 20);
+    pdf.text(noteLines, 38, y + 4);
+    y += 6 + noteLines.length * 4;
+  }
+
+  y += 3;
+
+  // ── BARCODE VISUAL ────────────────────────────────────────
+  stroke(...C.border);
+  pdf.setLineWidth(0.3);
+  pdf.line(10, y, W - 10, y);
+  y += 4;
+
+  // Draw pseudo barcode
+  var hash = 0;
+  var bseed = o.order_number + '';
+  for (var bi = 0; bi < bseed.length; bi++) hash = (hash * 31 + bseed.charCodeAt(bi)) & 0xFFFFFF;
+  var bx = 20;
+  for (var bj = 0; bj < 32; bj++) {
+    var bit = (hash >> (bj % 24)) & 1;
+    var bh = bit ? 8 : 5;
+    fill(...C.chocoMid);
+    pdf.rect(bx, y + (8 - bh), 1.2, bh, 'F');
+    bx += 2;
+  }
+  font('bold', 6);
+  textC(...C.muted);
+  pdf.text(o.order_number, W / 2, y + 12, { align: 'center' });
+  y += 16;
+
+  // ── FOOTER ────────────────────────────────────────────────
+  fill(...C.choco);
+  pdf.rect(0, y, W, 30, 'F');
+
+  // Purple accent top strip in footer
+  fill(...C.purple);
+  pdf.rect(0, y, W, 2, 'F');
+
+  font('italic', 9);
+  textC(...C.goldLight);
+  pdf.text('"Every bite is crafted with love"', W / 2, y + 10, { align: 'center' });
+
+  font('normal', 7.5);
+  textC(240, 201, 107);
+  pdf.text('Thank you for choosing NSDI ChocoCravings!', W / 2, y + 16, { align: 'center' });
+
+  font('bold', 6.5);
+  textC(253, 246, 236);
+  pdf.setGState(new pdf.GState({ opacity: 0.5 }));
+  pdf.text('@nsdi.chococravings  ·  Salem, Tamil Nadu', W / 2, y + 22, { align: 'center' });
+  pdf.setGState(new pdf.GState({ opacity: 1 }));
+
+  return pdf;
+}
+
+function formatDatePDF(iso) {
+  var d = new Date(iso);
+  return d.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })
+    + '  ' + d.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
+}
+
 // ── Generate PDF → Upload → Show share card ──────────────────
 async function generateAndShare() {
   if (!currentOrder) { alert('No order loaded.'); return; }
@@ -662,36 +965,23 @@ async function generateAndShare() {
   showToast('⏳ Generating PDF…');
 
   try {
-    // 1. Render invoice to canvas
-    var element = document.getElementById('invoice');
-    var canvas  = await html2canvas(element, {
-      scale: 2, useCORS: true, backgroundColor: '#FDF6EC', logging: false,
-    });
-
-    // 2. Canvas → PDF (A5)
-    var { jsPDF } = window.jspdf;
-    var pdf  = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
-    var imgData = canvas.toDataURL('image/jpeg', 0.92);
-    var pdfW = pdf.internal.pageSize.getWidth();
-    var pdfH = (canvas.height * pdfW) / canvas.width;
-    pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
-
-    // 3. PDF blob
-    var pdfBlob = pdf.output('blob');
+    // 1. Build branded PDF natively
+    var pdf      = buildBrandedPDF(currentOrder);
+    var pdfBlob  = pdf.output('blob');
     var fileName = 'invoices/' + currentOrder.order_number + '.pdf';
     showToast('☁️ Uploading to cloud…');
 
-    // 4. Upload to Supabase Storage bucket: invoices (set to public)
+    // 2. Upload to Supabase Storage
     var { error: uploadErr } = await db.storage
       .from('invoices')
       .upload(fileName, pdfBlob, { contentType: 'application/pdf', upsert: true });
     if (uploadErr) throw uploadErr;
 
-    // 5. Get public URL
+    // 3. Get public URL
     var { data: urlData } = db.storage.from('invoices').getPublicUrl(fileName);
     pdfPublicUrl = urlData.publicUrl;
 
-    // 6. Show share card
+    // 4. Show share card
     document.getElementById('sc-link-text').textContent = pdfPublicUrl;
     document.getElementById('share-card').style.display = 'block';
     document.getElementById('share-card').scrollIntoView({ behavior: 'smooth' });
