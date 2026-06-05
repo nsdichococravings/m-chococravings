@@ -843,6 +843,8 @@ async function insertStoreOrder(token, paymentId, pmMethod, pmStatus) {
   return res.data;
 }
 
+
+
 // ── CASH: place directly ───────────────────────────────────────
 async function placeOrder(){
   var btn = document.getElementById('place-btn');
@@ -855,8 +857,12 @@ async function placeOrder(){
     var token = await getToken();
     var data  = await insertStoreOrder(token, null, 'cash', 'pending');
     orderId = data.id; orderToken = token;
+    var invoiceData = buildInvoiceData(data);
     closeSheet();
     showConfirm(token, cartEntries(), cartTotal());
+    if (invoiceData.customer_phone && invoiceData.customer_phone !== '—') {
+      sendInvoiceAuto(invoiceData);
+    }
   } catch(err) {
     console.error(err);
     btn.textContent = 'Error — Try again'; btn.style.opacity = '1'; btn.disabled = false;
@@ -933,11 +939,15 @@ async function openRazorpay() {
         document.body.appendChild(overlay);
 
         try {
-          var data = await insertStoreOrder(token, paymentId, 'upi', 'paid');
-          orderId = data.id; orderToken = token;
-        } catch(e) {
-          console.error('insertStoreOrder failed', e);
-        }
+            var data = await insertStoreOrder(token, paymentId, 'upi', 'paid');
+            orderId = data.id; orderToken = token;
+            var invoiceData = buildInvoiceData(data);
+            if (invoiceData.customer_phone && invoiceData.customer_phone !== '—') {
+              sendInvoiceAuto(invoiceData);
+            }
+          } catch(e) {
+            console.error('insertStoreOrder failed', e);
+          }
 
         setTimeout(function() {
           overlay.style.transition = 'opacity .6s ease';
@@ -1503,6 +1513,55 @@ async function checkAdminBadge(){
       if(pb) pb.style.display = 'block';
     }
   } catch(e){}
+}
+function buildInvoiceData(o) {
+  var rawItems = o.items;
+  var items = Array.isArray(rawItems)
+    ? rawItems
+    : typeof rawItems === 'string'
+    ? JSON.parse(rawItems)
+    : [];
+  var pmMap = { upi:'UPI', upi_qr:'UPI (QR)', cash:'Cash', razorpay:'Razorpay', gpay:'Google Pay', phonepe:'PhonePe' };
+  var pm = pmMap[(o.payment_method||'').toLowerCase()] || o.payment_method || 'UPI';
+  return {
+    order_number:        o.token || o.id,
+    created_at:          o.created_at,
+    payment_method:      pm,
+    payment_status:      o.payment_status === 'paid' ? 'paid'
+                       : o.payment_method === 'cash' ? 'cod' : 'pending',
+    delivery_type:       'On-Store Purchase',
+    customer_name:       o.customer_name  || 'Walk-in Customer',
+    customer_phone:      o.customer_phone || '—',
+    delivery_address:    '',
+    items:               items.map(function(i) {
+                           return { name: i.name || 'Item', variant: '', qty: i.qty || 1, unit_price: Number(i.price || 0) };
+                         }),
+    delivery_charge:     0,
+    discount_amount:     0,
+    promo_code:          '',
+    loyalty_points_used: 0,
+    special_notes:       '',
+  };
+}
+async function sendInvoiceAuto(orderData) {
+  try {
+    // 1. Build & upload PDF
+    var { jsPDF } = window.jspdf;  // jsPDF must be loaded in store.html too
+    // OR open invoice page and trigger via sendInvoice()
+    var win = window.open('invoice-print.html', '_blank');
+    if (!win) return;
+    var attempts = 0;
+    var poll = setInterval(function() {
+      attempts++;
+      if (typeof win.sendInvoice === 'function') {
+        clearInterval(poll);
+        win.sendInvoice(orderData);  // generates PDF, uploads, opens WhatsApp
+      }
+      if (attempts > 40) clearInterval(poll);
+    }, 100);
+  } catch(e) {
+    console.error('sendInvoiceAuto:', e);
+  }
 }
 </script>
 </body>
