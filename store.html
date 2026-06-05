@@ -331,6 +331,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     </div>
   </div>
   <div class="track-btn" onclick="goTo('pg-status')">Track Order Status →</div>
+  <div onclick="printStoreInvoice(orderId)" style="display:block;margin:10px 16px 0;padding:14px;text-align:center;border-radius:14px;font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:900;color:#6e0977;background:transparent;border:2px solid #6e0977;cursor:pointer">
+    🖨️ Print Invoice
+  </div>
   <div onclick="goTo('pg-menu')" style="display:block;margin:10px 16px 24px;padding:14px;text-align:center;border-radius:14px;font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:900;color:#fff;background:#c2607a;cursor:pointer;box-shadow:0 4px 20px rgba(194,96,122,0.35)">
     + New Order
   </div>
@@ -1115,8 +1118,75 @@ function renderKitchen(orders){
       +'<button class="k-btn k-start" onclick="kBump(\''+o.id+'\',\'preparing\')">'+startTxt+'</button>'
       +'<button class="k-btn k-ready" onclick="kBump(\''+o.id+'\',\'ready\')">'+readyTxt+'</button>'
       +'<button class="k-btn k-done"  onclick="kBump(\''+o.id+'\',\'collected\')">Collected ✓</button>'
+      +'<button class="k-btn" onclick="printStoreInvoice(\''+o.id+'\')" style="background:rgba(240,201,107,0.1);border:1px solid rgba(240,201,107,0.3);color:#b87410">🖨️ Print</button>'
       +'</div></div>';
   }).join('');
+}
+
+async function printStoreInvoice(id) {
+  if (!id) { alert('No order to print.'); return; }
+
+  try {
+    // Fetch fresh order data from Supabase
+    var res = await db.from('store_orders').select('*').eq('id', id).single();
+    if (res.error) throw res.error;
+    var o = res.data;
+
+    // Parse items — may be double-encoded string
+    var rawItems = o.items;
+    var items = Array.isArray(rawItems)
+      ? rawItems
+      : typeof rawItems === 'string'
+      ? JSON.parse(rawItems)
+      : [];
+
+    // Map payment method to display label
+    var pmMap = { upi:'UPI', upi_qr:'UPI (QR)', cash:'Cash', razorpay:'Razorpay', gpay:'Google Pay', phonepe:'PhonePe' };
+    var pm    = pmMap[(o.payment_method||'').toLowerCase()] || o.payment_method || 'UPI';
+
+    // Build invoice data object
+    var invoiceData = {
+      order_number:        o.token || o.id,
+      created_at:          o.created_at,
+      payment_method:      pm,
+      payment_status:      o.payment_status === 'paid' ? 'paid'
+                         : o.payment_method === 'cash' ? 'cod'
+                         : 'pending',
+      delivery_type:       'On-Store Purchase',
+      customer_name:       o.customer_name  || 'Walk-in Customer',
+      customer_phone:      o.customer_phone || '—',
+      delivery_address:    '',
+      items:               items.map(function(i) {
+                             return { name: i.name || 'Item', variant: '', qty: i.qty || 1, unit_price: Number(i.price || 0) };
+                           }),
+      delivery_charge:     0,
+      discount_amount:     0,
+      promo_code:          '',
+      loyalty_points_used: 0,
+      special_notes:       '',
+    };
+
+    // Open invoice.html in new tab and trigger print
+    var win = window.open('invoice-print.html', '_blank');
+    if (!win) {
+      alert('Pop-up blocked! Allow pop-ups for this site and try again.');
+      return;
+    }
+    // Poll until printInvoice is ready on the new window
+    var attempts = 0;
+    var poll = setInterval(function() {
+      attempts++;
+      if (typeof win.printInvoice === 'function') {
+        clearInterval(poll);
+        win.printInvoice(invoiceData);
+      }
+      if (attempts > 40) clearInterval(poll); // give up after 4 seconds
+    }, 100);
+
+  } catch(e) {
+    console.error('printStoreInvoice error:', e);
+    alert('Could not load order for printing: ' + e.message);
+  }
 }
 
 async function kBump(id,status){
