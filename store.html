@@ -331,7 +331,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     </div>
   </div>
   <div class="track-btn" onclick="goTo('pg-status')">Track Order Status →</div>
-  <div onclick="printStoreInvoice(orderId)" style="display:block;margin:10px 16px 0;padding:14px;text-align:center;border-radius:14px;font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:900;color:#6e0977;background:transparent;border:2px solid #6e0977;cursor:pointer">
+  <div id="print-invoice-btn" onclick="printStoreInvoice(orderId)" style="display:none;margin:10px 16px 0;padding:14px;text-align:center;border-radius:14px;font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:900;color:#6e0977;background:transparent;border:2px solid #6e0977;cursor:pointer">
     🖨️ Print Invoice
   </div>
   <div onclick="goTo('pg-menu')" style="display:block;margin:10px 16px 24px;padding:14px;text-align:center;border-radius:14px;font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:900;color:#fff;background:#c2607a;cursor:pointer;box-shadow:0 4px 20px rgba(194,96,122,0.35)">
@@ -1498,6 +1498,9 @@ async function checkAdminBadge(){
     var chk = await db.from('customers').select('is_admin').eq('email', user.email).single();
     if(chk.data && chk.data.is_admin){
       document.getElementById('kitchen-fab').style.display = 'flex';
+      // ── ADD THIS LINE ──
+      var pb = document.getElementById('print-invoice-btn');
+      if(pb) pb.style.display = 'block';
     }
   } catch(e){}
 }

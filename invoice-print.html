@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ChocoCravings Invoice</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<!-- PDF + Supabase -->
+<script src="https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
 <style>
   /* ── Screen styles ── */
   :root {
@@ -59,12 +63,28 @@
   }
   .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(201,150,43,0.5); }
 
-  .btn-secondary {
-    background: transparent;
-    color: #F0C96B;
-    border: 1px solid rgba(240,201,107,0.4);
+  /* ── Status toast ── */
+  #status-toast {
+    position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+    background: #1a0d05; border: 1px solid rgba(240,201,107,0.3);
+    color: #F0C96B; padding: 10px 20px; border-radius: 50px;
+    font-size: 13px; font-weight: 600; z-index: 999;
+    display: none; white-space: nowrap;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
   }
-  .btn-secondary:hover { background: rgba(240,201,107,0.08); }
+
+  .btn-wa { background: #25D366; color: #fff; box-shadow: 0 4px 20px rgba(37,211,102,0.4); }
+  .btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none !important; }
+
+  /* ── Share card ── */
+  #share-card {
+    display: none; width: 100%; max-width: 520px; margin-top: 16px;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(240,201,107,0.2);
+    border-radius: 16px; padding: 18px 20px;
+  }
+  #share-card .sc-label { font-size: 9px; font-weight: 700; letter-spacing: 2px; color: #F0C96B; text-transform: uppercase; margin-bottom: 8px; }
+  #share-card .sc-link  { font-size: 11px; color: #F0C96B; word-break: break-all; margin-bottom: 12px; opacity: 0.8; }
+  #share-card .sc-btns  { display: flex; gap: 8px; flex-wrap: wrap; }
 
   /* ── Invoice Card (screen preview) ── */
   .invoice-wrapper {
@@ -427,10 +447,22 @@
 </head>
 <body>
 
+<div id="status-toast">⏳ Generating PDF…</div>
+
 <!-- Toolbar (screen only) -->
 <div class="toolbar">
   <button class="btn btn-primary" onclick="window.print()">🖨️ Print Invoice</button>
-  <button class="btn btn-secondary" onclick="savePDF()">⬇️ Save as PDF</button>
+  <button class="btn btn-secondary" id="btn-send" onclick="generateAndShare()">📤 Send Invoice</button>
+</div>
+
+<!-- Share card — shown after PDF upload -->
+<div id="share-card">
+  <div class="sc-label">📎 Invoice Ready to Share</div>
+  <div class="sc-link" id="sc-link-text"></div>
+  <div class="sc-btns">
+    <button class="btn btn-wa"        onclick="openWhatsApp()">💬 Send on WhatsApp</button>
+    <button class="btn btn-secondary" onclick="copyLink()">📋 Copy Link</button>
+  </div>
 </div>
 
 <!-- Invoice -->
@@ -535,167 +567,222 @@
 </div>
 
 <script>
-// ─── Sample order data (replace with real order object from your app) ───
-const order = {
-  order_number: "CC-2025-00147",
-  created_at: new Date().toISOString(),
-  payment_method: "PhonePe / UPI",
-  payment_status: "paid",        // paid | pending | cod
-  delivery_type: "Home Delivery", // Home Delivery | Pickup
-  customer_name: "Ramya Krishnan",
-  customer_phone: "+91 98765 43210",
-  delivery_address: "12, Saradha Nagar, Salem – 636 016",
+// ── Supabase ─────────────────────────────────────────────────
+var SUPABASE_URL = 'https://yjbfditboewwpgyqzryd.supabase.co';
+var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqYmZkaXRib2V3d3BneXF6cnlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNTgwNjcsImV4cCI6MjA4ODczNDA2N30.08Tvq71w2DBeWZrZb-IaiKfoI-2P_1MPJygzSPiRq24';
+var db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── State ────────────────────────────────────────────────────
+var currentOrder = null;
+var pdfPublicUrl = null;
+
+// ── Demo order (fallback only) ───────────────────────────────
+const demoOrder = {
+  order_number: "CC-2025-00147", created_at: new Date().toISOString(),
+  payment_method: "PhonePe / UPI", payment_status: "paid",
+  delivery_type: "Home Delivery", customer_name: "Ramya Krishnan",
+  customer_phone: "+91 98765 43210", delivery_address: "12, Saradha Nagar, Salem – 636 016",
   items: [
-    {
-      name: "Classic Dark Brownie",
-      variant: "Couverture · Walnut Crunch",
-      qty: 2,
-      unit_price: 180,
-    },
-    {
-      name: "Loaded Fudge Box",
-      variant: "Oreo Drizzle · Extra Fudge",
-      qty: 1,
-      unit_price: 349,
-    },
-    {
-      name: "Birthday Cake (1 kg)",
-      variant: "Chocolate Ganache · Sprinkles",
-      qty: 1,
-      unit_price: 899,
-    },
+    { name: "Classic Dark Brownie", variant: "Couverture · Walnut Crunch", qty: 2, unit_price: 180 },
+    { name: "Loaded Fudge Box",     variant: "Oreo Drizzle · Extra Fudge",  qty: 1, unit_price: 349 },
+    { name: "Birthday Cake (1 kg)", variant: "Chocolate Ganache · Sprinkles", qty: 1, unit_price: 899 },
   ],
-  delivery_charge: 40,
-  discount_amount: 50,
-  promo_code: "CHOCO10",
-  loyalty_points_used: 20,       // monetary value deducted
-  special_notes: "Less sweet please, add extra walnuts 🙏",
+  delivery_charge: 40, discount_amount: 50, promo_code: "CHOCO10",
+  loyalty_points_used: 20, special_notes: "Less sweet please, add extra walnuts 🙏",
 };
 
-// ─── Render ───
+// ── Render ───────────────────────────────────────────────────
 function renderInvoice(o) {
-  window._invoiceRendered = true;  // ← add this line
-  // Meta
-  document.getElementById('inv-number').textContent = '#' + o.order_number;
-  document.getElementById('inv-date').textContent = formatDate(o.created_at);
+  window._invoiceRendered = true;
+  currentOrder = o;
+  pdfPublicUrl = null;
+  document.getElementById('share-card').style.display = 'none';
+  var btn = document.getElementById('btn-send');
+  btn.textContent = '📤 Send Invoice'; btn.disabled = false;
+
+  document.getElementById('inv-number').textContent  = '#' + o.order_number;
+  document.getElementById('inv-date').textContent    = formatDate(o.created_at);
   document.getElementById('inv-payment').textContent = o.payment_method;
-  document.getElementById('inv-type').textContent = o.delivery_type;
+  document.getElementById('inv-type').textContent    = o.delivery_type;
   document.getElementById('barcode-num').textContent = o.order_number;
-  document.getElementById('barcode2').innerHTML = generateBarcode(o.order_number + '2');
+  document.getElementById('barcode').innerHTML       = generateBarcode(o.order_number);
+  document.getElementById('barcode2').innerHTML      = generateBarcode(o.order_number + '2');
 
-  // Customer
   document.getElementById('cust-name').textContent = o.customer_name;
-  const addrLines = o.delivery_type === 'Pickup'
-    ? 'Outlet Pickup'
-    : `${o.delivery_address}<br>📞 ${o.customer_phone}`;
-  document.getElementById('cust-addr').innerHTML = addrLines;
+  var addrLine = o.delivery_type === 'On-Store Purchase'
+    ? 'On-Store Purchase' + (o.customer_phone && o.customer_phone !== '—' ? '<br>📞 ' + o.customer_phone : '')
+    : (o.delivery_address || '') + (o.customer_phone ? '<br>📞 ' + o.customer_phone : '');
+  document.getElementById('cust-addr').innerHTML = addrLine;
 
-  // Payment badge
   const badge = document.getElementById('pay-status');
-  if (o.payment_status === 'paid') {
-    badge.className = 'inv-badge badge-paid'; badge.textContent = '✓ Paid';
-  } else if (o.payment_status === 'cod') {
-    badge.className = 'inv-badge badge-cod'; badge.textContent = '💵 COD';
-  } else {
-    badge.className = 'inv-badge badge-pending'; badge.textContent = '⏳ Pending';
-  }
+  if      (o.payment_status === 'paid')    { badge.className = 'inv-badge badge-paid';    badge.textContent = '✓ Paid'; }
+  else if (o.payment_status === 'cod')     { badge.className = 'inv-badge badge-cod';     badge.textContent = '💵 COD'; }
+  else                                      { badge.className = 'inv-badge badge-pending'; badge.textContent = '⏳ Pending'; }
 
-  // Items
   let subtotal = 0;
-  const container = document.getElementById('items-container');
-  container.innerHTML = o.items.map(item => {
-    const total = item.qty * item.unit_price;
-    subtotal += total;
-    return `
-      <div class="inv-item">
-        <div>
-          <div class="item-name">${item.name}</div>
-          ${item.variant ? `<div class="item-sub">${item.variant}</div>` : ''}
-        </div>
-        <div class="item-qty">${item.qty}</div>
-        <div class="item-price">₹${item.unit_price}</div>
-        <div class="item-total">₹${total}</div>
-      </div>`;
+  document.getElementById('items-container').innerHTML = o.items.map(item => {
+    const total = item.qty * item.unit_price; subtotal += total;
+    return `<div class="inv-item">
+      <div><div class="item-name">${item.name}</div>${item.variant ? `<div class="item-sub">${item.variant}</div>` : ''}</div>
+      <div class="item-qty">${item.qty}</div>
+      <div class="item-price">₹${item.unit_price}</div>
+      <div class="item-total">₹${total}</div>
+    </div>`;
   }).join('');
 
-  // Totals
   document.getElementById('subtotal').textContent = '₹' + subtotal;
-
   const delivery = o.delivery_charge || 0;
   document.getElementById('delivery').textContent = delivery === 0 ? 'FREE' : '₹' + delivery;
-
-  let grandTotal = subtotal + delivery;
+  let grand = subtotal + delivery;
 
   if (o.discount_amount > 0) {
     document.getElementById('discount-row').style.display = 'flex';
     document.getElementById('discount').textContent = `–₹${o.discount_amount}`;
-    if (o.promo_code) {
-      document.querySelector('#discount-row span').textContent = `Discount (${o.promo_code})`;
-    }
-    grandTotal -= o.discount_amount;
+    document.querySelector('#discount-row span').textContent = `Discount${o.promo_code ? ' (' + o.promo_code + ')' : ''}`;
+    grand -= o.discount_amount;
   }
-
   if (o.loyalty_points_used > 0) {
     document.getElementById('loyalty-row').style.display = 'flex';
     document.getElementById('loyalty').textContent = `–₹${o.loyalty_points_used}`;
-    grandTotal -= o.loyalty_points_used;
+    grand -= o.loyalty_points_used;
   }
+  document.getElementById('grand-total').textContent = '₹' + grand;
 
-  document.getElementById('grand-total').textContent = '₹' + grandTotal;
-
-  // Special notes
   if (o.special_notes) {
     document.getElementById('notes-section').style.display = 'block';
     document.getElementById('special-notes').textContent = o.special_notes;
   }
-
-  // Barcode visual
-  document.getElementById('barcode').innerHTML = generateBarcode(o.order_number);
 }
 
+// ── Generate PDF → Upload → Show share card ──────────────────
+async function generateAndShare() {
+  if (!currentOrder) { alert('No order loaded.'); return; }
+  var btn = document.getElementById('btn-send');
+  btn.disabled = true; btn.textContent = '⏳ Generating…';
+  showToast('⏳ Generating PDF…');
+
+  try {
+    // 1. Render invoice to canvas
+    var element = document.getElementById('invoice');
+    var canvas  = await html2canvas(element, {
+      scale: 2, useCORS: true, backgroundColor: '#FDF6EC', logging: false,
+    });
+
+    // 2. Canvas → PDF (A5)
+    var { jsPDF } = window.jspdf;
+    var pdf  = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
+    var imgData = canvas.toDataURL('image/jpeg', 0.92);
+    var pdfW = pdf.internal.pageSize.getWidth();
+    var pdfH = (canvas.height * pdfW) / canvas.width;
+    pdf.addImage(imgData, 'JPEG', 0, 0, pdfW, pdfH);
+
+    // 3. PDF blob
+    var pdfBlob = pdf.output('blob');
+    var fileName = 'invoices/' + currentOrder.order_number + '.pdf';
+    showToast('☁️ Uploading to cloud…');
+
+    // 4. Upload to Supabase Storage bucket: invoices (set to public)
+    var { error: uploadErr } = await db.storage
+      .from('invoices')
+      .upload(fileName, pdfBlob, { contentType: 'application/pdf', upsert: true });
+    if (uploadErr) throw uploadErr;
+
+    // 5. Get public URL
+    var { data: urlData } = db.storage.from('invoices').getPublicUrl(fileName);
+    pdfPublicUrl = urlData.publicUrl;
+
+    // 6. Show share card
+    document.getElementById('sc-link-text').textContent = pdfPublicUrl;
+    document.getElementById('share-card').style.display = 'block';
+    document.getElementById('share-card').scrollIntoView({ behavior: 'smooth' });
+    showToast('✅ Ready to share!');
+    btn.textContent = '✅ PDF Ready';
+
+  } catch (err) {
+    console.error('generateAndShare:', err);
+    showToast('❌ ' + err.message);
+    btn.disabled = false; btn.textContent = '📤 Send Invoice';
+  }
+}
+
+// ── WhatsApp deep link ────────────────────────────────────────
+function openWhatsApp() {
+  if (!pdfPublicUrl || !currentOrder) return;
+  var o = currentOrder;
+  var grand = o.items.reduce((s,i) => s + i.qty * i.unit_price, 0)
+    + (o.delivery_charge || 0) - (o.discount_amount || 0) - (o.loyalty_points_used || 0);
+  var itemLines = o.items.map(i => '  • ' + i.name + (i.qty > 1 ? ' ×' + i.qty : '') + ' — ₹' + (i.qty * i.unit_price)).join('\n');
+
+  var msg = '🍫 *NSDI ChocoCravings*\nSalem, Tamil Nadu\n\n'
+    + '━━━━━━━━━━━━━━━━\n*Your Invoice is Ready!*\n━━━━━━━━━━━━━━━━\n\n'
+    + '🧾 *Order:* #' + o.order_number + '\n'
+    + '📅 *Date:* ' + formatDate(o.created_at) + '\n'
+    + '💳 *Payment:* ' + o.payment_method + '\n\n'
+    + '*Items:*\n' + itemLines + '\n\n'
+    + (o.delivery_charge > 0 ? '🚚 Delivery: ₹' + o.delivery_charge + '\n' : '')
+    + (o.discount_amount  > 0 ? '🏷 Discount: –₹' + o.discount_amount  + '\n' : '')
+    + (o.loyalty_points_used > 0 ? '🎁 Loyalty: –₹' + o.loyalty_points_used + '\n' : '')
+    + '\n💰 *Total Paid: ₹' + grand + '*\n\n'
+    + '📄 *Invoice PDF:*\n' + pdfPublicUrl + '\n\n'
+    + '_Thank you for choosing ChocoCravings! 💛_\n_@nsdi.chococravings_';
+
+  var phone = (o.customer_phone || '').replace(/\D/g, '');
+  if (phone.length === 10) phone = '91' + phone;
+  var waUrl = phone
+    ? 'https://wa.me/' + phone + '?text=' + encodeURIComponent(msg)
+    : 'https://wa.me/?text=' + encodeURIComponent(msg);
+  window.open(waUrl, '_blank');
+}
+
+// ── Copy link ─────────────────────────────────────────────────
+function copyLink() {
+  if (!pdfPublicUrl) return;
+  navigator.clipboard.writeText(pdfPublicUrl).then(() => {
+    var btn = document.querySelector('#share-card .sc-btns button:last-child');
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => { btn.textContent = '📋 Copy Link'; }, 2000);
+  });
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+function showToast(msg) {
+  var t = document.getElementById('status-toast');
+  t.textContent = msg; t.style.display = 'block';
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => { t.style.display = 'none'; }, 3500);
+}
+
+// ── Helpers ───────────────────────────────────────────────────
 function formatDate(iso) {
   const d = new Date(iso);
-  return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-    + ' · ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })
+    + ' · ' + d.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
 }
-
 function generateBarcode(seed) {
-  // Pseudo barcode from string hash
   let hash = 0;
   for (let c of seed) hash = (hash * 31 + c.charCodeAt(0)) & 0xFFFFFF;
   let html = '';
   for (let i = 0; i < 24; i++) {
-    const bit = (hash >> i) & 1;
-    const h = bit ? [20, 24, 28][i % 3] : [12, 16][i % 2];
+    const bit = (hash >> i) & 1, h = bit ? [20,24,28][i%3] : [12,16][i%2];
     html += `<span style="height:${h}px;"></span>`;
   }
   return html;
 }
 
-function savePDF() {
-  // Trigger browser's print to PDF
-  window.print();
-}
-
-// ── Integration helper exposed globally ──
-// Call this from your app: window.printInvoice(orderObj)
+// ── Called from store.html (print) ───────────────────────────
 window.printInvoice = function(orderData) {
   renderInvoice(orderData);
   setTimeout(() => window.print(), 300);
 };
 
-// Wait for parent to pass real order data via printInvoice()
-// Only render demo if opened directly (no data passed)
-window.printInvoice = function(orderData) {
+// ── Called from store.html (send only, no print) ─────────────
+window.sendInvoice = function(orderData) {
   renderInvoice(orderData);
-  setTimeout(() => window.print(), 300);
+  setTimeout(() => generateAndShare(), 400);
 };
 
-// Fallback: render demo only if no data received within 1 second
-setTimeout(function() {
-  if (!window._invoiceRendered) renderInvoice(order);
-}, 1000);
-
+// ── Fallback demo ─────────────────────────────────────────────
+setTimeout(() => { if (!window._invoiceRendered) renderInvoice(demoOrder); }, 800);
 </script>
 </body>
 </html>
