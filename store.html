@@ -335,8 +335,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   <div id="print-invoice-btn" onclick="printStoreInvoice(orderId)" style="display:none;margin:10px 16px 0;padding:14px;text-align:center;border-radius:14px;font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:900;color:#6e0977;background:transparent;border:2px solid #6e0977;cursor:pointer">
     🖨️ Print Invoice
   </div>
-  <div onclick="goTo('pg-menu')" style="display:block;margin:10px 16px 24px;padding:14px;text-align:center;border-radius:14px;font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:900;color:#fff;background:#c2607a;cursor:pointer;box-shadow:0 4px 20px rgba(194,96,122,0.35)">
-    + New Order
+  <div onclick="newOrder()" style="display:block;margin:10px 16px 24px;padding:14px;text-align:center;border-radius:14px;font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:900;color:#fff;background:#c2607a;cursor:pointer;box-shadow:0 4px 20px rgba(194,96,122,0.35)">
+  + New Order
   </div>
 </div>
 
@@ -1554,7 +1554,47 @@ function viewOrder(id, token, status){
     if(r.data) updateStatusUI(r.data.status);
   });
 }
+function newOrder() {
+  // Reset order state
+  orderId     = null;
+  orderToken  = null;
+  cart        = {};
 
+  // Reset place button
+  var btn = document.getElementById('place-btn');
+  if (btn) {
+    btn.disabled    = false;
+    btn.style.opacity = '1';
+    btn.textContent = 'Pay via UPI';
+    btn.className   = 'place-btn place-upi';
+  }
+
+  // Reset payment method
+  payMethod = 'upi';
+
+  // Reset phone input
+  var inp = document.getElementById('customer-phone-input');
+  if (inp) inp.value = '';
+
+  // Reset QR state
+  stopScanner();
+  document.getElementById('qr-panel').style.display        = 'none';
+  document.getElementById('qr-scan-state').style.display   = 'block';
+  document.getElementById('qr-scanned-state').style.display = 'none';
+  document.getElementById('qr-paid-btn').style.display      = 'none';
+
+  // Close invoice sheet if open
+  closeInvSheet();
+
+  // Close checkout sheet
+  closeSheet();
+
+  // Reset cart UI
+  updateBar();
+
+  // Go to menu
+  goTo('pg-menu');
+}
 // ── INIT ──────────────────────────────────────────────────────
 window.addEventListener('load', function(){
   try{ if(typeof supabase !== 'undefined') db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY); }
@@ -1779,7 +1819,13 @@ async function sendInvoiceAuto(invoiceData) {
 
     invSheetData = { phone: phone, url: pdfUrl, msg: msg, token: invoiceData.order_number, amt: grand };
 
-    // 5. Show sheet
+    // 5. Show sheet — admin only
+    try {
+      var { data: { user } } = await db.auth.getUser();
+      var chk = await db.from('customers').select('is_admin').eq('email', user.email).single();
+      if (!chk.data || !chk.data.is_admin) return; // not admin — skip sheet silently
+    } catch(e) { return; }
+
     document.getElementById('inv-sheet-token').textContent = invoiceData.order_number;
     document.getElementById('inv-sheet-amt').textContent   = 'Rs.'+grand+' · '+invoiceData.payment_method;
     document.getElementById('inv-sheet-phone').textContent = phone || 'No phone saved';
