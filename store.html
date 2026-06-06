@@ -1616,34 +1616,35 @@ function newOrder() {
 }
 async function autoFillPhone() {
   var inp = document.getElementById('customer-phone-input');
-  if (!inp || inp.value.trim()) return; // already filled — don't overwrite
+  if (!inp || inp.value.trim()) return;
 
   try {
-    var { data: { user } } = await db.auth.getUser();
+    var session = await db.auth.getSession();
+    var user = session.data && session.data.session ? session.data.session.user : null;
     if (!user) return;
 
-    // Check phone from auth first
+    // Check auth phone first
     if (user.phone) {
-      var phone = user.phone.replace(/\D/g, '');
-      if (phone.startsWith('91') && phone.length === 12) phone = phone.substring(2);
-      inp.value = phone;
+      var p = user.phone.replace(/\D/g, '');
+      if (p.startsWith('91') && p.length === 12) p = p.substring(2);
+      inp.value = p;
       return;
     }
 
-    // Fallback — check customers table
+    // Fallback — customers table
     var res = await db.from('customers')
       .select('phone')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();   // won't throw 406 if no row found
 
     if (res.data && res.data.phone) {
-      var phone = res.data.phone.replace(/\D/g, '');
-      if (phone.startsWith('91') && phone.length === 12) phone = phone.substring(2);
-      inp.value = phone;
+      var p = res.data.phone.replace(/\D/g, '');
+      if (p.startsWith('91') && p.length === 12) p = p.substring(2);
+      inp.value = p;
     }
 
   } catch(e) {
-    console.log('autoFillPhone:', e);
+    console.log('autoFillPhone error:', e.message);
   }
 }
 // ── INIT ──────────────────────────────────────────────────────
