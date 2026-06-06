@@ -335,8 +335,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   <div id="print-invoice-btn" onclick="printStoreInvoice(orderId)" style="display:none;margin:10px 16px 0;padding:14px;text-align:center;border-radius:14px;font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:900;color:#6e0977;background:transparent;border:2px solid #6e0977;cursor:pointer">
     🖨️ Print Invoice
   </div>
-  <div onclick="goTo('pg-menu')" style="display:block;margin:10px 16px 24px;padding:14px;text-align:center;border-radius:14px;font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:900;color:#fff;background:#c2607a;cursor:pointer;box-shadow:0 4px 20px rgba(194,96,122,0.35)">
-    + New Order
+  <div onclick="newOrder()" style="display:block;margin:10px 16px 24px;padding:14px;text-align:center;border-radius:14px;font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:900;color:#fff;background:#c2607a;cursor:pointer;box-shadow:0 4px 20px rgba(194,96,122,0.35)">
+  + New Order
   </div>
 </div>
 
@@ -605,29 +605,37 @@ var MENU = {
 };
 
 function showSkeleton(){
-  var list  = document.getElementById('items-list');
-  var opacs = [1, 0.85, 0.65, 0.4];
-  var widths = [['52%','33%','38px'],['62%','40%','42px'],['44%','28%','36px'],['48%','30%','40px']];
-  var rows  = '';
-  opacs.forEach(function(op, i){
-    var w = widths[i];
-    rows += '<div style="display:flex;align-items:center;padding:16px 20px;border-bottom:1px solid rgba(110,9,119,0.06);opacity:'+op+'">'
-      + '<div style="flex:1">'
-      +   '<div class="sk-bone" style="height:17px;width:'+w[0]+';margin-bottom:9px"></div>'
-      +   '<div class="sk-bone" style="height:10px;width:'+w[1]+'"></div>'
+  // Full screen overlay while loading
+  var overlay = document.getElementById('store-loading-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'store-loading-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#fffbf2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px';
+    overlay.innerHTML = ''
+      + '<div style="position:relative;width:72px;height:72px">'
+      +   '<div style="position:absolute;inset:0;border-radius:50%;border:3px solid rgba(110,9,119,0.1)"></div>'
+      +   '<div id="spin-ring" style="position:absolute;inset:0;border-radius:50%;border:3px solid transparent;border-top-color:#6e0977;animation:storeSpin 0.8s linear infinite"></div>'
+      +   '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:28px">🍫</div>'
       + '</div>'
-      + '<div class="sk-bone" style="height:17px;width:'+w[2]+';margin-right:14px;border-radius:5px"></div>'
-      + '<div class="sk-bone" style="width:33px;height:33px;border-radius:50%"></div>'
-      + '</div>';
-  });
-  rows += '<div style="padding:14px 20px;display:flex;align-items:center;gap:8px;border-top:1px solid rgba(110,9,119,0.07)">'
-    + '<div style="width:6px;height:6px;border-radius:50%;background:#6e0977;animation:skPulse 1.2s ease-in-out infinite"></div>'
-    + '<div style="font-size:10px;letter-spacing:2px;color:#6e0977;font-weight:700;font-family:sans-serif">PREPARING MENU...</div>'
-    + '</div>';
-  list.innerHTML = rows;
+      + '<div style="text-align:center">'
+      +   '<div style="font-family:\'Fraunces\',Georgia,serif;font-size:20px;font-weight:900;color:#6e0977">ChocoCravings</div>'
+      +   '<div style="font-size:10px;letter-spacing:3px;color:#c2607a;font-weight:700;margin-top:4px">ON STORE</div>'
+      + '</div>'
+      + '<div style="display:flex;gap:6px;align-items:center">'
+      +   '<div class="ld" style="animation-delay:0s"></div>'
+      +   '<div class="ld" style="animation-delay:0.15s"></div>'
+      +   '<div class="ld" style="animation-delay:0.3s"></div>'
+      + '</div>'
+      + '<style>'
+      +   '@keyframes storeSpin{to{transform:rotate(360deg)}}'
+      +   '@keyframes storeDot{0%,80%,100%{transform:scale(0.6);opacity:0.3}40%{transform:scale(1);opacity:1}}'
+      +   '.ld{width:7px;height:7px;border-radius:50%;background:#6e0977;animation:storeDot 1.2s ease-in-out infinite}'
+      + '</style>';
+    document.body.appendChild(overlay);
+  }
+  overlay.style.display = 'flex';
   document.getElementById('cart-empty').style.display = 'none';
 }
-
 async function loadMenu(){
   if(!db) return;
   showSkeleton();
@@ -647,6 +655,15 @@ async function loadMenu(){
   } catch(e){
     console.error('loadMenu', e);
     document.getElementById('items-list').innerHTML = '<div style="text-align:center;padding:40px 20px;font-family:Fraunces,serif;font-size:15px;color:#9a8aaa">Could not load menu.<br>Check connection.</div>';
+  } finally {
+    // Hide overlay whether success or error
+    var overlay = document.getElementById('store-loading-overlay');
+    if (overlay) {
+      overlay.style.transition = 'opacity 0.4s ease';
+      overlay.style.opacity = '0';
+      setTimeout(function() { overlay.style.display = 'none'; overlay.style.opacity = '1'; }, 400);
+    }
+    document.getElementById('cart-empty').style.display = 'block';
   }
 }
 
@@ -1554,7 +1571,47 @@ function viewOrder(id, token, status){
     if(r.data) updateStatusUI(r.data.status);
   });
 }
+function newOrder() {
+  // Reset order state
+  orderId     = null;
+  orderToken  = null;
+  cart        = {};
 
+  // Reset place button
+  var btn = document.getElementById('place-btn');
+  if (btn) {
+    btn.disabled    = false;
+    btn.style.opacity = '1';
+    btn.textContent = 'Pay via UPI';
+    btn.className   = 'place-btn place-upi';
+  }
+
+  // Reset payment method
+  payMethod = 'upi';
+
+  // Reset phone input
+  var inp = document.getElementById('customer-phone-input');
+  if (inp) inp.value = '';
+
+  // Reset QR state
+  stopScanner();
+  document.getElementById('qr-panel').style.display        = 'none';
+  document.getElementById('qr-scan-state').style.display   = 'block';
+  document.getElementById('qr-scanned-state').style.display = 'none';
+  document.getElementById('qr-paid-btn').style.display      = 'none';
+
+  // Close invoice sheet if open
+  closeInvSheet();
+
+  // Close checkout sheet
+  closeSheet();
+
+  // Reset cart UI
+  updateBar();
+
+  // Go to menu
+  goTo('pg-menu');
+}
 // ── INIT ──────────────────────────────────────────────────────
 window.addEventListener('load', function(){
   try{ if(typeof supabase !== 'undefined') db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY); }
@@ -1779,7 +1836,13 @@ async function sendInvoiceAuto(invoiceData) {
 
     invSheetData = { phone: phone, url: pdfUrl, msg: msg, token: invoiceData.order_number, amt: grand };
 
-    // 5. Show sheet
+    // 5. Show sheet — admin only
+    try {
+      var { data: { user } } = await db.auth.getUser();
+      var chk = await db.from('customers').select('is_admin').eq('email', user.email).single();
+      if (!chk.data || !chk.data.is_admin) return; // not admin — skip sheet silently
+    } catch(e) { return; }
+
     document.getElementById('inv-sheet-token').textContent = invoiceData.order_number;
     document.getElementById('inv-sheet-amt').textContent   = 'Rs.'+grand+' · '+invoiceData.payment_method;
     document.getElementById('inv-sheet-phone').textContent = phone || 'No phone saved';
