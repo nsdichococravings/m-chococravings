@@ -759,6 +759,7 @@ function openSheet(){
       +'</div>';
   }).join('');
   document.getElementById('sheet-total').textContent='₹'+cartTotal();
+  autoFillPhone();
   selPay(payMethod);
   document.getElementById('backdrop').style.display='block';
   var s=document.getElementById('sheet');
@@ -1610,6 +1611,38 @@ function newOrder() {
 
   // Go to menu
   goTo('pg-menu');
+}
+async function autoFillPhone() {
+  var inp = document.getElementById('customer-phone-input');
+  if (!inp || inp.value.trim()) return; // already filled — don't overwrite
+
+  try {
+    var { data: { user } } = await db.auth.getUser();
+    if (!user) return;
+
+    // Check phone from auth first
+    if (user.phone) {
+      var phone = user.phone.replace(/\D/g, '');
+      if (phone.startsWith('91') && phone.length === 12) phone = phone.substring(2);
+      inp.value = phone;
+      return;
+    }
+
+    // Fallback — check customers table
+    var res = await db.from('customers')
+      .select('phone')
+      .eq('id', user.id)
+      .single();
+
+    if (res.data && res.data.phone) {
+      var phone = res.data.phone.replace(/\D/g, '');
+      if (phone.startsWith('91') && phone.length === 12) phone = phone.substring(2);
+      inp.value = phone;
+    }
+
+  } catch(e) {
+    console.log('autoFillPhone:', e);
+  }
 }
 // ── INIT ──────────────────────────────────────────────────────
 window.addEventListener('load', function(){
