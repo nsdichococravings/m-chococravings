@@ -1630,11 +1630,10 @@ async function autoFillPhone() {
       return;
     }
 
-    // Fallback — customers table
     var res = await db.from('customers')
       .select('phone')
-      .eq('id', user.id)
-      .maybeSingle();   // won't throw 406 if no row found
+      .eq('email', user.email)
+      .maybeSingle();
 
     if (res.data && res.data.phone) {
       var p = res.data.phone.replace(/\D/g, '');
