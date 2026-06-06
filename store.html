@@ -10,6 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <style>
 /* ── RESET ───────────────────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -1557,24 +1558,186 @@ function buildInvoiceData(o) {
     special_notes:       '',
   };
 }
-async function sendInvoiceAuto(orderData) {
+async function sendInvoiceAuto(invoiceData) {
+  if (!invoiceData.customer_phone || invoiceData.customer_phone === '—') return;
+
   try {
-    // 1. Build & upload PDF
-    var { jsPDF } = window.jspdf;  // jsPDF must be loaded in store.html too
-    // OR open invoice page and trigger via sendInvoice()
-    var win = window.open('invoice-print.html', '_blank');
-    if (!win) return;
-    var attempts = 0;
-    var poll = setInterval(function() {
-      attempts++;
-      if (typeof win.sendInvoice === 'function') {
-        clearInterval(poll);
-        win.sendInvoice(orderData);  // generates PDF, uploads, opens WhatsApp
+    // 1. Build PDF directly here (no new window needed)
+    var { jsPDF } = window.jspdf;
+    var pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
+    var W = pdf.internal.pageSize.getWidth();
+
+    // ── Header ──
+    pdf.setFillColor(59, 26, 8);
+    pdf.rect(0, 0, W, 48, 'F');
+    pdf.setFillColor(110, 9, 119);
+    pdf.rect(0, 0, 3, 48, 'F');
+    pdf.setFillColor(201, 150, 43);
+    pdf.rect(0, 46, W, 2, 'F');
+
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(15);
+    pdf.setTextColor(253, 246, 236);
+    pdf.text('NSDI ChocoCravings', 12, 14);
+
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(7);
+    pdf.setTextColor(240, 201, 107);
+    pdf.text('HANDCRAFTED PREMIUM BROWNIES & CAKES', 12, 19);
+
+    // Meta
+    var meta = [
+      ['INVOICE NO.', '#' + invoiceData.order_number],
+      ['DATE & TIME', new Date(invoiceData.created_at).toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'}) + ' ' + new Date(invoiceData.created_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})],
+      ['PAYMENT', invoiceData.payment_method],
+      ['ORDER TYPE', invoiceData.delivery_type],
+    ];
+    meta.forEach(function(m, i) {
+      var col = i % 2 === 0 ? 10 : W/2 + 4;
+      var row = 26 + Math.floor(i/2) * 10;
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(6);
+      pdf.setTextColor(240, 201, 107);
+      pdf.text(m[0], col, row);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8);
+      pdf.setTextColor(253, 246, 236);
+      pdf.text(m[1], col, row + 4);
+    });
+
+    var y = 50;
+
+    // ── Customer ──
+    pdf.setFillColor(255, 249, 242);
+    pdf.rect(0, y, W, 18, 'F');
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(10);
+    pdf.setTextColor(26, 13, 5);
+    pdf.text(invoiceData.customer_name || 'Walk-in Customer', 10, y + 7);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(7.5);
+    pdf.setTextColor(138, 110, 88);
+    pdf.text(invoiceData.delivery_type + (invoiceData.customer_phone !== '—' ? '   Ph: ' + invoiceData.customer_phone : ''), 10, y + 13);
+    y += 20;
+
+    // ── Items header ──
+    pdf.setFillColor(110, 9, 119);
+    pdf.rect(0, y, W, 7, 'F');
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(6.5);
+    pdf.setTextColor(240, 201, 107);
+    pdf.text('ITEM', 10, y + 4.8);
+    pdf.text('QTY',   W-72, y + 4.8, {align:'right'});
+    pdf.text('RATE',  W-42, y + 4.8, {align:'right'});
+    pdf.text('TOTAL', W-10, y + 4.8, {align:'right'});
+    y += 7;
+
+    // ── Items ──
+    var subtotal = 0;
+    invoiceData.items.forEach(function(item, idx) {
+      var rowH = item.variant ? 13 : 9;
+      if (idx % 2 === 0) { pdf.setFillColor(253, 248, 240); pdf.rect(0, y, W, rowH, 'F'); }
+      var lineTotal = item.qty * item.unit_price;
+      subtotal += lineTotal;
+      pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8.5); pdf.setTextColor(26, 13, 5);
+      pdf.text(item.name.substring(0, 30), 10, y + 6);
+      if (item.variant) {
+        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(6.5); pdf.setTextColor(138, 110, 88);
+        pdf.text(item.variant.substring(0, 40), 10, y + 11);
       }
-      if (attempts > 40) clearInterval(poll);
-    }, 100);
+      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8.5); pdf.setTextColor(26, 13, 5);
+      pdf.text(String(item.qty), W-72, y+6, {align:'right'});
+      pdf.text('Rs.'+item.unit_price, W-42, y+6, {align:'right'});
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Rs.'+lineTotal, W-10, y+6, {align:'right'});
+      pdf.setDrawColor(232, 213, 187); pdf.setLineWidth(0.2);
+      pdf.setLineDashPattern([1,1], 0); pdf.line(10, y+rowH, W-10, y+rowH);
+      pdf.setLineDashPattern([], 0);
+      y += rowH;
+    });
+
+    y += 4;
+
+    // ── Totals ──
+    pdf.setFillColor(255, 249, 242); pdf.rect(0, y-2, W, 40, 'F');
+    pdf.setDrawColor(232,213,187); pdf.setLineWidth(0.3); pdf.line(0, y-2, W, y-2);
+
+    var grand = subtotal + (invoiceData.delivery_charge||0) - (invoiceData.discount_amount||0) - (invoiceData.loyalty_points_used||0);
+
+    [
+      ['Subtotal', 'Rs.'+subtotal],
+      ['Delivery', (invoiceData.delivery_charge||0) === 0 ? 'FREE' : 'Rs.'+(invoiceData.delivery_charge||0)],
+    ].forEach(function(r) {
+      pdf.setFont('helvetica','normal'); pdf.setFontSize(8); pdf.setTextColor(138,110,88);
+      pdf.text(r[0], 10, y+4);
+      pdf.setTextColor(26,13,5);
+      pdf.text(r[1], W-10, y+4, {align:'right'});
+      y += 7;
+    });
+
+    if (invoiceData.discount_amount > 0) {
+      pdf.setFont('helvetica','normal'); pdf.setFontSize(8); pdf.setTextColor(138,110,88);
+      pdf.text('Discount'+(invoiceData.promo_code?' ('+invoiceData.promo_code+')':''), 10, y+4);
+      pdf.setTextColor(46,125,50);
+      pdf.text('-Rs.'+invoiceData.discount_amount, W-10, y+4, {align:'right'});
+      y += 7;
+    }
+
+    pdf.setDrawColor(232,213,187); pdf.setLineWidth(0.4); pdf.line(10, y, W-10, y); y += 4;
+
+    // Grand total
+    pdf.setFillColor(59, 26, 8); pdf.roundedRect(8, y, W-16, 12, 2, 2, 'F');
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(8); pdf.setTextColor(240,201,107);
+    pdf.text('TOTAL PAID', 16, y+8);
+    pdf.setFontSize(13); pdf.setTextColor(255,255,255);
+    pdf.text('Rs.'+grand, W-16, y+8, {align:'right'});
+    y += 16;
+
+    // ── Footer ──
+    pdf.setFillColor(59,26,8); pdf.rect(0, y, W, 24, 'F');
+    pdf.setFillColor(110,9,119); pdf.rect(0, y, W, 2, 'F');
+    pdf.setFont('helvetica','italic'); pdf.setFontSize(9); pdf.setTextColor(240,201,107);
+    pdf.text('"Every bite is crafted with love"', W/2, y+9, {align:'center'});
+    pdf.setFont('helvetica','normal'); pdf.setFontSize(7.5); pdf.setTextColor(240,201,107);
+    pdf.text('Thank you for choosing NSDI ChocoCravings!', W/2, y+15, {align:'center'});
+    pdf.setFontSize(6.5); pdf.setTextColor(253,246,236);
+    pdf.text('@nsdi.chococravings  ·  Salem, Tamil Nadu', W/2, y+21, {align:'center'});
+
+    // 2. Upload PDF to Supabase Storage
+    var pdfBlob = pdf.output('blob');
+    var fileName = 'invoices/' + invoiceData.order_number + '.pdf';
+    var { error: uploadErr } = await db.storage
+      .from('invoices')
+      .upload(fileName, pdfBlob, { contentType: 'application/pdf', upsert: true });
+    if (uploadErr) throw uploadErr;
+
+    // 3. Get public URL
+    var { data: urlData } = db.storage.from('invoices').getPublicUrl(fileName);
+    var pdfUrl = urlData.publicUrl;
+
+    // 4. Build WhatsApp message
+    var items = invoiceData.items.map(function(i) {
+      return '  • ' + i.name + (i.qty > 1 ? ' x' + i.qty : '') + ' — Rs.' + (i.qty * i.unit_price);
+    }).join('\n');
+
+    var msg = '🍫 *NSDI ChocoCravings*\nSalem, Tamil Nadu\n\n'
+      + '━━━━━━━━━━━━━━━━\n*Your Invoice is Ready!*\n━━━━━━━━━━━━━━━━\n\n'
+      + '🧾 *Order:* #' + invoiceData.order_number + '\n'
+      + '💳 *Payment:* ' + invoiceData.payment_method + '\n\n'
+      + '*Items:*\n' + items + '\n\n'
+      + '💰 *Total Paid: Rs.' + grand + '*\n\n'
+      + '📄 *Invoice PDF:*\n' + pdfUrl + '\n\n'
+      + '_Thank you for choosing ChocoCravings! 💛_\n_@nsdi.chococravings_';
+
+    // 5. Open WhatsApp with customer number directly
+    var phone = invoiceData.customer_phone.replace(/\D/g, '');
+    if (phone.length === 10) phone = '91' + phone;
+
+    var waUrl = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(msg);
+    window.open(waUrl, '_blank');
+
   } catch(e) {
-    console.error('sendInvoiceAuto:', e);
+    console.error('sendInvoiceAuto error:', e);
   }
 }
 </script>
