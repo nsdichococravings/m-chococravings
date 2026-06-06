@@ -482,7 +482,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
       <div style="font-size:10px;letter-spacing:3px;color:#9a8aaa;font-weight:700;margin-bottom:8px">CUSTOMER PHONE <span style="opacity:0.5;font-size:9px;letter-spacing:1px">(FOR INVOICE)</span></div>
       <div style="display:flex;align-items:center;gap:8px;background:#fdf5e3;border:1.5px solid rgba(18,10,30,0.1);border-radius:12px;padding:0 14px">
         <span style="font-size:13px;font-weight:700;color:#9a8aaa">+91</span>
-        <input id="customer-phone-input" type="tel" maxlength="10" placeholder="9876543210"
+        <input id="customer-phone-input" type="tel" maxlength="10" placeholder="Enter number"
           style="flex:1;padding:13px 0;border:none;background:transparent;font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:700;color:#120a1e;outline:none"/>
       </div>
     </div>
@@ -759,7 +759,9 @@ function openSheet(){
       +'</div>';
   }).join('');
   document.getElementById('sheet-total').textContent='₹'+cartTotal();
-  autoFillPhone();
+  setTimeout(autoFillPhone, 100);
+  console.log('user:', user);
+  console.log('user.phone:', user ? user.phone : 'no user');
   selPay(payMethod);
   document.getElementById('backdrop').style.display='block';
   var s=document.getElementById('sheet');
