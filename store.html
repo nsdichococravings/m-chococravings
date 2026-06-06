@@ -536,7 +536,60 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     <button class="place-btn place-upi" id="place-btn" onclick="placeOrder()">Pay via UPI</button>
   </div>
 </div>
+<!-- ═══ INVOICE SEND SHEET ════════════════════════════════════ -->
+<div id="inv-backdrop" onclick="closeInvSheet()" style="display:none;position:fixed;inset:0;background:rgba(18,10,30,0.6);z-index:800"></div>
+<div id="inv-sheet" style="display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fffbf2;border-radius:28px 28px 0 0;border-top:1.5px solid rgba(18,10,30,0.09);z-index:801;padding-bottom:env(safe-area-inset-bottom,20px)">
+  <div class="handle"><span></span></div>
+  <div style="background:#3B1A08;border-radius:20px 20px 0 0;padding:14px 20px;display:flex;align-items:center;gap:10px">
+    <div style="width:36px;height:36px;border-radius:8px;background:#C9962B;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🍫</div>
+    <div>
+      <div style="font-family:'Fraunces',Georgia,serif;font-size:15px;font-weight:900;color:#FDF6EC">Invoice Ready to Send</div>
+      <div style="font-size:10px;color:rgba(240,201,107,0.7);margin-top:1px">PDF uploaded · Share with customer</div>
+    </div>
+  </div>
+  <div style="padding:16px 20px">
 
+    <!-- Order info -->
+    <div style="font-size:9px;font-weight:700;letter-spacing:2px;color:#9a8aaa;text-transform:uppercase;margin-bottom:8px">Order</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;background:#fdf5e3;border-radius:12px;padding:10px 14px;margin-bottom:14px">
+      <span style="font-family:'Fraunces',Georgia,serif;font-size:22px;font-weight:900;color:#6e0977" id="inv-sheet-token">T-000</span>
+      <span style="font-family:'Fraunces',Georgia,serif;font-size:13px;font-weight:700;color:#120a1e" id="inv-sheet-amt">Rs.0</span>
+    </div>
+
+    <!-- Phone -->
+    <div style="font-size:9px;font-weight:700;letter-spacing:2px;color:#9a8aaa;text-transform:uppercase;margin-bottom:8px">Customer Phone</div>
+    <div style="display:flex;align-items:center;gap:10px;background:#fdf5e3;border-radius:12px;padding:10px 14px;margin-bottom:14px">
+      <span style="flex:1;font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:700;color:#120a1e;letter-spacing:1px" id="inv-sheet-phone">—</span>
+      <button onclick="invCopyPhone()" style="padding:6px 12px;border-radius:8px;background:rgba(110,9,119,0.1);border:1px solid rgba(110,9,119,0.2);color:#6e0977;font-size:11px;font-weight:700;cursor:pointer" id="inv-copy-phone-btn">Copy</button>
+    </div>
+
+    <!-- PDF link -->
+    <div style="font-size:9px;font-weight:700;letter-spacing:2px;color:#9a8aaa;text-transform:uppercase;margin-bottom:8px">Invoice PDF</div>
+    <div style="display:flex;align-items:center;gap:8px;background:#fdf5e3;border-radius:12px;padding:10px 14px;margin-bottom:16px">
+      <span style="font-size:18px">📄</span>
+      <span style="flex:1;font-size:10px;color:#9a8aaa;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="inv-sheet-url">—</span>
+      <button onclick="invCopyLink()" style="padding:6px 12px;border-radius:8px;background:rgba(184,116,16,0.1);border:1px solid rgba(184,116,16,0.2);color:#b87410;font-size:11px;font-weight:700;cursor:pointer" id="inv-copy-link-btn">Copy</button>
+    </div>
+
+    <!-- Buttons -->
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button onclick="invOpenWA()" style="flex:1;padding:14px;border-radius:12px;background:#25D366;border:none;color:#fff;font-family:'Fraunces',Georgia,serif;font-size:15px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+        💬 Open WhatsApp
+      </button>
+      <button onclick="invCopyMsg()" style="flex:1;padding:14px;border-radius:12px;background:rgba(18,10,30,0.06);border:1.5px solid rgba(18,10,30,0.1);color:#120a1e;font-family:'Fraunces',Georgia,serif;font-size:15px;font-weight:900;cursor:pointer">
+        📋 Copy Msg
+      </button>
+    </div>
+
+    <!-- Toast -->
+    <div id="inv-toast" style="display:none;text-align:center;font-size:12px;color:#15803d;font-weight:700;padding:6px">✓ Copied!</div>
+
+    <!-- Note -->
+    <div style="font-size:11px;color:#9a8aaa;line-height:1.6;padding:10px 12px;background:#fdf5e3;border-radius:10px;border-left:3px solid #6e0977">
+      Tap <strong style="color:#6e0977">Open WhatsApp</strong> → search the copied number → paste &amp; send the message.
+    </div>
+  </div>
+</div>
 <script>
 // ── CONFIG — paste your anon key here ────────────────────────
 var SUPABASE_URL = 'https://yjbfditboewwpgyqzryd.supabase.co';
@@ -1558,200 +1611,187 @@ function buildInvoiceData(o) {
     special_notes:       '',
   };
 }
-async function sendInvoiceAuto(invoiceData) {
-  if (!invoiceData.customer_phone || invoiceData.customer_phone === '—') return;
+// ── Invoice send sheet state ──────────────────────────────────
+var invSheetData = { phone: '', url: '', msg: '', token: '', amt: 0 };
 
+function closeInvSheet() {
+  document.getElementById('inv-backdrop').style.display = 'none';
+  document.getElementById('inv-sheet').style.display    = 'none';
+}
+
+function invShowToast(msg) {
+  var t = document.getElementById('inv-toast');
+  t.textContent = msg; t.style.display = 'block';
+  clearTimeout(window._invToast);
+  window._invToast = setTimeout(function() { t.style.display = 'none'; }, 2000);
+}
+
+function invCopyPhone() {
+  navigator.clipboard.writeText(invSheetData.phone);
+  document.getElementById('inv-copy-phone-btn').textContent = '✓ Copied';
+  setTimeout(function() { document.getElementById('inv-copy-phone-btn').textContent = 'Copy'; }, 2000);
+}
+
+function invCopyLink() {
+  navigator.clipboard.writeText(invSheetData.url);
+  document.getElementById('inv-copy-link-btn').textContent = '✓ Copied';
+  setTimeout(function() { document.getElementById('inv-copy-link-btn').textContent = 'Copy'; }, 2000);
+}
+
+function invCopyMsg() {
+  navigator.clipboard.writeText(invSheetData.msg);
+  invShowToast('✓ Message copied — paste in WhatsApp');
+}
+
+function invOpenWA() {
+  // Opens WhatsApp — admin searches copied number and pastes message
+  var waUrl = 'https://wa.me/?text=' + encodeURIComponent(invSheetData.msg);
+  window.open(waUrl, '_blank');
+}
+
+async function sendInvoiceAuto(invoiceData) {
   try {
-    // 1. Build PDF directly here (no new window needed)
+    // 1. Build PDF
     var { jsPDF } = window.jspdf;
     var pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
     var W = pdf.internal.pageSize.getWidth();
 
-    // ── Header ──
-    pdf.setFillColor(59, 26, 8);
-    pdf.rect(0, 0, W, 48, 'F');
-    pdf.setFillColor(110, 9, 119);
-    pdf.rect(0, 0, 3, 48, 'F');
-    pdf.setFillColor(201, 150, 43);
-    pdf.rect(0, 46, W, 2, 'F');
-
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(15);
-    pdf.setTextColor(253, 246, 236);
+    // Header
+    pdf.setFillColor(59,26,8); pdf.rect(0,0,W,48,'F');
+    pdf.setFillColor(110,9,119); pdf.rect(0,0,3,48,'F');
+    pdf.setFillColor(201,150,43); pdf.rect(0,46,W,2,'F');
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(15); pdf.setTextColor(253,246,236);
     pdf.text('NSDI ChocoCravings', 12, 14);
-
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(7);
-    pdf.setTextColor(240, 201, 107);
+    pdf.setFont('helvetica','normal'); pdf.setFontSize(7); pdf.setTextColor(240,201,107);
     pdf.text('HANDCRAFTED PREMIUM BROWNIES & CAKES', 12, 19);
 
-    // Meta
     var meta = [
       ['INVOICE NO.', '#' + invoiceData.order_number],
-      ['DATE & TIME', new Date(invoiceData.created_at).toLocaleDateString('en-IN', {day:'2-digit',month:'short',year:'numeric'}) + ' ' + new Date(invoiceData.created_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})],
+      ['DATE & TIME', new Date(invoiceData.created_at).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})],
       ['PAYMENT', invoiceData.payment_method],
       ['ORDER TYPE', invoiceData.delivery_type],
     ];
-    meta.forEach(function(m, i) {
-      var col = i % 2 === 0 ? 10 : W/2 + 4;
-      var row = 26 + Math.floor(i/2) * 10;
-      pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(6);
-      pdf.setTextColor(240, 201, 107);
+    meta.forEach(function(m,i){
+      var col = i%2===0 ? 10 : W/2+4;
+      var row = 26 + Math.floor(i/2)*10;
+      pdf.setFont('helvetica','bold'); pdf.setFontSize(6); pdf.setTextColor(240,201,107);
       pdf.text(m[0], col, row);
-      pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(8);
-      pdf.setTextColor(253, 246, 236);
-      pdf.text(m[1], col, row + 4);
+      pdf.setFont('helvetica','normal'); pdf.setFontSize(8); pdf.setTextColor(253,246,236);
+      pdf.text(m[1], col, row+4);
     });
 
     var y = 50;
 
-    // ── Customer ──
-    pdf.setFillColor(255, 249, 242);
-    pdf.rect(0, y, W, 18, 'F');
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(10);
-    pdf.setTextColor(26, 13, 5);
-    pdf.text(invoiceData.customer_name || 'Walk-in Customer', 10, y + 7);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setFontSize(7.5);
-    pdf.setTextColor(138, 110, 88);
-    pdf.text(invoiceData.delivery_type + (invoiceData.customer_phone !== '—' ? '   Ph: ' + invoiceData.customer_phone : ''), 10, y + 13);
+    // Customer
+    pdf.setFillColor(255,249,242); pdf.rect(0,y,W,18,'F');
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(10); pdf.setTextColor(26,13,5);
+    pdf.text(invoiceData.customer_name||'Walk-in Customer', 10, y+7);
+    pdf.setFont('helvetica','normal'); pdf.setFontSize(7.5); pdf.setTextColor(138,110,88);
+    pdf.text(invoiceData.delivery_type+(invoiceData.customer_phone&&invoiceData.customer_phone!=='—'?'   Ph:'+invoiceData.customer_phone:''), 10, y+13);
     y += 20;
 
-    // ── Items header ──
-    pdf.setFillColor(110, 9, 119);
-    pdf.rect(0, y, W, 7, 'F');
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(6.5);
-    pdf.setTextColor(240, 201, 107);
-    pdf.text('ITEM', 10, y + 4.8);
-    pdf.text('QTY',   W-72, y + 4.8, {align:'right'});
-    pdf.text('RATE',  W-42, y + 4.8, {align:'right'});
-    pdf.text('TOTAL', W-10, y + 4.8, {align:'right'});
+    // Items header
+    pdf.setFillColor(110,9,119); pdf.rect(0,y,W,7,'F');
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(6.5); pdf.setTextColor(240,201,107);
+    pdf.text('ITEM',10,y+4.8);
+    pdf.text('QTY',W-72,y+4.8,{align:'right'});
+    pdf.text('RATE',W-42,y+4.8,{align:'right'});
+    pdf.text('TOTAL',W-10,y+4.8,{align:'right'});
     y += 7;
 
-    // ── Items ──
+    // Items
     var subtotal = 0;
-    invoiceData.items.forEach(function(item, idx) {
+    invoiceData.items.forEach(function(item,idx){
       var rowH = item.variant ? 13 : 9;
-      if (idx % 2 === 0) { pdf.setFillColor(253, 248, 240); pdf.rect(0, y, W, rowH, 'F'); }
-      var lineTotal = item.qty * item.unit_price;
-      subtotal += lineTotal;
-      pdf.setFont('helvetica', 'bold'); pdf.setFontSize(8.5); pdf.setTextColor(26, 13, 5);
-      pdf.text(item.name.substring(0, 30), 10, y + 6);
-      if (item.variant) {
-        pdf.setFont('helvetica', 'normal'); pdf.setFontSize(6.5); pdf.setTextColor(138, 110, 88);
-        pdf.text(item.variant.substring(0, 40), 10, y + 11);
-      }
-      pdf.setFont('helvetica', 'normal'); pdf.setFontSize(8.5); pdf.setTextColor(26, 13, 5);
-      pdf.text(String(item.qty), W-72, y+6, {align:'right'});
-      pdf.text('Rs.'+item.unit_price, W-42, y+6, {align:'right'});
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Rs.'+lineTotal, W-10, y+6, {align:'right'});
-      pdf.setDrawColor(232, 213, 187); pdf.setLineWidth(0.2);
-      pdf.setLineDashPattern([1,1], 0); pdf.line(10, y+rowH, W-10, y+rowH);
-      pdf.setLineDashPattern([], 0);
+      if(idx%2===0){pdf.setFillColor(253,248,240);pdf.rect(0,y,W,rowH,'F');}
+      var lt = item.qty*item.unit_price; subtotal += lt;
+      pdf.setFont('helvetica','bold'); pdf.setFontSize(8.5); pdf.setTextColor(26,13,5);
+      pdf.text(item.name.substring(0,30), 10, y+6);
+      if(item.variant){pdf.setFont('helvetica','normal');pdf.setFontSize(6.5);pdf.setTextColor(138,110,88);pdf.text(item.variant.substring(0,40),10,y+11);}
+      pdf.setFont('helvetica','normal'); pdf.setFontSize(8.5); pdf.setTextColor(26,13,5);
+      pdf.text(String(item.qty),W-72,y+6,{align:'right'});
+      pdf.text('Rs.'+item.unit_price,W-42,y+6,{align:'right'});
+      pdf.setFont('helvetica','bold'); pdf.text('Rs.'+lt,W-10,y+6,{align:'right'});
+      pdf.setDrawColor(232,213,187); pdf.setLineWidth(0.2);
+      pdf.setLineDashPattern([1,1],0); pdf.line(10,y+rowH,W-10,y+rowH); pdf.setLineDashPattern([],0);
       y += rowH;
     });
 
     y += 4;
 
-    // ── Totals ──
-    pdf.setFillColor(255, 249, 242); pdf.rect(0, y-2, W, 40, 'F');
-    pdf.setDrawColor(232,213,187); pdf.setLineWidth(0.3); pdf.line(0, y-2, W, y-2);
-
-    var grand = subtotal + (invoiceData.delivery_charge||0) - (invoiceData.discount_amount||0) - (invoiceData.loyalty_points_used||0);
-
-    [
-      ['Subtotal', 'Rs.'+subtotal],
-      ['Delivery', (invoiceData.delivery_charge||0) === 0 ? 'FREE' : 'Rs.'+(invoiceData.delivery_charge||0)],
-    ].forEach(function(r) {
-      pdf.setFont('helvetica','normal'); pdf.setFontSize(8); pdf.setTextColor(138,110,88);
-      pdf.text(r[0], 10, y+4);
-      pdf.setTextColor(26,13,5);
-      pdf.text(r[1], W-10, y+4, {align:'right'});
-      y += 7;
-    });
-
-    if (invoiceData.discount_amount > 0) {
-      pdf.setFont('helvetica','normal'); pdf.setFontSize(8); pdf.setTextColor(138,110,88);
-      pdf.text('Discount'+(invoiceData.promo_code?' ('+invoiceData.promo_code+')':''), 10, y+4);
-      pdf.setTextColor(46,125,50);
-      pdf.text('-Rs.'+invoiceData.discount_amount, W-10, y+4, {align:'right'});
-      y += 7;
+    // Totals
+    pdf.setFillColor(255,249,242); pdf.rect(0,y-2,W,40,'F');
+    var grand = subtotal+(invoiceData.delivery_charge||0)-(invoiceData.discount_amount||0)-(invoiceData.loyalty_points_used||0);
+    pdf.setFont('helvetica','normal'); pdf.setFontSize(8); pdf.setTextColor(138,110,88);
+    pdf.text('Subtotal',10,y+4); pdf.setTextColor(26,13,5); pdf.text('Rs.'+subtotal,W-10,y+4,{align:'right'}); y+=7;
+    pdf.setTextColor(138,110,88); pdf.text('Delivery',10,y+4);
+    pdf.setTextColor(26,13,5); pdf.text((invoiceData.delivery_charge||0)===0?'FREE':'Rs.'+(invoiceData.delivery_charge||0),W-10,y+4,{align:'right'}); y+=7;
+    if(invoiceData.discount_amount>0){
+      pdf.setTextColor(138,110,88); pdf.text('Discount',10,y+4);
+      pdf.setTextColor(46,125,50); pdf.text('-Rs.'+invoiceData.discount_amount,W-10,y+4,{align:'right'}); y+=7;
     }
-
-    pdf.setDrawColor(232,213,187); pdf.setLineWidth(0.4); pdf.line(10, y, W-10, y); y += 4;
-
-    // Grand total
-    pdf.setFillColor(59, 26, 8); pdf.roundedRect(8, y, W-16, 12, 2, 2, 'F');
+    pdf.setDrawColor(232,213,187); pdf.setLineWidth(0.4); pdf.line(10,y,W-10,y); y+=4;
+    pdf.setFillColor(59,26,8); pdf.roundedRect(8,y,W-16,12,2,2,'F');
     pdf.setFont('helvetica','bold'); pdf.setFontSize(8); pdf.setTextColor(240,201,107);
-    pdf.text('TOTAL PAID', 16, y+8);
-    pdf.setFontSize(13); pdf.setTextColor(255,255,255);
-    pdf.text('Rs.'+grand, W-16, y+8, {align:'right'});
+    pdf.text('TOTAL PAID',16,y+8);
+    pdf.setFontSize(13); pdf.setTextColor(255,255,255); pdf.text('Rs.'+grand,W-16,y+8,{align:'right'});
     y += 16;
 
-    // ── Footer ──
-    pdf.setFillColor(59,26,8); pdf.rect(0, y, W, 24, 'F');
-    pdf.setFillColor(110,9,119); pdf.rect(0, y, W, 2, 'F');
+    // Footer
+    pdf.setFillColor(59,26,8); pdf.rect(0,y,W,24,'F');
+    pdf.setFillColor(110,9,119); pdf.rect(0,y,W,2,'F');
     pdf.setFont('helvetica','italic'); pdf.setFontSize(9); pdf.setTextColor(240,201,107);
-    pdf.text('"Every bite is crafted with love"', W/2, y+9, {align:'center'});
-    pdf.setFont('helvetica','normal'); pdf.setFontSize(7.5); pdf.setTextColor(240,201,107);
-    pdf.text('Thank you for choosing NSDI ChocoCravings!', W/2, y+15, {align:'center'});
+    pdf.text('"Every bite is crafted with love"',W/2,y+9,{align:'center'});
+    pdf.setFont('helvetica','normal'); pdf.setFontSize(7); pdf.setTextColor(240,201,107);
+    pdf.text('Thank you for choosing NSDI ChocoCravings!',W/2,y+15,{align:'center'});
     pdf.setFontSize(6.5); pdf.setTextColor(253,246,236);
-    pdf.text('@nsdi.chococravings  ·  Salem, Tamil Nadu', W/2, y+21, {align:'center'});
+    pdf.text('@nsdi.chococravings  ·  Salem, Tamil Nadu',W/2,y+21,{align:'center'});
 
-    // 2. Upload PDF to Supabase Storage
+    // 2. Upload to Supabase
     var pdfBlob = pdf.output('blob');
     var fileName = 'invoices/' + invoiceData.order_number + '.pdf';
-    var { error: uploadErr } = await db.storage
-      .from('invoices')
-      .upload(fileName, pdfBlob, { contentType: 'application/pdf', upsert: true });
+    var { error: uploadErr } = await db.storage.from('invoices').upload(fileName, pdfBlob, {contentType:'application/pdf',upsert:true});
     if (uploadErr) throw uploadErr;
 
-    // 3. Get public URL
     var { data: urlData } = db.storage.from('invoices').getPublicUrl(fileName);
     var pdfUrl = urlData.publicUrl;
 
-    // 4. Build WhatsApp message
-    var items = invoiceData.items.map(function(i) {
-      return '  • ' + i.name + (i.qty > 1 ? ' x' + i.qty : '') + ' — Rs.' + (i.qty * i.unit_price);
+    // 3. Build WhatsApp message
+    var itemLines = invoiceData.items.map(function(i){
+      return '  • '+i.name+(i.qty>1?' x'+i.qty:'')+' — Rs.'+(i.qty*i.unit_price);
     }).join('\n');
 
     var msg = '🍫 *NSDI ChocoCravings*\nSalem, Tamil Nadu\n\n'
-      + '━━━━━━━━━━━━━━━━\n*Your Invoice is Ready!*\n━━━━━━━━━━━━━━━━\n\n'
-      + '🧾 *Order:* #' + invoiceData.order_number + '\n'
-      + '💳 *Payment:* ' + invoiceData.payment_method + '\n\n'
-      + '*Items:*\n' + items + '\n\n'
-      + '💰 *Total Paid: Rs.' + grand + '*\n\n'
-      + '📄 *Invoice PDF:*\n' + pdfUrl + '\n\n'
-      + '_Thank you for choosing ChocoCravings! 💛_\n_@nsdi.chococravings_';
+      +'━━━━━━━━━━━━━━━━\n*Your Invoice is Ready!*\n━━━━━━━━━━━━━━━━\n\n'
+      +'🧾 *Order:* #'+invoiceData.order_number+'\n'
+      +'💳 *Payment:* '+invoiceData.payment_method+'\n\n'
+      +'*Items:*\n'+itemLines+'\n\n'
+      +(invoiceData.delivery_charge>0?'🚚 Delivery: Rs.'+invoiceData.delivery_charge+'\n':'')
+      +(invoiceData.discount_amount>0?'🏷 Discount: -Rs.'+invoiceData.discount_amount+'\n':'')
+      +'\n💰 *Total Paid: Rs.'+grand+'*\n\n'
+      +'📄 *Invoice PDF:*\n'+pdfUrl+'\n\n'
+      +'_Thank you for choosing ChocoCravings! 💛_\n_@nsdi.chococravings_';
 
-  var rawPhone = (invoiceData.customer_phone || '').toString().trim();
-  var phone = rawPhone.replace(/\D/g, ''); // strip all non-digits
+    // 4. Store in sheet state
+    var phone = (invoiceData.customer_phone||'').replace(/\D/g,'');
+    if(phone.length===10) phone = '+91'+phone;
+    else if(phone.length===12) phone = '+'+phone;
 
-  // Handle all formats:
-  // 9876543210     → 10 digits  → add 91
-  // 919876543210   → 12 digits  → use as-is
-  // +919876543210  → already cleaned by replace
-  // 09876543210    → starts with 0 → strip 0 add 91
-  if (phone.startsWith('0') && phone.length === 11) phone = '91' + phone.substring(1);
-  else if (phone.length === 10) phone = '91' + phone;
+    invSheetData = { phone: phone, url: pdfUrl, msg: msg, token: invoiceData.order_number, amt: grand };
 
-  console.log('WhatsApp phone:', phone); // debug — check console
-
-  if (phone.length < 11) {
-    console.warn('Invalid phone, skipping WhatsApp:', phone);
-    return;
-  }
-
-  var waUrl = 'https://api.whatsapp.com/send?phone=' + phone + '&text=' + encodeURIComponent(msg);
-  window.open(waUrl, '_blank');
+    // 5. Show sheet
+    document.getElementById('inv-sheet-token').textContent = invoiceData.order_number;
+    document.getElementById('inv-sheet-amt').textContent   = 'Rs.'+grand+' · '+invoiceData.payment_method;
+    document.getElementById('inv-sheet-phone').textContent = phone || 'No phone saved';
+    document.getElementById('inv-sheet-url').textContent   = pdfUrl;
+    document.getElementById('inv-backdrop').style.display  = 'block';
+    var s = document.getElementById('inv-sheet');
+    s.style.display   = 'block';
+    s.style.animation = 'slideUp .38s cubic-bezier(.16,1,.3,1) both';
 
   } catch(e) {
-    console.error('sendInvoiceAuto error:', e);
+    console.error('sendInvoiceAuto:', e);
+    alert('Invoice error: ' + e.message);
   }
 }
 </script>
