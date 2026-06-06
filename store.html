@@ -760,8 +760,6 @@ function openSheet(){
   }).join('');
   document.getElementById('sheet-total').textContent='₹'+cartTotal();
   setTimeout(autoFillPhone, 100);
-  console.log('user:', user);
-  console.log('user.phone:', user ? user.phone : 'no user');
   selPay(payMethod);
   document.getElementById('backdrop').style.display='block';
   var s=document.getElementById('sheet');
@@ -1179,7 +1177,7 @@ function updateStatusUI(status){
 async function kitchenLoad(){
   // ── Admin guard ───────────────────────────────────────────────
   try {
-    var { data: { user } } = await db.auth.getUser();
+    var s = await db.auth.getUser(); var user = s.data.user;
     if (!user) { goTo('pg-menu'); showKitchenDenied(); return; }
     var chk = await db.from('customers').select('is_admin').eq('email', user.email).single();
     if (!chk.data || !chk.data.is_admin) { goTo('pg-menu'); showKitchenDenied(); return; }
@@ -1321,7 +1319,8 @@ var mgSelCatVal = 'Coffee';
 async function openManage(){
   // Admin guard
   try {
-    var { data:{ user } } = await db.auth.getUser();
+    var s = await db.auth.getUser(); var user = s.data.user;
+    if(!user){ alert('Admins only'); return; }
     var chk = await db.from('customers').select('is_admin').eq('email', user.email).single();
     if(!chk.data || !chk.data.is_admin){ alert('Admins only'); return; }
   } catch(e){ alert('Admins only'); return; }
@@ -1665,7 +1664,7 @@ var isAdmin = false; // global flag
 async function checkAdminBadge(){
   try {
     if(!db) return;
-    var { data:{ user } } = await db.auth.getUser();
+    var s = await db.auth.getUser(); var user = s.data.user;
     if(!user) return;
     var chk = await db.from('customers').select('is_admin').eq('email', user.email).single();
     if(chk.data && chk.data.is_admin){
