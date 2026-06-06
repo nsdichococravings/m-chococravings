@@ -1729,12 +1729,26 @@ async function sendInvoiceAuto(invoiceData) {
       + '📄 *Invoice PDF:*\n' + pdfUrl + '\n\n'
       + '_Thank you for choosing ChocoCravings! 💛_\n_@nsdi.chococravings_';
 
-    // 5. Open WhatsApp with customer number directly
-    var phone = invoiceData.customer_phone.replace(/\D/g, '');
-    if (phone.length === 10) phone = '91' + phone;
+  var rawPhone = (invoiceData.customer_phone || '').toString().trim();
+  var phone = rawPhone.replace(/\D/g, ''); // strip all non-digits
 
-    var waUrl = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(msg);
-    window.open(waUrl, '_blank');
+  // Handle all formats:
+  // 9876543210     → 10 digits  → add 91
+  // 919876543210   → 12 digits  → use as-is
+  // +919876543210  → already cleaned by replace
+  // 09876543210    → starts with 0 → strip 0 add 91
+  if (phone.startsWith('0') && phone.length === 11) phone = '91' + phone.substring(1);
+  else if (phone.length === 10) phone = '91' + phone;
+
+  console.log('WhatsApp phone:', phone); // debug — check console
+
+  if (phone.length < 11) {
+    console.warn('Invalid phone, skipping WhatsApp:', phone);
+    return;
+  }
+
+  var waUrl = 'https://api.whatsapp.com/send?phone=' + phone + '&text=' + encodeURIComponent(msg);
+  window.open(waUrl, '_blank');
 
   } catch(e) {
     console.error('sendInvoiceAuto error:', e);
