@@ -538,8 +538,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 </div>
 <!-- ═══ INVOICE SEND SHEET ════════════════════════════════════ -->
 <div id="inv-backdrop" onclick="closeInvSheet()" style="display:none;position:fixed;inset:0;background:rgba(18,10,30,0.6);z-index:800"></div>
-<div id="inv-sheet" style="display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fffbf2;border-radius:28px 28px 0 0;border-top:1.5px solid rgba(18,10,30,0.09);z-index:801;padding-bottom:env(safe-area-inset-bottom,20px)">
-  <div class="handle"><span></span></div>
+<div id="inv-sheet" style="display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fffbf2;border-radius:28px 28px 0 0;border-top:1.5px solid rgba(18,10,30,0.09);z-index:801;padding-bottom:env(safe-area-inset-bottom,20px);max-height:90vh;overflow-y:auto">  <div class="handle"><span></span></div>
   <div style="background:#3B1A08;border-radius:20px 20px 0 0;padding:14px 20px;display:flex;align-items:center;gap:10px">
     <div style="width:36px;height:36px;border-radius:8px;background:#C9962B;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🍫</div>
     <div>
@@ -1625,6 +1624,8 @@ window.addEventListener('load', function(){
   if(window.location.hash === '#pg-kitchen') goTo('pg-kitchen');
 });
 
+var isAdmin = false; // global flag
+
 async function checkAdminBadge(){
   try {
     if(!db) return;
@@ -1632,8 +1633,8 @@ async function checkAdminBadge(){
     if(!user) return;
     var chk = await db.from('customers').select('is_admin').eq('email', user.email).single();
     if(chk.data && chk.data.is_admin){
+      isAdmin = true;
       document.getElementById('kitchen-fab').style.display = 'flex';
-      // ── ADD THIS LINE ──
       var pb = document.getElementById('print-invoice-btn');
       if(pb) pb.style.display = 'block';
     }
@@ -1837,11 +1838,7 @@ async function sendInvoiceAuto(invoiceData) {
     invSheetData = { phone: phone, url: pdfUrl, msg: msg, token: invoiceData.order_number, amt: grand };
 
     // 5. Show sheet — admin only
-    try {
-      var { data: { user } } = await db.auth.getUser();
-      var chk = await db.from('customers').select('is_admin').eq('email', user.email).single();
-      if (!chk.data || !chk.data.is_admin) return; // not admin — skip sheet silently
-    } catch(e) { return; }
+    if (!isAdmin) return;  // instant check — no DB call needed
 
     document.getElementById('inv-sheet-token').textContent = invoiceData.order_number;
     document.getElementById('inv-sheet-amt').textContent   = 'Rs.'+grand+' · '+invoiceData.payment_method;
