@@ -253,6 +253,15 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 @media (max-width: 480px) {
   .page {
     padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important;
+    overflow-x: hidden;
+  }
+  /* Scale hero carousel text */
+  .hc-title {
+    font-size: clamp(18px, 5.5vw, 26px);
+  }
+  .phone {
+    width: 100vw !important;
+    height: 100dvh !important;
   }
   .checkout-btn, #checkout-btn {
     margin-bottom: 0 !important;
@@ -324,11 +333,113 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
   box-shadow: 0 4px 20px rgba(110,9,119,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
   transition: all 0.2s cubic-bezier(.16,1,.3,1);
 }
-
+:root {
+  /* existing vars... */
+  
+  /* Allow system font scaling */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
 .back:active {
   transform: scale(0.88);
   box-shadow: 0 2px 10px rgba(110,9,119,0.3);
 }
+
+/* ── RESPONSIVE SCALING ────────────────────── */
+
+/* Respect system font size */
+html {
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Fluid font sizes using clamp */
+.item-name,
+.pname,
+.tname,
+.si-name,
+.oh-name {
+  font-size: clamp(12px, 3.5vw, 15px);
+}
+
+.plcard .plname,
+.pcard .pname {
+  font-size: clamp(11px, 3vw, 14px);
+}
+
+.pprice,
+.plprice,
+.cprice {
+  font-size: clamp(14px, 4vw, 18px);
+}
+
+.hc-title {
+  font-size: clamp(20px, 6vw, 28px);
+}
+
+.cart-title,
+.ck-title,
+.exp-title {
+  font-size: clamp(20px, 5.5vw, 26px);
+}
+
+/* Bottom nav labels always readable */
+.nlbl {
+  font-size: clamp(9px, 2.5vw, 11px);
+}
+
+/* Buttons always tappable */
+.cart-btn,
+.place-btn,
+.checkout-btn,
+.login-btn {
+  font-size: clamp(13px, 3.5vw, 15px);
+  min-height: 48px; /* accessibility tap target */
+}
+
+/* Inputs readable at any size */
+.ck-field,
+.login-input,
+.field-input {
+  font-size: clamp(13px, 3.5vw, 15px) !important;
+  min-height: 44px;
+}
+
+/* Cards don't break on large fonts */
+.pcard, .tcard, .plcard {
+  min-height: 0;
+  height: auto;
+}
+
+/* Images stay proportional */
+.pimg, .timg, .plimg {
+  flex-shrink: 0;
+}
+
+/* Prevent overflow on large text */
+* {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Safe area on all sides */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .bnav {
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+  .page {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Large font accessibility */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 .dfav{position:absolute;top:50px;right:18px;width:38px;height:38px;border-radius:12px;background:rgba(0,0,0,.38);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;font-size:17px;cursor:pointer;border:1px solid rgba(255,255,255,.1);z-index:10}
 .dbody{background:var(--dark);border-radius:28px 28px 0 0;margin-top:-22px;padding:22px 22px;position:relative;z-index:5}
 
@@ -1094,6 +1205,9 @@ body{
   background-image:
     radial-gradient(ellipse 60% 50% at 20% 10%, rgba(160,80,15,0.07) 0%,transparent 60%),
     radial-gradient(ellipse 50% 40% at 85% 80%, rgba(120,55,8,0.06) 0%,transparent 55%);
+  font-size: clamp(14px, 4vw, 16px);
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
 }
 body::before{
   content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
