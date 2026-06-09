@@ -25,10 +25,52 @@
   // ── LOAD HTML + INIT ──
   async function loadAndInit() {
     try {
-      // Don't even fetch if already entered
-      if (localStorage.getItem('cc_lucky_draw_entered')) return;
-    } catch(e) {}
 
+      // ── CHECK 1: Admin flag — is lucky draw active? ──
+      var flagRes = await db.from('app_settings')
+        .select('value')
+        .eq('key', 'lucky_draw_active')
+        .single();
+
+      if (!flagRes.data || flagRes.data.value !== 'yes') {
+        console.log('Lucky draw is disabled by admin');
+        return;
+      }
+
+      // ── CHECK 2: Has this phone already entered? ──
+      // Try to get phone from logged-in customer
+      var phone = null;
+      try {
+        var session = await db.auth.getSession();
+        var user = session.data && session.data.session ? session.data.session.user : null;
+        if (user) {
+          var cust = await db.from('customers')
+            .select('phone')
+            .eq('email', user.email)
+            .maybeSingle();
+          if (cust.data && cust.data.phone) phone = cust.data.phone;
+        }
+      } catch(e) {}
+
+      if (phone) {
+        var existing = await db.from('lucky_draw_entries')
+          .select('id')
+          .eq('phone', phone)
+          .maybeSingle();
+        if (existing.data) {
+          console.log('Already entered lucky draw');
+          localStorage.setItem('cc_lucky_draw_entered', 'yes'); // cache it
+          return;
+        }
+      } else {
+        // Not logged in — fall back to localStorage
+        if (localStorage.getItem('cc_lucky_draw_entered')) return;
+      }
+
+    } catch(e) {
+      console.warn('Lucky draw check error:', e.message);
+      return; // fail safe — don't show on error
+    }
     try {
       // Fetch lucky-draw.html and inject into body
      // Load via dynamic script tag — works on file:// too
