@@ -1,0 +1,163 @@
+<!-- ═══════════════════════════════════════════════
+     NSDI ChocoCravings — Lucky Draw Popup
+     Include in index.html just before </body>:
+     
+     <link rel="stylesheet" href="/lucky-draw.css">  ← if you split CSS
+     <script src="/lucky-draw.js"></script>           ← JS file
+     
+     Then paste this HTML block just before </body>
+═══════════════════════════════════════════════ -->
+
+<!-- LUCKY DRAW OVERLAY -->
+<div id="ld-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.78);z-index:9000;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(6px)">
+
+  <div id="ld-modal" style="width:100%;max-width:360px;background:#1a0030;border-radius:22px;border:1px solid rgba(201,150,43,0.3);overflow:hidden;position:relative;max-height:92vh;overflow-y:auto;scrollbar-width:none">
+
+    <!-- Close -->
+    <button onclick="closeLuckyDraw()" aria-label="Close" style="position:absolute;top:13px;right:13px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:10;font-family:'DM Sans',sans-serif;transition:all .2s">✕</button>
+
+    <!-- ── HERO ── -->
+    <div style="padding:30px 24px 20px;text-align:center;border-bottom:1px solid rgba(201,150,43,0.1)">
+      <div style="display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:12px">
+        <div style="height:0.5px;width:38px;background:rgba(201,150,43,0.5)"></div>
+        <div style="width:5px;height:5px;transform:rotate(45deg);background:rgba(201,150,43,0.65)"></div>
+        <div style="width:3px;height:3px;border-radius:50%;background:rgba(201,150,43,0.4)"></div>
+        <div style="width:5px;height:5px;transform:rotate(45deg);background:rgba(201,150,43,0.65)"></div>
+        <div style="height:0.5px;width:38px;background:rgba(201,150,43,0.5)"></div>
+      </div>
+      <div style="font-size:10px;letter-spacing:4px;color:rgba(201,150,43,0.6);text-transform:uppercase;font-family:'DM Sans',sans-serif;margin-bottom:10px">Launch Day · Exclusive</div>
+      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:27px;font-weight:600;color:#fff;line-height:1.2;margin-bottom:5px">The Grand<br><em style="color:rgba(201,150,43,0.88);font-style:italic">Lucky Draw</em></div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.32);font-family:'DM Sans',sans-serif;font-style:italic;letter-spacing:.5px">Win a sweet surprise on launch day 🎁</div>
+    </div>
+
+    <!-- ── STEP PIPS ── -->
+    <div id="ld-pips" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:14px 24px 0">
+      <div id="ld-pip1" style="height:3px;border-radius:2px;background:rgba(201,150,43,0.55);width:44px;transition:all .35s"></div>
+      <div id="ld-pip2" style="height:3px;border-radius:2px;background:rgba(255,255,255,0.1);width:28px;transition:all .35s"></div>
+      <div id="ld-pip3" style="height:3px;border-radius:2px;background:rgba(255,255,255,0.1);width:28px;transition:all .35s"></div>
+    </div>
+
+    <!-- ── STEP 1 — FAVOURITE ── -->
+    <div id="ld-s1" style="padding:20px 20px 24px">
+      <div style="font-size:10px;letter-spacing:3px;color:rgba(201,150,43,0.5);text-transform:uppercase;font-family:'DM Sans',sans-serif;margin-bottom:5px">Step 01</div>
+      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;color:#fff;line-height:1.3;margin-bottom:18px">What's your <em style="color:rgba(201,150,43,0.85);font-style:italic">all-time favourite?</em></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:22px">
+
+        <div class="ld-fav" onclick="ldPickFav(this,'Classic Brownie')" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px 10px 14px;text-align:center;cursor:pointer;transition:all .25s;position:relative">
+          <div class="ld-chk" style="display:none;position:absolute;top:8px;right:8px;width:18px;height:18px;border-radius:50%;background:rgba(201,150,43,0.9);align-items:center;justify-content:center;font-size:10px;color:#1a0030;font-weight:700">✓</div>
+          <div style="font-size:26px;margin-bottom:8px">🍫</div>
+          <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.7);font-family:'DM Sans',sans-serif;margin-bottom:2px">Classic Brownie</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.28);font-family:'DM Sans',sans-serif">Rich & fudgy</div>
+        </div>
+
+        <div class="ld-fav" onclick="ldPickFav(this,'Truffle Cake')" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px 10px 14px;text-align:center;cursor:pointer;transition:all .25s;position:relative">
+          <div class="ld-chk" style="display:none;position:absolute;top:8px;right:8px;width:18px;height:18px;border-radius:50%;background:rgba(201,150,43,0.9);align-items:center;justify-content:center;font-size:10px;color:#1a0030;font-weight:700">✓</div>
+          <div style="font-size:26px;margin-bottom:8px">🎂</div>
+          <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.7);font-family:'DM Sans',sans-serif;margin-bottom:2px">Truffle Cake</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.28);font-family:'DM Sans',sans-serif">Luxurious layers</div>
+        </div>
+
+        <div class="ld-fav" onclick="ldPickFav(this,'Hot Coffee')" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px 10px 14px;text-align:center;cursor:pointer;transition:all .25s;position:relative">
+          <div class="ld-chk" style="display:none;position:absolute;top:8px;right:8px;width:18px;height:18px;border-radius:50%;background:rgba(201,150,43,0.9);align-items:center;justify-content:center;font-size:10px;color:#1a0030;font-weight:700">✓</div>
+          <div style="font-size:26px;margin-bottom:8px">☕</div>
+          <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.7);font-family:'DM Sans',sans-serif;margin-bottom:2px">Hot Coffee</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.28);font-family:'DM Sans',sans-serif">Fresh & warm</div>
+        </div>
+
+        <div class="ld-fav" onclick="ldPickFav(this,'Couverture Box')" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px 10px 14px;text-align:center;cursor:pointer;transition:all .25s;position:relative">
+          <div class="ld-chk" style="display:none;position:absolute;top:8px;right:8px;width:18px;height:18px;border-radius:50%;background:rgba(201,150,43,0.9);align-items:center;justify-content:center;font-size:10px;color:#1a0030;font-weight:700">✓</div>
+          <div style="font-size:26px;margin-bottom:8px">🎁</div>
+          <div style="font-size:12px;font-weight:600;color:rgba(255,255,255,0.7);font-family:'DM Sans',sans-serif;margin-bottom:2px">Couverture Box</div>
+          <div style="font-size:10px;color:rgba(255,255,255,0.28);font-family:'DM Sans',sans-serif">Premium select</div>
+        </div>
+
+      </div>
+      <button id="ld-btn1" onclick="ldGoTo(2)" disabled style="width:100%;padding:15px;border-radius:12px;border:none;background:rgba(201,150,43,0.9);color:#1a0030;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;font-family:'DM Sans',sans-serif;cursor:pointer;opacity:0.3;transition:opacity .2s">Continue</button>
+    </div>
+
+    <!-- ── STEP 2 — DETAILS ── -->
+    <div id="ld-s2" style="display:none;padding:20px 20px 24px">
+      <div style="font-size:10px;letter-spacing:3px;color:rgba(201,150,43,0.5);text-transform:uppercase;font-family:'DM Sans',sans-serif;margin-bottom:5px">Step 02</div>
+      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;color:#fff;line-height:1.3;margin-bottom:20px">Your <em style="color:rgba(201,150,43,0.85);font-style:italic">details</em></div>
+
+      <div style="margin-bottom:14px">
+        <div style="font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(201,150,43,0.5);font-family:'DM Sans',sans-serif;margin-bottom:7px">Full name</div>
+        <input id="ld-name" type="text" placeholder="e.g. Ramya Krishnan" oninput="ldChk2()"
+          style="width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:13px 15px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;transition:border-color .2s">
+      </div>
+
+      <div style="margin-bottom:22px">
+        <div style="font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:rgba(201,150,43,0.5);font-family:'DM Sans',sans-serif;margin-bottom:7px">WhatsApp number</div>
+        <div style="display:flex;align-items:center;gap:0;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;overflow:hidden">
+          <div style="padding:13px 12px 13px 15px;font-size:14px;color:rgba(255,255,255,0.4);font-family:'DM Sans',sans-serif;border-right:1px solid rgba(255,255,255,0.08);flex-shrink:0">+91</div>
+          <input id="ld-phone" type="tel" maxlength="10" placeholder="98765 43210" oninput="ldChk2()"
+            style="flex:1;background:transparent;border:none;padding:13px 15px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;min-width:0">
+        </div>
+      </div>
+
+      <button id="ld-btn2" onclick="ldGoTo(3)" disabled style="width:100%;padding:15px;border-radius:12px;border:none;background:rgba(201,150,43,0.9);color:#1a0030;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;font-family:'DM Sans',sans-serif;cursor:pointer;opacity:0.3;transition:opacity .2s">Continue</button>
+    </div>
+
+    <!-- ── STEP 3 — SOURCE ── -->
+    <div id="ld-s3" style="display:none;padding:20px 20px 24px">
+      <div style="font-size:10px;letter-spacing:3px;color:rgba(201,150,43,0.5);text-transform:uppercase;font-family:'DM Sans',sans-serif;margin-bottom:5px">Step 03</div>
+      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:18px;color:#fff;line-height:1.3;margin-bottom:18px">How did you <em style="color:rgba(201,150,43,0.85);font-style:italic">find us?</em></div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:22px">
+
+        <div class="ld-src" onclick="ldPickSrc(this,'Instagram')" style="display:flex;align-items:center;gap:9px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:11px;padding:13px 12px;cursor:pointer;transition:all .2s">
+          <span style="font-size:18px;flex-shrink:0">📸</span>
+          <span style="font-size:12px;color:rgba(255,255,255,0.6);font-family:'DM Sans',sans-serif">Instagram</span>
+        </div>
+        <div class="ld-src" onclick="ldPickSrc(this,'Friend')" style="display:flex;align-items:center;gap:9px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:11px;padding:13px 12px;cursor:pointer;transition:all .2s">
+          <span style="font-size:18px;flex-shrink:0">👥</span>
+          <span style="font-size:12px;color:rgba(255,255,255,0.6);font-family:'DM Sans',sans-serif">A friend</span>
+        </div>
+        <div class="ld-src" onclick="ldPickSrc(this,'Google Play')" style="display:flex;align-items:center;gap:9px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:11px;padding:13px 12px;cursor:pointer;transition:all .2s">
+          <span style="font-size:18px;flex-shrink:0">📱</span>
+          <span style="font-size:12px;color:rgba(255,255,255,0.6);font-family:'DM Sans',sans-serif">Google Play</span>
+        </div>
+        <div class="ld-src" onclick="ldPickSrc(this,'WhatsApp')" style="display:flex;align-items:center;gap:9px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:11px;padding:13px 12px;cursor:pointer;transition:all .2s">
+          <span style="font-size:18px;flex-shrink:0">💬</span>
+          <span style="font-size:12px;color:rgba(255,255,255,0.6);font-family:'DM Sans',sans-serif">WhatsApp</span>
+        </div>
+
+      </div>
+      <button id="ld-btn3" onclick="ldSubmit()" disabled style="width:100%;padding:15px;border-radius:12px;border:none;background:rgba(201,150,43,0.9);color:#1a0030;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;font-family:'DM Sans',sans-serif;cursor:pointer;opacity:0.3;transition:opacity .2s">Enter the Draw</button>
+    </div>
+
+    <!-- ── SUCCESS ── -->
+    <div id="ld-success" style="display:none;padding:30px 22px 24px;text-align:center">
+
+      <div style="width:70px;height:70px;border-radius:50%;border:1px solid rgba(201,150,43,0.4);background:rgba(201,150,43,0.07);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;font-size:30px">🏆</div>
+
+      <div style="font-family:'Cormorant Garamond',Georgia,serif;font-size:26px;color:#fff;margin-bottom:6px">You're in!</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.38);line-height:1.75;font-family:'DM Sans',sans-serif;font-style:italic;margin-bottom:24px">Your entry is confirmed. We'll announce<br>the winner on launch day via WhatsApp.</div>
+
+      <!-- Ticket -->
+      <div style="background:rgba(201,150,43,0.06);border:1px solid rgba(201,150,43,0.28);border-radius:16px;padding:20px;margin-bottom:16px;position:relative;overflow:hidden">
+        <div style="position:absolute;top:0;left:0;right:0;height:1.5px;background:rgba(201,150,43,0.6)"></div>
+        <div style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:rgba(201,150,43,0.45);font-family:'DM Sans',sans-serif;margin-bottom:7px">Your lucky ticket</div>
+        <div id="ld-ticket-num" style="font-family:'Cormorant Garamond',Georgia,serif;font-size:34px;color:rgba(201,150,43,0.9);letter-spacing:4px;margin-bottom:5px">#CC-00000</div>
+        <div id="ld-ticket-name" style="font-size:13px;color:rgba(255,255,255,0.5);font-family:'DM Sans',sans-serif;margin-bottom:2px"></div>
+        <div id="ld-ticket-fav" style="font-size:12px;color:rgba(201,150,43,0.45);font-family:'DM Sans',sans-serif;font-style:italic"></div>
+      </div>
+
+      <!-- Share -->
+      <button onclick="ldShare()" style="width:100%;padding:14px;border-radius:12px;border:1px solid rgba(255,255,255,0.1);background:transparent;color:rgba(255,255,255,0.6);font-size:13px;font-family:'DM Sans',sans-serif;letter-spacing:.5px;cursor:pointer;margin-bottom:10px;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px">
+        <span style="font-size:16px">📲</span> Share with friends
+      </button>
+
+      <button onclick="closeLuckyDraw()" style="width:100%;padding:12px;border-radius:12px;border:none;background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.3);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s">Close</button>
+
+    </div>
+
+    <!-- Footer -->
+    <div style="border-top:1px solid rgba(255,255,255,0.05);padding:12px 22px;text-align:center">
+      <div style="font-size:11px;color:rgba(255,255,255,0.16);font-family:'DM Sans',sans-serif;letter-spacing:.5px">🔒 Your info stays private · Winner notified on launch day</div>
+    </div>
+
+  </div>
+</div>
+<!-- END LUCKY DRAW POPUP -->
