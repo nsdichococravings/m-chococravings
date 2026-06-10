@@ -63,9 +63,22 @@
           return;
         }
       } else {
-        // Not logged in — fall back to localStorage
-        if (localStorage.getItem('cc_lucky_draw_entered')) return;
+        // Not logged in — check localStorage
+        try {
+          if (localStorage.getItem('cc_lucky_draw_entered')) return;
+        } catch(e) {}
       }
+
+      // ── CHECK 3: Snoozed? (closed without submitting) ──
+      try {
+        var snoozed = localStorage.getItem('cc_lucky_draw_snoozed');
+        if (snoozed && Date.now() < parseInt(snoozed)) {
+          console.log('Lucky draw snoozed — will show again later');
+          return;
+        }
+        // Snooze expired — clear it
+        localStorage.removeItem('cc_lucky_draw_snoozed');
+      } catch(e) {}
 
     } catch(e) {
       console.warn('Lucky draw check error:', e.message);
@@ -113,11 +126,19 @@
     _ldReset();
   };
 
-  // ── CLOSE ──
-  window.closeLuckyDraw = function() {
-    var ov = document.getElementById('ld-overlay');
-    if (ov) ov.style.display = 'none';
-  };
+window.closeLuckyDraw = function() {
+  var ov = document.getElementById('ld-overlay');
+  if (ov) ov.style.display = 'none';
+
+  // Only suppress future shows if they actually submitted
+  // If just closed — show again after 30 minutes
+  if (!_ldSubmitting) {
+    try {
+      var snoozeUntil = Date.now() + (30 * 60 * 1000); // 30 mins
+      localStorage.setItem('cc_lucky_draw_snoozed', snoozeUntil);
+    } catch(e) {}
+  }
+};
 
   // ── RESET ──
   function _ldReset() {
