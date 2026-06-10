@@ -2107,7 +2107,7 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
       <div id="add-addr-form" style="display:none;padding:0 22px 20px">
         <div style="background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px">
           <div style="font-size:13px;font-weight:700;color:var(--white);margin-bottom:4px">New Address</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1f;gap:8px">
                   <div class="addr-chip on" onclick="selAddrLabel(this,'Home')" style="padding:9px;background:rgba(107,47,206,.15);border:1.5px solid var(--p);border-radius:12px;text-align:center;cursor:pointer;font-size:12px;font-weight:600;color:var(--pl)">🏠 Home</div>
                   <div class="addr-chip" onclick="selAddrLabel(this,'Office')" style="padding:9px;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;text-align:center;cursor:pointer;font-size:12px;font-weight:600;color:var(--dim)">💼 Office</div>
                   <div class="addr-chip" onclick="selAddrLabel(this,'Other')" style="padding:9px;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;text-align:center;cursor:pointer;font-size:12px;font-weight:600;color:var(--dim)">📍 Other</div>
@@ -4687,24 +4687,38 @@ function selChip(el, group) {
 }
 
 // ── BROWNIE PREVIEW ──
+// Dynamic price map — loaded from Supabase
 var PRICE_MAP = {
-  'Eggless': {
-    '0.5 kg': [500,700],
-    '1 kg':   [900,1300],
-    '1.5 kg': [1300,1800],
-    '2 kg':   [1700,2400],
-    '3 kg':   [2500,3500],
-    '5 kg+':  [4000,6000]
-  },
-  'With Egg': {
-    '0.5 kg': [450,650],
-    '1 kg':   [800,1200],
-    '1.5 kg': [1200,1700],
-    '2 kg':   [1600,2200],
-    '3 kg':   [2300,3200],
-    '5 kg+':  [3800,5500]
-  }
+  'Eggless':  {},
+  'With Egg': {}
 };
+
+async function loadCakePricing() {
+  try {
+    var { data, error } = await db
+      .from('cake_pricing')
+      .select('egg_type, weight, price_min, price_max')
+      .eq('is_active', true);
+
+    if (error || !data || data.length === 0) {
+      console.warn('cake_pricing load failed — using defaults');
+      return;
+    }
+
+    // Reset
+    PRICE_MAP = { 'Eggless': {}, 'With Egg': {} };
+
+    data.forEach(function(row) {
+      if (!PRICE_MAP[row.egg_type]) PRICE_MAP[row.egg_type] = {};
+      PRICE_MAP[row.egg_type][row.weight] = [row.price_min, row.price_max];
+    });
+
+    console.log('✅ Cake pricing loaded:', PRICE_MAP);
+
+  } catch(e) {
+    console.warn('loadCakePricing error:', e.message);
+  }
+}
 
 // Layer add-ons per KG
 var LAYER_ADDON = { '1': 0, '2': 150, '3': 300 };
@@ -7885,6 +7899,10 @@ function openDetail(el) {
 
 async function loadProducts() {
   try {
+
+         // Load pricing dynamically before page renders
+    await Promise.all([loadCakePricing(), loadCakeAddons()]);
+
     // Load products with their variants
           var userPref = getUserEggPref(); // 'eggless', 'egg', or null
 
@@ -7911,6 +7929,7 @@ async function loadProducts() {
     renderFeaturedGrid(products);
     renderExploreList(products);
     renderTrending(products);
+    //loadCakePricing();
 
     // Hide loading overlay
     var overlay = document.getElementById('loading-overlay');
@@ -9961,16 +9980,41 @@ const S = {
   cakeName:'', namePlacement:'top'
 };
 
-function calcPrice(){
-  const tm = S.tiers===1?1:S.tiers===2?1.8:2.6;
-  document.getElementById('pnum').textContent = Math.round((S.basePrice+S.weightExtra)*tm*S.qty+S.extras);
-}
-
-function setWeight(btn,w,extra){
-  S.weight=w; S.weightExtra=extra;
-  btn.parentElement.querySelectorAll('.pill').forEach(b=>b.classList.remove('active'));
+function setWeight(btn, w, extra) {
+  S.weight = w;
+  S.weightExtra = extra; // kept for fallback
+  btn.parentElement.querySelectorAll('.pill').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   calcPrice();
+}
+
+function calcPrice() {
+  // ── Dynamic price from Supabase PRICE_MAP ──
+  var egg2   = (S.eggType === 'egg') ? 'With Egg' : 'Eggless';
+  var weight = S.weight || '1 kg';
+
+  // Map cake studio weight keys to PRICE_MAP keys
+  var weightMap = {
+    '0.5kg': '0.5 kg',
+    '1kg':   '1 kg',
+    '1.5kg': '1.5 kg',
+    '2kg':   '2 kg',
+    '3kg':   '3 kg',
+    '5kg':   '5 kg+'
+  };
+  var priceKey = weightMap[weight] || weight;
+
+  // Get base price range from dynamic map
+  var eggMap   = (PRICE_MAP && PRICE_MAP[egg2]) ? PRICE_MAP[egg2] : {};
+  var base     = eggMap[priceKey] || [900, 1300];
+  var midPrice = Math.round((base[0] + base[1]) / 2);
+
+  // Tier multiplier
+  var tm = S.tiers === 1 ? 1 : S.tiers === 2 ? 1.8 : 2.6;
+
+  // Final price
+  var total = Math.round(midPrice * tm * S.qty + (S.extras || 0));
+  document.getElementById('pnum').textContent = total;
 }
 
 function setFlavor(f){
@@ -11887,6 +11931,36 @@ window.addEventListener('load', function(){
   var el = document.getElementById('nav-nstore');
   if(el) observer.observe(el, {childList:true, subtree:true, characterData:true});
 });
+
+var LAYER_ADDON  = { '1': 0, '2': 150, '3': 300 };
+var TOPPER_ADDON = { 'None': 0, 'Acrylic Topper': 250, 'White Chocolate Name': 50, 'Dark Chocolate Name': 25 };
+
+async function loadCakeAddons() {
+  try {
+    var { data, error } = await db
+      .from('cake_addons')
+      .select('key, price')
+      .eq('is_active', true);
+
+    if (error || !data) return;
+
+    data.forEach(function(row) {
+      switch(row.key) {
+        case 'layer_2':            LAYER_ADDON['2'] = row.price; break;
+        case 'layer_3':            LAYER_ADDON['3'] = row.price; break;
+        case 'topper_acrylic':     TOPPER_ADDON['Acrylic Topper']        = row.price; break;
+        case 'topper_white_choco': TOPPER_ADDON['White Chocolate Name']  = row.price; break;
+        case 'topper_dark_choco':  TOPPER_ADDON['Dark Chocolate Name']   = row.price; break;
+        case 'faux_4corners':      FauxBALL_ADDON['Faux Balls – 4 Corners'] = row.price; break;
+        case 'butterfly_3':        BUTTERFLY_ADDON['3 Butterflies']      = row.price; break;
+      }
+    });
+
+    console.log('✅ Cake addons loaded');
+  } catch(e) {
+    console.warn('loadCakeAddons error:', e.message);
+  }
+}
 </script>
 
 <script src="/lucky-draw.js"></script>
