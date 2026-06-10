@@ -422,7 +422,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     </div>
     <div onclick="openAddItem()" style="margin-left:auto;width:36px;height:36px;border-radius:50%;background:#6e0977;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;cursor:pointer;box-shadow:0 3px 12px rgba(110,9,119,0.4)">+</div>
   </div>
-
+  
   <!-- Category filter -->
   <div style="display:flex;gap:7px;padding:12px 20px;background:#fffbf2;border-bottom:1.5px solid rgba(18,10,30,0.09)">
     <div class="tab on-coffee" id="mt-coffee"   onclick="mgSetTab('Coffee')"  >☕ Coffee</div>
@@ -431,6 +431,15 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   </div>
 
   <div id="mg-list" style="padding-bottom:100px"></div>
+</div>
+<!-- Admin quick actions — shown only to admin -->
+<div id="admin-quick-actions" style="display:none;display:flex;gap:8px;padding:10px 16px;background:#f5eeff;border-bottom:1px solid #e0c8f0">
+  <button onclick="openAdminOrder()" style="flex:1;padding:10px;background:#6e0977;color:#fff;border:none;border-radius:12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">
+    👤 Place Order for Customer
+  </button>
+  <button onclick="openQaItem()" style="flex:1;padding:10px;background:#fff;color:#6e0977;border:1.5px solid #6e0977;border-radius:12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">
+    ➕ Add Menu Item
+  </button>
 </div>
 
 <!-- ═══ ADD/EDIT ITEM SHEET ═══════════════════════════════════ -->
@@ -588,6 +597,98 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     </div>
   </div>
 </div>
+<!-- ═══ QUICK ADD MENU ITEM SHEET ═══ -->
+<div id="qaitem-overlay" onclick="closeQaItem()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:3000;backdrop-filter:blur(4px)"></div>
+
+<div id="qaitem-sheet" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-radius:22px 22px 0 0;border-top:1px solid #e8d0f0;z-index:3001;padding:0 0 32px;font-family:'DM Sans',sans-serif;max-height:90vh;overflow-y:auto">
+
+  <div style="width:40px;height:4px;border-radius:2px;background:#ddd0ea;margin:14px auto 0"></div>
+
+  <!-- Header -->
+  <div style="padding:16px 20px 12px;border-bottom:1px solid #f0e8f8">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#9c0ca1;margin-bottom:4px">Admin · Quick Add</div>
+        <div style="font-size:18px;font-weight:700;color:#1a0820">Add Menu Item</div>
+      </div>
+      <div onclick="closeQaItem()" style="width:34px;height:34px;border-radius:50%;background:#f5eeff;border:1px solid #e0c8f0;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#6e0977">✕</div>
+    </div>
+  </div>
+
+  <div style="padding:18px 20px;display:flex;flex-direction:column;gap:14px">
+
+    <!-- Name -->
+    <div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#9c0ca1;margin-bottom:7px">Item Name *</div>
+      <input id="qa-name" type="text" placeholder="e.g. Caramel Latte" style="width:100%;padding:12px 14px;border:1.5px solid #e0c8f0;border-radius:12px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;color:#1a0820">
+    </div>
+
+    <!-- Category -->
+    <div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#9c0ca1;margin-bottom:7px">Category *</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px" id="qa-cat-grid">
+        <div class="qa-cat" onclick="qaSelCat(this,'Coffee')" style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1.5px solid #e0c8f0;text-align:center;cursor:pointer;transition:all .2s">
+          <div style="font-size:18px;margin-bottom:3px">☕</div>
+          <div style="font-size:11px;font-weight:600;color:#6e0977">Coffee</div>
+        </div>
+        <div class="qa-cat" onclick="qaSelCat(this,'Tea')" style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1.5px solid #e0c8f0;text-align:center;cursor:pointer;transition:all .2s">
+          <div style="font-size:18px;margin-bottom:3px">🍵</div>
+          <div style="font-size:11px;font-weight:600;color:#6e0977">Tea</div>
+        </div>
+        <div class="qa-cat" onclick="qaSelCat(this,'Desserts')" style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1.5px solid #e0c8f0;text-align:center;cursor:pointer;transition:all .2s">
+          <div style="font-size:18px;margin-bottom:3px">🍫</div>
+          <div style="font-size:11px;font-weight:600;color:#6e0977">Desserts</div>
+        </div>
+        <div class="qa-cat" onclick="qaSelCat(this,'Brownies')" style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1.5px solid #e0c8f0;text-align:center;cursor:pointer;transition:all .2s">
+          <div style="font-size:18px;margin-bottom:3px">🟫</div>
+          <div style="font-size:11px;font-weight:600;color:#6e0977">Brownies</div>
+        </div>
+        <div class="qa-cat" onclick="qaSelCat(this,'Cakes')" style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1.5px solid #e0c8f0;text-align:center;cursor:pointer;transition:all .2s">
+          <div style="font-size:18px;margin-bottom:3px">🎂</div>
+          <div style="font-size:11px;font-weight:600;color:#6e0977">Cakes</div>
+        </div>
+        <div class="qa-cat" onclick="qaSelCat(this,'Others')" style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1.5px solid #e0c8f0;text-align:center;cursor:pointer;transition:all .2s">
+          <div style="font-size:18px;margin-bottom:3px">✨</div>
+          <div style="font-size:11px;font-weight:600;color:#6e0977">Others</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Price -->
+    <div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#9c0ca1;margin-bottom:7px">Price (₹) *</div>
+      <div style="display:flex;align-items:center;background:#f5eeff;border:1.5px solid #e0c8f0;border-radius:12px;overflow:hidden">
+        <div style="padding:12px 14px;font-size:14px;color:#9c0ca1;font-weight:700;border-right:1px solid #e0c8f0">₹</div>
+        <input id="qa-price" type="number" placeholder="0" style="flex:1;padding:12px 14px;border:none;background:transparent;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;color:#1a0820">
+      </div>
+    </div>
+
+    <!-- Description -->
+    <div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#9c0ca1;margin-bottom:7px">Description <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#b090c0">optional</span></div>
+      <input id="qa-desc" type="text" placeholder="e.g. double shot" style="width:100%;padding:12px 14px;border:1.5px solid #e0c8f0;border-radius:12px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;color:#1a0820">
+    </div>
+
+    <!-- Availability toggle -->
+    <div style="display:flex;align-items:center;justify-content:space-between;background:#f5eeff;border:1px solid #e0c8f0;border-radius:12px;padding:12px 14px">
+      <div>
+        <div style="font-size:13px;font-weight:600;color:#1a0820">Available now</div>
+        <div style="font-size:11px;color:#9c0ca1;margin-top:1px">Show immediately on menu</div>
+      </div>
+      <div id="qa-avail-toggle" onclick="qaToggleAvail()" style="width:44px;height:26px;border-radius:13px;background:#6e0977;cursor:pointer;position:relative;transition:background .2s">
+        <div id="qa-avail-knob" style="position:absolute;top:3px;left:20px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 4px rgba(0,0,0,0.2)"></div>
+      </div>
+    </div>
+    <input type="hidden" id="qa-avail" value="true">
+
+    <!-- Submit -->
+    <button onclick="qaSubmit()" style="width:100%;padding:15px;background:linear-gradient(135deg,#6e0977,#9c0ca1);color:#fff;font-size:13px;font-weight:700;border:none;border-radius:14px;cursor:pointer;letter-spacing:1px;font-family:'DM Sans',sans-serif">
+      ➕ Add to Menu
+    </button>
+
+  </div>
+</div>
+
 <script>
 // ── CONFIG — paste your anon key here ────────────────────────
 var SUPABASE_URL = 'https://yjbfditboewwpgyqzryd.supabase.co';
@@ -1662,6 +1763,10 @@ var isAdmin = false; // global flag
 async function checkAdminBadge(){
   try {
     if(!db) return;
+
+    var adminActions = document.getElementById('admin-quick-actions');
+    if (adminActions) adminActions.style.display = 'flex';
+
     var s = await db.auth.getUser(); var user = s.data.user;
     if(!user) return;
     var chk = await db.from('customers').select('is_admin').eq('email', user.email).single();
@@ -1887,6 +1992,240 @@ async function sendInvoiceAuto(invoiceData) {
     alert('Invoice error: ' + e.message);
   }
 }
+// ══ QUICK ADD MENU ITEM ══
+var _qaCat   = '';
+var _qaAvail = true;
+
+function openQaItem() {
+  document.getElementById('qaitem-overlay').style.display = 'block';
+  document.getElementById('qaitem-sheet').style.display   = 'block';
+  // Reset form
+  ['qa-name','qa-price','qa-desc'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  _qaCat = '';
+  _qaAvail = true;
+  document.querySelectorAll('.qa-cat').forEach(function(c) {
+    c.style.borderColor = '#e0c8f0';
+    c.style.background  = '#f5eeff';
+  });
+}
+
+function closeQaItem() {
+  document.getElementById('qaitem-overlay').style.display = 'none';
+  document.getElementById('qaitem-sheet').style.display   = 'none';
+}
+
+function qaSelCat(el, val) {
+  document.querySelectorAll('.qa-cat').forEach(function(c) {
+    c.style.borderColor = '#e0c8f0';
+    c.style.background  = '#f5eeff';
+  });
+  el.style.borderColor = '#6e0977';
+  el.style.background  = 'rgba(110,9,119,0.1)';
+  _qaCat = val;
+}
+
+function qaToggleAvail() {
+  _qaAvail = !_qaAvail;
+  var toggle = document.getElementById('qa-avail-toggle');
+  var knob   = document.getElementById('qa-avail-knob');
+  toggle.style.background = _qaAvail ? '#6e0977' : '#ccc';
+  knob.style.left         = _qaAvail ? '20px' : '3px';
+  document.getElementById('qa-avail').value = _qaAvail;
+}
+
+async function qaSubmit() {
+  var name  = (document.getElementById('qa-name')  || {}).value || '';
+  var price = (document.getElementById('qa-price') || {}).value || '';
+  var desc  = (document.getElementById('qa-desc')  || {}).value || '';
+
+  if (!name.trim())  { showStoreToast('Enter item name');    return; }
+  if (!_qaCat)       { showStoreToast('Select a category'); return; }
+  if (!price || isNaN(price)) { showStoreToast('Enter a valid price'); return; }
+
+  var btn = document.querySelector('#qaitem-sheet button:last-child');
+  if (btn) { btn.disabled = true; btn.textContent = 'Adding...'; }
+
+  var { error } = await db.from('store_menu').insert([{
+    name:        name.trim(),
+    category:    _qaCat.toLowerCase().replace(' ','_'),
+    price:       parseInt(price),
+    description: desc.trim() || null,
+    is_available: _qaAvail,
+    is_active:   true
+  }]);
+
+  if (btn) { btn.disabled = false; btn.textContent = '➕ Add to Menu'; }
+
+  if (error) {
+    showStoreToast('Error: ' + error.message);
+    return;
+  }
+
+  showStoreToast('✅ ' + name + ' added to menu!');
+  closeQaItem();
+
+  // Reload menu so new item shows instantly
+  await loadMenu();
+}
+
+
+// ══ ADMIN ORDER ON BEHALF OF CUSTOMER ══
+var _aoItems  = [];
+var _aoPayMethod = 'cash';
+
+function openAdminOrder() {
+  _aoItems     = [];
+  _aoPayMethod = 'cash';
+  document.getElementById('admin-order-overlay').style.display = 'block';
+  document.getElementById('admin-order-sheet').style.display   = 'block';
+  // Pre-fill with current cart items if any
+  if (typeof cart !== 'undefined' && cart.length > 0) {
+    cart.forEach(function(item) {
+      _aoItems.push({ name: item.name, price: item.price, qty: item.qty || 1 });
+    });
+  }
+  aoRenderItems();
+  aoCalcTotal();
+  // Clear inputs
+  ['ao-cust-name','ao-cust-phone','ao-item-name','ao-item-price','ao-notes'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  var qtyEl = document.getElementById('ao-item-qty');
+  if (qtyEl) qtyEl.value = '1';
+}
+
+function closeAdminOrder() {
+  document.getElementById('admin-order-overlay').style.display = 'none';
+  document.getElementById('admin-order-sheet').style.display   = 'none';
+}
+
+function aoAddItem() {
+  var name  = (document.getElementById('ao-item-name')  || {}).value || '';
+  var price = (document.getElementById('ao-item-price') || {}).value || '';
+  var qty   = (document.getElementById('ao-item-qty')   || {}).value || '1';
+
+  if (!name.trim() || !price || isNaN(price)) {
+    showStoreToast('Enter item name and price');
+    return;
+  }
+
+  _aoItems.push({ name: name.trim(), price: parseInt(price), qty: parseInt(qty) || 1 });
+  aoRenderItems();
+  aoCalcTotal();
+
+  // Clear inputs
+  document.getElementById('ao-item-name').value  = '';
+  document.getElementById('ao-item-price').value = '';
+  document.getElementById('ao-item-qty').value   = '1';
+  document.getElementById('ao-item-name').focus();
+}
+
+function aoRemoveItem(idx) {
+  _aoItems.splice(idx, 1);
+  aoRenderItems();
+  aoCalcTotal();
+}
+
+function aoRenderItems() {
+  var list = document.getElementById('ao-items-list');
+  if (!list) return;
+  if (_aoItems.length === 0) {
+    list.innerHTML = '<div style="font-size:12px;color:#b090c0;text-align:center;padding:10px">No items added yet</div>';
+    return;
+  }
+  list.innerHTML = _aoItems.map(function(item, i) {
+    return '<div style="display:flex;align-items:center;justify-content:space-between;'
+      + 'background:#f5eeff;border:1px solid #e0c8f0;border-radius:10px;padding:10px 12px">'
+      + '<div style="flex:1">'
+      + '<div style="font-size:13px;font-weight:600;color:#1a0820">' + item.name + '</div>'
+      + '<div style="font-size:11px;color:#9c0ca1">₹' + item.price + ' × ' + item.qty + '</div>'
+      + '</div>'
+      + '<div style="font-size:13px;font-weight:700;color:#6e0977;margin-right:10px">₹' + (item.price * item.qty) + '</div>'
+      + '<div onclick="aoRemoveItem(' + i + ')" style="width:26px;height:26px;border-radius:50%;'
+      + 'background:#fff;border:1px solid #e0c8f0;display:flex;align-items:center;'
+      + 'justify-content:center;cursor:pointer;font-size:12px;color:#e05080">✕</div>'
+      + '</div>';
+  }).join('');
+}
+
+function aoCalcTotal() {
+  var total = _aoItems.reduce(function(s, i) { return s + (i.price * i.qty); }, 0);
+  var el = document.getElementById('ao-total');
+  if (el) el.textContent = '₹' + total;
+  return total;
+}
+
+function aoSelPay(el, val) {
+  document.querySelectorAll('.ao-pay').forEach(function(c) {
+    c.style.borderColor = '#e0c8f0';
+    c.style.background  = '#f5eeff';
+    var lbl = c.querySelector('div:last-child');
+    if (lbl) lbl.style.color = '#9c0ca1';
+  });
+  el.style.borderColor = '#6e0977';
+  el.style.background  = 'rgba(110,9,119,0.1)';
+  var lbl = el.querySelector('div:last-child');
+  if (lbl) lbl.style.color = '#6e0977';
+  _aoPayMethod = val;
+}
+
+async function aoSubmit() {
+  var custName  = (document.getElementById('ao-cust-name')  || {}).value || '';
+  var custPhone = (document.getElementById('ao-cust-phone') || {}).value || '';
+  var notes     = (document.getElementById('ao-notes')      || {}).value || '';
+
+  if (!custName.trim())              { showStoreToast('Enter customer name');   return; }
+  if (_aoItems.length === 0)         { showStoreToast('Add at least one item'); return; }
+
+  var total = aoCalcTotal();
+  var phone = custPhone.trim()
+    ? '+91' + custPhone.replace(/\D/g,'').slice(-10)
+    : 'Walk-in';
+
+  // Generate token
+  var today  = new Date().toDateString();
+  var stored = localStorage.getItem('store_token_date');
+  var count  = stored === today ? parseInt(localStorage.getItem('store_token_count') || '0') + 1 : 1;
+  localStorage.setItem('store_token_date',  today);
+  localStorage.setItem('store_token_count', count);
+  var token = 'T-' + String(count).padStart(3, '0');
+
+  var btn = document.getElementById('ao-submit-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Placing order...'; }
+
+  var { data: order, error } = await db.from('store_orders').insert([{
+    token:           token,
+    customer_name:   custName.trim(),
+    customer_phone:  phone,
+    items:           JSON.stringify(_aoItems.map(function(i) {
+                       return { name: i.name, qty: i.qty, price: i.price };
+                     })),
+    total:           total,
+    payment_method:  _aoPayMethod,
+    payment_status:  _aoPayMethod === 'free' ? 'complimentary' : 'paid',
+    status:          'confirmed',
+    notes:           notes.trim() || null,
+    placed_by_admin: true
+  }]).select('id, token').single();
+
+  if (btn) { btn.disabled = false; btn.textContent = '✅ Place Order'; }
+
+  if (error) {
+    showStoreToast('Error: ' + error.message);
+    return;
+  }
+
+  showStoreToast('✅ Order ' + token + ' placed for ' + custName.trim());
+  closeAdminOrder();
+
+  // Refresh kitchen display
+  if (typeof kitchenLoad === 'function') kitchenLoad();
+}
 </script>
+
 </body>
 </html>
