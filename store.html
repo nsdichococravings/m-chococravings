@@ -2121,20 +2121,36 @@ async function aoSubmit() {
   var btn = document.getElementById('ao-submit-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Placing order...'; }
 
-  var { data: order, error } = await db.from('store_orders').insert([{
-    token:           token,
-    customer_name:   custName.trim(),
-    customer_phone:  phone,
-    items:           JSON.stringify(_aoItems.map(function(i) {
-                       return { name: i.name, qty: i.qty, price: i.price };
-                     })),
-    total:           total,
-    payment_method:  _aoPayMethod,
-    payment_status:  _aoPayMethod === 'free' ? 'complimentary' : 'paid',
-    status:          'confirmed',
-    notes:           notes.trim() || null,
-    placed_by_admin: true
-  }]).select('id, token').single();
+  // Use walk-in customer ID for admin placed orders
+var WALKIN_CUSTOMER_ID = '00000000-0000-0000-0000-000000000001';
+
+// Try to find existing customer by phone
+var custId = WALKIN_CUSTOMER_ID;
+if (custPhone.trim().length === 10) {
+  try {
+    var custLookup = await db.from('customers')
+      .select('id')
+      .eq('phone', '+91' + custPhone.replace(/\D/g,'').slice(-10))
+      .maybeSingle();
+    if (custLookup.data) custId = custLookup.data.id;
+  } catch(e) {}
+}
+
+var { data: order, error } = await db.from('store_orders').insert([{
+  token:           token,
+  customer_id:     custId,
+  customer_name:   custName.trim(),
+  customer_phone:  phone,
+  items:           JSON.stringify(_aoItems.map(function(i) {
+                     return { name: i.name, qty: i.qty, price: i.price };
+                   })),
+  total:           total,
+  payment_method:  _aoPayMethod,
+  payment_status:  _aoPayMethod === 'free' ? 'complimentary' : 'paid',
+  status:          'confirmed',
+  notes:           notes.trim() || null,
+  placed_by_admin: true
+}]).select('id, token').single();
 
   if (btn) { btn.disabled = false; btn.textContent = '✅ Place Order'; }
 
