@@ -433,8 +433,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   <div id="mg-list" style="padding-bottom:100px"></div>
 </div>
 <!-- Admin quick actions — shown only to admin -->
-<div id="admin-quick-actions" style="display:none;gap:8px;padding:10px 16px;background:#f5eeff;border-bottom:1px solid #e0c8f0">
-  <button onclick="openAdminOrder()" style="flex:1;padding:10px;background:#6e0977;color:#fff;border:none;border-radius:12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">
+<div id="admin-quick-actions" style="display:none;gap:8px;padding:10px 16px;background:#f5eeff;border-bottom:1px solid #e0c8f0;position:relative;z-index:100;margin-top:60px">  <button onclick="openAdminOrder()" style="flex:1;padding:10px;background:#6e0977;color:#fff;border:none;border-radius:12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">
     👤 Place Order for Customer
   </button>
   <button onclick="openQaItem()" style="flex:1;padding:10px;background:#fff;color:#6e0977;border:1.5px solid #6e0977;border-radius:12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">
@@ -2085,8 +2084,18 @@ var _aoPayMethod = 'cash';
 function openAdminOrder() {
   _aoItems     = [];
   _aoPayMethod = 'cash';
-  document.getElementById('admin-order-overlay').style.display = 'block';
-  document.getElementById('admin-order-sheet').style.display   = 'block';
+
+  var ov = document.getElementById('admin-order-overlay');
+  var sh = document.getElementById('admin-order-sheet');
+
+  if (!ov || !sh) {
+    console.warn('Admin order sheet HTML not found in store.html — make sure you pasted the HTML');
+    alert('Admin order sheet not found. Please paste the HTML into store.html first.');
+    return;
+  }
+
+  ov.style.display = 'block';
+  sh.style.display = 'block';
   // Pre-fill with current cart items if any
   if (typeof cart !== 'undefined' && cart.length > 0) {
     cart.forEach(function(item) {
