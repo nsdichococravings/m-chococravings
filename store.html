@@ -596,97 +596,6 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     </div>
   </div>
 </div>
-<!-- ═══ QUICK ADD MENU ITEM SHEET ═══ -->
-<div id="qaitem-overlay" onclick="closeQaItem()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:3000;backdrop-filter:blur(4px)"></div>
-
-<div id="qaitem-sheet" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-radius:22px 22px 0 0;border-top:1px solid #e8d0f0;z-index:3001;padding:0 0 32px;font-family:'DM Sans',sans-serif;max-height:90vh;overflow-y:auto">
-
-  <div style="width:40px;height:4px;border-radius:2px;background:#ddd0ea;margin:14px auto 0"></div>
-
-  <!-- Header -->
-  <div style="padding:16px 20px 12px;border-bottom:1px solid #f0e8f8">
-    <div style="display:flex;align-items:center;justify-content:space-between">
-      <div>
-        <div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#9c0ca1;margin-bottom:4px">Admin · Quick Add</div>
-        <div style="font-size:18px;font-weight:700;color:#1a0820">Add Menu Item</div>
-      </div>
-      <div onclick="closeQaItem()" style="width:34px;height:34px;border-radius:50%;background:#f5eeff;border:1px solid #e0c8f0;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#6e0977">✕</div>
-    </div>
-  </div>
-
-  <div style="padding:18px 20px;display:flex;flex-direction:column;gap:14px">
-
-    <!-- Name -->
-    <div>
-      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#9c0ca1;margin-bottom:7px">Item Name *</div>
-      <input id="qa-name" type="text" placeholder="e.g. Caramel Latte" style="width:100%;padding:12px 14px;border:1.5px solid #e0c8f0;border-radius:12px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;color:#1a0820">
-    </div>
-
-    <!-- Category -->
-    <div>
-      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#9c0ca1;margin-bottom:7px">Category *</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px" id="qa-cat-grid">
-        <div class="qa-cat" onclick="qaSelCat(this,'Coffee')" style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1.5px solid #e0c8f0;text-align:center;cursor:pointer;transition:all .2s">
-          <div style="font-size:18px;margin-bottom:3px">☕</div>
-          <div style="font-size:11px;font-weight:600;color:#6e0977">Coffee</div>
-        </div>
-        <div class="qa-cat" onclick="qaSelCat(this,'Tea')" style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1.5px solid #e0c8f0;text-align:center;cursor:pointer;transition:all .2s">
-          <div style="font-size:18px;margin-bottom:3px">🍵</div>
-          <div style="font-size:11px;font-weight:600;color:#6e0977">Tea</div>
-        </div>
-        <div class="qa-cat" onclick="qaSelCat(this,'Desserts')" style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1.5px solid #e0c8f0;text-align:center;cursor:pointer;transition:all .2s">
-          <div style="font-size:18px;margin-bottom:3px">🍫</div>
-          <div style="font-size:11px;font-weight:600;color:#6e0977">Desserts</div>
-        </div>
-        <div class="qa-cat" onclick="qaSelCat(this,'Brownies')" style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1.5px solid #e0c8f0;text-align:center;cursor:pointer;transition:all .2s">
-          <div style="font-size:18px;margin-bottom:3px">🟫</div>
-          <div style="font-size:11px;font-weight:600;color:#6e0977">Brownies</div>
-        </div>
-        <div class="qa-cat" onclick="qaSelCat(this,'Cakes')" style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1.5px solid #e0c8f0;text-align:center;cursor:pointer;transition:all .2s">
-          <div style="font-size:18px;margin-bottom:3px">🎂</div>
-          <div style="font-size:11px;font-weight:600;color:#6e0977">Cakes</div>
-        </div>
-        <div class="qa-cat" onclick="qaSelCat(this,'Others')" style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1.5px solid #e0c8f0;text-align:center;cursor:pointer;transition:all .2s">
-          <div style="font-size:18px;margin-bottom:3px">✨</div>
-          <div style="font-size:11px;font-weight:600;color:#6e0977">Others</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Price -->
-    <div>
-      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#9c0ca1;margin-bottom:7px">Price (₹) *</div>
-      <div style="display:flex;align-items:center;background:#f5eeff;border:1.5px solid #e0c8f0;border-radius:12px;overflow:hidden">
-        <div style="padding:12px 14px;font-size:14px;color:#9c0ca1;font-weight:700;border-right:1px solid #e0c8f0">₹</div>
-        <input id="qa-price" type="number" placeholder="0" style="flex:1;padding:12px 14px;border:none;background:transparent;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;color:#1a0820">
-      </div>
-    </div>
-
-    <!-- Description -->
-    <div>
-      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#9c0ca1;margin-bottom:7px">Description <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#b090c0">optional</span></div>
-      <input id="qa-desc" type="text" placeholder="e.g. double shot" style="width:100%;padding:12px 14px;border:1.5px solid #e0c8f0;border-radius:12px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;color:#1a0820">
-    </div>
-
-    <!-- Availability toggle -->
-    <div style="display:flex;align-items:center;justify-content:space-between;background:#f5eeff;border:1px solid #e0c8f0;border-radius:12px;padding:12px 14px">
-      <div>
-        <div style="font-size:13px;font-weight:600;color:#1a0820">Available now</div>
-        <div style="font-size:11px;color:#9c0ca1;margin-top:1px">Show immediately on menu</div>
-      </div>
-      <div id="qa-avail-toggle" onclick="qaToggleAvail()" style="width:44px;height:26px;border-radius:13px;background:#6e0977;cursor:pointer;position:relative;transition:background .2s">
-        <div id="qa-avail-knob" style="position:absolute;top:3px;left:20px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 4px rgba(0,0,0,0.2)"></div>
-      </div>
-    </div>
-    <input type="hidden" id="qa-avail" value="true">
-
-    <!-- Submit -->
-    <button onclick="qaSubmit()" style="width:100%;padding:15px;background:linear-gradient(135deg,#6e0977,#9c0ca1);color:#fff;font-size:13px;font-weight:700;border:none;border-radius:14px;cursor:pointer;letter-spacing:1px;font-family:'DM Sans',sans-serif">
-      ➕ Add to Menu
-    </button>
-
-  </div>
-</div>
 
 <script>
 // ── CONFIG — paste your anon key here ────────────────────────
@@ -2240,7 +2149,226 @@ async function aoSubmit() {
   // Refresh kitchen display
   if (typeof kitchenLoad === 'function') kitchenLoad();
 }
-</script>
 
+function showStoreToast(msg) {
+  var t = document.getElementById('store-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'store-toast';
+    t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);'
+      + 'background:#6e0977;color:#fff;padding:11px 22px;border-radius:22px;'
+      + 'font-size:13px;font-weight:700;z-index:9999;white-space:nowrap;'
+      + 'box-shadow:0 8px 24px rgba(110,9,119,0.5);opacity:0;transition:all .3s;'
+      + 'font-family:\'Instrument Sans\',sans-serif;pointer-events:none';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  t.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(window._storeToast);
+  window._storeToast = setTimeout(function() {
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(-50%) translateY(10px)';
+  }, 2500);
+}
+s
+</script>
+<!-- ═══ ADMIN PLACE ORDER SHEET ═══ -->
+<div id="admin-order-overlay" onclick="closeAdminOrder()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:3000;backdrop-filter:blur(4px)"></div>
+
+<div id="admin-order-sheet" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-radius:22px 22px 0 0;border-top:1px solid #e8d0f0;z-index:3001;padding:0 0 32px;font-family:'DM Sans',sans-serif;max-height:92vh;overflow-y:auto">
+
+  <div style="width:40px;height:4px;border-radius:2px;background:#ddd0ea;margin:14px auto 0"></div>
+
+  <!-- Header -->
+  <div style="padding:16px 20px 12px;border-bottom:1px solid #f0e8f8">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#9c0ca1;margin-bottom:4px">Admin · Manual Order</div>
+        <div style="font-size:18px;font-weight:700;color:#1a0820">Place Order for Customer</div>
+      </div>
+      <div onclick="closeAdminOrder()" style="width:34px;height:34px;border-radius:50%;background:#f5eeff;border:1px solid #e0c8f0;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#6e0977">✕</div>
+    </div>
+  </div>
+
+  <div style="padding:18px 20px;display:flex;flex-direction:column;gap:14px">
+
+    <!-- Customer details -->
+    <div style="background:#f5eeff;border:1px solid #e0c8f0;border-radius:14px;padding:14px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#9c0ca1;margin-bottom:12px">Customer Details</div>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <input id="ao-cust-name" type="text" placeholder="Customer name"
+          style="width:100%;padding:11px 13px;border:1px solid #e0c8f0;border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;color:#1a0820">
+        <div style="display:flex;align-items:center;background:#fff;border:1px solid #e0c8f0;border-radius:10px;overflow:hidden">
+          <div style="padding:11px 12px;font-size:13px;color:#9c0ca1;font-weight:600;border-right:1px solid #e0c8f0;flex-shrink:0">+91</div>
+          <input id="ao-cust-phone" type="tel" maxlength="10" placeholder="WhatsApp number"
+            style="flex:1;padding:11px 12px;border:none;background:transparent;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;color:#1a0820">
+        </div>
+      </div>
+    </div>
+
+    <!-- Items list -->
+    <div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#9c0ca1;margin-bottom:10px">Order Items</div>
+      <div id="ao-items-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px">
+        <div style="font-size:12px;color:#b090c0;text-align:center;padding:10px">No items added yet</div>
+      </div>
+
+      <!-- Add item row -->
+      <div style="display:flex;gap:8px;align-items:flex-end">
+        <div style="flex:2">
+          <div style="font-size:10px;color:#9c0ca1;font-weight:600;margin-bottom:5px">Item name</div>
+          <input id="ao-item-name" type="text" placeholder="e.g. Espresso"
+            style="width:100%;padding:10px 12px;border:1px solid #e0c8f0;border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;color:#1a0820">
+        </div>
+        <div style="flex:1">
+          <div style="font-size:10px;color:#9c0ca1;font-weight:600;margin-bottom:5px">Price ₹</div>
+          <input id="ao-item-price" type="number" placeholder="0"
+            style="width:100%;padding:10px 12px;border:1px solid #e0c8f0;border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;color:#1a0820">
+        </div>
+        <div style="flex:0.6">
+          <div style="font-size:10px;color:#9c0ca1;font-weight:600;margin-bottom:5px">Qty</div>
+          <input id="ao-item-qty" type="number" min="1" value="1"
+            style="width:100%;padding:10px 12px;border:1px solid #e0c8f0;border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;color:#1a0820">
+        </div>
+        <button onclick="aoAddItem()" style="padding:10px 14px;background:#6e0977;color:#fff;border:none;border-radius:10px;font-size:20px;cursor:pointer;flex-shrink:0;height:40px;display:flex;align-items:center;justify-content:center">+</button>
+      </div>
+    </div>
+
+    <!-- Total -->
+    <div style="display:flex;justify-content:space-between;align-items:center;background:#f5eeff;border:1px solid #e0c8f0;border-radius:12px;padding:13px 16px">
+      <div style="font-size:13px;font-weight:700;color:#1a0820">Total</div>
+      <div id="ao-total" style="font-size:22px;font-weight:700;color:#6e0977;font-family:'Fraunces',Georgia,serif">₹0</div>
+    </div>
+
+    <!-- Payment -->
+    <div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#9c0ca1;margin-bottom:10px">Payment</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div class="ao-pay" onclick="aoSelPay(this,'cash')"
+          style="padding:10px 6px;border-radius:12px;background:rgba(110,9,119,0.08);border:1.5px solid #6e0977;text-align:center;cursor:pointer;transition:all .2s">
+          <div style="font-size:20px;margin-bottom:3px">💵</div>
+          <div style="font-size:11px;font-weight:600;color:#6e0977">Cash</div>
+        </div>
+        <div class="ao-pay" onclick="aoSelPay(this,'upi')"
+          style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1px solid #e0c8f0;text-align:center;cursor:pointer;transition:all .2s">
+          <div style="font-size:20px;margin-bottom:3px">📱</div>
+          <div style="font-size:11px;font-weight:600;color:#9c0ca1">UPI</div>
+        </div>
+        <div class="ao-pay" onclick="aoSelPay(this,'free')"
+          style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1px solid #e0c8f0;text-align:center;cursor:pointer;transition:all .2s">
+          <div style="font-size:20px;margin-bottom:3px">🎁</div>
+          <div style="font-size:11px;font-weight:600;color:#9c0ca1">Complimentary</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#9c0ca1;margin-bottom:7px">Notes <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#b090c0">optional</span></div>
+      <input id="ao-notes" type="text" placeholder="Any special instructions..."
+        style="width:100%;padding:12px 14px;border:1.5px solid #e0c8f0;border-radius:12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;color:#1a0820">
+    </div>
+
+    <!-- Submit -->
+    <button id="ao-submit-btn" onclick="aoSubmit()"
+      style="width:100%;padding:15px;background:linear-gradient(135deg,#6e0977,#9c0ca1);color:#fff;font-size:13px;font-weight:700;border:none;border-radius:14px;cursor:pointer;letter-spacing:1px;font-family:'DM Sans',sans-serif">
+      ✅ Place Order
+    </button>
+
+  </div>
+</div>
+<!-- END ADMIN PLACE ORDER SHEET -->
+
+
+<!-- ═══ QUICK ADD MENU ITEM SHEET ═══ -->
+<div id="qaitem-overlay" onclick="closeQaItem()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:3000;backdrop-filter:blur(4px)"></div>
+
+<div id="qaitem-sheet" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-radius:22px 22px 0 0;border-top:1px solid #e8d0f0;z-index:3001;padding:0 0 32px;font-family:'DM Sans',sans-serif;max-height:90vh;overflow-y:auto">
+
+  <div style="width:40px;height:4px;border-radius:2px;background:#ddd0ea;margin:14px auto 0"></div>
+
+  <div style="padding:16px 20px 12px;border-bottom:1px solid #f0e8f8">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#9c0ca1;margin-bottom:4px">Admin · Quick Add</div>
+        <div style="font-size:18px;font-weight:700;color:#1a0820">Add Menu Item</div>
+      </div>
+      <div onclick="closeQaItem()" style="width:34px;height:34px;border-radius:50%;background:#f5eeff;border:1px solid #e0c8f0;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#6e0977">✕</div>
+    </div>
+  </div>
+
+  <div style="padding:18px 20px;display:flex;flex-direction:column;gap:14px">
+
+    <div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#9c0ca1;margin-bottom:7px">Item Name *</div>
+      <input id="qa-name" type="text" placeholder="e.g. Caramel Latte"
+        style="width:100%;padding:12px 14px;border:1.5px solid #e0c8f0;border-radius:12px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;color:#1a0820">
+    </div>
+
+    <div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#9c0ca1;margin-bottom:7px">Category *</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div class="qa-cat" onclick="qaSelCat(this,'Coffee')" style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1.5px solid #e0c8f0;text-align:center;cursor:pointer;transition:all .2s">
+          <div style="font-size:18px;margin-bottom:3px">☕</div>
+          <div style="font-size:11px;font-weight:600;color:#6e0977">Coffee</div>
+        </div>
+        <div class="qa-cat" onclick="qaSelCat(this,'Tea')" style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1.5px solid #e0c8f0;text-align:center;cursor:pointer;transition:all .2s">
+          <div style="font-size:18px;margin-bottom:3px">🍵</div>
+          <div style="font-size:11px;font-weight:600;color:#6e0977">Tea</div>
+        </div>
+        <div class="qa-cat" onclick="qaSelCat(this,'Desserts')" style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1.5px solid #e0c8f0;text-align:center;cursor:pointer;transition:all .2s">
+          <div style="font-size:18px;margin-bottom:3px">🍫</div>
+          <div style="font-size:11px;font-weight:600;color:#6e0977">Desserts</div>
+        </div>
+        <div class="qa-cat" onclick="qaSelCat(this,'Brownies')" style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1.5px solid #e0c8f0;text-align:center;cursor:pointer;transition:all .2s">
+          <div style="font-size:18px;margin-bottom:3px">🟫</div>
+          <div style="font-size:11px;font-weight:600;color:#6e0977">Brownies</div>
+        </div>
+        <div class="qa-cat" onclick="qaSelCat(this,'Cakes')" style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1.5px solid #e0c8f0;text-align:center;cursor:pointer;transition:all .2s">
+          <div style="font-size:18px;margin-bottom:3px">🎂</div>
+          <div style="font-size:11px;font-weight:600;color:#6e0977">Cakes</div>
+        </div>
+        <div class="qa-cat" onclick="qaSelCat(this,'Others')" style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1.5px solid #e0c8f0;text-align:center;cursor:pointer;transition:all .2s">
+          <div style="font-size:18px;margin-bottom:3px">✨</div>
+          <div style="font-size:11px;font-weight:600;color:#6e0977">Others</div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#9c0ca1;margin-bottom:7px">Price (₹) *</div>
+      <div style="display:flex;align-items:center;background:#f5eeff;border:1.5px solid #e0c8f0;border-radius:12px;overflow:hidden">
+        <div style="padding:12px 14px;font-size:14px;color:#9c0ca1;font-weight:700;border-right:1px solid #e0c8f0">₹</div>
+        <input id="qa-price" type="number" placeholder="0"
+          style="flex:1;padding:12px 14px;border:none;background:transparent;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;color:#1a0820">
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#9c0ca1;margin-bottom:7px">Description <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#b090c0">optional</span></div>
+      <input id="qa-desc" type="text" placeholder="e.g. double shot"
+        style="width:100%;padding:12px 14px;border:1.5px solid #e0c8f0;border-radius:12px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;color:#1a0820">
+    </div>
+
+    <!-- Availability toggle -->
+    <div style="display:flex;align-items:center;justify-content:space-between;background:#f5eeff;border:1px solid #e0c8f0;border-radius:12px;padding:12px 14px">
+      <div>
+        <div style="font-size:13px;font-weight:600;color:#1a0820">Available now</div>
+        <div style="font-size:11px;color:#9c0ca1;margin-top:1px">Show immediately on menu</div>
+      </div>
+      <div id="qa-avail-toggle" onclick="qaToggleAvail()" style="width:44px;height:26px;border-radius:13px;background:#6e0977;cursor:pointer;position:relative;transition:background .2s">
+        <div id="qa-avail-knob" style="position:absolute;top:3px;left:20px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 4px rgba(0,0,0,0.2)"></div>
+      </div>
+    </div>
+
+    <button onclick="qaSubmit()"
+      style="width:100%;padding:15px;background:linear-gradient(135deg,#6e0977,#9c0ca1);color:#fff;font-size:13px;font-weight:700;border:none;border-radius:14px;cursor:pointer;letter-spacing:1px;font-family:'DM Sans',sans-serif">
+      ➕ Add to Menu
+    </button>
+
+  </div>
+</div>
+<!-- END QUICK ADD MENU ITEM SHEET -->
 </body>
 </html>
