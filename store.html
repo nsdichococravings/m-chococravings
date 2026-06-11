@@ -433,8 +433,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   <div id="mg-list" style="padding-bottom:100px"></div>
 </div>
 <!-- Admin quick actions — shown only to admin -->
-<div id="admin-quick-actions" style="display:none;display:flex;gap:8px;padding:10px 16px;background:#f5eeff;border-bottom:1px solid #e0c8f0">
-  <button onclick="openAdminOrder()" style="flex:1;padding:10px;background:#6e0977;color:#fff;border:none;border-radius:12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">
+<div id="admin-quick-actions" style="display:none;gap:8px;padding:10px 16px;background:#f5eeff;border-bottom:1px solid #e0c8f0"></div>
+<button onclick="openAdminOrder()" style="flex:1;padding:10px;background:#6e0977;color:#fff;border:none;border-radius:12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">
     👤 Place Order for Customer
   </button>
   <button onclick="openQaItem()" style="flex:1;padding:10px;background:#fff;color:#6e0977;border:1.5px solid #6e0977;border-radius:12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">
@@ -1764,20 +1764,26 @@ async function checkAdminBadge(){
   try {
     if(!db) return;
 
-    var adminActions = document.getElementById('admin-quick-actions');
-    if (adminActions) adminActions.style.display = 'flex';
-
     var s = await db.auth.getUser(); var user = s.data.user;
     if(!user) return;
+
     var chk = await db.from('customers').select('is_admin').eq('email', user.email).single();
     if(chk.data && chk.data.is_admin){
       isAdmin = true;
-      document.getElementById('kitchen-fab').style.display = 'flex';
+
+      // Show admin-only UI elements
+      var adminActions = document.getElementById('admin-quick-actions');
+      if (adminActions) adminActions.style.display = 'flex';
+
+      var fab = document.getElementById('kitchen-fab');
+      if (fab) fab.style.display = 'flex';
+
       var pb = document.getElementById('print-invoice-btn');
-      if(pb) pb.style.display = 'block';
+      if (pb) pb.style.display = 'block';
     }
-  } catch(e){}
+  } catch(e){ console.warn('checkAdminBadge error:', e.message); }
 }
+
 function buildInvoiceData(o) {
   var rawItems = o.items;
   var items = Array.isArray(rawItems)
