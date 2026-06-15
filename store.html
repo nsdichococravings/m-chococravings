@@ -433,13 +433,75 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   <div id="mg-list" style="padding-bottom:100px"></div>
 </div>
 <!-- Admin quick actions — shown only to admin -->
-<div id="admin-quick-actions" style="display:none;gap:8px;padding:10px 16px;background:#f5eeff;border-bottom:1px solid #e0c8f0;position:relative;z-index:100;margin-top:60px">  <button onclick="openAdminOrder()" style="flex:1;padding:10px;background:#6e0977;color:#fff;border:none;border-radius:12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">
-    👤 Place Order for Customer
-  </button>
-  <button onclick="openQaItem()" style="flex:1;padding:10px;background:#fff;color:#6e0977;border:1.5px solid #6e0977;border-radius:12px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif">
-    ➕ Add Menu Item
-  </button>
+<!-- Admin floating action button -->
+<div id="admin-quick-actions" style="display:none">
+
+  <!-- Floating pill button -->
+  <div id="admin-fab-pill" onclick="toggleAdminMenu()"
+    style="position:fixed;top:80px;right:14px;z-index:500;
+    background:linear-gradient(135deg,#6e0977,#9c0ca1);
+    border-radius:24px;padding:8px 14px 8px 10px;
+    display:flex;align-items:center;gap:7px;
+    box-shadow:0 4px 20px rgba(110,9,119,0.5);
+    cursor:pointer;transition:all .2s;
+    border:1px solid rgba(255,255,255,0.2)">
+    <div style="font-size:16px">⚙️</div>
+    <div style="font-size:11px;font-weight:700;color:#fff;letter-spacing:.5px">Admin</div>
+    <div id="admin-fab-arrow" style="font-size:10px;color:rgba(255,255,255,0.7);transition:transform .2s">▼</div>
+  </div>
+
+  <!-- Dropdown menu -->
+  <div id="admin-fab-menu" style="display:none;position:fixed;top:122px;right:14px;z-index:499;
+    background:#fff;border-radius:16px;overflow:hidden;
+    box-shadow:0 8px 32px rgba(0,0,0,0.2);
+    border:1px solid rgba(110,9,119,0.15);
+    min-width:200px;
+    animation:slideDownMenu .2s ease both">
+
+    <div style="padding:10px 14px 8px;border-bottom:1px solid #f0e8f8">
+      <div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#9c0ca1">Admin Actions</div>
+    </div>
+
+    <div onclick="openAdminOrder();closeAdminMenu()"
+      style="display:flex;align-items:center;gap:10px;padding:13px 16px;
+      cursor:pointer;transition:background .15s;border-bottom:1px solid #f5f0f8"
+      onmouseover="this.style.background='#f5eeff'"
+      onmouseout="this.style.background='transparent'">
+      <div style="width:32px;height:32px;border-radius:8px;background:rgba(110,9,119,0.1);
+        display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">👤</div>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:#1a0820">Place Order</div>
+        <div style="font-size:11px;color:#9c0ca1;margin-top:1px">On behalf of customer</div>
+      </div>
+    </div>
+
+    <div onclick="openQaItem();closeAdminMenu()"
+      style="display:flex;align-items:center;gap:10px;padding:13px 16px;
+      cursor:pointer;transition:background .15s"
+      onmouseover="this.style.background='#f5eeff'"
+      onmouseout="this.style.background='transparent'">
+      <div style="width:32px;height:32px;border-radius:8px;background:rgba(110,9,119,0.1);
+        display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">➕</div>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:#1a0820">Add Menu Item</div>
+        <div style="font-size:11px;color:#9c0ca1;margin-top:1px">Instant menu update</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Click outside to close -->
+  <div id="admin-fab-backdrop" onclick="closeAdminMenu()"
+    style="display:none;position:fixed;inset:0;z-index:498"></div>
+
 </div>
+
+<style>
+@keyframes slideDownMenu {
+  from { opacity:0; transform:translateY(-8px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+</style>
 
 <!-- ═══ ADD/EDIT ITEM SHEET ═══════════════════════════════════ -->
 <div id="mg-backdrop" onclick="closeMgSheet()" style="display:none;position:fixed;inset:0;background:rgba(18,10,30,0.52);z-index:700"></div>
@@ -2187,7 +2249,30 @@ function showStoreToast(msg) {
     t.style.transform = 'translateX(-50%) translateY(10px)';
   }, 2500);
 }
-s
+
+var _adminMenuOpen = false;
+
+function toggleAdminMenu() {
+  _adminMenuOpen ? closeAdminMenu() : openAdminMenu();
+}
+
+function openAdminMenu() {
+  _adminMenuOpen = true;
+  document.getElementById('admin-fab-menu').style.display     = 'block';
+  document.getElementById('admin-fab-backdrop').style.display = 'block';
+  document.getElementById('admin-fab-arrow').style.transform  = 'rotate(180deg)';
+  document.getElementById('admin-fab-pill').style.boxShadow   = '0 4px 20px rgba(110,9,119,0.7)';
+}
+
+function closeAdminMenu() {
+  _adminMenuOpen = false;
+  document.getElementById('admin-fab-menu').style.display     = 'none';
+  document.getElementById('admin-fab-backdrop').style.display = 'none';
+  document.getElementById('admin-fab-arrow').style.transform  = 'rotate(0deg)';
+  document.getElementById('admin-fab-pill').style.boxShadow   = '0 4px 20px rgba(110,9,119,0.5)';
+}
+
+
 </script>
 <!-- ═══ ADMIN PLACE ORDER SHEET ═══ -->
 <div id="admin-order-overlay" onclick="closeAdminOrder()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:3000;backdrop-filter:blur(4px)"></div>
