@@ -2029,13 +2029,13 @@ async function qaSubmit() {
   if (btn) { btn.disabled = true; btn.textContent = 'Adding...'; }
 
   var { error } = await db.from('store_menu').insert([{
-    name:        name.trim(),
-    category:    _qaCat.toLowerCase().replace(' ','_'),
-    price:       parseInt(price),
-    description: desc.trim() || null,
-    is_available: _qaAvail,
-    is_active:   true
-  }]);
+  name:      name.trim(),
+  category:  _qaCat,
+  price:     parseInt(price),
+  tag:       desc.trim() || null,
+  available: _qaAvail,
+  sort_order: 99
+}]);
 
   if (btn) { btn.disabled = false; btn.textContent = '➕ Add to Menu'; }
 
