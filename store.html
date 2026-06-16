@@ -440,6 +440,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 <div id="admin-fab-pill" 
     onmousedown="adminFabDragStart(event)"
     ontouchstart="adminFabDragStart(event)"
+    ontouchend="adminFabTouchEnd(event)"
+    onclick="adminFabClick(event)"
     style="position:fixed;top:80px;right:14px;z-index:500;
     background:linear-gradient(135deg,#6e0977,#9c0ca1);
     border-radius:24px;padding:8px 14px 8px 10px;
@@ -2392,6 +2394,26 @@ function adminFabDragEnd(e) {
     }
   } catch(e) {}
 })();
+
+function adminFabTouchEnd(e) {
+  e.preventDefault(); // prevents ghost click issues on mobile
+  if (!_fabMoved) {
+    _fabMoved = false;
+    toggleAdminMenu();
+  }
+  _fabMoved = false;
+  // Clean up drag listeners
+  document.removeEventListener('touchmove', adminFabDragMove);
+  document.removeEventListener('touchend',  adminFabDragEnd);
+  _fabDragging = false;
+}
+
+function adminFabClick(e) {
+  // Desktop only — touch handled by ontouchend
+  if (e.pointerType === 'touch') return;
+  if (_fabMoved) { _fabMoved = false; return; }
+  toggleAdminMenu();
+}
 
 </script>
 <!-- ═══ ADMIN PLACE ORDER SHEET ═══ -->
