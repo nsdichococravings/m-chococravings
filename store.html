@@ -279,10 +279,13 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
       </div>
       <div class="pg-hdr-right">Quick · Fresh · Yours</div>
     </div>
-    <div class="tabs">
+    <div class="tabs" id="menu-tabs" style="flex-wrap:wrap;gap:6px">
       <div class="tab on-coffee" onclick="setTab('Coffee')">☕ Coffee</div>
-      <div class="tab"          onclick="setTab('Tea')">🫖 Tea</div>
-      <div class="tab"          onclick="setTab('Desserts')">🍫 Desserts</div>
+      <div class="tab"           onclick="setTab('Tea')">🫖 Tea</div>
+      <div class="tab"           onclick="setTab('Desserts')">🍫 Desserts</div>
+      <div class="tab"           onclick="setTab('Brownies')" id="tab-Brownies" style="display:none">🟫 Brownies</div>
+      <div class="tab"           onclick="setTab('Cakes')"    id="tab-Cakes"    style="display:none">🎂 Cakes</div>
+      <div class="tab"           onclick="setTab('Others')"   id="tab-Others"   style="display:none">✨ Others</div>
     </div>
   </div>
   <div class="sec-lbl">
@@ -675,6 +678,9 @@ var MENU = {
   Coffee:   {accent:'#b87410', dot:'#f5c430', cls:'coffee',   items:[]},
   Tea:      {accent:'#2a6644', dot:'#6dba5a', cls:'tea',      items:[]},
   Desserts: {accent:'#6e0977', dot:'#b94dc7', cls:'desserts', items:[]},
+  Brownies: {accent:'#92400e', dot:'#d97706', cls:'desserts',  items:[]},
+  Cakes:    {accent:'#be185d', dot:'#f472b6', cls:'desserts',  items:[]},
+  Others:   {accent:'#374151', dot:'#9ca3af', cls:'desserts',  items:[]},
 };
 
 function showSkeleton(){
@@ -725,6 +731,13 @@ async function loadMenu(){
       }
     });
     renderItems();
+    // Show tabs dynamically based on which categories have items
+    ['Brownies','Cakes','Others'].forEach(function(cat) {
+      var tabEl = document.getElementById('tab-' + cat);
+      if (tabEl) {
+        tabEl.style.display = MENU[cat].items.length > 0 ? 'block' : 'none';
+      }
+    });
   } catch(e){
     console.error('loadMenu', e);
     document.getElementById('items-list').innerHTML = '<div style="text-align:center;padding:40px 20px;font-family:Fraunces,serif;font-size:15px;color:#9a8aaa">Could not load menu.<br>Check connection.</div>';
@@ -773,9 +786,14 @@ window.addEventListener('popstate',function(e){
 // ── TAB / RENDER ──────────────────────────────────────────────
 function setTab(t){
   tab=t;
-  document.querySelectorAll('.tab').forEach(function(el){el.className='tab'});
-  var idx={Coffee:0,Tea:1,Desserts:2}[t];
-  document.querySelectorAll('.tab')[idx].className='tab on-'+MENU[t].cls;
+  document.querySelectorAll('.tab').forEach(function(el){
+    // Reset — keep display state, just remove active class
+    el.className = el.className.replace(/\bon-\S+/g,'').trim() || 'tab';
+    el.className = 'tab' + (el.id && el.id !== 'tab-'+t ? '' : '');
+  });
+  // Set active tab
+  var activeTab = document.querySelector('[onclick="setTab(\''+t+'\')"]');
+  if (activeTab) activeTab.className = 'tab on-' + MENU[t].cls;
   renderItems();
 }
 
