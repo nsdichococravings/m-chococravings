@@ -2509,21 +2509,68 @@ function aoItemSelected(sel) {
       </div>
 
       <!-- Add item row -->
-    <div style="display:flex;gap:8px;align-items:flex-end">
-      <div style="flex:2">
-        <div style="font-size:10px;color:#9c0ca1;font-weight:600;margin-bottom:5px">Item</div>
-        <select id="ao-item-select" onchange="aoItemSelected(this)"
-          style="width:100%;padding:10px 12px;border:1px solid #e0c8f0;border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;color:#1a0820;background:#fff;cursor:pointer">
-          <option value="">Select item...</option>
-        </select>
+      <!-- Add item row -->
+        <div style="display:flex;gap:8px;align-items:flex-end">
+          <div style="flex:2">
+            <div style="font-size:10px;color:#9c0ca1;font-weight:600;margin-bottom:5px">Item</div>
+            <select id="ao-item-select" onchange="aoItemSelected(this)"
+              style="width:100%;padding:10px 12px;border:1px solid #e0c8f0;border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;color:#1a0820;background:#fff;cursor:pointer">
+              <option value="">Select item...</option>
+            </select>
+          </div>
+          <div style="flex:0.7">
+            <div style="font-size:10px;color:#9c0ca1;font-weight:600;margin-bottom:5px">Qty</div>
+            <input id="ao-item-qty" type="number" min="1" value="1"
+              style="width:100%;padding:10px 12px;border:1px solid #e0c8f0;border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;color:#1a0820">
+          </div>
+          <button onclick="aoAddItem()" style="padding:10px 14px;background:#6e0977;color:#fff;border:none;border-radius:10px;font-size:20px;cursor:pointer;flex-shrink:0;height:40px;display:flex;align-items:center;justify-content:center">+</button>
+        </div>
       </div>
-      <div style="flex:0.7">
-        <div style="font-size:10px;color:#9c0ca1;font-weight:600;margin-bottom:5px">Qty</div>
-        <input id="ao-item-qty" type="number" min="1" value="1"
-          style="width:100%;padding:10px 12px;border:1px solid #e0c8f0;border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;color:#1a0820">
+
+      <!-- Total -->
+      <div style="display:flex;justify-content:space-between;align-items:center;background:#f5eeff;border:1px solid #e0c8f0;border-radius:12px;padding:13px 16px">
+        <div style="font-size:13px;font-weight:700;color:#1a0820">Total</div>
+        <div id="ao-total" style="font-size:22px;font-weight:700;color:#6e0977;font-family:'Fraunces',Georgia,serif">₹0</div>
       </div>
-      <button onclick="aoAddItem()" style="padding:10px 14px;background:#6e0977;color:#fff;border:none;border-radius:10px;font-size:20px;cursor:pointer;flex-shrink:0;height:40px;display:flex;align-items:center;justify-content:center">+</button>
+
+      <!-- Payment -->
+      <div>
+        <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#9c0ca1;margin-bottom:10px">Payment</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+          <div class="ao-pay" onclick="aoSelPay(this,'cash')"
+            style="padding:10px 6px;border-radius:12px;background:rgba(110,9,119,0.08);border:1.5px solid #6e0977;text-align:center;cursor:pointer;transition:all .2s">
+            <div style="font-size:20px;margin-bottom:3px">💵</div>
+            <div style="font-size:11px;font-weight:600;color:#6e0977">Cash</div>
+          </div>
+          <div class="ao-pay" onclick="aoSelPay(this,'upi')"
+            style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1px solid #e0c8f0;text-align:center;cursor:pointer;transition:all .2s">
+            <div style="font-size:20px;margin-bottom:3px">📱</div>
+            <div style="font-size:11px;font-weight:600;color:#9c0ca1">UPI</div>
+          </div>
+          <div class="ao-pay" onclick="aoSelPay(this,'free')"
+            style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1px solid #e0c8f0;text-align:center;cursor:pointer;transition:all .2s">
+            <div style="font-size:20px;margin-bottom:3px">🎁</div>
+            <div style="font-size:11px;font-weight:600;color:#9c0ca1">Complimentary</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div>
+        <div style="font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#9c0ca1;margin-bottom:7px">Notes <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#b090c0">optional</span></div>
+        <input id="ao-notes" type="text" placeholder="Any special instructions..."
+          style="width:100%;padding:12px 14px;border:1.5px solid #e0c8f0;border-radius:12px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;color:#1a0820">
+      </div>
+
+      <!-- Submit -->
+      <button id="ao-submit-btn" onclick="aoSubmit()"
+        style="width:100%;padding:15px;background:linear-gradient(135deg,#6e0977,#9c0ca1);color:#fff;font-size:13px;font-weight:700;border:none;border-radius:14px;cursor:pointer;letter-spacing:1px;font-family:'DM Sans',sans-serif">
+        ✅ Place Order
+      </button>
+
     </div>
+  </div>
+  <!-- END ADMIN PLACE ORDER SHEET -->
 
     <!-- Total -->
     <div style="display:flex;justify-content:space-between;align-items:center;background:#f5eeff;border:1px solid #e0c8f0;border-radius:12px;padding:13px 16px">
