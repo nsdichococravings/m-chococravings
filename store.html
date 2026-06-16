@@ -437,7 +437,9 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 <div id="admin-quick-actions" style="display:none">
 
   <!-- Floating pill button -->
-  <div id="admin-fab-pill" onclick="toggleAdminMenu()"
+<div id="admin-fab-pill" 
+    onmousedown="adminFabDragStart(event)"
+    ontouchstart="adminFabDragStart(event)"
     style="position:fixed;top:80px;right:14px;z-index:500;
     background:linear-gradient(135deg,#6e0977,#9c0ca1);
     border-radius:24px;padding:8px 14px 8px 10px;
@@ -2272,6 +2274,115 @@ function closeAdminMenu() {
   document.getElementById('admin-fab-pill').style.boxShadow   = '0 4px 20px rgba(110,9,119,0.5)';
 }
 
+// ── ADMIN FAB DRAG ──
+var _fabDragging  = false;
+var _fabDragOffX  = 0;
+var _fabDragOffY  = 0;
+var _fabMoved     = false;
+var _fabStartX    = 0;
+var _fabStartY    = 0;
+
+function adminFabDragStart(e) {
+  var fab  = document.getElementById('admin-fab-pill');
+  var rect = fab.getBoundingClientRect();
+  var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  var clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+  _fabDragging = true;
+  _fabMoved    = false;
+  _fabStartX   = clientX;
+  _fabStartY   = clientY;
+  _fabDragOffX = clientX - rect.left;
+  _fabDragOffY = clientY - rect.top;
+
+  fab.style.transition = 'none';
+  fab.style.cursor     = 'grabbing';
+
+  document.addEventListener('mousemove', adminFabDragMove);
+  document.addEventListener('mouseup',   adminFabDragEnd);
+  document.addEventListener('touchmove', adminFabDragMove, { passive: false });
+  document.addEventListener('touchend',  adminFabDragEnd);
+}
+
+function adminFabDragMove(e) {
+  if (!_fabDragging) return;
+  if (e.cancelable) e.preventDefault();
+
+  var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  var clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+  // Mark as moved if dragged more than 5px
+  if (Math.abs(clientX - _fabStartX) > 5 || Math.abs(clientY - _fabStartY) > 5) {
+    _fabMoved = true;
+  }
+
+  var fab = document.getElementById('admin-fab-pill');
+  var W   = window.innerWidth;
+  var H   = window.innerHeight;
+
+  var newX = clientX - _fabDragOffX;
+  var newY = clientY - _fabDragOffY;
+
+  // Keep within screen bounds
+  var fabW = fab.offsetWidth;
+  var fabH = fab.offsetHeight;
+  newX = Math.max(8, Math.min(W - fabW - 8, newX));
+  newY = Math.max(8, Math.min(H - fabH - 8, newY));
+
+  fab.style.left  = newX + 'px';
+  fab.style.top   = newY + 'px';
+  fab.style.right = 'auto';
+
+  // Move dropdown with button
+  var menu = document.getElementById('admin-fab-menu');
+  if (menu && menu.style.display !== 'none') {
+    menu.style.left = newX + 'px';
+    menu.style.top  = (newY + fabH + 6) + 'px';
+    menu.style.right = 'auto';
+  }
+}
+
+function adminFabDragEnd(e) {
+  if (!_fabDragging) return;
+  _fabDragging = false;
+
+  var fab = document.getElementById('admin-fab-pill');
+  fab.style.transition = 'box-shadow .2s';
+  fab.style.cursor     = 'pointer';
+
+  document.removeEventListener('mousemove', adminFabDragMove);
+  document.removeEventListener('mouseup',   adminFabDragEnd);
+  document.removeEventListener('touchmove', adminFabDragMove);
+  document.removeEventListener('touchend',  adminFabDragEnd);
+
+  // Save position to localStorage
+  try {
+    localStorage.setItem('admin_fab_pos', JSON.stringify({
+      left: fab.style.left,
+      top:  fab.style.top
+    }));
+  } catch(e) {}
+
+  // If moved — don't open menu
+  if (_fabMoved) return;
+  // If not moved — treat as tap → toggle menu
+  toggleAdminMenu();
+}
+
+// Restore saved position on load
+(function restoreAdminFabPos() {
+  try {
+    var pos = JSON.parse(localStorage.getItem('admin_fab_pos'));
+    if (pos && pos.left && pos.top) {
+      var fab = document.getElementById('admin-fab-pill');
+      if (fab) {
+        fab.style.left  = pos.left;
+        fab.style.top   = pos.top;
+        fab.style.right = 'auto';
+      }
+    }
+  } catch(e) {}
+})();
 
 </script>
 <!-- ═══ ADMIN PLACE ORDER SHEET ═══ -->
