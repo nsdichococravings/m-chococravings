@@ -2089,6 +2089,8 @@ function openAdminOrder() {
 
   ov.style.display = 'block';
   sh.style.display = 'block';
+  // Populate dropdown from live menu
+  aoPopulateDropdown();
   // Pre-fill with current cart items if any
   if (typeof cart !== 'undefined' && cart.length > 0) {
     cart.forEach(function(item) {
@@ -2112,24 +2114,31 @@ function closeAdminOrder() {
 }
 
 function aoAddItem() {
-  var name  = (document.getElementById('ao-item-name')  || {}).value || '';
-  var price = (document.getElementById('ao-item-price') || {}).value || '';
-  var qty   = (document.getElementById('ao-item-qty')   || {}).value || '1';
+  var sel   = document.getElementById('ao-item-select');
+  var qty   = (document.getElementById('ao-item-qty') || {}).value || '1';
 
-  if (!name.trim() || !price || isNaN(price)) {
-    showStoreToast('Enter item name and price');
+  if (!sel || !sel.value) {
+    showStoreToast('Please select an item');
     return;
   }
+
+  var selected;
+  try { selected = JSON.parse(sel.value); } catch(e) {
+    showStoreToast('Invalid selection'); return;
+  }
+
+  var name  = selected.name;
+  var price = selected.price;
 
   _aoItems.push({ name: name.trim(), price: parseInt(price), qty: parseInt(qty) || 1 });
   aoRenderItems();
   aoCalcTotal();
 
-  // Clear inputs
-  document.getElementById('ao-item-name').value  = '';
-  document.getElementById('ao-item-price').value = '';
-  document.getElementById('ao-item-qty').value   = '1';
-  document.getElementById('ao-item-name').focus();
+    // Clear inputs
+  document.getElementById('ao-item-select').value = '';
+  document.getElementById('ao-item-select').style.borderColor = '#e0c8f0';
+  document.getElementById('ao-item-qty').value = '1';
+
 }
 
 function aoRemoveItem(idx) {
@@ -2433,6 +2442,30 @@ function adminFabClick(e) {
   toggleAdminMenu();
 }
 
+// ── Populate admin order dropdown from live MENU ──
+function aoPopulateDropdown() {
+  var sel = document.getElementById('ao-item-select');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Select item...</option>';
+  Object.keys(MENU).forEach(function(cat) {
+    if (!MENU[cat].items.length) return;
+    var grp = document.createElement('optgroup');
+    grp.label = cat;
+    MENU[cat].items.forEach(function(item) {
+      var opt = document.createElement('option');
+      opt.value = JSON.stringify({ name: item.name, price: item.price });
+      opt.textContent = item.name + ' — ₹' + item.price;
+      grp.appendChild(opt);
+    });
+    sel.appendChild(grp);
+  });
+}
+
+function aoItemSelected(sel) {
+  // Price is auto-set from selection — no separate price input needed
+  sel.style.borderColor = sel.value ? '#6e0977' : '#e0c8f0';
+}
+
 </script>
 <!-- ═══ ADMIN PLACE ORDER SHEET ═══ -->
 <div id="admin-order-overlay" onclick="closeAdminOrder()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:3000;backdrop-filter:blur(4px)"></div>
@@ -2476,24 +2509,20 @@ function adminFabClick(e) {
       </div>
 
       <!-- Add item row -->
-      <div style="display:flex;gap:8px;align-items:flex-end">
-        <div style="flex:2">
-          <div style="font-size:10px;color:#9c0ca1;font-weight:600;margin-bottom:5px">Item name</div>
-          <input id="ao-item-name" type="text" placeholder="e.g. Espresso"
-            style="width:100%;padding:10px 12px;border:1px solid #e0c8f0;border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;color:#1a0820">
-        </div>
-        <div style="flex:1">
-          <div style="font-size:10px;color:#9c0ca1;font-weight:600;margin-bottom:5px">Price ₹</div>
-          <input id="ao-item-price" type="number" placeholder="0"
-            style="width:100%;padding:10px 12px;border:1px solid #e0c8f0;border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;color:#1a0820">
-        </div>
-        <div style="flex:0.6">
-          <div style="font-size:10px;color:#9c0ca1;font-weight:600;margin-bottom:5px">Qty</div>
-          <input id="ao-item-qty" type="number" min="1" value="1"
-            style="width:100%;padding:10px 12px;border:1px solid #e0c8f0;border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;color:#1a0820">
-        </div>
-        <button onclick="aoAddItem()" style="padding:10px 14px;background:#6e0977;color:#fff;border:none;border-radius:10px;font-size:20px;cursor:pointer;flex-shrink:0;height:40px;display:flex;align-items:center;justify-content:center">+</button>
+    <div style="display:flex;gap:8px;align-items:flex-end">
+      <div style="flex:2">
+        <div style="font-size:10px;color:#9c0ca1;font-weight:600;margin-bottom:5px">Item</div>
+        <select id="ao-item-select" onchange="aoItemSelected(this)"
+          style="width:100%;padding:10px 12px;border:1px solid #e0c8f0;border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;color:#1a0820;background:#fff;cursor:pointer">
+          <option value="">Select item...</option>
+        </select>
       </div>
+      <div style="flex:0.7">
+        <div style="font-size:10px;color:#9c0ca1;font-weight:600;margin-bottom:5px">Qty</div>
+        <input id="ao-item-qty" type="number" min="1" value="1"
+          style="width:100%;padding:10px 12px;border:1px solid #e0c8f0;border-radius:10px;font-size:13px;font-family:'DM Sans',sans-serif;outline:none;box-sizing:border-box;color:#1a0820">
+      </div>
+      <button onclick="aoAddItem()" style="padding:10px 14px;background:#6e0977;color:#fff;border:none;border-radius:10px;font-size:20px;cursor:pointer;flex-shrink:0;height:40px;display:flex;align-items:center;justify-content:center">+</button>
     </div>
 
     <!-- Total -->
