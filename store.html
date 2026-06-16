@@ -2357,16 +2357,25 @@ function adminFabDragEnd(e) {
 
   // Save position to localStorage
   try {
-    localStorage.setItem('admin_fab_pos', JSON.stringify({
-      left: fab.style.left,
-      top:  fab.style.top
-    }));
+    if (fab.style.left) {
+      localStorage.setItem('admin_fab_pos', JSON.stringify({
+        left: fab.style.left,
+        top:  fab.style.top
+      }));
+    }
   } catch(e) {}
 
-  // If moved — don't open menu
-  if (_fabMoved) return;
-  // If not moved — treat as tap → toggle menu
-  toggleAdminMenu();
+  // If dragged more than 5px — don't toggle menu
+  if (_fabMoved) {
+    _fabMoved = false;
+    return;
+  }
+
+  // Tap — toggle menu after short delay to avoid conflicts
+  _fabMoved = false;
+  setTimeout(function() {
+    toggleAdminMenu();
+  }, 50);
 }
 
 // Restore saved position on load
