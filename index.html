@@ -1064,7 +1064,8 @@ html {
 }
 
 /* ── PWA MOBILE FULL SCREEN ── */
-@media (max-width: 480px) {
+/* Phones AND tablets — full screen app */
+@media (max-width: 1023px) {
   body {
     padding: 0 !important;
     gap: 0 !important;
@@ -1080,64 +1081,27 @@ html {
     height: 100svh !important;
     border-radius: 0 !important;
     box-shadow: none !important;
-    max-width:100%;
+    max-width: 100%;
   }
   .notch { display: none !important; }
   .mesh { pointer-events: none; }
-
-  /* Only on large screens (desktop/laptop) — show a centered "phone-like" frame instead of full-bleed */
-@media (min-width: 1024px){
-  body{
-    padding:28px 16px !important;
-    align-items:flex-start !important;
-    justify-content:center !important;
-  }
-  .phone-wrap{ width:auto !important; }
-  .phone{
-    width:430px !important;
-    height:900px !important;
-    border-radius:52px !important;
-    box-shadow:0 0 0 10px #1a1a1a,0 0 0 12px #272727,0 80px 120px rgba(107,47,206,.25),0 40px 80px rgba(0,0,0,.8) !important;
-  }
-  .notch{ display:block !important; }
 }
 
-  /* Top safe area for notch/dynamic island */
-  
-  .prof-hero, .exp-top, .cart-hdr,
-  .ck-hdr, #page-success > div:first-child,
-  #page-custom-order > div:first-child,
-  #page-orders > div:first-child,
-  #page-addresses > div:first-child {
-    padding-top: calc(52px + env(safe-area-inset-top)) !important;
+/* Desktop/laptop only — centered phone-mockup frame */
+@media (min-width: 1024px) {
+  body {
+    padding: 28px 16px !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
   }
-
-  /* Safe area top padding for all page headers */
-.hdr { padding-top: calc(20px + env(safe-area-inset-top)); }
-.prof-hero { padding-top: calc(58px + env(safe-area-inset-top)); }
-.exp-top { padding-top: calc(58px + env(safe-area-inset-top)); }
-.cart-hdr { padding-top: calc(58px + env(safe-area-inset-top)); }
-.ck-hdr { padding-top: calc(52px + env(safe-area-inset-top)); }
-
-/* These use inline padding-top so override with important on mobile */
-@media (max-width: 480px) {
-  #page-orders > div:first-child,
-  #page-addresses > div:first-child,
-  #page-custom-order > div:first-child,
-  #page-success > div:first-child {
-    padding-top: calc(52px + env(safe-area-inset-top)) !important;
+  .phone-wrap { width: auto !important; }
+  .phone {
+    width: 430px !important;
+    height: 900px !important;
+    border-radius: 52px !important;
+    box-shadow: 0 0 0 10px #1a1a1a, 0 0 0 12px #272727, 0 80px 120px rgba(107,47,206,.25), 0 40px 80px rgba(0,0,0,.8) !important;
   }
-  /* Fix back button position on detail page */
-  .back { top: calc(50px + env(safe-area-inset-top)); }
-  .dfav { top: calc(50px + env(safe-area-inset-top)); }
-}
-
-/* Toast above nav */
-.toast {
-  bottom: calc(90px + env(safe-area-inset-bottom));
-}
-  /* Nav label always visible */
-  .nlbl { font-size: 10px !important; }
+  .notch { display: block !important; }
 }
 
 
