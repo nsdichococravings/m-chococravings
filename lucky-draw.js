@@ -62,11 +62,6 @@
           localStorage.setItem('cc_lucky_draw_entered', 'yes'); // cache it
           return;
         }
-      } else {
-        // Not logged in — check localStorage
-        try {
-          if (localStorage.getItem('cc_lucky_draw_entered')) return;
-        } catch(e) {}
       }
 
       // ── CHECK 3: Snoozed? (closed without submitting) ──
