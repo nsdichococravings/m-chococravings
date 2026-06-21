@@ -263,6 +263,27 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 .anim-stamp{animation:stamp .45s cubic-bezier(.34,1.56,.64,1) both}
 .anim-qr{animation:qrIn .5s cubic-bezier(.16,1,.3,1) .3s both}
 .anim-row{animation:swipeIn .28s cubic-bezier(.16,1,.3,1) both}
+
+
+/* ── TABLET / LARGE SCREEN ADJUSTMENTS ── */
+@media (min-width: 600px) {
+  #cart-bar {
+    max-width: 520px;
+  }
+  #mg-sheet, #admin-order-sheet, #qaitem-sheet, #inv-sheet {
+    max-width: 520px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    border-radius: 28px;
+  }
+  .item, .pg-hdr, .sec-lbl, .steps, .k-list {
+    max-width: 680px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
 </style>
 </head>
 <body>
