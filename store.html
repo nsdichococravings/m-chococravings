@@ -1782,6 +1782,7 @@ window.addEventListener('load', function(){
   loadMyOrders();
   // Show kitchen button only for admins
   checkAdminBadge();
+  loadStoreOpenStatus();
   // If opened directly at #pg-kitchen
   if(window.location.hash === '#pg-kitchen') goTo('pg-kitchen');
 });
@@ -1810,6 +1811,41 @@ async function checkAdminBadge(){
       if (pb) pb.style.display = 'block';
     }
   } catch(e){ console.warn('checkAdminBadge error:', e.message); }
+}
+
+var _storeIsOpen = true;
+
+async function loadStoreOpenStatus() {
+  try {
+    var { data } = await db.from('app_settings').select('value').eq('key', 'app_is_open').single();
+    _storeIsOpen = data ? data.value === 'true' : true;
+    updateStoreStatusUI();
+  } catch(e) { console.warn('loadStoreOpenStatus:', e.message); }
+}
+
+function updateStoreStatusUI() {
+  var icon  = document.getElementById('store-status-icon');
+  var label = document.getElementById('store-status-label');
+  var sub   = label ? label.nextElementSibling : null;
+  if (icon)  icon.textContent = _storeIsOpen ? '🟢' : '🔴';
+  if (icon)  icon.style.background = _storeIsOpen ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)';
+  if (label) label.textContent = _storeIsOpen ? 'Store is Open' : 'Store is Closed';
+  if (sub)   sub.textContent = _storeIsOpen ? 'Tap to close store' : 'Tap to open store';
+}
+
+async function toggleStoreOpenStatus() {
+  var newVal = !_storeIsOpen;
+  try {
+    var { error } = await db.from('app_settings')
+      .update({ value: newVal ? 'true' : 'false', updated_at: new Date().toISOString() })
+      .eq('key', 'app_is_open');
+    if (error) { showStoreToast('Could not update: ' + error.message); return; }
+    _storeIsOpen = newVal;
+    updateStoreStatusUI();
+    showStoreToast(newVal ? '🟢 Store is now Open' : '🔴 Store is now Closed');
+  } catch(e) {
+    showStoreToast('Error updating store status');
+  }
 }
 
 function buildInvoiceData(o) {
@@ -2500,6 +2536,23 @@ function aoPopulateDropdown() {
 function aoItemSelected(sel) {
   // Price is auto-set from selection — no separate price input needed
   sel.style.borderColor = sel.value ? '#6e0977' : '#e0c8f0';
+}
+
+
+async function toggleStoreOpenStatus() {
+  var newVal = !_storeIsOpen;
+  try {
+    var { error } = await db.from('app_settings')
+      .update({ value: newVal ? 'true' : 'false', updated_at: new Date().toISOString() })
+      .eq('key', 'app_is_open');
+    if (error) { showToast('Could not update store status: ' + error.message); return; }
+    _storeIsOpen = newVal;
+    updateStoreStatusUI();
+    checkStoreOpenStatus();
+    showToast(newVal ? '🟢 Store is now Open' : '🔴 Store is now Closed');
+  } catch(e) {
+    showToast('Error updating store status');
+  }
 }
 
 </script>
