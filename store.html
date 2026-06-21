@@ -1313,7 +1313,9 @@ function renderKitchen(orders){
   var list=document.getElementById('k-list');
   if(!orders.length){list.innerHTML='<div class="k-empty">No pending orders</div>';return;}
   list.innerHTML=orders.map(function(o){
-    var items=(o.items||[]).map(function(i){return i.name+' ×'+i.qty}).join(' · ');
+    var rawItems = o.items;
+    var itemsArr = Array.isArray(rawItems) ? rawItems : (typeof rawItems === 'string' ? JSON.parse(rawItems) : []);
+    var items=(itemsArr||[]).map(function(i){return i.name+' ×'+i.qty}).join(' · ');
     var age=ageStr(o.created_at);
     var startTxt=o.status==='preparing'?'⏳ Making…':'▶ Start';
     var readyTxt=o.status==='ready'?'✓ Ready!':'✓ Mark Ready';
