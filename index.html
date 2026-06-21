@@ -1423,8 +1423,8 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
       </div>
       <div class="ntab" id="nav-nstore" onclick="window.location.href='/store'">
       <div class="nicon" style="position:relative;display:inline-block">☕
-        <span style="position:absolute;top:0;right:-4px;width:8px;height:8px;border-radius:50%;background:#22c55e;border:1.5px solid #fff;display:block">
-          <span style="display:block;width:5px;height:5px;border-radius:50%;background:#22c55e;animation:pulseLive 1.4s ease-in-out infinite;margin:auto;margin-top:0px"></span>
+        <span id="nstore-dot" style="position:absolute;top:0;right:-4px;width:8px;height:8px;border-radius:50%;background:#22c55e;border:1.5px solid #fff;display:block">
+          <span id="nstore-pulse" style="display:block;width:5px;height:5px;border-radius:50%;background:#22c55e;animation:pulseLive 1.4s ease-in-out infinite;margin:auto;margin-top:0px"></span>
         </span>
       </div>
       <div class="nlbl">On Store</div>
@@ -4223,6 +4223,18 @@ async function checkAndShowAdminTab() {
   }
 }
 
+async function checkStoreOpenStatus() {
+  try {
+    var { data } = await db.from('app_settings').select('value').eq('key', 'app_is_open').single();
+    var isOpen = data ? data.value === 'true' : true;
+    var dot   = document.getElementById('nstore-dot');
+    var pulse = document.getElementById('nstore-pulse');
+    var color = isOpen ? '#22c55e' : '#ef4444';
+    if (dot)   dot.style.background   = color;
+    if (pulse) pulse.style.background = color;
+  } catch(e) { console.warn('checkStoreOpenStatus:', e.message); }
+}
+
 async function loadAndShowOrders() {
   showPage('orders');
   var listEl = document.getElementById('orders-list');
@@ -5851,6 +5863,8 @@ setTimeout(updateCartDots, 100);
     }
     updateProfileUI();
     setTimeout(checkAndShowAdminTab, 500);
+    setTimeout(loadStoreOpenStatus, 500);
+    setTimeout(checkStoreOpenStatus, 500);
   } catch(e) {
     window.location.href = 'auth.html';
     return;
@@ -11943,6 +11957,53 @@ async function loadCakeAddons() {
     console.warn('loadCakeAddons error:', e.message);
   }
 }
+
+
+var _storeIsOpen = true;
+
+async function loadStoreOpenStatus() {
+  try {
+    var { data } = await db.from('app_settings').select('value').eq('key', 'app_is_open').single();
+    _storeIsOpen = data ? data.value === 'true' : true;
+    updateStoreStatusUI();
+    checkStoreOpenStatus(); // updates nav dot color too
+  } catch(e) { console.warn('loadStoreOpenStatus:', e.message); }
+}
+
+function updateStoreStatusUI() {
+  var icon  = document.getElementById('store-status-icon');
+  var label = document.getElementById('store-status-label');
+  var sub   = label ? label.nextElementSibling : null;
+  if (icon)  icon.textContent = _storeIsOpen ? '🟢' : '🔴';
+  if (icon)  icon.style.background = _storeIsOpen ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)';
+  if (label) label.textContent = _storeIsOpen ? 'Store is Open' : 'Store is Closed';
+  if (sub)   sub.textContent = _storeIsOpen ? 'Tap to close store' : 'Tap to open store';
+}
+
+async function toggleStoreOpenStatus() {
+  var newVal = !_storeIsOpen;
+  try {
+    var { error } = await db.from('app_settings')
+      .update({ value: newVal ? 'true' : 'false', updated_at: new Date().toISOString() })
+      .eq('key', 'app_is_open');
+    if (error) { showToast('Could not update store status: ' + error.message); return; }
+    _storeIsOpen = newVal;
+    updateStoreStatusUI();
+    checkStoreOpenStatus();
+    showToast(newVal ? '🟢 Store is now Open' : '🔴 Store is now Closed');
+  } catch(e) {
+    showToast('Error updating store status');
+  }
+}
+
+async function checkStoreOpenStatus() {
+  var dot   = document.getElementById('nstore-dot');
+  var pulse = document.getElementById('nstore-pulse');
+  var color = _storeIsOpen ? '#22c55e' : '#ef4444';
+  if (dot)   dot.style.background   = color;
+  if (pulse) pulse.style.background = color;
+}
+
 </script>
 
 <script src="/lucky-draw.js"></script>
