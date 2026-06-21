@@ -516,6 +516,19 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
       </div>
     </div>
 
+    <div id="store-status-toggle" onclick="toggleStoreOpenStatus();closeAdminMenu()"
+      style="display:flex;align-items:center;gap:10px;padding:13px 16px;
+      cursor:pointer;transition:background .15s;border-top:1px solid #f0e8f8"
+      onmouseover="this.style.background='#f5eeff'"
+      onmouseout="this.style.background='transparent'">
+      <div id="store-status-icon" style="width:32px;height:32px;border-radius:8px;background:rgba(34,197,94,0.1);
+        display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🟢</div>
+      <div>
+        <div id="store-status-label" style="font-size:13px;font-weight:600;color:#1a0820">Store is Open</div>
+        <div style="font-size:11px;color:#9c0ca1;margin-top:1px">Tap to close store</div>
+      </div>
+    </div>
+
   </div>
 
   <!-- Click outside to close -->
