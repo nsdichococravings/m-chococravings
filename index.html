@@ -11980,22 +11980,6 @@ function updateStoreStatusUI() {
   if (sub)   sub.textContent = _storeIsOpen ? 'Tap to close store' : 'Tap to open store';
 }
 
-async function toggleStoreOpenStatus() {
-  var newVal = !_storeIsOpen;
-  try {
-    var { error } = await db.from('app_settings')
-      .update({ value: newVal ? 'true' : 'false', updated_at: new Date().toISOString() })
-      .eq('key', 'app_is_open');
-    if (error) { showToast('Could not update store status: ' + error.message); return; }
-    _storeIsOpen = newVal;
-    updateStoreStatusUI();
-    checkStoreOpenStatus();
-    showToast(newVal ? '🟢 Store is now Open' : '🔴 Store is now Closed');
-  } catch(e) {
-    showToast('Error updating store status');
-  }
-}
-
 async function checkStoreOpenStatus() {
   var dot   = document.getElementById('nstore-dot');
   var pulse = document.getElementById('nstore-pulse');
