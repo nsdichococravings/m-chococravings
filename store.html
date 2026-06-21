@@ -2261,7 +2261,7 @@ var { data: order, error } = await db.from('store_orders').insert([{
   total:           total,
   payment_method:  _aoPayMethod,
   payment_status:  _aoPayMethod === 'free' ? 'complimentary' : 'paid',
-  status:          'confirmed',
+  status:          'pending',
   notes:           notes.trim() || null,
   placed_by_admin: true
 }]).select('id, token').single();
