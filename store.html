@@ -306,7 +306,8 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
       <div class="tab"           onclick="setTab('Desserts')">🍫 Desserts</div>
       <div class="tab"           onclick="setTab('Brownies')" id="tab-Brownies" style="display:none">🟫 Brownies</div>
       <div class="tab"           onclick="setTab('Cakes')"    id="tab-Cakes"    style="display:none">🎂 Cakes</div>
-      <div class="tab" onclick="setTab('Cookies')" id="tab-Cookies" style="display:none">🍪 Cookies</div>
+      <div class="tab"           onclick="setTab('Cookies')" id="tab-Cookies" style="display:none">🍪 Cookies</div>
+      <div class="tab"           onclick="setTab('Ice Cream')" id="tab-Ice Cream" style="display:none">🍦 Ice Cream</div>
       <div class="tab"           onclick="setTab('Others')"   id="tab-Others"   style="display:none">✨ Others</div>
     </div>
   </div>
@@ -713,10 +714,11 @@ var MENU = {
   Coffee:   {accent:'#b87410', dot:'#f5c430', cls:'coffee',   items:[]},
   Tea:      {accent:'#2a6644', dot:'#6dba5a', cls:'tea',      items:[]},
   Desserts: {accent:'#6e0977', dot:'#b94dc7', cls:'desserts', items:[]},
-  Brownies: {accent:'#92400e', dot:'#d97706', cls:'desserts',  items:[]},
-  Cakes:    {accent:'#be185d', dot:'#f472b6', cls:'desserts',  items:[]},
-  Cookies:  {accent:'#a16207', dot:'#facc15', cls:'desserts',  items:[]},
-  Others:   {accent:'#374151', dot:'#9ca3af', cls:'desserts',  items:[]},
+  Brownies: {accent:'#92400e', dot:'#d97706', cls:'brownies',  items:[]},
+  Cakes:    {accent:'#be185d', dot:'#f472b6', cls:'cakes',  items:[]},
+  Cookies:  {accent:'#a16207', dot:'#facc15', cls:'cookies',  items:[]},
+  IceCream: {accent:'#0ea5e9', dot:'#7dd3fc', cls:'icecream', items:[]},
+   Others:   {accent:'#374151', dot:'#9ca3af', cls:'others',  items:[]}
 };
 
 function showSkeleton(){
@@ -768,7 +770,7 @@ async function loadMenu(){
     });
     renderItems();
     // Show tabs dynamically based on which categories have items
-    ['Brownies','Cakes','Cookies','Others'].forEach(function(cat) {
+    ['Brownies','Cakes','Cookies','Ice Cream','Others'].forEach(function(cat) {
       var tabEl = document.getElementById('tab-' + cat);
       if (tabEl) {
         tabEl.style.display = MENU[cat].items.length > 0 ? 'block' : 'none';
