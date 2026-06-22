@@ -306,6 +306,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
       <div class="tab"           onclick="setTab('Desserts')">🍫 Desserts</div>
       <div class="tab"           onclick="setTab('Brownies')" id="tab-Brownies" style="display:none">🟫 Brownies</div>
       <div class="tab"           onclick="setTab('Cakes')"    id="tab-Cakes"    style="display:none">🎂 Cakes</div>
+      <div class="tab" onclick="setTab('Cookies')" id="tab-Cookies" style="display:none">🍪 Cookies</div>
       <div class="tab"           onclick="setTab('Others')"   id="tab-Others"   style="display:none">✨ Others</div>
     </div>
   </div>
@@ -714,6 +715,7 @@ var MENU = {
   Desserts: {accent:'#6e0977', dot:'#b94dc7', cls:'desserts', items:[]},
   Brownies: {accent:'#92400e', dot:'#d97706', cls:'desserts',  items:[]},
   Cakes:    {accent:'#be185d', dot:'#f472b6', cls:'desserts',  items:[]},
+  Cookies:  {accent:'#a16207', dot:'#facc15', cls:'desserts',  items:[]},
   Others:   {accent:'#374151', dot:'#9ca3af', cls:'desserts',  items:[]},
 };
 
@@ -766,7 +768,7 @@ async function loadMenu(){
     });
     renderItems();
     // Show tabs dynamically based on which categories have items
-    ['Brownies','Cakes','Others'].forEach(function(cat) {
+    ['Brownies','Cakes','Cookies','Others'].forEach(function(cat) {
       var tabEl = document.getElementById('tab-' + cat);
       if (tabEl) {
         tabEl.style.display = MENU[cat].items.length > 0 ? 'block' : 'none';
