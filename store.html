@@ -302,13 +302,13 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     </div>
     <div class="tabs" id="menu-tabs" style="flex-wrap:wrap;gap:6px">
       <div class="tab on-coffee" onclick="setTab('Coffee')">☕ Coffee</div>
-      <div class="tab"           onclick="setTab('Tea')">🫖 Tea</div>
-      <div class="tab"           onclick="setTab('Desserts')">🍫 Desserts</div>
-      <div class="tab"           onclick="setTab('Brownies')" id="tab-Brownies" style="display:none">🟫 Brownies</div>
-      <div class="tab"           onclick="setTab('Cakes')"    id="tab-Cakes"    style="display:none">🎂 Cakes</div>
-      <div class="tab"           onclick="setTab('Cookies')" id="tab-Cookies" style="display:none">🍪 Cookies</div>
-      <div class="tab"           onclick="setTab('Ice Cream')" id="tab-Ice Cream" style="display:none">🍦 Ice Cream</div>
-      <div class="tab"           onclick="setTab('Others')"   id="tab-Others"   style="display:none">✨ Others</div>
+      <div class="tab"           onclick="setTab('Tea')">Tea</div>
+      <div class="tab"           onclick="setTab('Desserts')">Desserts</div>
+      <div class="tab"           onclick="setTab('Brownies')" id="tab-Brownies" style="display:none">Brownies</div>
+      <div class="tab"           onclick="setTab('Cakes')"    id="tab-Cakes"    style="display:none">Cakes</div>
+      <div class="tab"           onclick="setTab('Cookies')" id="tab-Cookies" style="display:none">Cookies</div>
+      <div class="tab"           onclick="setTab('IceCream')" id="tab-IceCream" style="display:none">Ice Cream</div>
+      <div class="tab"           onclick="setTab('Others')"   id="tab-Others"   style="display:none">Fresh Juices</div>
     </div>
   </div>
   <div class="sec-lbl">
@@ -770,7 +770,7 @@ async function loadMenu(){
     });
     renderItems();
     // Show tabs dynamically based on which categories have items
-    ['Brownies','Cakes','Cookies','Ice Cream','Others'].forEach(function(cat) {
+    ['Brownies','Cakes','Cookies','IceCream','Others'].forEach(function(cat) {
       var tabEl = document.getElementById('tab-' + cat);
       if (tabEl) {
         tabEl.style.display = MENU[cat].items.length > 0 ? 'block' : 'none';
