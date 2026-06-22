@@ -301,7 +301,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
       <div class="pg-hdr-right">Quick · Fresh · Yours</div>
     </div>
     <div class="tabs" id="menu-tabs" style="flex-wrap:wrap;gap:6px">
-      <div class="tab on-coffee" onclick="setTab('Coffee')">☕ Coffee</div>
+      <div class="tab on-coffee" onclick="setTab('Coffee')">Coffee</div>
       <div class="tab"           onclick="setTab('Tea')">Tea</div>
       <div class="tab"           onclick="setTab('Desserts')">Desserts</div>
       <div class="tab"           onclick="setTab('Brownies')" id="tab-Brownies" style="display:none">Brownies</div>
@@ -714,11 +714,11 @@ var MENU = {
   Coffee:   {accent:'#b87410', dot:'#f5c430', cls:'coffee',   items:[]},
   Tea:      {accent:'#2a6644', dot:'#6dba5a', cls:'tea',      items:[]},
   Desserts: {accent:'#6e0977', dot:'#b94dc7', cls:'desserts', items:[]},
-  Brownies: {accent:'#92400e', dot:'#d97706', cls:'brownies',  items:[]},
-  Cakes:    {accent:'#be185d', dot:'#f472b6', cls:'cakes',  items:[]},
-  Cookies:  {accent:'#a16207', dot:'#facc15', cls:'cookies',  items:[]},
-  IceCream: {accent:'#0ea5e9', dot:'#7dd3fc', cls:'icecream', items:[]},
-   Others:   {accent:'#374151', dot:'#9ca3af', cls:'others',  items:[]}
+  Brownies: {accent:'#92400e', dot:'#d97706', cls:'desserts',  items:[]},
+  Cakes:    {accent:'#be185d', dot:'#f472b6', cls:'desserts',  items:[]},
+  Cookies:  {accent:'#a16207', dot:'#facc15', cls:'desserts',  items:[]},
+  IceCream: {accent:'#0ea5e9', dot:'#7dd3fc', cls:'desserts', items:[]},
+   Others:   {accent:'#374151', dot:'#9ca3af', cls:'desserts',  items:[]}
 };
 
 function showSkeleton(){
