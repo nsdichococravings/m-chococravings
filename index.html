@@ -6549,8 +6549,7 @@ function searchProducts(query) {
   noRes.style.display = found === 0 && q ? 'block' : 'none';
 }
 
-function applyListFilter(filter) {
-  var cards = document.querySelectorAll('.plcard');
+async function applyListFilter(filter) {
   var eggFilter = '';
   var catFilter = '';
 
@@ -6558,50 +6557,24 @@ function applyListFilter(filter) {
   else if (filter.includes('with egg') || filter.includes('egg')) { eggFilter = 'egg'; }
 
   if (filter.includes('couverture'))    { catFilter = 'couverture'; }
-  else if (filter.includes('healthy'))  { catFilter = 'healthy'; }
-  else if (filter.includes('nutella') || filter.includes('biscoff')) { catFilter = 'nutella'; }
-  else if (filter.includes('custom'))   { catFilter = 'custom'; }
 
-  var shown = 0;
-  cards.forEach(function(card) {
-    var tags = (card.getAttribute('data-tags') || '').toLowerCase();
-    var show = true;
+  try {
+    var query = db
+      .from('products')
+      .select('id, name, sku, tier, egg_type, category, description, is_featured, product_variants(id, pack_label, weight_grams, price)')
+      .eq('is_active', true)
+      .neq('product_type', 'accessory');
 
-    if (filter === 'all' || filter === '') {
-      show = true;
-    } else {
-      if (eggFilter && catFilter) {
-        show = tags.includes(eggFilter) && tags.includes(catFilter);
-      } else if (eggFilter) {
-        // eggless = show eggless only; "with egg" = show ALL (both have egg option)
-        if (eggFilter === 'eggless') show = true; // all products have eggless
-        else show = true; // all products have egg variant too
-      } else if (catFilter) {
-        show = tags.includes(catFilter);
-      }
-    }
+    if (eggFilter) query = query.eq('egg_type', eggFilter);
+    if (catFilter) query = query.eq('tier', catFilter);
 
-    card.style.display = show ? '' : 'none';
-    if (show) shown++;
-  });
+    var { data: products, error } = await query;
+    if (error || !products) { console.warn('applyListFilter fetch error:', error); return; }
 
-  // Update pltag text based on egg filter selection
-  cards.forEach(function(card) {
-    if (card.style.display === 'none') return;
-    var pltag = card.querySelector('.pltag');
-    if (!pltag) return;
-    var tags = (card.getAttribute('data-tags') || '');
-    var baseDesc = pltag.getAttribute('data-base') || pltag.textContent.split('·')[1] || '';
-    if (!pltag.getAttribute('data-base')) {
-      pltag.setAttribute('data-base', pltag.innerHTML.split('·').slice(1).join('·').trim());
-    }
-    var base = pltag.getAttribute('data-base');
-    if (eggFilter === 'egg') {
-      pltag.innerHTML = '❤️ With Egg · ' + base;
-    } else {
-      pltag.innerHTML = '💚 Eggless · ' + base;
-    }
-  });
+    renderExploreList(products);
+  } catch(e) {
+    console.warn('applyListFilter error:', e.message);
+  }
 }
 
 // ── PROMO CODES (Supabase) ──
