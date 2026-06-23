@@ -5666,6 +5666,38 @@ const P = {
 let prevPage='home', qty=1, tier='premium', egg='eggless', varIdx=0, packIdx=0;
 let topAdds={}, topTotal=0;
 
+async function loadBrowniePricing() {
+  try {
+    var { data, error } = await db
+      .from('products')
+      .select('sku, tier, egg_type, product_variants(pack_label, price)')
+      .neq('product_type', 'accessory');
+    if (error || !data) { console.warn('loadBrowniePricing failed, using hardcoded P'); return; }
+
+    var varCodes = ['CLASSIC','DOUBLE','TRIPLE','NUTELLA','BISCOFF','NUTS','SEEDS','SEEDNUTS','WALNUT','HAZEL','ASSORTED','RAGI','WHEAT','BLACKRICE','MILLET'];
+    var packOrder = ['4pcs','9pcs','16pcs'];
+
+    data.forEach(function(p) {
+      var varCode = p.sku.split('-').pop();
+      var idx = varCodes.indexOf(varCode);
+      if (idx === -1) return;
+      if (!P[p.tier] || !P[p.tier][p.egg_type] || !P[p.tier][p.egg_type][idx]) return;
+
+      var prices = P[p.tier][p.egg_type][idx]; // keep old values as fallback per-slot
+      (p.product_variants || []).forEach(function(v) {
+        var pIdx = packOrder.indexOf(v.pack_label);
+        var price = Math.round(parseFloat(v.price));
+        if (pIdx !== -1 && price > 0) prices[pIdx] = price;
+      });
+    });
+
+    console.log('✅ Brownie pricing updated from Supabase:', P);
+  } catch(e) {
+    console.warn('loadBrowniePricing error:', e.message);
+  }
+}
+
+
 function getPrice(){ return P[tier][egg][varIdx][packIdx]; }
 
 function refreshPrices(){
@@ -5896,6 +5928,8 @@ setTimeout(updateCartDots, 100);
 })();
 // Load products dynamically
 loadProducts();
+loadBrowniePricing();
+
 async function loadCakeStudioConfig() {
   try {
     var [flavRes, frostRes, tierRes, sizeRes, weightRes, touchRes] = await Promise.all([
