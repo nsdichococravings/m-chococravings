@@ -8218,7 +8218,7 @@ function renderExploreList(products) {
     var emoji = getEmojiForProduct(p.name);
     var piClass = getPiClass(i);
     var userPref = getUserEggPref();
-    var eggLabel = (userPref || p.egg_type) === 'eggless' ? '💚 Eggless' : '❤️ With Egg';
+    var eggLabel = p.egg_type === 'eggless' ? '💚 Eggless' : '❤️ With Egg';
     var tierLabel = p.tier === 'couverture' ? 'Couverture' : 'Premium';
     var rating = p.rating || 4.9;
     var reviews = p.review_count || 0;
