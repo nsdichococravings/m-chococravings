@@ -1104,6 +1104,22 @@ html {
   .notch { display: block !important; }
 }
 
+.lcard.tier-bronze {
+  background: linear-gradient(135deg, rgba(184,115,51,.5), rgba(122,74,31,.3));
+  border-color: rgba(184,115,51,.4);
+}
+.lcard.tier-silver {
+  background: linear-gradient(135deg, rgba(196,200,204,.5), rgba(142,148,156,.3));
+  border-color: rgba(196,200,204,.4);
+}
+.lcard.tier-gold {
+  background: linear-gradient(135deg, rgba(224,171,46,.5), rgba(168,121,22,.3));
+  border-color: rgba(224,171,46,.4);
+}
+.lcard.tier-platinum {
+  background: linear-gradient(135deg, rgba(168,212,236,.5), rgba(90,155,196,.3));
+  border-color: rgba(90,155,196,.4);
+}
 
 /* ── STATUS BAR SAFE AREA (notch) ── */
 .page {
@@ -1179,6 +1195,7 @@ html {
   --shadow:rgba(0,0,0,0.55);
   --shadow-gold:rgba(201,160,64,0.14);
 }
+
 
 html,body{width:100%;height:100%;overflow-x:hidden;background:var(--bg);font-family:'Jost',sans-serif;color:var(--text)}
 
@@ -4149,15 +4166,28 @@ async function loadProfileData() {
     el = document.getElementById('prof-pts-num'); if(el) el.textContent = pts;
     
     // Loyalty tier
-    var tier  = (cust.loyalty_tier || 'bronze').toLowerCase();
     var tierConfig = {
-      bronze:   { icon:'🥉', label:'Bronze Member', next:500,  color:'#CD7F32' },
-      silver:   { icon:'🥈', label:'Silver Member', next:1000, color:'#C0C0C0' },
-      gold:     { icon:'🥇', label:'Gold Member',   next:2000, color:'#FFD700' },
-      platinum: { icon:'💎', label:'Platinum',       next:null, color:'#E5E4E2' }
-    };
-    var tc = tierConfig[tier] || tierConfig.bronze;
-    el = document.getElementById('prof-tier-lbl'); if(el) el.textContent = tc.icon + ' ' + tc.label;
+        bronze:   { iconClass:'bronze',   icon:'ti-medal',  label:'Bronze Member', next:500  },
+        silver:   { iconClass:'silver',   icon:'ti-medal',  label:'Silver Member', next:1000 },
+        gold:     { iconClass:'gold',     icon:'ti-crown',  label:'Gold Member',   next:2000 },
+        platinum: { iconClass:'platinum',icon:'ti-diamond', label:'Platinum',      next:null }
+      };
+      var tc = tierConfig[tier] || tierConfig.bronze;
+      el = document.getElementById('prof-tier-lbl'); if(el) el.textContent = tc.label;
+
+      var badgeEl = document.getElementById('prof-tier-badge');
+      if (badgeEl) {
+        badgeEl.className = 'tier-badge ' + tc.iconClass;
+        badgeEl.innerHTML = '<i class="ti ' + tc.icon + '"></i>';
+      }
+
+      var cardEl = document.querySelector('.lcard');
+      if (cardEl) {
+        cardEl.classList.remove('tier-bronze','tier-silver','tier-gold','tier-platinum');
+        cardEl.classList.add('tier-' + tc.iconClass);
+      }
+
+
     // Tier progress based on LIFETIME points
     var pct = tc.next ? Math.min(100, Math.round(lifetimePts/tc.next*100)) : 100;
     el = document.getElementById('prof-lbar'); if(el) el.style.width = pct + '%';
