@@ -4163,19 +4163,21 @@ async function loadProfileData() {
         .in('order_id', orderIds);
         totalPieces = itemData ? itemData.reduce(function(s,i){ return s + (i.quantity||1); }, 0) : 0;
     }
+    
     } catch(e) { totalPieces = 0; }
     el = document.getElementById('prof-spent');
     if(el) el.textContent = totalPieces;
     el = document.getElementById('prof-pts-num'); if(el) el.textContent = pts;
     
     // Loyalty tier
+    var loyaltyTier = (cust.loyalty_tier || 'bronze').toLowerCase();
     var tierConfig = {
         bronze:   { iconClass:'bronze',   icon:'ti-medal',  label:'Bronze Member', next:500  },
         silver:   { iconClass:'silver',   icon:'ti-medal',  label:'Silver Member', next:1000 },
         gold:     { iconClass:'gold',     icon:'ti-crown',  label:'Gold Member',   next:2000 },
         platinum: { iconClass:'platinum',icon:'ti-diamond', label:'Platinum',      next:null }
       };
-      var tc = tierConfig[tier] || tierConfig.bronze;
+      var tc = tierConfig[loyaltyTier] || tierConfig.bronze;
       el = document.getElementById('prof-tier-lbl'); if(el) el.textContent = tc.label;
 
       var badgeEl = document.getElementById('prof-tier-badge');
