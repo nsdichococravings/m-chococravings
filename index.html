@@ -10281,6 +10281,13 @@ const FL={
 
 function initGL(){
   const cv=document.getElementById('cake-canvas');
+  if (!cv) { console.warn('cake-canvas not found, retrying...'); setTimeout(initGL, 200); return; }
+  const wrap = document.querySelector('.canvas-wrap');
+  if (!wrap || wrap.clientWidth === 0 || wrap.clientHeight === 0) {
+    console.warn('canvas-wrap has zero size, retrying...');
+    setTimeout(initGL, 200);
+    return;
+  }
   renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
   renderer.setPixelRatio(Math.min(devicePixelRatio,2));
   renderer.shadowMap.enabled=true;
