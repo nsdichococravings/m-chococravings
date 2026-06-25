@@ -671,10 +671,10 @@ async function loadOrders() {
   try {
     // Test basic connection first
     const { data, error } = await db
-      .from('orders')
-      .select('*, custom_orders(*)')
-      .order('created_at', { ascending: false })
-      .limit(200);
+    .from('orders')
+    .select('*, custom_orders(*), order_items(product_name, tier, egg_type, pack_label, quantity, line_total, toppings)')
+    .order('created_at', { ascending: false })
+    .limit(200);
 
     if (error) {
       console.error('❌ Orders fetch error:', error.code, error.message, error.hint);
@@ -683,10 +683,10 @@ async function loadOrders() {
       if (error.code === 'PGRST301' || error.message?.includes('permission') || error.message?.includes('policy')) {
         console.warn('⚠️ RLS blocking — trying without custom_orders join');
         const { data: data2, error: err2 } = await db
-          .from('orders')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(200);
+        .from('orders')
+        .select('*, order_items(product_name, tier, egg_type, pack_label, quantity, line_total, toppings)')
+        .order('created_at', { ascending: false })
+        .limit(200);
 
         if (!err2) {
           allOrders = data2 || [];
@@ -1013,6 +1013,37 @@ function isCustomOrder(order) {
     || (order.special_notes && order.special_notes.includes('custom_orders')));
 }
 
+function isAccessoryOrder(order) {
+  var items = Array.isArray(order.order_items) ? order.order_items : [];
+  if (items.length === 0) return false;
+  return items.every(function(i) { return i.egg_type === 'na'; });
+}
+
+const STATUS_LABELS_ACC = {
+  pending:   '⏳ Pending',
+  confirmed: '✅ Confirmed',
+  packed:    '📦 Packed',
+  shipped:   '🚚 Shipped',
+  delivered: '🎉 Delivered',
+  cancelled: '❌ Cancelled'
+};
+
+const NEXT_STAGE_ACC = {
+  pending:   { status:'confirmed', label:'✅ Confirm Order', bg:'rgba(59,130,246,.15)', color:'#60A5FA', border:'rgba(59,130,246,.3)' },
+  confirmed: { status:'packed',    label:'📦 Mark Packed',   bg:'rgba(34,197,94,.1)',   color:'#4ADE80', border:'rgba(34,197,94,.25)' },
+  packed:    { status:'shipped',   label:'🚚 Mark Shipped',  bg:'rgba(56,189,248,.12)', color:'#38BDF8', border:'rgba(56,189,248,.3)' },
+  shipped:   { status:'delivered', label:'🎉 Mark Delivered',bg:'rgba(34,197,94,.1)',   color:'#4ADE80', border:'rgba(34,197,94,.25)' }
+};
+
+const STATUS_CFG_ACC = {
+  pending:   { label:'⏳ Pending',   bg:'rgba(245,158,11,.12)', color:'#F59E0B', border:'rgba(245,158,11,.3)' },
+  confirmed: { label:'✅ Confirmed', bg:'rgba(59,130,246,.12)', color:'#60A5FA', border:'rgba(59,130,246,.3)' },
+  packed:    { label:'📦 Packed',    bg:'rgba(34,197,94,.1)',   color:'#4ADE80', border:'rgba(34,197,94,.25)' },
+  shipped:   { label:'🚚 Shipped',   bg:'rgba(56,189,248,.12)', color:'#38BDF8', border:'rgba(56,189,248,.3)' },
+  delivered: { label:'🎉 Delivered', bg:'rgba(34,197,94,.08)',  color:'#86EFAC', border:'rgba(34,197,94,.2)' },
+  cancelled: { label:'❌ Cancelled', bg:'rgba(239,68,68,.1)',   color:'#F87171', border:'rgba(239,68,68,.25)' }
+};
+
 // Store order ids for edit buttons (avoids inline quote escaping)
 window._adminEditMap = window._adminEditMap || {};
 
@@ -1109,10 +1140,11 @@ function buildCustomDetailsHTML(order) {
 }
 
 function renderOrderRow(order, isNew = false) {
-  const items = Array.isArray(order.items) ? order.items : [];
+  const items = Array.isArray(order.order_items) ? order.order_items : [];
   const firstItem = items[0] || {};
 
-  const statusCfg = {
+  const isAcc = isAccessoryOrder(order);
+  const statusCfg = isAcc ? STATUS_CFG_ACC : {
     pending:           { label:'⏳ Pending',              bg:'rgba(245,158,11,.12)',  color:'#F59E0B', border:'rgba(245,158,11,.3)'  },
     confirmed:         { label:'✅ Confirmed',             bg:'rgba(59,130,246,.12)',  color:'#60A5FA', border:'rgba(59,130,246,.3)'  },
     ready_for_baking:  { label:'🍫 Ready for Baking',     bg:'rgba(167,139,250,.12)', color:'#C084FC', border:'rgba(167,139,250,.3)' },
@@ -1124,15 +1156,16 @@ function renderOrderRow(order, isNew = false) {
   };
   const sc = statusCfg[order.status] || { label: order.status, bg:'var(--card)', color:'var(--dim)', border:'var(--bdr)' };
   const dt = new Date(order.created_at).toLocaleString('en-IN',{ day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' });
-  const itemLine = firstItem.product_name || firstItem.name || '—';
+  const itemLine = firstItem.product_name || '—';
   const itemExtra = items.length > 1 ? ` +${items.length-1} more` : '';
-  const packLine  = [firstItem.pack_label||firstItem.pack, order.egg_preference==='eggless'?'💚 Eggless':'❤️ With Egg'].filter(Boolean).join(' · ');
-
+  const packLine  = isAcc
+    ? [firstItem.pack_label].filter(Boolean).join(' · ')
+    : [firstItem.pack_label, order.egg_preference==='eggless'?'💚 Eggless':'❤️ With Egg'].filter(Boolean).join(' · ');
   // Action buttons based on current status
   const isDone = ['delivered','cancelled'].includes(order.status);
 
   // Each status shows a "Move to next stage" button
-  const NEXT_STAGE = {
+  const NEXT_STAGE = isAcc ? NEXT_STAGE_ACC : {
     pending:           { status:'confirmed',         label:'✅ Confirm Order',       bg:'rgba(59,130,246,.15)',  color:'#60A5FA', border:'rgba(59,130,246,.3)'  },
     confirmed:         { status:'ready_for_baking',  label:'🍫 Start Baking',        bg:'rgba(167,139,250,.12)', color:'#C084FC', border:'rgba(167,139,250,.3)' },
     ready_for_baking:  { status:'baking',            label:'🔥 Out of Oven',         bg:'rgba(251,146,60,.12)',  color:'#FB923C', border:'rgba(251,146,60,.3)'  },
@@ -1164,6 +1197,7 @@ function renderOrderRow(order, isNew = false) {
       <div style="display:flex;align-items:center;gap:7px">
         <div style="font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:700;color:var(--pl)">${order.order_number||'—'}</div>
         ${isCustomOrder(order) ? '<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:6px;background:rgba(245,158,11,.15);color:#FBBF24;border:1px solid rgba(245,158,11,.3)">CUSTOM</span>' : ''}
+        ${isAcc ? '<span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:6px;background:rgba(56,189,248,.15);color:#38BDF8;border:1px solid rgba(56,189,248,.3)">🎈 VIBE STORE</span>' : ''}
       </div>
       <div style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;background:${sc.bg};color:${sc.color};border:1px solid ${sc.border}">${sc.label}</div>
     </div>
@@ -1421,8 +1455,9 @@ function renderCharts() {
 // ─────────────────────────────────────────
 function openPanel(id) {
   const order = allOrders.find(o=>o.id===id); if(!order) return;
+  const isAcc = isAccessoryOrder(order);
   document.getElementById('dp-order-id').textContent = order.order_number || 'Order';
-  const items = Array.isArray(order.items) ? order.items : [];
+  const items = Array.isArray(order.order_items) ? order.order_items : [];
   const dt = new Date(order.created_at).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'});
 
   document.getElementById('dp-body').innerHTML = `
@@ -1460,6 +1495,14 @@ function openPanel(id) {
     <div class="dp-section">
       <div class="dp-slabel">Update Status</div>
       <select class="status-select" id="panel-status" onchange="">
+        ${isAcc ? `
+        <option value="pending"   ${order.status==='pending'?'selected':''}>⏳ Pending</option>
+        <option value="confirmed" ${order.status==='confirmed'?'selected':''}>✅ Confirmed</option>
+        <option value="packed"    ${order.status==='packed'?'selected':''}>📦 Packed</option>
+        <option value="shipped"   ${order.status==='shipped'?'selected':''}>🚚 Shipped</option>
+        <option value="delivered" ${order.status==='delivered'?'selected':''}>🎉 Delivered</option>
+        <option value="cancelled" ${order.status==='cancelled'?'selected':''}>❌ Cancelled</option>
+        ` : `
         <option value="pending"           ${order.status==='pending'?'selected':''}>⏳ Pending</option>
         <option value="confirmed"         ${order.status==='confirmed'?'selected':''}>✅ Confirmed</option>
         <option value="ready_for_baking"  ${order.status==='ready_for_baking'?'selected':''}>🍫 Ready for Baking</option>
@@ -1468,6 +1511,7 @@ function openPanel(id) {
         <option value="shipped"           ${order.status==='shipped'?'selected':''}>🚚 Shipped</option>
         <option value="delivered"         ${order.status==='delivered'?'selected':''}>🎉 Delivered</option>
         <option value="cancelled"         ${order.status==='cancelled'?'selected':''}>❌ Cancelled</option>
+        `}
       </select>
       <button class="update-status-btn" onclick="updateStatusFromPanel('${order.id}')">Update Status</button>
       <button class="wa-notify-btn" onclick="sendWAUpdate('${order.id}')">📲 WhatsApp Customer</button>
@@ -1594,7 +1638,14 @@ document.addEventListener('click', function(e) {
 // ─────────────────────────────────────────
 function sendWAUpdate(id) {
   const order = allOrders.find(o=>o.id===id); if(!order) return;
-  const statusMsg = {
+  const isAcc = isAccessoryOrder(order);
+  const statusMsg = isAcc ? {
+    confirmed: '✅ Great news! Your Vibe Store order is confirmed and being prepared! 🎈',
+    packed:    '📦 Your order is packed with care and ready for dispatch!',
+    shipped:   '🚚 Your order is on the way to ' + order.delivery_city + '! 🎈',
+    delivered: '🎉 Delivered! Hope you love your Vibe Store goodies! Do share your feedback ⭐⭐⭐⭐⭐',
+    cancelled: '❌ We\'re sorry, your order has been cancelled. Please call us at +91 99721 41890 for help.'
+  }[order.status] : {
     confirmed:         '✅ Great news! Your order is confirmed and we are getting ready to bake your fresh brownies! 🍫',
     ready_for_baking:  '🍫 Your brownies are ready to go into the oven! Freshly baked, just for you. Minimum 24 hrs baking time.',
     baking:            '🔥 Your brownies are FRESH OUT OF THE OVEN! Hot, delicious and packed with love 😍🍫',
@@ -1608,7 +1659,7 @@ function sendWAUpdate(id) {
     `Hi ${order.customer_name}! 🍫\n\n` +
     `*Order ${order.order_number} Update:*\n\n` +
     statusMsg + '\n\n' +
-    `📞 Queries: +91 99721 41890\n📸 @nsdi.chococravings\n\n_NSDI ChocoCravings — Happy to serve fresh!!_`
+    `📞 Queries: +91 8973141898\n📸 @nsdi.chococravings\n\n_NSDI ChocoCravings — Happy to serve fresh!!_`
   );
   const phone = order.customer_phone.replace(/[^0-9]/g,'');
   window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
