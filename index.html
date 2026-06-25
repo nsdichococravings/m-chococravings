@@ -6017,12 +6017,12 @@ loadBrowniePricing();
 async function loadCakeStudioConfig() {
   try {
     var [flavRes, frostRes, tierRes, sizeRes, weightRes, touchRes] = await Promise.all([
-      db.from('cake_flavours').select('*').eq('is_active', null).order('sort_order'),
-      db.from('cake_frostings').select('*').eq('is_active', null).order('sort_order'),
-      db.from('cake_tiers').select('*').eq('is_active', null).order('sort_order'),
-      db.from('cake_sizes').select('*').eq('is_active', null).order('sort_order'),
-      db.from('cake_weights').select('*').eq('is_active', null).order('sort_order'),
-      db.from('cake_finishing_touches').select('*').eq('is_active', null).order('sort_order'),
+      db.from('cake_flavours').select('*').eq('is_active', true).order('sort_order'),
+      db.from('cake_frostings').select('*').eq('is_active', true).order('sort_order'),
+      db.from('cake_tiers').select('*').eq('is_active', true).order('sort_order'),
+      db.from('cake_sizes').select('*').eq('is_active', true).order('sort_order'),
+      db.from('cake_weights').select('*').eq('is_active', true).order('sort_order'),
+      db.from('cake_finishing_touches').select('*').eq('is_active', true).order('sort_order'),
     ]);
 
     var flavours = flavRes.data || [];
@@ -6152,12 +6152,8 @@ async function loadCakeStudioConfig() {
             + '<button class="sopt topt" onclick="pickSprinkle(this,0xe04040)">◆ Red</button>'
             + '</div>';
         }
-        var EMOJIS = { goldLeaf:'✦', fauxBalls:'🟡', chocDrips:'🍫', hbd:'🎂', flowers:'🌸' };
-        var costStr = t.extra_price > 0 ? '' : '';
-        var extraCost = t.extra_price || 0;
-        // Map to existing setTouch cost values
-        var costMap = { goldLeaf:80, fauxBalls:60, chocDrips:50, hbd:90, flowers:50 };
-        var cost = costMap[t.key] || extraCost || 0;
+        var EMOJIS = { goldLeaf:'✦', fauxBalls:'🟡', chocDrips:'🍫', hbd:'🎂', flowers:'🌸', sprinkles:'✨', toys:'🧸' };
+        var cost = t.extra_price || 0;
         return '<button class="tchip" data-k="' + t.key + '" onclick="setTouch(this,\'' + t.key + '\',' + cost + ')">'
           + (EMOJIS[t.key] || '') + ' ' + t.name
           + '</button>';
