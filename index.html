@@ -4300,7 +4300,7 @@ async function loadAndShowOrders() {
   listEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--dim)">Loading...</div>';
 
   const { data: orders, error } = await db.from('orders')
-    .select('id,order_number,status,total,payment_method,is_custom,created_at,order_items(product_name,quantity,pack_label),custom_orders(*)')
+    .select('id,order_number,status,total,payment_method,is_custom,created_at,order_items(product_name,quantity,pack_label,egg_type),custom_orders(*)')
     .eq('customer_id', currentUser.db_id)
     .order('created_at', { ascending: false })
     .limit(20);
@@ -4327,8 +4327,14 @@ async function loadAndShowOrders() {
     var itemSummary = items.length > 0
       ? items[0].product_name + (items[0].pack_label ? ' · ' + items[0].pack_label : '') + (items.length > 1 ? ' +' + (items.length-1) + ' more' : '')
       : 'Order items';
+    var isAcc = isAccessoryOrder(o.order_items);
+    var accStatusLabels = {
+      pending:'⏳ Pending', confirmed:'✅ Confirmed', packed:'📦 Packed',
+      shipped:'🚚 Shipped', delivered:'🎉 Delivered', cancelled:'❌ Cancelled'
+    };
     var statusBg  = statusColors[o.status]  || 'rgba(255,255,255,.05)';
-    var statusLbl = statusLabels[o.status]  || o.status;
+    var statusLbl = (isAcc ? accStatusLabels[o.status] : statusLabels[o.status]) || o.status;
+
     var date = o.created_at ? new Date(o.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) : '';
     // Store custom order data in memory — avoids JSON escaping issues in HTML attributes
     if (!window._coData) window._coData = {};
@@ -6198,6 +6204,19 @@ var ORDER_STAGES = [
   { status: 'delivered',         icon: '🎉', label: 'Delivered!',            sub: 'Enjoy your ChocoCravings 🍫' }
 ];
 
+var ACCESSORY_STAGES = [
+  { status: 'pending',   icon: '✅', label: 'Order Confirmed',  sub: 'Your order is confirmed!' },
+  { status: 'confirmed', icon: '✅', label: 'Order Confirmed',  sub: 'Confirmed by NSDI ChocoCravings' },
+  { status: 'packed',    icon: '📦', label: 'Packed',           sub: 'Packed with care' },
+  { status: 'shipped',   icon: '🚚', label: 'Shipped',          sub: 'On the way to you!' },
+  { status: 'delivered', icon: '🎉', label: 'Delivered!',       sub: 'Hope you love it 🎈' }
+];
+
+function isAccessoryOrder(orderItems) {
+  if (!orderItems || orderItems.length === 0) return false;
+  return orderItems.every(function(i) { return i.egg_type === 'na'; });
+}
+
 function fmtTrackTime(isoStr) {
   if (!isoStr) return '';
   var d = new Date(isoStr);
@@ -6206,37 +6225,35 @@ function fmtTrackTime(isoStr) {
 }
 
 // Build steps from DB history records
-function buildStepsFromHistory(history, currentStatus) {
-  // Map status → timestamp from history
+function buildStepsFromHistory(history, currentStatus, useAccessoryStages) {
   var doneMap = {};
   (history || []).forEach(function(h) {
     if (!doneMap[h.to_status]) doneMap[h.to_status] = h.created_at;
   });
-  // Always mark order placed
   if (!doneMap['pending'] && history && history.length > 0) {
     doneMap['pending'] = history[0].created_at;
   }
 
-  var currentIdx = ORDER_STAGES.findIndex(function(s){ return s.status === currentStatus; });
+  var sourceStages = useAccessoryStages ? ACCESSORY_STAGES : ORDER_STAGES;
+
+  var currentIdx = sourceStages.findIndex(function(s){ return s.status === currentStatus; });
   if (currentIdx < 0) currentIdx = 0;
 
-  // Deduplicate — pending & confirmed both map to stage 0
-  var stages = ORDER_STAGES.filter(function(s, i, arr) {
-    if (s.status === 'confirmed') return false; // merge with pending
+  var stages = sourceStages.filter(function(s) {
+    if (s.status === 'confirmed') return false;
     return true;
   });
-  // Recalc currentIdx on deduped stages
   var dedupIdx = stages.findIndex(function(s){ return s.status === currentStatus; });
   if (dedupIdx < 0) dedupIdx = currentStatus === 'confirmed' ? 0 : 0;
 
   return { stages: stages, doneMap: doneMap, currentIdx: dedupIdx };
 }
 
-function renderTrackingSteps(currentStatus, history) {
+function renderTrackingSteps(currentStatus, history, isAccessory) {
   var el = document.getElementById('tracking-steps');
   if (!el) return;
 
-  var built = buildStepsFromHistory(history, currentStatus);
+  var built = buildStepsFromHistory(history, currentStatus, isAccessory);
   var stages = built.stages;
   var doneMap = built.doneMap;
   var currentIdx = built.currentIdx;
@@ -6288,7 +6305,14 @@ async function loadOrderTracking(orderId, currentStatus) {
       .select('to_status, from_status, created_at, note')
       .eq('order_id', orderId)
       .order('created_at', { ascending: true });
-    renderTrackingSteps(currentStatus, history || []);
+
+    var { data: items } = await db
+      .from('order_items')
+      .select('egg_type')
+      .eq('order_id', orderId);
+
+    var isAccessory = isAccessoryOrder(items);
+    renderTrackingSteps(currentStatus, history || [], isAccessory);
   } catch(e) {
     renderTrackingSteps(currentStatus, []);
   }
@@ -7579,15 +7603,25 @@ async function loadLiveTrackingData() {
     ready_to_dispatch:5, packed:5, shipped:6, out_for_delivery:6
   };
 
+  var accStatusLabels = {
+    pending:'⏳ Pending', confirmed:'✅ Confirmed',
+    packed:'📦 Packed', shipped:'🚚 Shipped', delivered:'🎉 Delivered'
+  };
+  var accStatusProgress = {
+    pending:1, confirmed:2, packed:3, shipped:4, delivered:5
+  };
+
   listEl.innerHTML = orders.map(function(o) {
     var items = o.order_items || [];
     var itemName = items.length > 0 ? items[0].product_name : 'Order';
     var itemDesc = items.length > 0 ? (items[0].egg_type === 'eggless' ? '💚 Eggless' : '❤️ Egg') + ' · ' + (items[0].pack_label || '4pcs') : '';
     if (items.length > 1) itemDesc += ' +' + (items.length-1) + ' more';
+    var isAcc = isAccessoryOrder(o.order_items);
     var statusBg  = statusColors[o.status]  || 'rgba(255,255,255,.05)';
-    var statusLbl = statusLabels[o.status]  || o.status;
-    var progress  = statusProgress[o.status] || 1;
-    var pct = Math.round((progress / 6) * 100);
+    var statusLbl = (isAcc ? accStatusLabels[o.status] : statusLabels[o.status]) || o.status;
+    var progress  = isAcc ? (accStatusProgress[o.status] || 1) : (statusProgress[o.status] || 1);
+    var totalSteps = isAcc ? 5 : 6;
+    var pct = Math.round((progress / totalSteps) * 100);
     var date = o.created_at ? new Date(o.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short'}) : '';
 
     console.log('Order row — id:', o.id, 'order_number:', o.order_number);
@@ -7734,6 +7768,7 @@ try {
 
     var history    = histRes.data   || [];
     var items      = itemRes.data   || [];
+    var isAccessory = isAccessoryOrder(items);
     var cakeData   = cakeRes.data   || null;
     var customData = customRes.data || null;
 
@@ -7863,7 +7898,7 @@ try {
     var tempEl = document.createElement('div');
     tempEl.id  = 'tracking-steps';
     document.body.appendChild(tempEl);
-    renderTrackingSteps(status, history);
+    renderTrackingSteps(status, history, isAccessory);
     var stepsContent = tempEl.innerHTML;
     tempEl.remove();
 
