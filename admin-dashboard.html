@@ -755,7 +755,7 @@ function subscribeRealtime() {
           setTimeout(function(){flashTitle(n-1);},600);
         })(8);
       })
-    .on('postgres_changes',
+  .on('postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'orders' },
         payload => {
           const idx = allOrders.findIndex(o => o.id === payload.new.id);
@@ -767,11 +767,6 @@ function subscribeRealtime() {
             updateStats();
           });
         })
-        requestAnimationFrame(function(){
-          renderAll();
-          updateStats();
-        });
-      })
     .subscribe();
 }
 
