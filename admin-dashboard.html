@@ -724,6 +724,17 @@ function subscribeRealtime() {
       payload => {
         const order = payload.new;
         allOrders.unshift(order);
+        // Re-fetch this order's items since realtime payload has no joins
+        db.from('order_items')
+          .select('product_name, tier, egg_type, pack_label, quantity, line_total, toppings')
+          .eq('order_id', order.id)
+          .then(function(res) {
+            if (res.data) {
+              var idx = allOrders.findIndex(function(o){ return o.id === order.id; });
+              if (idx !== -1) allOrders[idx].order_items = res.data;
+              renderAll();
+            }
+          });
         // Defer heavy renders to next animation frame to avoid blocking
         requestAnimationFrame(function(){
           renderAll();
@@ -745,10 +756,17 @@ function subscribeRealtime() {
         })(8);
       })
     .on('postgres_changes',
-      { event: 'UPDATE', schema: 'public', table: 'orders' },
-      payload => {
-        const idx = allOrders.findIndex(o => o.id === payload.new.id);
-        if (idx !== -1) allOrders[idx] = payload.new;
+        { event: 'UPDATE', schema: 'public', table: 'orders' },
+        payload => {
+          const idx = allOrders.findIndex(o => o.id === payload.new.id);
+          if (idx !== -1) {
+            allOrders[idx] = Object.assign({}, allOrders[idx], payload.new);
+          }
+          requestAnimationFrame(function(){
+            renderAll();
+            updateStats();
+          });
+        })
         requestAnimationFrame(function(){
           renderAll();
           updateStats();
@@ -1030,12 +1048,10 @@ const STATUS_LABELS_ACC = {
 
 
 const NEXT_STAGE_ACC = {
-  pending:   { status:'⏳ Pending',   bg:'rgba(245,158,11,.12)', color:'#F59E0B', border:'rgba(245,158,11,.3)' },
-  confirmed: { status:'✅ Confirmed', bg:'rgba(59,130,246,.12)', color:'#60A5FA', border:'rgba(59,130,246,.3)' },
-  packed:    { status:'📦 Packed',    bg:'rgba(34,197,94,.1)',   color:'#4ADE80', border:'rgba(34,197,94,.25)' },
-  shipped:   { status:'🚚 Shipped',   bg:'rgba(56,189,248,.12)', color:'#38BDF8', border:'rgba(56,189,248,.3)' },
-  delivered: { status:'🎉 Delivered', bg:'rgba(34,197,94,.08)',  color:'#86EFAC', border:'rgba(34,197,94,.2)' },
-  cancelled: { status:'❌ Cancelled', bg:'rgba(239,68,68,.1)',   color:'#F87171', border:'rgba(239,68,68,.25)' }
+  pending:   { status:'confirmed', label:'✅ Confirm Order', bg:'rgba(59,130,246,.15)', color:'#60A5FA', border:'rgba(59,130,246,.3)' },
+  confirmed: { status:'packed',    label:'📦 Mark Packed',   bg:'rgba(34,197,94,.1)',   color:'#4ADE80', border:'rgba(34,197,94,.25)' },
+  packed:    { status:'shipped',   label:'🚚 Mark Shipped',  bg:'rgba(56,189,248,.12)', color:'#38BDF8', border:'rgba(56,189,248,.3)' },
+  shipped:   { status:'delivered', label:'🎉 Mark Delivered',bg:'rgba(34,197,94,.1)',   color:'#4ADE80', border:'rgba(34,197,94,.25)' }
 };
 
 const STATUS_CFG_ACC = {
@@ -1169,14 +1185,13 @@ function renderOrderRow(order, isNew = false) {
 
   // Each status shows a "Move to next stage" button
   const NEXT_STAGE = isAcc ? NEXT_STAGE_ACC : {
-    pending:           { label:'⏳ Pending',              bg:'rgba(245,158,11,.12)',  color:'#F59E0B', border:'rgba(245,158,11,.3)'  },
-    confirmed:         { label:'✅ Confirmed',             bg:'rgba(59,130,246,.12)',  color:'#60A5FA', border:'rgba(59,130,246,.3)'  },
-    packed:    { label:'📦 Packed',    bg:'rgba(34,197,94,.1)',   color:'#4ADE80', border:'rgba(34,197,94,.25)' },
-    shipped:   { label:'🚚 Shipped',   bg:'rgba(56,189,248,.12)', color:'#38BDF8', border:'rgba(56,189,248,.3)' },
-    delivered: { label:'🎉 Delivered', bg:'rgba(34,197,94,.08)',  color:'#86EFAC', border:'rgba(34,197,94,.2)' },
-    cancelled: { label:'❌ Cancelled', bg:'rgba(239,68,68,.1)',   color:'#F87171', border:'rgba(239,68,68,.25)' }
-
-   };
+    pending:           { status:'confirmed',         label:'✅ Confirm Order',       bg:'rgba(59,130,246,.15)',  color:'#60A5FA', border:'rgba(59,130,246,.3)'  },
+    confirmed:         { status:'ready_for_baking',  label:'🍫 Start Baking',        bg:'rgba(167,139,250,.12)', color:'#C084FC', border:'rgba(167,139,250,.3)' },
+    ready_for_baking:  { status:'baking',            label:'🔥 Out of Oven',         bg:'rgba(251,146,60,.12)',  color:'#FB923C', border:'rgba(251,146,60,.3)'  },
+    baking:            { status:'ready_to_dispatch', label:'📦 Ready to Dispatch',   bg:'rgba(34,197,94,.1)',    color:'#4ADE80', border:'rgba(34,197,94,.25)'  },
+    ready_to_dispatch: { status:'shipped',           label:'🚚 Mark Shipped',        bg:'rgba(56,189,248,.12)', color:'#38BDF8', border:'rgba(56,189,248,.3)'  },
+    shipped:           { status:'delivered',         label:'🎉 Mark Delivered',      bg:'rgba(34,197,94,.1)',    color:'#4ADE80', border:'rgba(34,197,94,.25)'  },
+  };
 
   const normalizedStatus = (order.status || '').trim().toLowerCase();
   const next = NEXT_STAGE[normalizedStatus];
