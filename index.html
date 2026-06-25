@@ -11119,6 +11119,7 @@ function csPhotoNav(dir) {
 function initCakeGL() {
   if (window._cakeGLInited) return;
   window._cakeGLInited = true;
+  initGL();
   csUpdatePhoto();
   setTimeout(csStartAutoScroll, 500);
 }
