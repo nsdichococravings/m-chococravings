@@ -1178,7 +1178,8 @@ function renderOrderRow(order, isNew = false) {
 
    };
 
-  const next = NEXT_STAGE[order.status];
+  const normalizedStatus = (order.status || '').trim().toLowerCase();
+  const next = NEXT_STAGE[normalizedStatus];
   const nextBtn = next
     ? '<button onclick="event.stopPropagation();updateStatus(\'' + order.id + '\',\'' + next.status + '\')" style="flex:1;padding:10px 8px;background:' + next.bg + ';color:' + next.color + ';border:1px solid ' + next.border + ';border-radius:10px;font-size:12px;font-weight:700;cursor:pointer">' + next.label + '</button>'
     : '';
