@@ -308,6 +308,12 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
       <div class="tab"           onclick="setTab('Cakes')"    id="tab-Cakes"    style="display:none">Cakes</div>
       <div class="tab"           onclick="setTab('Cookies')" id="tab-Cookies" style="display:none">Cookies</div>
       <div class="tab"           onclick="setTab('IceCream')" id="tab-IceCream" style="display:none">Ice Cream</div>
+      <div class="tab" onclick="setTab('Milkshake')"  id="tab-Milkshake"  style="display:none">Milkshake</div>
+      <div class="tab" onclick="setTab('Chocolate')"  id="tab-Chocolate"  style="display:none">Chocolate</div>
+      <div class="tab" onclick="setTab('Spicy')"      id="tab-Spicy"      style="display:none">Spicy</div>
+      <div class="tab" onclick="setTab('Combo')"      id="tab-Combo"      style="display:none">Combo</div>
+      <div class="tab" onclick="setTab('Blondie')"    id="tab-Blondie"    style="display:none">Blondie</div>
+      <div class="tab" onclick="setTab('Cupcake')"    id="tab-Cupcake"    style="display:none">Cupcake</div>
       <div class="tab"           onclick="setTab('Others')"   id="tab-Others"   style="display:none">Fresh Juices</div>
     </div>
   </div>
@@ -718,7 +724,13 @@ var MENU = {
   Cakes:    {accent:'#be185d', dot:'#f472b6', cls:'desserts',  items:[]},
   Cookies:  {accent:'#a16207', dot:'#facc15', cls:'desserts',  items:[]},
   IceCream: {accent:'#0ea5e9', dot:'#7dd3fc', cls:'desserts', items:[]},
-   Others:   {accent:'#374151', dot:'#9ca3af', cls:'desserts',  items:[]}
+  Others:     {accent:'#374151', dot:'#9ca3af', cls:'desserts', items:[]},
+  Milkshake:  {accent:'#e879a0', dot:'#f9a8d4', cls:'desserts', items:[]},
+  Chocolate:  {accent:'#7c2d12', dot:'#c2410c', cls:'desserts', items:[]},
+  Spicy:      {accent:'#b91c1c', dot:'#f87171', cls:'desserts', items:[]},
+  Combo:      {accent:'#0f766e', dot:'#2dd4bf', cls:'desserts', items:[]},
+  Blondie:    {accent:'#92400e', dot:'#fbbf24', cls:'desserts', items:[]},
+  Cupcake:    {accent:'#be185d', dot:'#f9a8d4', cls:'desserts', items:[]}
 };
 
 function showSkeleton(){
@@ -770,7 +782,7 @@ async function loadMenu(){
     });
     renderItems();
     // Show tabs dynamically based on which categories have items
-    ['Brownies','Cakes','Cookies','IceCream','Others'].forEach(function(cat) {
+    ['Brownies','Cakes','Cookies','IceCream','Others','Milkshake','Chocolate','Spicy','Combo','Blondie','Cupcake'].forEach(function(cat) {
       var tabEl = document.getElementById('tab-' + cat);
       if (tabEl) {
         tabEl.style.display = MENU[cat].items.length > 0 ? 'block' : 'none';
@@ -2759,6 +2771,30 @@ async function toggleStoreOpenStatus() {
           <div style="font-size:18px;margin-bottom:3px">🎂</div>
           <div style="font-size:11px;font-weight:600;color:#6e0977">Cakes</div>
         </div>
+        <div class="qa-cat" onclick="qaSelCat(this,'Milkshake')" style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1.5px solid #e0c8f0;text-align:center;cursor:pointer">
+        <div style="font-size:18px;margin-bottom:3px">🥤</div>
+        <div style="font-size:11px;font-weight:600;color:#6e0977">Milkshake</div>
+      </div>
+      <div class="qa-cat" onclick="qaSelCat(this,'Chocolate')" style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1.5px solid #e0c8f0;text-align:center;cursor:pointer">
+        <div style="font-size:18px;margin-bottom:3px">🍫</div>
+        <div style="font-size:11px;font-weight:600;color:#6e0977">Chocolate</div>
+      </div>
+      <div class="qa-cat" onclick="qaSelCat(this,'Spicy')" style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1.5px solid #e0c8f0;text-align:center;cursor:pointer">
+        <div style="font-size:18px;margin-bottom:3px">🌶️</div>
+        <div style="font-size:11px;font-weight:600;color:#6e0977">Spicy</div>
+      </div>
+      <div class="qa-cat" onclick="qaSelCat(this,'Combo')" style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1.5px solid #e0c8f0;text-align:center;cursor:pointer">
+        <div style="font-size:18px;margin-bottom:3px">🎁</div>
+        <div style="font-size:11px;font-weight:600;color:#6e0977">Combo</div>
+      </div>
+      <div class="qa-cat" onclick="qaSelCat(this,'Blondie')" style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1.5px solid #e0c8f0;text-align:center;cursor:pointer">
+        <div style="font-size:18px;margin-bottom:3px">🟨</div>
+        <div style="font-size:11px;font-weight:600;color:#6e0977">Blondie</div>
+      </div>
+      <div class="qa-cat" onclick="qaSelCat(this,'Cupcake')" style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1.5px solid #e0c8f0;text-align:center;cursor:pointer">
+        <div style="font-size:18px;margin-bottom:3px">🧁</div>
+        <div style="font-size:11px;font-weight:600;color:#6e0977">Cupcake</div>
+      </div>
         <div class="qa-cat" onclick="qaSelCat(this,'Others')" style="padding:10px 6px;border-radius:12px;background:#f5eeff;border:1.5px solid #e0c8f0;text-align:center;cursor:pointer;transition:all .2s">
           <div style="font-size:18px;margin-bottom:3px">✨</div>
           <div style="font-size:11px;font-weight:600;color:#6e0977">Others</div>
