@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>My HRM — NSDI ChocoCravings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/hrm.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<div class="hrm-shell">
+
+  <div class="hrm-topbar">
+    <div class="logo-dot">CC</div>
+    <div class="brand-text">
+      <div class="b1">NSDI ChocoCravings</div>
+      <div class="b2">My Workspace</div>
+    </div>
+  </div>
+
+  <!-- ================= LOGIN VIEW ================= -->
+  <div id="loginView" class="login-wrap">
+    <div class="cc-card">
+      <h2>Welcome back</h2>
+      <p class="tag">Sign in with your Employee ID and PIN</p>
+      <input id="loginCode" class="cc-input" placeholder="Employee ID (e.g. EMP001)" autocomplete="off" />
+      <input id="loginPin" class="cc-input" placeholder="4-digit PIN" type="password" inputmode="numeric" maxlength="6" />
+      <button class="cc-btn" id="loginBtn">Sign In</button>
+      <div class="cc-error" id="loginError"></div>
+    </div>
+  </div>
+
+  <!-- ================= DASHBOARD VIEW ================= -->
+  <div id="dashView" style="display:none;">
+
+    <div class="cc-card">
+      <div class="profile-head">
+        <div class="profile-avatar" id="avatarInitial">E</div>
+        <div>
+          <div class="name" id="empName">—</div>
+          <div class="role" id="empRole">—</div>
+        </div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="num" id="statPresent">0</div><div class="lbl">Days Present</div></div>
+        <div class="stat-box"><div class="num" id="statHours">0</div><div class="lbl">Hrs This Month</div></div>
+        <div class="stat-box"><div class="num" id="statLeaveLeft">0</div><div class="lbl">Leaves Left</div></div>
+      </div>
+    </div>
+
+    <div class="hrm-tabs">
+      <div class="hrm-tab active" data-tab="overview">Overview</div>
+      <div class="hrm-tab" data-tab="attendance">Attendance</div>
+      <div class="hrm-tab" data-tab="leaves">Leaves</div>
+      <div class="hrm-tab" data-tab="benefits">Benefits</div>
+    </div>
+
+    <!-- OVERVIEW -->
+    <div class="hrm-panel active" id="panel-overview">
+      <div class="cc-card">
+        <h3>Today</h3>
+        <div id="todayBlock" class="hrm-empty">Loading…</div>
+      </div>
+      <div class="cc-card">
+        <h3>Leave Balance</h3>
+        <div class="leave-grid" id="leaveGridOverview"></div>
+      </div>
+    </div>
+
+    <!-- ATTENDANCE -->
+    <div class="hrm-panel" id="panel-attendance">
+      <div class="cc-card">
+        <h3>This Month's Attendance</h3>
+        <div id="attendanceList" class="hrm-empty">Loading…</div>
+      </div>
+    </div>
+
+    <!-- LEAVES -->
+    <div class="hrm-panel" id="panel-leaves">
+      <div class="cc-card">
+        <h3>Apply for Leave</h3>
+        <select class="cc-select" id="leaveType">
+          <option value="casual">Casual Leave</option>
+          <option value="sick">Sick Leave</option>
+          <option value="paid">Paid Leave</option>
+          <option value="unpaid">Unpaid Leave</option>
+        </select>
+        <div class="date-row">
+          <input class="cc-input" type="date" id="leaveStart" />
+          <input class="cc-input" type="date" id="leaveEnd" />
+        </div>
+        <input class="cc-input" id="leaveReason" placeholder="Reason (optional)" />
+        <button class="cc-btn" id="applyLeaveBtn">Submit Request</button>
+        <div class="cc-error" id="leaveError"></div>
+        <div class="cc-success-msg" id="leaveSuccess"></div>
+      </div>
+      <div class="cc-card">
+        <h3>My Leave History</h3>
+        <div id="leaveHistoryList" class="hrm-empty">Loading…</div>
+      </div>
+    </div>
+
+    <!-- BENEFITS -->
+    <div class="hrm-panel" id="panel-benefits">
+      <div class="cc-card">
+        <h3>Salary, Bonuses &amp; Perks</h3>
+        <div id="benefitsList" class="hrm-empty">Loading…</div>
+      </div>
+    </div>
+
+    <button class="cc-btn ghost" id="logoutBtn" style="margin-top:6px;">Sign out</button>
+  </div>
+
+</div>
+
+<div class="hrm-toast" id="toast"></div>
+
+<script src="js/hrm-employee.js"></script>
+</body>
+</html>

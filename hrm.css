@@ -1,0 +1,173 @@
+/* ============================================================================
+   NSDI ChocoCravings — HRM Portal Styles
+   Brand: Purple #6e0977 + Rose #c2607a | Fraunces (display) + Instrument Sans
+   ============================================================================ */
+
+:root{
+  --cc-purple:#6e0977;
+  --cc-purple-dark:#4a0650;
+  --cc-rose:#c2607a;
+  --cc-rose-light:#f3d9e0;
+  --cc-cream:#fbf6f0;
+  --cc-gold:#c9a24b;
+  --cc-ink:#2b1a2e;
+  --cc-muted:#8a7a8c;
+  --cc-success:#3f8f5f;
+  --cc-warning:#c98a2c;
+  --cc-danger:#c24545;
+  --cc-radius:18px;
+  --cc-shadow:0 10px 30px rgba(110,9,119,.12);
+}
+
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  font-family:"Instrument Sans", -apple-system, sans-serif;
+  background:linear-gradient(160deg,var(--cc-cream) 0%,#fff 55%,var(--cc-rose-light) 130%);
+  color:var(--cc-ink);
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,.brand-font{font-family:"Fraunces", serif;}
+
+.hrm-shell{max-width:520px;margin:0 auto;padding:20px 18px 90px;}
+
+/* ---- Top brand bar ---- */
+.hrm-topbar{
+  display:flex;align-items:center;gap:12px;
+  padding:18px 4px 22px;
+}
+.hrm-topbar .logo-dot{
+  width:40px;height:40px;border-radius:12px;
+  background:linear-gradient(135deg,var(--cc-purple),var(--cc-rose));
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-family:"Fraunces",serif;font-weight:600;font-size:18px;
+  box-shadow:var(--cc-shadow);
+}
+.hrm-topbar .brand-text{line-height:1.15;}
+.hrm-topbar .brand-text .b1{font-size:13px;color:var(--cc-muted);letter-spacing:.04em;text-transform:uppercase;}
+.hrm-topbar .brand-text .b2{font-size:18px;font-weight:600;color:var(--cc-purple-dark);}
+
+/* ---- Cards ---- */
+.cc-card{
+  background:#fff;border-radius:var(--cc-radius);
+  padding:20px;margin-bottom:16px;
+  box-shadow:var(--cc-shadow);
+  border:1px solid rgba(110,9,119,.06);
+}
+.cc-card h3{margin:0 0 12px;font-size:17px;color:var(--cc-purple-dark);}
+
+/* ---- Login card ---- */
+.login-wrap{display:flex;align-items:center;min-height:80vh;}
+.login-wrap .cc-card{width:100%;text-align:center;padding:34px 26px;}
+.login-wrap p.tag{color:var(--cc-muted);margin-top:-6px;margin-bottom:22px;font-size:14px;}
+.cc-input{
+  width:100%;padding:13px 16px;border-radius:12px;
+  border:1.5px solid #ecdbe4;background:#fdfaf9;
+  font-size:15px;margin-bottom:12px;font-family:inherit;
+  transition:border-color .15s;
+}
+.cc-input:focus{outline:none;border-color:var(--cc-purple);}
+.cc-btn{
+  width:100%;padding:13px 16px;border-radius:12px;border:none;
+  background:linear-gradient(135deg,var(--cc-purple),var(--cc-rose));
+  color:#fff;font-weight:600;font-size:15px;cursor:pointer;
+  font-family:inherit;box-shadow:0 8px 20px rgba(110,9,119,.28);
+  transition:transform .12s;
+}
+.cc-btn:active{transform:scale(.98);}
+.cc-btn.secondary{background:#fff;color:var(--cc-purple);border:1.5px solid var(--cc-purple);box-shadow:none;}
+.cc-btn.ghost{background:transparent;color:var(--cc-muted);box-shadow:none;font-weight:500;}
+.cc-error{color:var(--cc-danger);font-size:13.5px;margin:8px 0 0;min-height:18px;}
+.cc-success-msg{color:var(--cc-success);font-size:13.5px;margin:8px 0 0;}
+
+/* ---- Profile header ---- */
+.profile-head{display:flex;align-items:center;gap:14px;}
+.profile-avatar{
+  width:58px;height:58px;border-radius:50%;
+  background:linear-gradient(135deg,var(--cc-purple),var(--cc-rose));
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:22px;font-weight:600;font-family:"Fraunces",serif;
+  flex-shrink:0;
+}
+.profile-head .name{font-size:18px;font-weight:600;color:var(--cc-purple-dark);}
+.profile-head .role{font-size:13.5px;color:var(--cc-muted);}
+
+/* ---- Stat grid ---- */
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px;}
+.stat-box{
+  background:var(--cc-cream);border-radius:14px;padding:12px 8px;text-align:center;
+}
+.stat-box .num{font-size:20px;font-weight:700;color:var(--cc-purple-dark);font-family:"Fraunces",serif;}
+.stat-box .lbl{font-size:11px;color:var(--cc-muted);text-transform:uppercase;letter-spacing:.03em;margin-top:2px;}
+
+/* ---- Tabs ---- */
+.hrm-tabs{
+  display:flex;gap:6px;background:#fff;border-radius:16px;padding:6px;
+  box-shadow:var(--cc-shadow);position:sticky;top:10px;z-index:10;margin-bottom:18px;
+}
+.hrm-tab{
+  flex:1;text-align:center;padding:10px 4px;border-radius:12px;font-size:13px;font-weight:600;
+  color:var(--cc-muted);cursor:pointer;transition:.15s;user-select:none;
+}
+.hrm-tab.active{background:linear-gradient(135deg,var(--cc-purple),var(--cc-rose));color:#fff;}
+.hrm-panel{display:none;}
+.hrm-panel.active{display:block;animation:fadeUp .25s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+/* ---- Leave balance rings ---- */
+.leave-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.leave-pill{background:var(--cc-cream);border-radius:14px;padding:14px 8px;text-align:center;}
+.leave-pill .left{font-size:22px;font-weight:700;color:var(--cc-purple);font-family:"Fraunces",serif;}
+.leave-pill .of{font-size:11px;color:var(--cc-muted);}
+.leave-pill .type{font-size:11.5px;margin-top:4px;font-weight:600;color:var(--cc-ink);text-transform:capitalize;}
+
+/* ---- List rows (attendance / leave history / benefits) ---- */
+.row-item{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:12px 0;border-bottom:1px solid #f2e6ec;
+}
+.row-item:last-child{border-bottom:none;}
+.row-item .left-col .primary{font-size:14.5px;font-weight:600;color:var(--cc-ink);}
+.row-item .left-col .secondary{font-size:12.5px;color:var(--cc-muted);margin-top:2px;}
+.row-item .right-col{text-align:right;}
+.row-item .amount{font-weight:700;color:var(--cc-purple-dark);font-family:"Fraunces",serif;}
+
+.badge{
+  display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.03em;
+}
+.badge.present, .badge.approved, .badge.credited{background:#e4f4e9;color:var(--cc-success);}
+.badge.pending{background:#fbeed6;color:var(--cc-warning);}
+.badge.rejected, .badge.absent{background:#fbe4e4;color:var(--cc-danger);}
+.badge.half-day, .badge.cancelled{background:#eee5f7;color:var(--cc-purple);}
+
+/* ---- Leave apply form ---- */
+.cc-select{
+  width:100%;padding:13px 16px;border-radius:12px;border:1.5px solid #ecdbe4;
+  background:#fdfaf9;font-size:15px;margin-bottom:12px;font-family:inherit;
+}
+.date-row{display:flex;gap:10px;}
+.date-row .cc-input{flex:1;}
+
+/* ---- QR scan page specific ---- */
+.qr-status-icon{
+  width:76px;height:76px;border-radius:50%;margin:0 auto 16px;
+  display:flex;align-items:center;justify-content:center;font-size:34px;
+  background:var(--cc-cream);
+}
+.qr-status-icon.success{background:#e4f4e9;color:var(--cc-success);}
+.qr-status-icon.error{background:#fbe4e4;color:var(--cc-danger);}
+.qr-time{font-size:28px;font-weight:700;color:var(--cc-purple-dark);font-family:"Fraunces",serif;margin:4px 0;}
+
+/* ---- Toast ---- */
+.hrm-toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  background:var(--cc-ink);color:#fff;padding:12px 20px;border-radius:30px;
+  font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.25);z-index:999;opacity:0;
+  transition:opacity .25s, transform .25s;pointer-events:none;
+}
+.hrm-toast.show{opacity:1;transform:translateX(-50%) translateY(-4px);}
+
+.hrm-loading{text-align:center;padding:60px 0;color:var(--cc-muted);}
+.hrm-empty{text-align:center;padding:26px 0;color:var(--cc-muted);font-size:14px;}

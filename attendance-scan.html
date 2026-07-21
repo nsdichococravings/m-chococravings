@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Clock In / Out — NSDI ChocoCravings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/hrm.css" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<div class="hrm-shell">
+  <div class="hrm-topbar">
+    <div class="logo-dot">CC</div>
+    <div class="brand-text">
+      <div class="b1">NSDI ChocoCravings</div>
+      <div class="b2">Outlet Attendance</div>
+    </div>
+  </div>
+
+  <!-- FORM STATE -->
+  <div id="formState" class="login-wrap">
+    <div class="cc-card">
+      <h2>Mark Attendance</h2>
+      <p class="tag">Enter your Employee ID and PIN to clock in or out</p>
+      <input id="empCode" class="cc-input" placeholder="Employee ID (e.g. EMP001)" autocomplete="off" />
+      <input id="empPin" class="cc-input" placeholder="4-digit PIN" type="password" inputmode="numeric" maxlength="6" />
+      <button class="cc-btn" id="clockBtn">Clock In / Out</button>
+      <div class="cc-error" id="formError"></div>
+    </div>
+  </div>
+
+  <!-- RESULT STATE -->
+  <div id="resultState" class="login-wrap" style="display:none;">
+    <div class="cc-card" style="text-align:center;">
+      <div class="qr-status-icon" id="resultIcon">✓</div>
+      <h2 id="resultTitle">Clocked In</h2>
+      <div class="qr-time" id="resultTime">--:--</div>
+      <p class="tag" id="resultSub"></p>
+      <button class="cc-btn secondary" id="doneBtn">Done</button>
+    </div>
+  </div>
+
+  <!-- EXPIRED / NO TOKEN STATE -->
+  <div id="expiredState" class="login-wrap" style="display:none;">
+    <div class="cc-card" style="text-align:center;">
+      <div class="qr-status-icon error">!</div>
+      <h2>QR Code Expired</h2>
+      <p class="tag">Please scan today's QR code displayed at the outlet counter.</p>
+    </div>
+  </div>
+</div>
+
+<div class="hrm-toast" id="toast"></div>
+
+<script src="js/hrm-attendance.js"></script>
+</body>
+</html>
