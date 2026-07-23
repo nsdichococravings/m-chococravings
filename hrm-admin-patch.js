@@ -5,113 +5,120 @@
    <script> tag right before </body>, so it never touches the main dashboard
    code and can't cause hoisting/call-stack issues.
 
-   REQUIRES: `supabase` client already initialized on window (same one
-   admin-dashboard.html already uses from js/config.js).
+   Creates its OWN Supabase client (same URL/key as admin-dashboard.html) —
+   does NOT rely on window.supabase being a ready client, since in
+   admin-dashboard.html window.supabase is just the raw SDK namespace
+   (the real client lives in a local variable called `db`).
    ============================================================================ */
 
 (function () {
   "use strict";
 
-  const sb = window.supabase; // reuse existing client from config.js
+  const SUPABASE_URL = 'https://yjbfditboewwpgyqzryd.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqYmZkaXRib2V3d3BneXF6cnlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNTgwNjcsImV4cCI6MjA4ODczNDA2N30.08Tvq71w2DBeWZrZb-IaiKfoI-2P_1MPJygzSPiRq24';
+
+  let sb = null; // created in init() once the SDK namespace is available
 
   // --------------------------------------------------------------------------
   // 1. Inject nav button + panel container into the existing dashboard shell
   // --------------------------------------------------------------------------
   function injectShell() {
-  const isMobile = window.innerWidth <= 700;
+    const isMobile = window.innerWidth <= 700;
 
-  const btn = document.createElement("div");
-  btn.className = "hrm-nav-btn";
-  btn.id = "hrmNavBtn";
-  btn.onclick = openHrmPanel;
+    const btn = document.createElement("div");
+    btn.className = "hrm-nav-btn";
+    btn.id = "hrmNavBtn";
+    btn.onclick = openHrmPanel;
 
-  if (isMobile) {
-    // On mobile the desktop sidebar is display:none, so never inject there —
-    // always use a floating pill that sits above the bottom tab bar.
-    btn.innerHTML = "👥";
-    btn.style.cssText = `
-      position:fixed;bottom:74px;right:16px;z-index:9999;
-      width:48px;height:48px;border-radius:50%;
-      display:flex;align-items:center;justify-content:center;
-      font-size:20px;cursor:pointer;
-      background:linear-gradient(135deg,#6e0977,#c2607a);
-      color:#fff;box-shadow:0 8px 24px rgba(110,9,119,.45);
-    `;
-    document.body.appendChild(btn);
-  } else {
-    // Desktop — only use the sidebar if it's actually visible.
-    const navContainer = document.querySelector(".admin-nav, .sidebar-nav");
-    const sidebarNav = document.querySelector("nav.sidebar") || document.querySelector("nav");
-    const visible = (el) => el && el.offsetParent !== null;
-
-    btn.textContent = "👥 HRM";
-    btn.style.cssText = `
-      cursor:pointer;padding:12px 16px;margin:4px 0;border-radius:10px;
-      font-weight:600;font-family:inherit;color:#6e0977;
-      background:#fdf3f7;transition:.15s;
-    `;
-    btn.onmouseenter = () => (btn.style.background = "#f3d9e0");
-    btn.onmouseleave = () => (btn.style.background = "#fdf3f7");
-
-    const target = visible(navContainer) ? navContainer : (visible(sidebarNav) ? sidebarNav.querySelector(".sb-nav") || sidebarNav : null);
-
-    if (target) {
-      target.appendChild(btn);
-    } else {
-      btn.style.position = "fixed";
-      btn.style.bottom = "24px";
-      btn.style.right = "24px";
-      btn.style.zIndex = "9999";
-      btn.style.boxShadow = "0 8px 24px rgba(110,9,119,.3)";
+    if (isMobile) {
+      // On mobile the desktop sidebar is display:none, so never inject there —
+      // always use a floating pill that sits above the bottom tab bar.
+      btn.innerHTML = "👥";
+      btn.style.cssText = `
+        position:fixed;bottom:74px;right:16px;z-index:9999;
+        width:48px;height:48px;border-radius:50%;
+        display:flex;align-items:center;justify-content:center;
+        font-size:20px;cursor:pointer;
+        background:linear-gradient(135deg,#6e0977,#c2607a);
+        color:#fff;box-shadow:0 8px 24px rgba(110,9,119,.45);
+      `;
       document.body.appendChild(btn);
+    } else {
+      // Desktop — only use the sidebar if it's actually visible.
+      const navContainer = document.querySelector(".admin-nav, .sidebar-nav");
+      const sidebarNav = document.querySelector("nav.sidebar") || document.querySelector("nav");
+      const visible = (el) => el && el.offsetParent !== null;
+
+      btn.textContent = "👥 HRM";
+      btn.style.cssText = `
+        cursor:pointer;padding:12px 16px;margin:4px 0;border-radius:10px;
+        font-weight:600;font-family:inherit;color:#6e0977;
+        background:#fdf3f7;transition:.15s;
+      `;
+      btn.onmouseenter = () => (btn.style.background = "#f3d9e0");
+      btn.onmouseleave = () => (btn.style.background = "#fdf3f7");
+
+      const target = visible(navContainer)
+        ? navContainer
+        : (visible(sidebarNav) ? (sidebarNav.querySelector(".sb-nav") || sidebarNav) : null);
+
+      if (target) {
+        target.appendChild(btn);
+      } else {
+        btn.style.position = "fixed";
+        btn.style.bottom = "24px";
+        btn.style.right = "24px";
+        btn.style.zIndex = "9999";
+        btn.style.boxShadow = "0 8px 24px rgba(110,9,119,.3)";
+        document.body.appendChild(btn);
+      }
     }
-  }
 
-  // ── overlay panel (unchanged) ──
-  const overlay = document.createElement("div");
-  overlay.id = "hrmOverlay";
-  overlay.style.cssText = `
-    display:none;position:fixed;inset:0;background:rgba(20,10,22,.55);
-    z-index:10000;align-items:flex-start;justify-content:center;
-    overflow-y:auto;padding:30px 16px;font-family:'Instrument Sans',sans-serif;
-  `;
-  overlay.innerHTML = `
-    <div style="background:#fff;border-radius:20px;max-width:980px;width:100%;
-                padding:26px 28px;box-shadow:0 20px 60px rgba(0,0,0,.3);">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
-        <h2 style="margin:0;color:#4a0650;font-family:'Fraunces',serif;">HRM Management</h2>
-        <span id="hrmCloseBtn" style="cursor:pointer;font-size:22px;color:#8a7a8c;">&times;</span>
+    // ── overlay panel ──
+    const overlay = document.createElement("div");
+    overlay.id = "hrmOverlay";
+    overlay.style.cssText = `
+      display:none;position:fixed;inset:0;background:rgba(20,10,22,.55);
+      z-index:10000;align-items:flex-start;justify-content:center;
+      overflow-y:auto;padding:30px 16px;font-family:'Instrument Sans',sans-serif;
+    `;
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:20px;max-width:980px;width:100%;
+                  padding:26px 28px;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+          <h2 style="margin:0;color:#4a0650;font-family:'Fraunces',serif;">HRM Management</h2>
+          <span id="hrmCloseBtn" style="cursor:pointer;font-size:22px;color:#8a7a8c;">&times;</span>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+          <button class="hrm-admin-tab active" data-tab="qr">Today's QR</button>
+          <button class="hrm-admin-tab" data-tab="employees">Employees</button>
+          <button class="hrm-admin-tab" data-tab="attendance">Attendance</button>
+          <button class="hrm-admin-tab" data-tab="leaves">Leave Requests</button>
+          <button class="hrm-admin-tab" data-tab="benefits">Add Benefit</button>
+        </div>
+        <div id="hrmAdminBody"></div>
       </div>
-      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
-        <button class="hrm-admin-tab active" data-tab="qr">Today's QR</button>
-        <button class="hrm-admin-tab" data-tab="employees">Employees</button>
-        <button class="hrm-admin-tab" data-tab="attendance">Attendance</button>
-        <button class="hrm-admin-tab" data-tab="leaves">Leave Requests</button>
-        <button class="hrm-admin-tab" data-tab="benefits">Add Benefit</button>
-      </div>
-      <div id="hrmAdminBody"></div>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-  document.getElementById("hrmCloseBtn").onclick = () => (overlay.style.display = "none");
+    `;
+    document.body.appendChild(overlay);
+    document.getElementById("hrmCloseBtn").onclick = () => (overlay.style.display = "none");
 
-  document.querySelectorAll(".hrm-admin-tab").forEach(t => {
-    t.style.cssText = "padding:9px 16px;border-radius:10px;border:none;background:#f4eef6;color:#6e0977;font-weight:600;cursor:pointer;font-family:inherit;";
-  });
-  overlay.querySelectorAll(".hrm-admin-tab").forEach(tab => {
-    tab.addEventListener("click", () => {
-      overlay.querySelectorAll(".hrm-admin-tab").forEach(t => {
-        t.classList.remove("active");
-        t.style.background = "#f4eef6";
-        t.style.color = "#6e0977";
-      });
-      tab.classList.add("active");
-      tab.style.background = "linear-gradient(135deg,#6e0977,#c2607a)";
-      tab.style.color = "#fff";
-      renderTab(tab.dataset.tab);
+    document.querySelectorAll(".hrm-admin-tab").forEach(t => {
+      t.style.cssText = "padding:9px 16px;border-radius:10px;border:none;background:#f4eef6;color:#6e0977;font-weight:600;cursor:pointer;font-family:inherit;";
     });
-  });
-}
+    overlay.querySelectorAll(".hrm-admin-tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        overlay.querySelectorAll(".hrm-admin-tab").forEach(t => {
+          t.classList.remove("active");
+          t.style.background = "#f4eef6";
+          t.style.color = "#6e0977";
+        });
+        tab.classList.add("active");
+        tab.style.background = "linear-gradient(135deg,#6e0977,#c2607a)";
+        tab.style.color = "#fff";
+        renderTab(tab.dataset.tab);
+      });
+    });
+  }
 
   function openHrmPanel() {
     document.getElementById("hrmOverlay").style.display = "flex";
@@ -135,7 +142,7 @@
   async function renderQrTab(body) {
     const { data, error } = await sb.rpc("rpc_get_daily_qr");
     if (error || !data || !data.ok) {
-      body.innerHTML = `<p style="color:#c24545;">Could not load today's QR code.</p>`;
+      body.innerHTML = `<p style="color:#c24545;">Could not load today's QR code. ${error ? error.message : ""}</p>`;
       return;
     }
     const scanUrl = `${window.location.origin}/attendance-scan.html?token=${data.token}`;
@@ -308,13 +315,14 @@
   }
 
   // --------------------------------------------------------------------------
-  // Init — wait for DOM + supabase client to be ready
+  // Init — wait for the Supabase SDK namespace, then build our own client
   // --------------------------------------------------------------------------
   function init() {
-    if (!window.supabase) {
-      setTimeout(init, 300); // config.js may still be loading
+    if (!window.supabase || typeof window.supabase.createClient !== "function") {
+      setTimeout(init, 300); // config.js / CDN script may still be loading
       return;
     }
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     injectShell();
   }
 
