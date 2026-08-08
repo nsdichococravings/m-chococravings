@@ -51,17 +51,13 @@ self.addEventListener('fetch', function(event) {
   // Skip non-GET requests
   if (event.request.method !== 'GET') return;
 
-  // ── CRITICAL: Never intercept reset-password page ──
-  // Supabase recovery tokens in the URL hash must be handled
-  // natively by the browser — SW interception causes auto-login redirect
-  if (url.pathname.includes('reset-password')) return;
+  var acceptHeader = event.request.headers.get('accept') || '';
 
-  // For HTML pages — network first, fallback to cache, then offline page
-  if (event.request.headers.get('accept').includes('text/html')) {
+  // HTML pages — network first, fallback to cache, then offline page
+  if (acceptHeader.includes('text/html')) {
     event.respondWith(
       fetch(event.request)
         .then(function(response) {
-          // Cache the fresh response
           var clone = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
           return response;
@@ -74,7 +70,30 @@ self.addEventListener('fetch', function(event) {
     return;
   }
 
-  // For other assets (CSS, JS, fonts, images) — cache first, network fallback
+  // JS and CSS — network first too. These are your patch files, core
+  // scripts, and stylesheets, which change often during active
+  // development. Serving a stale cached copy silently (with no error)
+  // is exactly what caused updates to not show up. Cache is only used
+  // as an offline fallback, never preferred over a fresh network copy.
+  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
+    event.respondWith(
+      fetch(event.request)
+        .then(function(response) {
+          if (response.ok) {
+            var clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(function() {
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+
+  // Everything else (fonts, images) — cache first is fine, these rarely
+  // change and cache-first keeps the app fast and usable offline.
   event.respondWith(
     caches.match(event.request).then(function(cached) {
       if (cached) return cached;
