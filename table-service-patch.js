@@ -413,6 +413,13 @@ function renderKitchen(orders) {
       + '<button class="k-btn k-done"  onclick="kBump(\'' + o.id + '\',\'collected\')">Collected ✓</button>'
       + '<button class="k-btn" onclick="printStoreInvoice(\'' + o.id + '\')" style="background:rgba(240,201,107,0.1);'
       + 'border:1px solid rgba(240,201,107,0.3);color:#b87410">🖨️ Print</button>'
+      + '<button class="k-btn" onclick="kCancelOrder(\'' + o.id + '\')" style="background:rgba(239,68,68,0.1);'
+      + 'border:1px solid rgba(239,68,68,0.3);color:#f87171">❌ Cancel</button>'
       + '</div></div>';
   }).join('');
+}
+
+function kCancelOrder(id) {
+  if (!confirm('Cancel this order? This cannot be undone.')) return;
+  kBump(id, 'cancelled');
 }
