@@ -104,25 +104,12 @@ function buildTablesBoardDOM() {
     +   '<div id="ts-items-list" style="display:flex;flex-direction:column;gap:8px">'
     +     '<div style="font-size:12px;color:#b090c0;text-align:center;padding:10px">No items yet</div>'
     +   '</div>'
-    +   '<div style="display:flex;gap:8px;align-items:flex-end">'
-    +     '<div style="flex:2">'
-    +       '<div style="font-size:10px;color:#9c0ca1;font-weight:600;margin-bottom:5px">Item</div>'
-    +       '<select id="ts-item-select" style="width:100%;padding:10px 12px;border:1px solid #e0c8f0;'
-    +         'border-radius:10px;font-size:13px;font-family:\'DM Sans\',sans-serif;outline:none;'
-    +         'box-sizing:border-box;color:#1a0820;background:#fff;cursor:pointer">'
-    +         '<option value="">Select item...</option>'
-    +       '</select>'
-    +     '</div>'
-    +     '<div style="flex:0.7">'
-    +       '<div style="font-size:10px;color:#9c0ca1;font-weight:600;margin-bottom:5px">Qty</div>'
-    +       '<input id="ts-item-qty" type="number" min="1" value="1" style="width:100%;padding:10px 12px;'
-    +         'border:1px solid #e0c8f0;border-radius:10px;font-size:13px;font-family:\'DM Sans\',sans-serif;'
-    +         'outline:none;box-sizing:border-box;color:#1a0820">'
-    +     '</div>'
-    +     '<button onclick="tsAddItem()" style="padding:10px 14px;background:#6e0977;color:#fff;'
-    +       'border:none;border-radius:10px;font-size:20px;cursor:pointer;flex-shrink:0;height:40px;'
-    +       'display:flex;align-items:center;justify-content:center">+</button>'
-    +   '</div>'
+    +   '<input id="ts-search" type="text" placeholder="🔍 Search items..." oninput="tsFilterItems()" '
+    +     'style="width:100%;padding:12px 14px;border:1.5px solid #e0c8f0;border-radius:12px;font-size:14px;'
+    +     'font-family:\'DM Sans\',sans-serif;outline:none;box-sizing:border-box">'
+    +   '<div id="ts-cat-tabs" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px"></div>'
+    +   '<div id="ts-item-grid" style="display:flex;flex-wrap:wrap;gap:8px;max-height:200px;'
+    +     'overflow-y:auto;padding:2px"></div>'
     +   '<div style="display:flex;justify-content:space-between;align-items:center;background:#f5eeff;'
     +     'border:1px solid #e0c8f0;border-radius:12px;padding:13px 16px">'
     +     '<div style="font-size:13px;font-weight:700;color:#1a0820">Total</div>'
@@ -251,37 +238,71 @@ function closeTableOrderSheet() {
   openTablesBoard();
 }
 
+var _tsActiveCat = null;
+
 function tsPopulateDropdown() {
-  var sel = document.getElementById('ts-item-select');
-  if (!sel) return;
-  sel.innerHTML = '<option value="">Select item...</option>';
-  Object.keys(MENU).forEach(function (cat) {
-    if (!MENU[cat].items.length) return;
-    var grp = document.createElement('optgroup');
-    grp.label = cat;
-    MENU[cat].items.forEach(function (item) {
-      var opt = document.createElement('option');
-      opt.value = JSON.stringify({ name: item.name, price: item.price });
-      opt.textContent = item.name + ' — ₹' + item.price;
-      grp.appendChild(opt);
-    });
-    sel.appendChild(grp);
-  });
+  var firstCat = Object.keys(MENU).find(function (c) { return MENU[c].items.length; });
+  _tsActiveCat = firstCat;
+  var search = document.getElementById('ts-search');
+  if (search) search.value = '';
+  renderTsCatTabs();
+  renderTsItemGrid();
 }
 
-function tsAddItem() {
-  var sel = document.getElementById('ts-item-select');
-  var qty = (document.getElementById('ts-item-qty') || {}).value || '1';
-  if (!sel || !sel.value) { showStoreToast('Select an item'); return; }
-  var selected;
-  try { selected = JSON.parse(sel.value); } catch (e) { showStoreToast('Invalid selection'); return; }
+function renderTsCatTabs() {
+  var tabsEl = document.getElementById('ts-cat-tabs');
+  if (!tabsEl) return;
+  var cats = Object.keys(MENU).filter(function (c) { return MENU[c].items.length; });
+  tabsEl.innerHTML = cats.map(function (c) {
+    var on = c === _tsActiveCat;
+    return '<div onclick="tsSetCat(\'' + c + '\')" style="flex-shrink:0;padding:7px 13px;border-radius:20px;'
+      + 'font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;'
+      + (on ? 'background:#6e0977;color:#fff' : 'background:#f5eeff;color:#6e0977;border:1px solid #e0c8f0')
+      + '">' + c + '</div>';
+  }).join('');
+}
 
-  var existing = _tsItems.find(function (i) { return i.name === selected.name; });
-  if (existing) existing.qty += parseInt(qty) || 1;
-  else _tsItems.push({ name: selected.name, price: selected.price, qty: parseInt(qty) || 1 });
+function tsSetCat(c) {
+  _tsActiveCat = c;
+  var search = document.getElementById('ts-search');
+  if (search) search.value = '';
+  renderTsCatTabs();
+  renderTsItemGrid();
+}
 
-  sel.value = '';
-  document.getElementById('ts-item-qty').value = '1';
+function renderTsItemGrid(filterText) {
+  var grid = document.getElementById('ts-item-grid');
+  if (!grid) return;
+  var items;
+  if (filterText) {
+    items = [];
+    Object.keys(MENU).forEach(function (c) {
+      MENU[c].items.forEach(function (i) {
+        if (i.name.toLowerCase().indexOf(filterText.toLowerCase()) !== -1) items.push(i);
+      });
+    });
+  } else {
+    items = (MENU[_tsActiveCat] || { items: [] }).items;
+  }
+  grid.innerHTML = items.length
+    ? items.map(function (item) {
+        return '<div onclick="tsQuickAdd(\'' + item.name.replace(/'/g, "\\'") + '\',' + item.price + ')" '
+          + 'style="padding:9px 13px;border-radius:20px;background:#f5eeff;border:1.5px solid #e0c8f0;'
+          + 'font-size:12px;font-weight:600;color:#6e0977;cursor:pointer">' + item.name + ' · ₹' + item.price + '</div>';
+      }).join('')
+    : '<div style="font-size:12px;color:#b090c0;padding:10px;text-align:center;width:100%">No items found</div>';
+}
+
+function tsFilterItems() {
+  var q = (document.getElementById('ts-search').value || '').trim();
+  document.getElementById('ts-cat-tabs').style.display = q ? 'none' : 'flex';
+  renderTsItemGrid(q);
+}
+
+function tsQuickAdd(name, price) {
+  var existing = _tsItems.find(function (i) { return i.name === name; });
+  if (existing) existing.qty++;
+  else _tsItems.push({ name: name, price: price, qty: 1 });
   tsRenderItems();
   tsCalcTotal();
 }
@@ -306,7 +327,10 @@ function tsRenderItems() {
       + '<div style="font-size:13px;font-weight:600;color:#1a0820">' + item.name + '</div>'
       + '<div style="font-size:11px;color:#9c0ca1">₹' + item.price + ' × ' + item.qty + '</div>'
       + '</div>'
-      + '<div style="font-size:13px;font-weight:700;color:#6e0977;margin-right:10px">₹' + (item.price * item.qty) + '</div>'
+      + '<div style="font-size:13px;font-weight:700;color:#6e0977;margin-right:8px">₹' + (item.price * item.qty) + '</div>'
+      + '<div onclick="tsQuickAdd(\'' + item.name.replace(/'/g, "\\'") + '\',' + item.price + ')" '
+      + 'style="width:26px;height:26px;border-radius:50%;background:#6e0977;color:#fff;display:flex;'
+      + 'align-items:center;justify-content:center;cursor:pointer;font-size:14px;font-weight:700;margin-right:6px">+</div>'
       + '<div onclick="tsRemoveItem(' + i + ')" style="width:26px;height:26px;border-radius:50%;'
       + 'background:#fff;border:1px solid #e0c8f0;display:flex;align-items:center;'
       + 'justify-content:center;cursor:pointer;font-size:12px;color:#e05080">✕</div>'
