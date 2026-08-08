@@ -12,7 +12,7 @@
  * Requires DB migration: ALTER TABLE store_orders ADD COLUMN table_code text;
  */
 
-var TABLE_CODES = ['T1', 'T2', 'T3', 'BS', 'SL', 'SR', 'SC'];
+var TABLE_CODES = ['T1', 'T2', 'T3', 'BS', 'SL', 'SR', 'SC', 'DC'];
 
 var _tsItems        = [];
 var _tsTableCode    = null;
@@ -145,7 +145,7 @@ function closeTablesBoard() {
 async function loadTablesStatus() {
   var today = new Date().toISOString().slice(0, 10);
   var res = await db.from('store_orders')
-    .select('id, table_code, items, total, status')
+    .select('id, table_code, items, total, status, staff_name')
     .not('table_code', 'is', null)
     .not('status', 'in', '("collected","cancelled")')
     .gte('created_at', today + 'T00:00:00.000Z');
@@ -165,12 +165,14 @@ function renderTablesGrid(map) {
       var items = Array.isArray(rawItems) ? rawItems : JSON.parse(rawItems || '[]');
       var count = items.reduce(function (s, i) { return s + (i.qty || 1); }, 0);
       var statusLbl = { pending: 'Pending', preparing: 'Preparing', ready: 'Ready!' }[o.status] || o.status;
+      var staffBadge = o.staff_name ? ('<div style="font-size:10px;color:#8a6a3a;margin-top:2px">👤 ' + o.staff_name + '</div>') : '';
       return '<div onclick="openTableOrderSheet(\'' + code + '\')" style="background:rgba(184,116,16,0.09);'
         + 'border:1.5px solid rgba(184,116,16,0.35);border-radius:14px;padding:14px;cursor:pointer;'
         + 'text-align:center">'
         + '<div style="font-family:Fraunces,Georgia,serif;font-size:22px;font-weight:900;color:#b87410">' + code + '</div>'
         + '<div style="font-size:10px;font-weight:700;color:#b87410;letter-spacing:1px;margin-top:2px">' + statusLbl.toUpperCase() + '</div>'
         + '<div style="font-size:12px;color:#8a6a3a;margin-top:6px">' + count + ' items · ₹' + o.total + '</div>'
+        + staffBadge
         + '</div>';
     }
     return '<div onclick="openTableOrderSheet(\'' + code + '\')" style="background:rgba(34,197,94,0.08);'
@@ -203,7 +205,7 @@ function openTableOrderSheet(code) {
   var billBtn = document.getElementById('ts-bill-btn');
 
   db.from('store_orders')
-    .select('id, items, total, status')
+    .select('id, items, total, status, created_at, staff_name')
     .eq('table_code', code)
     .not('status', 'in', '("collected","cancelled")')
     .order('created_at', { ascending: false })
@@ -370,11 +372,15 @@ async function tsSubmit() {
     } else {
       btn.disabled = true; btn.textContent = 'Sending…';
       var token = await getToken();
+      var placedBy = (typeof _staffSession !== 'undefined' && _staffSession && _staffSession.name)
+        ? _staffSession.name
+        : ((typeof isAdmin !== 'undefined' && isAdmin) ? 'Admin' : null);
       var ins = await db.from('store_orders').insert([{
         token:           token,
         table_code:      _tsTableCode,
         customer_name:   'Table ' + _tsTableCode,
         customer_phone:  null,
+        staff_name:      placedBy,
         items:           JSON.stringify(_tsItems),
         total:           total,
         payment_method:  'cash',
@@ -397,14 +403,18 @@ async function tsSubmit() {
 async function tsBillAndClose() {
   if (!_tsExistingOrder) return;
   var total = _tsExistingOrder.total;
-  if (!confirm('Close ' + _tsTableCode + ' — bill total ₹' + total + '?')) return;
+  var totalMin = tsElapsedMin(_tsExistingOrder.created_at, null);
+  var staffTxt = _tsExistingOrder.staff_name ? (' · placed by ' + _tsExistingOrder.staff_name) : '';
+  if (!confirm('Close ' + _tsTableCode + ' — bill total ₹' + total + '\nOpen for ' + tsFormatDuration(totalMin) + staffTxt + '?')) return;
 
   try {
+    var collectedAt = new Date().toISOString();
     var upd = await db.from('store_orders')
-      .update({ status: 'collected', payment_status: 'paid' })
+      .update({ status: 'collected', payment_status: 'paid', collected_at: collectedAt })
       .eq('id', _tsExistingOrder.id);
     if (upd.error) throw upd.error;
-    showStoreToast('✅ ' + _tsTableCode + ' billed & closed — ₹' + total);
+    var finalMin = tsElapsedMin(_tsExistingOrder.created_at, collectedAt);
+    showStoreToast('✅ ' + _tsTableCode + ' closed — ₹' + total + ' · ' + tsFormatDuration(finalMin) + staffTxt);
     if (typeof kitchenLoad === 'function') kitchenLoad();
     closeTableOrderSheet();
   } catch (e) {
@@ -426,10 +436,20 @@ function renderKitchen(orders) {
     var headline = o.table_code
       ? '🍽️ ' + o.table_code
       : o.token;
+    var staffLine = o.staff_name ? ('👤 ' + o.staff_name) : '';
+    var timingBits = [];
+    if (o.preparing_at) {
+      var prepDuration = tsElapsedMin(o.preparing_at, o.ready_at || null);
+      timingBits.push('🔥 Prep ' + tsFormatDuration(prepDuration));
+    } else {
+      timingBits.push('⏳ Waiting ' + tsFormatDuration(tsElapsedMin(o.created_at, null)));
+    }
+    var metaLine = [staffLine, timingBits.join(' · ')].filter(Boolean).join(' · ');
     return '<div class="k-ticket" id="kt-' + o.id + '" data-s="' + o.status + '">'
       + '<div class="k-top"><div class="k-tok">' + headline + '</div>'
       + '<div class="k-badge">' + o.status.toUpperCase() + '</div>'
       + '<div class="k-age">' + age + '</div></div>'
+      + (metaLine ? '<div style="font-size:10px;color:rgba(245,234,220,.4);margin-bottom:6px">' + metaLine + '</div>' : '')
       + '<div class="k-items">' + items + '</div>'
       + '<div class="k-actions">'
       + '<button class="k-btn k-start" onclick="kBump(\'' + o.id + '\',\'preparing\')">' + startTxt + '</button>'
@@ -441,6 +461,37 @@ function renderKitchen(orders) {
       + 'border:1px solid rgba(239,68,68,0.3);color:#f87171">❌ Cancel</button>'
       + '</div></div>';
   }).join('');
+}
+
+function tsElapsedMin(fromIso, toIso) {
+  if (!fromIso) return null;
+  var from = new Date(fromIso).getTime();
+  var to = toIso ? new Date(toIso).getTime() : Date.now();
+  return Math.max(0, Math.round((to - from) / 60000));
+}
+
+function tsFormatDuration(min) {
+  if (min === null || min === undefined) return '—';
+  if (min < 60) return min + 'm';
+  return Math.floor(min / 60) + 'h ' + (min % 60) + 'm';
+}
+
+// Override kBump (originally in store.html) to also stamp stage timestamps.
+// Only stamps a timestamp the FIRST time an order enters that stage — this
+// keeps the "prep took Xm" numbers meaningful even if an order bounces
+// back to preparing after items are added post-ready (see tsSubmit).
+async function kBump(id, status) {
+  var payload = { status: status };
+  if (status === 'preparing') {
+    var existing = await db.from('store_orders').select('preparing_at').eq('id', id).single();
+    if (existing.data && !existing.data.preparing_at) payload.preparing_at = new Date().toISOString();
+  } else if (status === 'ready') {
+    var existingR = await db.from('store_orders').select('ready_at').eq('id', id).single();
+    if (existingR.data && !existingR.data.ready_at) payload.ready_at = new Date().toISOString();
+  } else if (status === 'collected') {
+    payload.collected_at = new Date().toISOString();
+  }
+  await db.from('store_orders').update(payload).eq('id', id);
 }
 
 function kCancelOrder(id) {
