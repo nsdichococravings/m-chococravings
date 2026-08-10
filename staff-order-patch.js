@@ -54,7 +54,10 @@ function buildStaffLoginUI() {
   var tablesFab = document.createElement('div');
   tablesFab.id = 'staff-tables-fab';
   tablesFab.onclick = function () { if (typeof openTablesBoard === 'function') openTablesBoard(); };
-  tablesFab.style.cssText = 'display:none;position:fixed;bottom:24px;right:20px;z-index:400;'
+  // Sits higher than the admin-only kitchen-fab (bottom:24px) as a safety
+  // net — the two shouldn't both be visible at once (see showStaffLoggedInUI),
+  // but this keeps them from visually overlapping even if that check races.
+  tablesFab.style.cssText = 'display:none;position:fixed;bottom:88px;right:20px;z-index:400;'
     + 'width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#b87410,#d4930e);'
     + 'align-items:center;justify-content:center;box-shadow:0 6px 22px rgba(184,116,16,0.4);'
     + 'cursor:pointer;font-size:24px';
@@ -119,7 +122,8 @@ async function openStaffLoginSheet() {
   var sel = document.getElementById('staff-login-name');
   sel.innerHTML = '<option value="">Loading staff…</option>';
   try {
-    var res = await db.from('store_staff').select('name').eq('active', true).order('name');
+    var res = await db.from('store_staff').select('name').eq('active', true)
+      .in('role', ['Admin', 'Employee']).order('name');
     var staff = res.data || [];
     sel.innerHTML = staff.length
       ? '<option value="">Select your name...</option>' + staff.map(function (s) {
@@ -194,7 +198,29 @@ function showStaffLoggedInUI() {
     + '<span style="font-size:10px;color:#9a8aaa">· Sign out</span>';
   badge.style.display = 'flex';
 
-  document.getElementById('staff-tables-fab').style.display = 'flex';
+  // If this device is ALSO an admin session, the admin's own kitchen-fab
+  // (🍳) sits at the exact same spot as our Tables fab (🍽️), and admins
+  // already reach Tables via the Admin FAB menu — so skip showing a
+  // second, redundant button here instead of stacking on top of it.
+  // checkAdminBadge() in store.html resolves asynchronously, so poll
+  // briefly rather than assuming it's settled by the time we get here.
+  var attempts = 0;
+  var poll = setInterval(function () {
+    attempts++;
+    var kFab = document.getElementById('kitchen-fab');
+    var adminVisible = kFab && kFab.style.display === 'flex';
+    if (adminVisible) {
+      document.getElementById('staff-tables-fab').style.display = 'none';
+      clearInterval(poll);
+      return;
+    }
+    if (attempts >= 1) {
+      // Not an admin session (or admin check hasn't granted access) —
+      // safe to show our own Tables fab.
+      document.getElementById('staff-tables-fab').style.display = 'flex';
+    }
+    if (attempts >= 10) clearInterval(poll); // give up polling after ~3s
+  }, 300);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -256,6 +282,12 @@ function buildManageStaffUI() {
     +     '<input id="mstaff-pin" placeholder="PIN" maxlength="6" style="flex:1;padding:12px 14px;'
     +       'border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);font-family:inherit;'
     +       'font-size:13px;outline:none;box-sizing:border-box">'
+    +     '<select id="mstaff-role" style="flex:1;padding:12px 10px;border-radius:12px;'
+    +       'border:1.5px solid rgba(18,10,30,0.12);font-family:inherit;font-size:13px;'
+    +       'outline:none;box-sizing:border-box;background:#fff;cursor:pointer">'
+    +       '<option value="Employee">Employee</option>'
+    +       '<option value="Admin">Admin</option>'
+    +     '</select>'
     +   '</div>'
     +   '<button onclick="mstaffAdd()" style="width:100%;padding:13px;background:linear-gradient(135deg,'
     +     '#6e0977,#9c0ca1);color:#fff;font-size:13px;font-weight:700;border:none;border-radius:12px;'
@@ -288,10 +320,16 @@ async function mstaffLoadList() {
     var pillBg = s.active ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.08)';
     var pillColor = s.active ? '#15803d' : '#c24545';
     var pillLabel = s.active ? 'Active' : 'Inactive';
+    var roleBg = s.role === 'Admin' ? 'rgba(110,9,119,0.1)' : 'rgba(184,116,16,0.1)';
+    var roleColor = s.role === 'Admin' ? '#6e0977' : '#b87410';
     return '<div style="display:flex;align-items:center;justify-content:space-between;'
       + 'background:#f5eeff;border:1px solid #e0c8f0;border-radius:12px;padding:12px 14px">'
       + '<div style="flex:1">'
+      + '<div style="display:flex;align-items:center;gap:6px">'
       + '<div style="font-size:13px;font-weight:700;color:#1a0820">' + s.name + '</div>'
+      + '<div style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;'
+      + 'background:' + roleBg + ';color:' + roleColor + '">' + (s.role || 'Employee') + '</div>'
+      + '</div>'
       + '<div style="font-size:11px;color:#9c0ca1;margin-top:2px">PIN: ' + s.pin + '</div>'
       + '</div>'
       + '<div style="display:flex;align-items:center;gap:8px">'
@@ -308,14 +346,16 @@ async function mstaffLoadList() {
 async function mstaffAdd() {
   var name = (document.getElementById('mstaff-name').value || '').trim();
   var pin  = (document.getElementById('mstaff-pin').value  || '').trim();
+  var role = document.getElementById('mstaff-role').value || 'Employee';
   if (!name) { showStoreToast('Enter a staff name'); return; }
   if (!pin)  { showStoreToast('Enter a PIN'); return; }
 
-  var res = await db.from('store_staff').insert([{ name: name, pin: pin, active: true }]);
+  var res = await db.from('store_staff').insert([{ name: name, pin: pin, role: role, active: true }]);
   if (res.error) { showStoreToast('Error: ' + res.error.message); return; }
 
   document.getElementById('mstaff-name').value = '';
   document.getElementById('mstaff-pin').value  = '';
+  document.getElementById('mstaff-role').value = 'Employee';
   showStoreToast('✅ ' + name + ' added');
   mstaffLoadList();
 }
