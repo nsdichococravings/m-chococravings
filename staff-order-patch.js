@@ -51,6 +51,18 @@ async function checkEmployeeAccess() {
 // over instead — see restoreStaffSession/showStaffLoggedInUI).
 async function refreshStaffButtonVisibility() {
   if (_staffSession) return; // already logged in via PIN — button stays hidden regardless
+
+  // `db` (the Supabase client) is created in store.html's own script
+  // inside a window 'load' event, which fires AFTER our DOMContentLoaded
+  // handler runs. Without this wait, db is still null the first time we
+  // get here, db.auth.getUser() throws, and the button silently never
+  // shows — even though the underlying is_employee data is correct.
+  var waited = 0;
+  while ((typeof db === 'undefined' || !db) && waited < 5000) {
+    await new Promise(function (r) { setTimeout(r, 200); });
+    waited += 200;
+  }
+
   var allowed = await checkEmployeeAccess();
   var btn = document.getElementById('staff-login-btn');
   if (btn) btn.style.display = allowed ? 'flex' : 'none';
