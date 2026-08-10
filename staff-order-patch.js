@@ -24,7 +24,37 @@ document.addEventListener('DOMContentLoaded', function () {
   buildManageStaffUI();
   injectManageStaffMenuEntry();
   restoreStaffSession();
+  refreshStaffButtonVisibility();
 });
+
+// The Staff Login button is only shown to customers whose own account
+// (customers.is_employee) has been flagged by an admin. A regular
+// customer, or someone not logged in at all, never sees this button.
+// This is checked against the SAME Supabase auth session used elsewhere
+// in the app (db.auth.getUser()) — separate from the store_staff PIN
+// login, which is the second, actual sign-in step once this button is
+// visible and tapped.
+async function checkEmployeeAccess() {
+  try {
+    var s = await db.auth.getUser();
+    var user = s.data && s.data.user;
+    if (!user) return false;
+    var res = await db.from('customers').select('is_employee').eq('email', user.email).single();
+    return !!(res.data && res.data.is_employee);
+  } catch (e) {
+    return false;
+  }
+}
+
+// Re-evaluates whether the login button should show. Skips the check
+// entirely if a staff PIN session is already active (that badge/UI takes
+// over instead — see restoreStaffSession/showStaffLoggedInUI).
+async function refreshStaffButtonVisibility() {
+  if (_staffSession) return; // already logged in via PIN — button stays hidden regardless
+  var allowed = await checkEmployeeAccess();
+  var btn = document.getElementById('staff-login-btn');
+  if (btn) btn.style.display = allowed ? 'flex' : 'none';
+}
 
 // ══════════════════════════════════════════════════════════════
 // PART 1 — Staff login (for employees taking table orders)
@@ -34,13 +64,15 @@ function buildStaffLoginUI() {
   var loginBtn = document.createElement('div');
   loginBtn.id = 'staff-login-btn';
   loginBtn.onclick = openStaffLoginSheet;
-  loginBtn.style.cssText = 'position:fixed;bottom:24px;left:14px;z-index:400;'
+  loginBtn.style.cssText = 'display:none;position:fixed;bottom:24px;left:14px;z-index:400;'
     + 'background:#fff;border:1px solid rgba(18,10,30,0.12);border-radius:22px;'
-    + 'padding:8px 14px;display:flex;align-items:center;gap:6px;cursor:pointer;'
+    + 'padding:8px 14px;align-items:center;gap:6px;cursor:pointer;'
     + 'box-shadow:0 4px 16px rgba(18,10,30,0.12);font-family:\'Instrument Sans\',sans-serif';
   loginBtn.innerHTML = '<span style="font-size:14px">👤</span>'
     + '<span style="font-size:11px;font-weight:700;color:#6e0977;letter-spacing:.3px">Staff Login</span>';
   document.body.appendChild(loginBtn);
+  // Starts hidden — refreshStaffButtonVisibility() decides whether to show
+  // it, based on the logged-in customer's is_employee flag.
 
   var badge = document.createElement('div');
   badge.id = 'staff-logged-badge';
@@ -171,13 +203,13 @@ async function staffAttemptLogin() {
   }
 }
 
-function staffLogout() {
+async function staffLogout() {
   if (!confirm('Sign out of staff mode?')) return;
   sessionStorage.removeItem(STAFF_SESSION_KEY);
   _staffSession = null;
-  document.getElementById('staff-login-btn').style.display   = 'flex';
   document.getElementById('staff-logged-badge').style.display = 'none';
   document.getElementById('staff-tables-fab').style.display   = 'none';
+  await refreshStaffButtonVisibility();
 }
 
 function restoreStaffSession() {
