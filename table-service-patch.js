@@ -429,28 +429,73 @@ function renderKitchen(orders) {
   list.innerHTML = orders.map(function (o) {
     var rawItems = o.items;
     var itemsArr = Array.isArray(rawItems) ? rawItems : (typeof rawItems === 'string' ? JSON.parse(rawItems) : []);
-    var items = (itemsArr || []).map(function (i) { return i.name + ' ×' + i.qty; }).join(' · ');
     var age = ageStr(o.created_at);
     var startTxt = o.status === 'preparing' ? '⏳ Making…' : '▶ Start';
     var readyTxt = o.status === 'ready' ? '✓ Ready!' : '✓ Mark Ready';
     var headline = o.table_code
       ? '🍽️ ' + o.table_code
-      : o.token;
-    var staffLine = o.staff_name ? ('👤 ' + o.staff_name) : '';
-    var timingBits = [];
-    if (o.preparing_at) {
-      var prepDuration = tsElapsedMin(o.preparing_at, o.ready_at || null);
-      timingBits.push('🔥 Prep ' + tsFormatDuration(prepDuration));
+      : ('#' + o.token);
+
+    // Meta line: staff + timing for table orders; customer name/phone for
+    // self-orders placed by customers on their own phones — this matters
+    // just as much, since staff need to know WHO to call out or match at
+    // pickup, not just that "a token exists."
+    var metaLine;
+    if (o.table_code) {
+      var staffLine = o.staff_name ? ('👤 ' + o.staff_name) : '';
+      var timingBits = [];
+      if (o.preparing_at) {
+        var prepDuration = tsElapsedMin(o.preparing_at, o.ready_at || null);
+        timingBits.push('🔥 Prep ' + tsFormatDuration(prepDuration));
+      } else {
+        timingBits.push('⏳ Waiting ' + tsFormatDuration(tsElapsedMin(o.created_at, null)));
+      }
+      metaLine = [staffLine, timingBits.join(' · ')].filter(Boolean).join(' · ');
     } else {
-      timingBits.push('⏳ Waiting ' + tsFormatDuration(tsElapsedMin(o.created_at, null)));
+      var custBits = [];
+      if (o.customer_name) custBits.push('🙋 ' + o.customer_name);
+      if (o.customer_phone) custBits.push('📞 ' + o.customer_phone);
+      metaLine = custBits.length ? custBits.join('  ·  ') : '🙋 Walk-in (no details)';
     }
-    var metaLine = [staffLine, timingBits.join(' · ')].filter(Boolean).join(' · ');
+
+    // Payment badge — shows exactly how/whether this order was paid,
+    // so staff know at a glance whether cash still needs collecting.
+    var pmMap = { upi: 'UPI', upi_qr: 'UPI (QR)', cash: 'Cash', razorpay: 'Razorpay', gpay: 'Google Pay', phonepe: 'PhonePe' };
+    var pmLabel = pmMap[(o.payment_method || '').toLowerCase()] || (o.payment_method || 'Cash');
+    var pay;
+    if (o.payment_status === 'paid') {
+      pay = { label: '✅ Paid · ' + pmLabel, bg: 'rgba(74,222,128,0.12)', color: '#4ade80', border: 'rgba(74,222,128,0.3)' };
+    } else if (o.payment_status === 'complimentary') {
+      pay = { label: '🎁 Complimentary', bg: 'rgba(192,132,252,0.12)', color: '#c084fc', border: 'rgba(192,132,252,0.3)' };
+    } else if ((o.payment_method || '').toLowerCase() === 'cash') {
+      pay = { label: '💵 COD · Pay at counter', bg: 'rgba(245,158,11,0.12)', color: '#fb923c', border: 'rgba(245,158,11,0.3)' };
+    } else {
+      pay = { label: '⏳ Payment Pending', bg: 'rgba(239,68,68,0.1)', color: '#f87171', border: 'rgba(239,68,68,0.3)' };
+    }
+    var payBadge = '<span style="display:inline-block;font-size:9.5px;font-weight:700;padding:3px 9px;'
+      + 'border-radius:20px;background:' + pay.bg + ';color:' + pay.color + ';border:1px solid ' + pay.border
+      + ';margin-left:8px;vertical-align:middle">' + pay.label + '</span>';
+
+    // Items — one per line, clearer contrast than the old dense dot-joined string
+    var itemsHtml = (itemsArr || []).map(function (i) {
+      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">'
+        + '<span style="font-size:13px;color:#f5eadc;font-weight:500">' + i.name + '</span>'
+        + '<span style="font-size:12px;color:#f5c430;font-weight:700;flex-shrink:0;margin-left:10px">×' + i.qty + '</span>'
+        + '</div>';
+    }).join('');
+
     return '<div class="k-ticket" id="kt-' + o.id + '" data-s="' + o.status + '">'
       + '<div class="k-top"><div class="k-tok">' + headline + '</div>'
       + '<div class="k-badge">' + o.status.toUpperCase() + '</div>'
       + '<div class="k-age">' + age + '</div></div>'
-      + (metaLine ? '<div style="font-size:10px;color:rgba(245,234,220,.4);margin-bottom:6px">' + metaLine + '</div>' : '')
-      + '<div class="k-items">' + items + '</div>'
+      + '<div style="font-size:11.5px;color:rgba(245,234,220,.65);margin-bottom:9px;font-weight:600">' + metaLine + payBadge + '</div>'
+      + '<div style="background:rgba(0,0,0,0.22);border-radius:10px;padding:9px 12px;margin-bottom:10px">' + itemsHtml + '</div>'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;'
+      + 'background:linear-gradient(135deg,rgba(245,196,48,0.18),rgba(245,196,48,0.06));'
+      + 'border:1.5px solid rgba(245,196,48,0.4);border-radius:12px;padding:10px 14px;margin-bottom:10px">'
+      + '<span style="font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(245,196,48,0.85)">TOTAL</span>'
+      + '<span style="font-family:Fraunces,Georgia,serif;font-size:26px;font-weight:900;color:#f5c430">₹' + (o.total || 0) + '</span>'
+      + '</div>'
       + '<div class="k-actions">'
       + '<button class="k-btn k-start" onclick="kBump(\'' + o.id + '\',\'preparing\')">' + startTxt + '</button>'
       + '<button class="k-btn k-ready" onclick="kBump(\'' + o.id + '\',\'ready\')">' + readyTxt + '</button>'
