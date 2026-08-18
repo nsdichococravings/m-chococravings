@@ -38,7 +38,7 @@ function injectInventoryMenuEntry() {
   if (!fabMenu) return;
 
   var entry = document.createElement('div');
-  entry.id = 'inv-menu-entry';
+  entry.id = 'invtry-menu-entry';
   entry.onclick = function () { openInventory(); closeAdminMenu(); };
   entry.style.cssText = 'display:flex;align-items:center;gap:10px;padding:13px 16px;'
     + 'cursor:pointer;transition:background .15s;border-bottom:1px solid #f5f0f8';
@@ -51,7 +51,7 @@ function injectInventoryMenuEntry() {
     +   '<div style="font-size:13px;font-weight:600;color:#1a0820">Inventory</div>'
     +   '<div style="font-size:11px;color:#9c0ca1;margin-top:1px">Ingredient stock</div>'
     + '</div>'
-    + '<div id="inv-menu-badge" style="display:none;background:#dc2626;color:#fff;font-size:10px;'
+    + '<div id="invtry-menu-badge" style="display:none;background:#dc2626;color:#fff;font-size:10px;'
     + 'font-weight:700;padding:2px 7px;border-radius:20px">0</div>';
 
   fabMenu.appendChild(entry);
@@ -62,7 +62,7 @@ async function refreshLowStockBadge() {
     var res = await db.from('inventory_items').select('id, current_stock, low_stock_threshold');
     var items = res.data || [];
     _invLowStockCount = items.filter(function (i) { return i.current_stock <= i.low_stock_threshold; }).length;
-    var badge = document.getElementById('inv-menu-badge');
+    var badge = document.getElementById('invtry-menu-badge');
     if (badge) {
       badge.textContent = _invLowStockCount;
       badge.style.display = _invLowStockCount > 0 ? 'inline-block' : 'none';
@@ -75,14 +75,14 @@ async function refreshLowStockBadge() {
 // ══════════════════════════════════════════════════════════════
 function buildInventoryUI() {
   var overlay = document.createElement('div');
-  overlay.id = 'inv-overlay';
+  overlay.id = 'invtry-overlay';
   overlay.onclick = closeInventory;
   overlay.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);'
     + 'z-index:3400;backdrop-filter:blur(4px)';
   document.body.appendChild(overlay);
 
   var sheet = document.createElement('div');
-  sheet.id = 'inv-sheet';
+  sheet.id = 'invtry-sheet';
   sheet.style.cssText = 'display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;'
     + 'border-radius:22px 22px 0 0;border-top:1px solid #e8d0f0;z-index:3401;'
     + 'padding:0 0 28px;font-family:\'DM Sans\',sans-serif;max-height:90vh;overflow-y:auto';
@@ -108,7 +108,7 @@ function buildInventoryUI() {
     +     '#6e0977,#9c0ca1);color:#fff;font-size:13px;font-weight:700;border:none;border-radius:12px;'
     +     'cursor:pointer">➕ Add Ingredient</button>'
     + '</div>'
-    + '<div id="inv-list" style="padding:16px 20px;display:flex;flex-direction:column;gap:10px"></div>';
+    + '<div id="invtry-list" style="padding:16px 20px;display:flex;flex-direction:column;gap:10px"></div>';
   document.body.appendChild(sheet);
 
   buildAddItemUI();
@@ -117,17 +117,17 @@ function buildInventoryUI() {
 }
 
 function openInventory() {
-  document.getElementById('inv-overlay').style.display = 'block';
-  document.getElementById('inv-sheet').style.display   = 'block';
+  document.getElementById('invtry-overlay').style.display = 'block';
+  document.getElementById('invtry-sheet').style.display   = 'block';
   loadInventoryItems();
 }
 function closeInventory() {
-  document.getElementById('inv-overlay').style.display = 'none';
-  document.getElementById('inv-sheet').style.display   = 'none';
+  document.getElementById('invtry-overlay').style.display = 'none';
+  document.getElementById('invtry-sheet').style.display   = 'none';
 }
 
 async function loadInventoryItems() {
-  var list = document.getElementById('inv-list');
+  var list = document.getElementById('invtry-list');
   list.innerHTML = '<div style="text-align:center;padding:20px;color:#b090c0;font-size:12px">Loading…</div>';
   var res = await db.from('inventory_items').select('*').order('name');
   _invItems = res.data || [];
@@ -136,7 +136,7 @@ async function loadInventoryItems() {
 }
 
 function renderInventoryList() {
-  var list = document.getElementById('inv-list');
+  var list = document.getElementById('invtry-list');
   if (!_invItems.length) {
     list.innerHTML = '<div style="text-align:center;padding:30px 20px;color:#b090c0;font-size:13px">'
       + 'No ingredients added yet — tap "Add Ingredient" to start tracking stock.</div>';
@@ -184,14 +184,14 @@ var _invEditId = null;
 
 function buildAddItemUI() {
   var overlay = document.createElement('div');
-  overlay.id = 'inv-item-overlay';
+  overlay.id = 'invtry-item-overlay';
   overlay.onclick = closeInvItemSheet;
   overlay.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);'
     + 'z-index:3500;backdrop-filter:blur(4px)';
   document.body.appendChild(overlay);
 
   var sheet = document.createElement('div');
-  sheet.id = 'inv-item-sheet';
+  sheet.id = 'invtry-item-sheet';
   sheet.style.cssText = 'display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;'
     + 'border-radius:22px 22px 0 0;border-top:1px solid #e8d0f0;z-index:3501;'
     + 'padding:0 0 28px;font-family:\'DM Sans\',sans-serif';
@@ -199,40 +199,40 @@ function buildAddItemUI() {
       '<div style="width:40px;height:4px;border-radius:2px;background:#ddd0ea;margin:14px auto 0"></div>'
     + '<div style="padding:16px 20px 12px;border-bottom:1px solid #f0e8f8;display:flex;'
     +   'align-items:center;justify-content:space-between">'
-    +   '<div id="inv-item-title" style="font-size:18px;font-weight:700;color:#1a0820">Add Ingredient</div>'
+    +   '<div id="invtry-item-title" style="font-size:18px;font-weight:700;color:#1a0820">Add Ingredient</div>'
     +   '<div onclick="closeInvItemSheet()" style="width:34px;height:34px;border-radius:50%;'
     +     'background:#f5eeff;border:1px solid #e0c8f0;display:flex;align-items:center;'
     +     'justify-content:center;cursor:pointer;font-size:14px;color:#6e0977">✕</div>'
     + '</div>'
     + '<div style="padding:18px 20px;display:flex;flex-direction:column;gap:12px">'
-    +   '<input id="inv-item-name" placeholder="Ingredient name (e.g. All-purpose Flour)" style="width:100%;'
+    +   '<input id="invtry-item-name" placeholder="Ingredient name (e.g. All-purpose Flour)" style="width:100%;'
     +     'padding:12px 14px;border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);font-family:inherit;'
     +     'font-size:14px;outline:none;box-sizing:border-box">'
     +   '<div style="display:flex;gap:8px">'
-    +     '<select id="inv-item-unit" style="flex:1;padding:12px 10px;border-radius:12px;'
+    +     '<select id="invtry-item-unit" style="flex:1;padding:12px 10px;border-radius:12px;'
     +       'border:1.5px solid rgba(18,10,30,0.12);font-family:inherit;font-size:14px;outline:none;'
     +       'background:#fff;cursor:pointer">'
     +       '<option value="kg">kg</option><option value="g">g</option>'
     +       '<option value="liter">liter</option><option value="ml">ml</option>'
     +       '<option value="pieces">pieces</option><option value="dozen">dozen</option>'
     +     '</select>'
-    +     '<input id="inv-item-stock" type="number" step="any" placeholder="Current stock" style="flex:1;'
+    +     '<input id="invtry-item-stock" type="number" step="any" placeholder="Current stock" style="flex:1;'
     +       'padding:12px 14px;border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);font-family:inherit;'
     +       'font-size:14px;outline:none;box-sizing:border-box">'
     +   '</div>'
     +   '<div>'
     +     '<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;'
     +       'color:#9c0ca1;margin-bottom:6px">Low Stock Alert Threshold</div>'
-    +     '<input id="inv-item-threshold" type="number" step="any" placeholder="e.g. 2" style="width:100%;'
+    +     '<input id="invtry-item-threshold" type="number" step="any" placeholder="e.g. 2" style="width:100%;'
     +       'padding:12px 14px;border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);font-family:inherit;'
     +       'font-size:14px;outline:none;box-sizing:border-box">'
     +     '<div style="font-size:11px;color:#9a8aaa;margin-top:5px">You\'ll get a low-stock warning once '
     +       'stock falls to or below this amount.</div>'
     +   '</div>'
-    +   '<button id="inv-item-save-btn" onclick="saveInvItem()" style="width:100%;padding:15px;'
+    +   '<button id="invtry-item-save-btn" onclick="saveInvItem()" style="width:100%;padding:15px;'
     +     'background:linear-gradient(135deg,#6e0977,#9c0ca1);color:#fff;font-size:13px;font-weight:700;'
     +     'border:none;border-radius:14px;cursor:pointer;letter-spacing:1px">Save Ingredient</button>'
-    +   '<button id="inv-item-delete-btn" onclick="deleteInvItem()" style="display:none;width:100%;'
+    +   '<button id="invtry-item-delete-btn" onclick="deleteInvItem()" style="display:none;width:100%;'
     +     'padding:13px;background:rgba(220,38,38,0.08);color:#dc2626;font-size:12px;font-weight:700;'
     +     'border:1px solid rgba(220,38,38,0.25);border-radius:12px;cursor:pointer">🗑 Delete Ingredient</button>'
     + '</div>';
@@ -241,46 +241,46 @@ function buildAddItemUI() {
 
 function openAddInvItem() {
   _invEditId = null;
-  document.getElementById('inv-item-title').textContent = 'Add Ingredient';
-  document.getElementById('inv-item-name').value = '';
-  document.getElementById('inv-item-unit').value = 'kg';
-  document.getElementById('inv-item-stock').value = '';
-  document.getElementById('inv-item-threshold').value = '';
-  document.getElementById('inv-item-delete-btn').style.display = 'none';
-  document.getElementById('inv-item-overlay').style.display = 'block';
-  document.getElementById('inv-item-sheet').style.display   = 'block';
+  document.getElementById('invtry-item-title').textContent = 'Add Ingredient';
+  document.getElementById('invtry-item-name').value = '';
+  document.getElementById('invtry-item-unit').value = 'kg';
+  document.getElementById('invtry-item-stock').value = '';
+  document.getElementById('invtry-item-threshold').value = '';
+  document.getElementById('invtry-item-delete-btn').style.display = 'none';
+  document.getElementById('invtry-item-overlay').style.display = 'block';
+  document.getElementById('invtry-item-sheet').style.display   = 'block';
 }
 
 function openEditInvItem(id) {
   var item = _invItems.find(function (i) { return i.id === id; });
   if (!item) return;
   _invEditId = id;
-  document.getElementById('inv-item-title').textContent = 'Edit Ingredient';
-  document.getElementById('inv-item-name').value = item.name;
-  document.getElementById('inv-item-unit').value = item.unit;
-  document.getElementById('inv-item-stock').value = item.current_stock;
-  document.getElementById('inv-item-threshold').value = item.low_stock_threshold;
-  document.getElementById('inv-item-delete-btn').style.display = 'block';
-  document.getElementById('inv-item-overlay').style.display = 'block';
-  document.getElementById('inv-item-sheet').style.display   = 'block';
+  document.getElementById('invtry-item-title').textContent = 'Edit Ingredient';
+  document.getElementById('invtry-item-name').value = item.name;
+  document.getElementById('invtry-item-unit').value = item.unit;
+  document.getElementById('invtry-item-stock').value = item.current_stock;
+  document.getElementById('invtry-item-threshold').value = item.low_stock_threshold;
+  document.getElementById('invtry-item-delete-btn').style.display = 'block';
+  document.getElementById('invtry-item-overlay').style.display = 'block';
+  document.getElementById('invtry-item-sheet').style.display   = 'block';
 }
 
 function closeInvItemSheet() {
-  document.getElementById('inv-item-overlay').style.display = 'none';
-  document.getElementById('inv-item-sheet').style.display   = 'none';
+  document.getElementById('invtry-item-overlay').style.display = 'none';
+  document.getElementById('invtry-item-sheet').style.display   = 'none';
 }
 
 async function saveInvItem() {
-  var name = (document.getElementById('inv-item-name').value || '').trim();
-  var unit = document.getElementById('inv-item-unit').value;
-  var stock = parseFloat(document.getElementById('inv-item-stock').value);
-  var threshold = parseFloat(document.getElementById('inv-item-threshold').value);
+  var name = (document.getElementById('invtry-item-name').value || '').trim();
+  var unit = document.getElementById('invtry-item-unit').value;
+  var stock = parseFloat(document.getElementById('invtry-item-stock').value);
+  var threshold = parseFloat(document.getElementById('invtry-item-threshold').value);
 
   if (!name) { showStoreToast('Enter an ingredient name'); return; }
   if (isNaN(stock)) { showStoreToast('Enter a starting stock amount'); return; }
   if (isNaN(threshold)) threshold = 0;
 
-  var btn = document.getElementById('inv-item-save-btn');
+  var btn = document.getElementById('invtry-item-save-btn');
   btn.disabled = true; btn.textContent = 'Saving…';
 
   try {
@@ -323,31 +323,31 @@ var _invMoveType    = null;
 
 function buildMovementUI() {
   var overlay = document.createElement('div');
-  overlay.id = 'inv-move-overlay';
+  overlay.id = 'invtry-move-overlay';
   overlay.onclick = closeInvMovement;
   overlay.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);'
     + 'z-index:3500;backdrop-filter:blur(4px)';
   document.body.appendChild(overlay);
 
   var sheet = document.createElement('div');
-  sheet.id = 'inv-move-sheet';
+  sheet.id = 'invtry-move-sheet';
   sheet.style.cssText = 'display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;'
     + 'border-radius:22px 22px 0 0;border-top:1px solid #e8d0f0;z-index:3501;'
     + 'padding:0 0 28px;font-family:\'DM Sans\',sans-serif';
   sheet.innerHTML =
       '<div style="width:40px;height:4px;border-radius:2px;background:#ddd0ea;margin:14px auto 0"></div>'
     + '<div style="padding:16px 20px 12px;border-bottom:1px solid #f0e8f8">'
-    +   '<div id="inv-move-title" style="font-size:18px;font-weight:700;color:#1a0820">Restock</div>'
-    +   '<div id="inv-move-sub" style="font-size:12px;color:#9a8aaa;margin-top:2px">Item name</div>'
+    +   '<div id="invtry-move-title" style="font-size:18px;font-weight:700;color:#1a0820">Restock</div>'
+    +   '<div id="invtry-move-sub" style="font-size:12px;color:#9a8aaa;margin-top:2px">Item name</div>'
     + '</div>'
     + '<div style="padding:18px 20px;display:flex;flex-direction:column;gap:12px">'
-    +   '<input id="inv-move-qty" type="number" step="any" placeholder="Quantity" style="width:100%;'
+    +   '<input id="invtry-move-qty" type="number" step="any" placeholder="Quantity" style="width:100%;'
     +     'padding:13px 14px;border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);font-family:inherit;'
     +     'font-size:16px;outline:none;box-sizing:border-box">'
-    +   '<input id="inv-move-note" placeholder="Note (optional) — e.g. supplier name, reason" style="width:100%;'
+    +   '<input id="invtry-move-note" placeholder="Note (optional) — e.g. supplier name, reason" style="width:100%;'
     +     'padding:12px 14px;border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);font-family:inherit;'
     +     'font-size:13px;outline:none;box-sizing:border-box">'
-    +   '<button id="inv-move-btn" onclick="submitInvMovement()" style="width:100%;padding:15px;'
+    +   '<button id="invtry-move-btn" onclick="submitInvMovement()" style="width:100%;padding:15px;'
     +     'color:#fff;font-size:13px;font-weight:700;border:none;border-radius:14px;cursor:pointer;'
     +     'letter-spacing:1px">Confirm</button>'
     + '</div>';
@@ -362,26 +362,26 @@ function openInvMovement(itemId, type) {
 
   var titleMap = { restock: '➕ Restock', use: '➖ Use', waste: '🗑 Waste' };
   var colorMap = { restock: '#15803d', use: '#b87410', waste: '#dc2626' };
-  document.getElementById('inv-move-title').textContent = titleMap[type] + ' — ' + item.name;
-  document.getElementById('inv-move-sub').textContent = 'Current stock: ' + item.current_stock + ' ' + item.unit;
-  document.getElementById('inv-move-qty').value = '';
-  document.getElementById('inv-move-note').value = '';
-  var btn = document.getElementById('inv-move-btn');
+  document.getElementById('invtry-move-title').textContent = titleMap[type] + ' — ' + item.name;
+  document.getElementById('invtry-move-sub').textContent = 'Current stock: ' + item.current_stock + ' ' + item.unit;
+  document.getElementById('invtry-move-qty').value = '';
+  document.getElementById('invtry-move-note').value = '';
+  var btn = document.getElementById('invtry-move-btn');
   btn.style.background = colorMap[type];
   btn.textContent = 'Confirm ' + titleMap[type].replace(/[➕➖🗑]\s*/, '');
 
-  document.getElementById('inv-move-overlay').style.display = 'block';
-  document.getElementById('inv-move-sheet').style.display   = 'block';
+  document.getElementById('invtry-move-overlay').style.display = 'block';
+  document.getElementById('invtry-move-sheet').style.display   = 'block';
 }
 
 function closeInvMovement() {
-  document.getElementById('inv-move-overlay').style.display = 'none';
-  document.getElementById('inv-move-sheet').style.display   = 'none';
+  document.getElementById('invtry-move-overlay').style.display = 'none';
+  document.getElementById('invtry-move-sheet').style.display   = 'none';
 }
 
 async function submitInvMovement() {
-  var qty = parseFloat(document.getElementById('inv-move-qty').value);
-  var note = (document.getElementById('inv-move-note').value || '').trim();
+  var qty = parseFloat(document.getElementById('invtry-move-qty').value);
+  var note = (document.getElementById('invtry-move-note').value || '').trim();
   if (isNaN(qty) || qty <= 0) { showStoreToast('Enter a valid quantity'); return; }
 
   var item = _invItems.find(function (i) { return i.id === _invMoveItemId; });
@@ -390,7 +390,7 @@ async function submitInvMovement() {
   var newStock = _invMoveType === 'restock' ? item.current_stock + qty : item.current_stock - qty;
   if (newStock < 0) newStock = 0;
 
-  var btn = document.getElementById('inv-move-btn');
+  var btn = document.getElementById('invtry-move-btn');
   btn.disabled = true; btn.textContent = 'Saving…';
 
   try {
@@ -422,14 +422,14 @@ async function submitInvMovement() {
 // ══════════════════════════════════════════════════════════════
 function buildHistoryUI() {
   var overlay = document.createElement('div');
-  overlay.id = 'inv-hist-overlay';
+  overlay.id = 'invtry-hist-overlay';
   overlay.onclick = closeInvHistory;
   overlay.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);'
     + 'z-index:3500;backdrop-filter:blur(4px)';
   document.body.appendChild(overlay);
 
   var sheet = document.createElement('div');
-  sheet.id = 'inv-hist-sheet';
+  sheet.id = 'invtry-hist-sheet';
   sheet.style.cssText = 'display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;'
     + 'border-radius:22px 22px 0 0;border-top:1px solid #e8d0f0;z-index:3501;'
     + 'padding:0 0 28px;font-family:\'DM Sans\',sans-serif;max-height:85vh;overflow-y:auto';
@@ -442,22 +442,22 @@ function buildHistoryUI() {
     +     'background:#f5eeff;border:1px solid #e0c8f0;display:flex;align-items:center;'
     +     'justify-content:center;cursor:pointer;font-size:14px;color:#6e0977">✕</div>'
     + '</div>'
-    + '<div id="inv-hist-list" style="padding:16px 20px;display:flex;flex-direction:column;gap:8px"></div>';
+    + '<div id="invtry-hist-list" style="padding:16px 20px;display:flex;flex-direction:column;gap:8px"></div>';
   document.body.appendChild(sheet);
 }
 
 function openInvHistory() {
-  document.getElementById('inv-hist-overlay').style.display = 'block';
-  document.getElementById('inv-hist-sheet').style.display   = 'block';
+  document.getElementById('invtry-hist-overlay').style.display = 'block';
+  document.getElementById('invtry-hist-sheet').style.display   = 'block';
   loadInvHistory();
 }
 function closeInvHistory() {
-  document.getElementById('inv-hist-overlay').style.display = 'none';
-  document.getElementById('inv-hist-sheet').style.display   = 'none';
+  document.getElementById('invtry-hist-overlay').style.display = 'none';
+  document.getElementById('invtry-hist-sheet').style.display   = 'none';
 }
 
 async function loadInvHistory() {
-  var list = document.getElementById('inv-hist-list');
+  var list = document.getElementById('invtry-hist-list');
   list.innerHTML = '<div style="text-align:center;padding:20px;color:#b090c0;font-size:12px">Loading…</div>';
 
   var res = await db.from('inventory_movements')
