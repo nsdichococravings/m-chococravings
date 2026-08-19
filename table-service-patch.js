@@ -391,7 +391,10 @@ async function tsSubmit() {
       if (ins.error) throw ins.error;
       showStoreToast('✅ Order sent for ' + _tsTableCode);
     }
-    if (typeof kitchenLoad === 'function') kitchenLoad();
+    // Not calling kitchenLoad() here on purpose — it tears down and rebuilds
+    // the realtime subscription every time, which can drop OTHER orders
+    // arriving during that split-second reconnect window. The kitchen
+    // page's own subscription already picks this order up live.
     closeTableOrderSheet();
   } catch (e) {
     showStoreToast('Error: ' + e.message);
@@ -415,7 +418,8 @@ async function tsBillAndClose() {
     if (upd.error) throw upd.error;
     var finalMin = tsElapsedMin(_tsExistingOrder.created_at, collectedAt);
     showStoreToast('✅ ' + _tsTableCode + ' closed — ₹' + total + ' · ' + tsFormatDuration(finalMin) + staffTxt);
-    if (typeof kitchenLoad === 'function') kitchenLoad();
+    // Same reasoning as tsSubmit — no kitchenLoad() call here, let the
+    // realtime subscription handle it without forcing a reconnect.
     closeTableOrderSheet();
   } catch (e) {
     showStoreToast('Error: ' + e.message);
