@@ -19,6 +19,10 @@
  * Requires: `db`, `MENU`, `showStoreToast()` — already global on this page.
  */
 
+// Which items are tracked is now controlled by store_menu.track_display_stock
+// (a real column, toggle-able per item from the Settings tab below) instead
+// of a hardcoded category list — flip it on/off anytime without a code change.
+
 var _dsItems = {};          // item_name -> display_stock row
 var _dsPendingRequests = {}; // item_name -> true if a pending request already exists
 var _dsCh = null;
@@ -31,10 +35,10 @@ document.addEventListener('DOMContentLoaded', function () {
   subscribeNewMenuItems();
 });
 
-// Listens for new rows in store_menu directly at the database level — this
-// means a brand-new item shows up in display_stock the instant it's saved,
-// no matter which admin flow created it (Manage Menu, Quick Add, or any
-// future one), without needing to reopen Display Stock first.
+// Listens for ANY change in store_menu directly at the database level —
+// covers brand-new items appearing, AND the track_display_stock flag being
+// toggled on/off for an existing item — either way, display_stock stays
+// in sync instantly without needing to reopen Display Stock first.
 var _dsMenuCh = null;
 function subscribeNewMenuItems() {
   var wait = setInterval(function () {
@@ -42,21 +46,16 @@ function subscribeNewMenuItems() {
     clearInterval(wait);
     if (_dsMenuCh) { try { db.removeChannel(_dsMenuCh); } catch (e) {} }
     _dsMenuCh = db.channel('display-stock-menu-sync')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'store_menu' }, async function (payload) {
-        var row = payload.new;
-        if (!row || !row.name) return;
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'store_menu' }, async function () {
         try {
-          var existing = await db.from('display_stock').select('id').eq('item_name', row.name).maybeSingle();
-          if (!existing.data) {
-            await db.from('display_stock').insert([{
-              item_name: row.name, category: row.category, current_stock: 0, low_stock_threshold: 5
-            }]);
-            refreshDsBadge();
-            // If Display Stock happens to be open right now, refresh whichever tab is showing.
-            var sheet = document.getElementById('ds-sheet');
-            if (sheet && sheet.style.display === 'block') {
-              if (_dsTab === 'morning') loadMorningCount(); else loadLiveStock();
-            }
+          var trackedItems = await fetchTrackedMenuItems();
+          await ensureDisplayStockRows(trackedItems);
+          refreshDsBadge();
+          var sheet = document.getElementById('ds-sheet');
+          if (sheet && sheet.style.display === 'block') {
+            if (_dsTab === 'morning') loadMorningCount();
+            else if (_dsTab === 'live') loadLiveStock();
+            else if (_dsTab === 'settings') loadSettingsTab();
           }
         } catch (e) {}
       })
@@ -155,6 +154,9 @@ function buildDisplayStockUI() {
     +   '<div id="ds-tab-live" onclick="dsSetTab(\'live\')" style="flex:1;padding:9px;'
     +     'border-radius:10px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;'
     +     'border:1.5px solid rgba(18,10,30,0.1);color:#9a8aaa">📊 Live Stock</div>'
+    +   '<div id="ds-tab-settings" onclick="dsSetTab(\'settings\')" style="flex:1;padding:9px;'
+    +     'border-radius:10px;text-align:center;font-size:11px;font-weight:700;cursor:pointer;'
+    +     'border:1.5px solid rgba(18,10,30,0.1);color:#9a8aaa">⚙️ Settings</div>'
     + '</div>'
     + '<div id="ds-body" style="padding:14px 20px 0"></div>';
   document.body.appendChild(sheet);
@@ -172,35 +174,49 @@ function closeDisplayStock() {
 
 function dsSetTab(tab) {
   _dsTab = tab;
-  document.getElementById('ds-tab-morning').style.background = tab === 'morning' ? '#120a1e' : 'transparent';
-  document.getElementById('ds-tab-morning').style.color      = tab === 'morning' ? '#fff' : '#9a8aaa';
-  document.getElementById('ds-tab-morning').style.border     = tab === 'morning' ? 'none' : '1.5px solid rgba(18,10,30,0.1)';
-  document.getElementById('ds-tab-live').style.background    = tab === 'live' ? '#120a1e' : 'transparent';
-  document.getElementById('ds-tab-live').style.color         = tab === 'live' ? '#fff' : '#9a8aaa';
-  document.getElementById('ds-tab-live').style.border        = tab === 'live' ? 'none' : '1.5px solid rgba(18,10,30,0.1)';
+  ['morning', 'live', 'settings'].forEach(function (t) {
+    var el = document.getElementById('ds-tab-' + t);
+    if (!el) return;
+    var on = t === tab;
+    el.style.background = on ? '#120a1e' : 'transparent';
+    el.style.color      = on ? '#fff' : '#9a8aaa';
+    el.style.border     = on ? 'none' : '1.5px solid rgba(18,10,30,0.1)';
+  });
 
   if (tab === 'morning') loadMorningCount();
-  else loadLiveStock();
+  else if (tab === 'live') loadLiveStock();
+  else loadSettingsTab();
 }
 
 // ══════════════════════════════════════════════════════════════
 // Morning Count tab
 // ══════════════════════════════════════════════════════════════
-async function ensureDisplayStockRows() {
+async function fetchTrackedMenuItems() {
+  var res = await db.from('store_menu').select('id, name, category, track_display_stock')
+    .eq('track_display_stock', true).order('category').order('name');
+  return res.data || [];
+}
+
+async function ensureDisplayStockRows(trackedItems) {
   var res = await db.from('display_stock').select('item_name');
-  var existing = {};
-  (res.data || []).forEach(function (r) { existing[r.item_name] = true; });
+  var existingDs = {};
+  (res.data || []).forEach(function (r) { existingDs[r.item_name] = true; });
+
+  var trackedNames = {};
+  trackedItems.forEach(function (item) { trackedNames[item.name] = true; });
 
   var toInsert = [];
-  Object.keys(MENU).forEach(function (cat) {
-    MENU[cat].items.forEach(function (item) {
-      if (!existing[item.name]) {
-        toInsert.push({ item_name: item.name, category: cat, current_stock: 0, low_stock_threshold: 5 });
-      }
-    });
+  trackedItems.forEach(function (item) {
+    if (!existingDs[item.name]) {
+      toInsert.push({ item_name: item.name, category: item.category, current_stock: 0, low_stock_threshold: 5 });
+    }
   });
-  if (toInsert.length) {
-    await db.from('display_stock').insert(toInsert);
+  if (toInsert.length) await db.from('display_stock').insert(toInsert);
+
+  // Clean up rows for items whose tracking flag got turned off
+  var staleNames = Object.keys(existingDs).filter(function (n) { return !trackedNames[n]; });
+  if (staleNames.length) {
+    await db.from('display_stock').delete().in('item_name', staleNames);
   }
 }
 
@@ -208,8 +224,9 @@ async function loadMorningCount() {
   var body = document.getElementById('ds-body');
   body.innerHTML = '<div style="text-align:center;padding:30px;color:#b090c0;font-size:12px">Loading…</div>';
 
-  await ensureDisplayStockRows();
-  var res = await db.from('display_stock').select('*').order('category').order('item_name');
+  var trackedItems = await fetchTrackedMenuItems();
+  await ensureDisplayStockRows(trackedItems);
+  var res = await db.from('display_stock').select('*');
   var rows = res.data || [];
   _dsItems = {};
   rows.forEach(function (r) { _dsItems[r.item_name] = r; });
@@ -229,13 +246,21 @@ async function loadMorningCount() {
       + 'font-size:12px;color:#8a6a1a;margin-bottom:14px;line-height:1.5">⚠️ Not counted yet today — go through '
       + 'every item below and enter what\'s actually on the counter right now.</div>';
 
+  if (!trackedItems.length) {
+    body.innerHTML = bannerHtml + '<div style="text-align:center;padding:30px 20px;color:#b090c0;font-size:13px">'
+      + 'No items are tracked yet — open the <b>⚙️ Settings</b> tab and turn tracking on for the items you want here.</div>';
+    return;
+  }
+
   var listHtml = '';
-  var categories = Object.keys(MENU).filter(function (c) { return MENU[c].items.length; });
-  categories.forEach(function (cat) {
-    var itemsInCat = MENU[cat].items;
-    if (!itemsInCat.length) return;
+  var byCategory = {};
+  trackedItems.forEach(function (item) {
+    if (!byCategory[item.category]) byCategory[item.category] = [];
+    byCategory[item.category].push(item);
+  });
+  Object.keys(byCategory).forEach(function (cat) {
     listHtml += '<div style="font-size:10px;letter-spacing:2px;color:#c2607a;font-weight:700;margin:14px 0 8px">' + cat.toUpperCase() + '</div>';
-    itemsInCat.forEach(function (item) {
+    byCategory[cat].forEach(function (item) {
       var row = _dsItems[item.name] || { current_stock: 0 };
       listHtml += '<div style="display:flex;align-items:center;justify-content:space-between;background:#fff;'
         + 'border:1.5px solid #e0c8f0;border-radius:12px;padding:10px 14px;margin-bottom:8px">'
@@ -289,7 +314,8 @@ async function loadLiveStock() {
   var body = document.getElementById('ds-body');
   body.innerHTML = '<div style="text-align:center;padding:30px;color:#b090c0;font-size:12px">Loading…</div>';
 
-  await ensureDisplayStockRows();
+  var trackedItems = await fetchTrackedMenuItems();
+  await ensureDisplayStockRows(trackedItems);
   var res = await db.from('display_stock').select('*').order('category').order('item_name');
   var rows = res.data || [];
 
@@ -299,7 +325,7 @@ async function loadLiveStock() {
 
   if (!rows.length) {
     body.innerHTML = '<div style="text-align:center;padding:30px;color:#b090c0;font-size:13px">'
-      + 'No items yet — open Morning Count first to sync your menu.</div>';
+      + 'No items are tracked yet — open the <b>⚙️ Settings</b> tab and turn tracking on for the items you want here.</div>';
     return;
   }
 
@@ -448,4 +474,60 @@ function subscribeProductionRequests() {
       loadProductionRequests();
     })
     .subscribe();
+}
+
+// ══════════════════════════════════════════════════════════════
+// Settings tab — toggle which menu items are tracked
+// ══════════════════════════════════════════════════════════════
+async function loadSettingsTab() {
+  var body = document.getElementById('ds-body');
+  body.innerHTML = '<div style="text-align:center;padding:30px;color:#b090c0;font-size:12px">Loading…</div>';
+
+  var res = await db.from('store_menu').select('id, name, category, track_display_stock')
+    .order('category').order('name');
+  var items = res.data || [];
+
+  if (!items.length) {
+    body.innerHTML = '<div style="text-align:center;padding:30px 20px;color:#b090c0;font-size:13px">No menu items found.</div>';
+    return;
+  }
+
+  var byCategory = {};
+  items.forEach(function (item) {
+    if (!byCategory[item.category]) byCategory[item.category] = [];
+    byCategory[item.category].push(item);
+  });
+
+  var html = '<div style="font-size:11px;color:#9a8aaa;line-height:1.5;margin-bottom:14px">'
+    + 'Turn tracking on for any item you want counted in Display Stock — off for anything that '
+    + 'shouldn\'t show up there (drinks, etc). Changes take effect instantly.</div>';
+
+  Object.keys(byCategory).forEach(function (cat) {
+    html += '<div style="font-size:10px;letter-spacing:2px;color:#c2607a;font-weight:700;margin:14px 0 8px">' + cat.toUpperCase() + '</div>';
+    byCategory[cat].forEach(function (item) {
+      var on = !!item.track_display_stock;
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;background:#fff;'
+        + 'border:1.5px solid #e0c8f0;border-radius:12px;padding:10px 14px;margin-bottom:8px">'
+        + '<div style="font-size:13px;font-weight:600;color:#1a0820;flex:1">' + item.name + '</div>'
+        + '<div onclick="toggleTracking(\'' + item.id + '\',' + on + ')" style="width:44px;height:26px;'
+        + 'border-radius:13px;background:' + (on ? '#6e0977' : '#ccc') + ';cursor:pointer;position:relative;'
+        + 'transition:background .2s;flex-shrink:0">'
+        + '<div style="position:absolute;top:3px;' + (on ? 'left:21px' : 'left:3px') + ';width:20px;height:20px;'
+        + 'border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 4px rgba(0,0,0,0.2)"></div>'
+        + '</div></div>';
+    });
+  });
+
+  body.innerHTML = html;
+}
+
+async function toggleTracking(itemId, current) {
+  try {
+    await db.from('store_menu').update({ track_display_stock: !current }).eq('id', itemId);
+    // The realtime listener (subscribeNewMenuItems) will pick this up and
+    // re-sync display_stock automatically — just refresh this tab's view.
+    loadSettingsTab();
+  } catch (e) {
+    showStoreToast('Error: ' + e.message);
+  }
 }

@@ -249,3 +249,100 @@ async function autoFillPhone() {
     console.log('autoFillPhone error:', e.message);
   }
 }
+
+// ── Override: aoSubmit() — identical to store-patch.js's version, minus
+// the kitchenLoad() calls in both branches. kitchenLoad() tears down and
+// rebuilds the Kitchen page's realtime subscription every time it runs,
+// which can cause OTHER orders arriving during that reconnect window to
+// be silently missed until someone manually refreshes. The realtime
+// subscription already picks up every order live without this trigger.
+async function aoSubmit() {
+  var custName  = (document.getElementById('ao-cust-name')  || {}).value || '';
+  var custPhone = (document.getElementById('ao-cust-phone') || {}).value || '';
+  var notes     = (document.getElementById('ao-notes')      || {}).value || '';
+
+  if (_aoItems.length === 0) { showStoreToast('Add at least one item'); return; }
+
+  var btn = document.getElementById('ao-submit-btn');
+
+  // ── MODE A: Add items to existing active order ───────────────
+  if (_aoExistingOrder) {
+    if (btn) { btn.disabled = true; btn.textContent = 'Adding items…'; }
+    try {
+      var rawExisting  = _aoExistingOrder.items;
+      var existingItems = Array.isArray(rawExisting)
+        ? rawExisting
+        : JSON.parse(rawExisting || '[]');
+
+      var mergedItems = existingItems.slice();
+      _aoItems.forEach(function (ni) {
+        var found = mergedItems.find(function (e) { return e.name === ni.name; });
+        if (found) { found.qty += ni.qty; }
+        else { mergedItems.push({ name: ni.name, qty: ni.qty, price: ni.price }); }
+      });
+
+      var newTotal = mergedItems.reduce(function (s, i) { return s + (i.price * i.qty); }, 0);
+
+      var upd = await db.from('store_orders')
+        .update({ items: JSON.stringify(mergedItems), total: newTotal })
+        .eq('id', _aoExistingOrder.id);
+
+      if (upd.error) throw upd.error;
+
+      showStoreToast('✅ Items added to ' + _aoExistingOrder.token);
+      closeAdminOrder();
+    } catch (e) {
+      showStoreToast('Error: ' + e.message);
+      if (btn) { btn.disabled = false; aoUpdateSubmitLabel(); }
+    }
+    return;
+  }
+
+  // ── MODE B: New order ────────────────────────────────────────
+  if (!custName.trim()) { showStoreToast('Enter customer name'); return; }
+
+  var total = aoCalcTotal();
+  var phone = custPhone.trim()
+    ? '+91' + custPhone.replace(/\D/g, '').slice(-10)
+    : 'Walk-in';
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Placing order…'; }
+
+  try {
+    var token  = await getToken();
+    var custId = null;
+    if (custPhone.trim().length === 10) {
+      try {
+        var lk = await db.from('customers')
+          .select('id')
+          .eq('phone', '+91' + custPhone.replace(/\D/g, '').slice(-10))
+          .maybeSingle();
+        if (lk.data) custId = lk.data.id;
+      } catch (e) {}
+    }
+
+    var ins = await db.from('store_orders').insert([{
+      token:           token,
+      customer_id:     custId,
+      customer_name:   custName.trim(),
+      customer_phone:  phone,
+      items:           JSON.stringify(_aoItems.map(function (i) {
+                         return { name: i.name, qty: i.qty, price: i.price };
+                       })),
+      total:           total,
+      payment_method:  _aoPayMethod,
+      payment_status:  _aoPayMethod === 'free' ? 'complimentary' : 'paid',
+      status:          'pending',
+      notes:           notes.trim() || null,
+      placed_by_admin: true
+    }]).select('id, token').single();
+
+    if (ins.error) throw ins.error;
+
+    showStoreToast('✅ Order ' + token + ' placed for ' + custName.trim());
+    closeAdminOrder();
+  } catch (e) {
+    showStoreToast('Error: ' + e.message);
+    if (btn) { btn.disabled = false; aoUpdateSubmitLabel(); }
+  }
+}
