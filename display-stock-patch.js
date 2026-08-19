@@ -372,13 +372,26 @@ function injectProductionRequestsIntoKitchen() {
   var kitchenFab = document.getElementById('kitchen-fab');
   if (kitchenFab) kitchenFab.addEventListener('click', loadProductionRequests);
 
-  if (window.location.hash === '#pg-kitchen') loadProductionRequests();
-  subscribeProductionRequests();
+  // `db` (the Supabase client) is created in store.html's own script inside
+  // a window 'load' event, which fires AFTER our DOMContentLoaded handler —
+  // so db is still null the first time we get here. Wait for it before
+  // touching anything that calls db.from() or db.channel().
+  var waited = 0;
+  var wait = setInterval(function () {
+    waited += 200;
+    if (typeof db !== 'undefined' && db) {
+      clearInterval(wait);
+      if (window.location.hash === '#pg-kitchen') loadProductionRequests();
+      subscribeProductionRequests();
+    } else if (waited >= 8000) {
+      clearInterval(wait); // give up after 8s rather than poll forever
+    }
+  }, 200);
 }
 
 async function loadProductionRequests() {
   var list = document.getElementById('prod-requests-list');
-  if (!list) return;
+  if (!list || typeof db === 'undefined' || !db) return;
   var res = await db.from('production_requests').select('*').eq('status', 'pending').order('requested_at', { ascending: false });
   renderProductionRequests(res.data || []);
 }
