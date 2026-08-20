@@ -284,6 +284,47 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   }
 }
 
+/* ── DESKTOP LAYOUT — menu reflows into a card grid on large screens ── */
+@media (min-width: 900px) {
+  .pg-hdr, .sec-lbl {
+    max-width: 1140px;
+    padding-left: 48px;
+    padding-right: 48px;
+  }
+  .pg-hdr-left .title {
+    font-size: 34px;
+  }
+  .tab {
+    padding: 10px 18px;
+    font-size: 12px;
+  }
+  #items-list {
+    max-width: 1140px;
+    margin: 0 auto;
+    padding: 0 48px 120px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .item {
+    border-bottom: none;
+    border-radius: 16px;
+    border: 1px solid rgba(18,10,30,0.07);
+    box-shadow: 0 2px 10px rgba(18,10,30,0.05);
+    padding: 18px;
+    background: #fdf5e3;
+    transition: box-shadow .15s, transform .15s;
+  }
+  .item:hover {
+    box-shadow: 0 6px 20px rgba(18,10,30,0.09);
+    transform: translateY(-2px);
+  }
+  .item.q-coffee { background: #fff8e6; }
+  .item.q-tea { background: #f0faed; }
+  .item.q-desserts { background: #fdf0ff; }
+  #cart-bar { max-width: 560px; }
+}
+
 </style>
 </head>
 <body>
