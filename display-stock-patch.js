@@ -31,9 +31,26 @@ document.addEventListener('DOMContentLoaded', function () {
   injectDisplayStockMenuEntry();
   buildDisplayStockUI();
   injectProductionRequestsIntoKitchen();
-  waitForMenuThenBadge();
-  subscribeNewMenuItems();
+  waitForAdminThenInit();
 });
+
+// Only admins ever use Display Stock — so only admins should pay the cost
+// of its badge query and its two permanent realtime subscriptions. Every
+// regular customer browsing the menu was previously triggering all of
+// this on page load for no reason, which adds up fast under real traffic.
+function waitForAdminThenInit() {
+  var attempts = 0;
+  var poll = setInterval(function () {
+    attempts++;
+    if (typeof isAdmin !== 'undefined' && isAdmin) {
+      clearInterval(poll);
+      waitForMenuThenBadge();
+      subscribeNewMenuItems();
+    } else if (attempts >= 20) {
+      clearInterval(poll); // not an admin session (or check never resolved) — skip entirely
+    }
+  }, 300);
+}
 
 // Listens for ANY change in store_menu directly at the database level —
 // covers brand-new items appearing, AND the track_display_stock flag being
@@ -400,17 +417,18 @@ function injectProductionRequestsIntoKitchen() {
 
   // `db` (the Supabase client) is created in store.html's own script inside
   // a window 'load' event, which fires AFTER our DOMContentLoaded handler —
-  // so db is still null the first time we get here. Wait for it before
-  // touching anything that calls db.from() or db.channel().
+  // so db is still null the first time we get here. Also wait for isAdmin
+  // to resolve — only admins/kitchen staff ever reach this page, so this
+  // avoids setting up a realtime subscription for every regular customer.
   var waited = 0;
   var wait = setInterval(function () {
     waited += 200;
-    if (typeof db !== 'undefined' && db) {
+    if (typeof db !== 'undefined' && db && typeof isAdmin !== 'undefined' && isAdmin) {
       clearInterval(wait);
       if (window.location.hash === '#pg-kitchen') loadProductionRequests();
       subscribeProductionRequests();
     } else if (waited >= 8000) {
-      clearInterval(wait); // give up after 8s rather than poll forever
+      clearInterval(wait); // give up after 8s — not an admin session, or check never resolved
     }
   }, 200);
 }
