@@ -41,6 +41,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Insert as the first item, above "Place Order"
   fabMenu.insertBefore(entry, fabMenu.children[1] || null);
   buildTablesBoardDOM();
+  injectKitchenRefreshButton();
 });
 
 // ── 2. Build the board + item-picker sheet DOM ─────────────────
@@ -546,4 +547,58 @@ async function kBump(id, status) {
 function kCancelOrder(id) {
   if (!confirm('Cancel this order? This cannot be undone.')) return;
   kBump(id, 'cancelled');
+}
+
+// ══════════════════════════════════════════════════════════════
+// Kitchen manual refresh button
+// ══════════════════════════════════════════════════════════════
+// Deliberately does NOT call kitchenLoad() — that also calls
+// subscribeKitchen(), which tears down and rebuilds the realtime
+// connection every time it runs. Doing that on every manual refresh tap
+// would reintroduce the exact "orders sometimes don't show up live"
+// problem fixed elsewhere. This only re-fetches and re-renders, leaving
+// the live subscription untouched.
+function injectKitchenRefreshButton() {
+  var kHdr = document.querySelector('#pg-kitchen .k-hdr');
+  if (!kHdr) return;
+
+  var btn = document.createElement('div');
+  btn.id = 'kitchen-refresh-btn';
+  btn.onclick = kitchenManualRefresh;
+  btn.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:8px 14px;'
+    + 'border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);'
+    + 'color:rgba(245,234,220,.75);font-size:11px;font-weight:700;cursor:pointer;margin-left:8px;'
+    + 'font-family:\'DM Sans\',sans-serif;transition:background .15s';
+  btn.onmouseenter = function () { btn.style.background = 'rgba(255,255,255,.12)'; };
+  btn.onmouseleave = function () { btn.style.background = 'rgba(255,255,255,.06)'; };
+  btn.innerHTML = '<span id="kitchen-refresh-icon" style="display:inline-block">🔄</span> Refresh';
+
+  kHdr.appendChild(btn);
+
+  var style = document.createElement('style');
+  style.textContent = '@keyframes kitchenRefreshSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
+  document.head.appendChild(style);
+}
+
+async function kitchenManualRefresh() {
+  var icon = document.getElementById('kitchen-refresh-icon');
+  if (icon) icon.style.animation = 'kitchenRefreshSpin .6s linear';
+
+  try {
+    var today = new Date().toISOString().slice(0, 10);
+    var res = await db.from('store_orders')
+      .select('*')
+      .gte('created_at', today + 'T00:00:00.000Z')
+      .in('status', ['pending', 'preparing', 'ready'])
+      .order('created_at', { ascending: true });
+
+    if (res.error) throw res.error;
+    renderKitchen(res.data || []);
+    if (typeof loadProductionRequests === 'function') loadProductionRequests();
+    showStoreToast('🔄 Refreshed');
+  } catch (e) {
+    showStoreToast('Refresh error: ' + e.message);
+  } finally {
+    if (icon) setTimeout(function () { icon.style.animation = ''; }, 600);
+  }
 }
