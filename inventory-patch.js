@@ -21,8 +21,24 @@ var _invItems = [];
 document.addEventListener('DOMContentLoaded', function () {
   injectInventoryMenuEntry();
   buildInventoryUI();
-  refreshLowStockBadge();
+  waitForAdminThenRefreshBadge();
 });
+
+// Only admins use Inventory — gate the badge query behind a real admin
+// check so every regular customer isn't triggering an inventory_items
+// query on every single page load for a feature they'll never see.
+function waitForAdminThenRefreshBadge() {
+  var attempts = 0;
+  var poll = setInterval(function () {
+    attempts++;
+    if (typeof isAdmin !== 'undefined' && isAdmin) {
+      clearInterval(poll);
+      refreshLowStockBadge();
+    } else if (attempts >= 20) {
+      clearInterval(poll);
+    }
+  }, 300);
+}
 
 function currentLogName() {
   if (typeof _staffSession !== 'undefined' && _staffSession && _staffSession.name) return _staffSession.name;

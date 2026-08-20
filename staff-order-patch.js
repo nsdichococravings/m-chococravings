@@ -36,8 +36,12 @@ document.addEventListener('DOMContentLoaded', function () {
 // visible and tapped.
 async function checkEmployeeAccess() {
   try {
-    var s = await db.auth.getUser();
-    var user = s.data && s.data.user;
+    // getSession() reads from local storage — no network round-trip.
+    // getUser() always calls out to the Auth server to revalidate the
+    // token, which is unnecessary here and adds latency for EVERY
+    // visitor on EVERY page load, most of whom aren't even logged in.
+    var s = await db.auth.getSession();
+    var user = s.data && s.data.session ? s.data.session.user : null;
     if (!user) return false;
     var res = await db.from('customers').select('is_employee').eq('email', user.email).single();
     return !!(res.data && res.data.is_employee);
