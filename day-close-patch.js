@@ -80,6 +80,7 @@ function openDayClose() {
 function closeDayClose() {
   document.getElementById('dc-overlay').style.display = 'none';
   document.getElementById('dc-sheet').style.display   = 'none';
+  if (typeof openReportsHub === 'function') openReportsHub();
 }
 
 async function loadDayClose() {
