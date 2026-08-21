@@ -29,6 +29,7 @@ var REPORT_PERIODS = {
 };
 var _srPeriod = 'daily';
 var _srCharts = {};
+var _srCurrentLabel = 'Daily'; // used by PDF export — works for both preset and custom periods
 
 document.addEventListener('DOMContentLoaded', function () {
   buildReportsUI();
@@ -75,6 +76,17 @@ function buildReportsUI() {
     +     'border:none;cursor:pointer;display:flex;align-items:center;gap:6px">📥 Download PDF</button>'
     + '</div>'
     + '<div style="padding:16px 20px 0;display:flex;gap:8px;flex-wrap:wrap" id="sr-tabs"></div>'
+    + '<div id="sr-custom-range" style="display:none;padding:14px 20px 0;align-items:center;'
+    +   'gap:10px;flex-wrap:wrap">'
+    +   '<input type="date" id="sr-custom-start" style="padding:9px 12px;border-radius:10px;'
+    +     'border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:#fff;font-family:inherit;font-size:12px">'
+    +   '<span style="color:rgba(255,255,255,.4);font-size:12px">to</span>'
+    +   '<input type="date" id="sr-custom-end" style="padding:9px 12px;border-radius:10px;'
+    +     'border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:#fff;font-family:inherit;font-size:12px">'
+    +   '<button onclick="srApplyCustomRange()" style="padding:9px 18px;border-radius:10px;'
+    +     'background:linear-gradient(135deg,#6e0977,#9c0ca1);color:#fff;font-size:12px;font-weight:700;'
+    +     'border:none;cursor:pointer">Apply</button>'
+    + '</div>'
     + '<div id="sr-report-content" style="padding:20px;max-width:1100px;margin:0 auto"></div>';
   document.body.appendChild(page);
 
@@ -88,6 +100,19 @@ function buildReportsUI() {
     t.textContent = REPORT_PERIODS[key].label;
     tabsEl.appendChild(t);
   });
+  // "Custom" tab is separate from the REPORT_PERIODS lookup since its
+  // range comes from the date pickers instead of a fixed day count.
+  var customTab = document.createElement('div');
+  customTab.id = 'sr-tab-custom';
+  customTab.onclick = function () { srSetPeriod('custom'); };
+  customTab.style.cssText = 'padding:9px 18px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;'
+    + 'background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.08)';
+  customTab.textContent = '📅 Custom';
+  tabsEl.appendChild(customTab);
+
+  var today = new Date().toISOString().slice(0, 10);
+  document.getElementById('sr-custom-end').value = today;
+  document.getElementById('sr-custom-start').value = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
 }
 
 function openReports() {
@@ -96,17 +121,42 @@ function openReports() {
 }
 function closeReports() {
   document.getElementById('sr-page').style.display = 'none';
+  // Return to the Reports Hub rather than closing everything — matches
+  // how Kitchen's navigation keeps you inside a section instead of
+  // dropping you all the way back out every time.
+  if (typeof openReportsHub === 'function') openReportsHub();
 }
 
 function srSetPeriod(key) {
   _srPeriod = key;
-  Object.keys(REPORT_PERIODS).forEach(function (k) {
+  var allKeys = Object.keys(REPORT_PERIODS).concat(['custom']);
+  allKeys.forEach(function (k) {
     var t = document.getElementById('sr-tab-' + k);
     if (!t) return;
     t.style.background = k === key ? '#6e0977' : 'rgba(255,255,255,.05)';
     t.style.color = k === key ? '#fff' : 'rgba(255,255,255,.5)';
   });
-  loadReport(key);
+
+  var rangeBar = document.getElementById('sr-custom-range');
+  if (key === 'custom') {
+    rangeBar.style.display = 'flex';
+    srApplyCustomRange(); // load immediately with the default 7-day range
+  } else {
+    rangeBar.style.display = 'none';
+    loadReport(key);
+  }
+}
+
+function srApplyCustomRange() {
+  var startStr = document.getElementById('sr-custom-start').value;
+  var endStr = document.getElementById('sr-custom-end').value;
+  if (!startStr || !endStr) { showStoreToast('Pick both a start and end date'); return; }
+
+  var start = new Date(startStr + 'T00:00:00.000Z');
+  var end = new Date(endStr + 'T23:59:59.999Z');
+  if (start > end) { showStoreToast('Start date must be before end date'); return; }
+
+  loadCustomReport(start, end);
 }
 
 async function loadReport(periodKey) {
@@ -133,7 +183,43 @@ async function loadReport(periodKey) {
   var current = curRes.data || [];
   var previous = prevRes.data || [];
 
+  _srCurrentLabel = period.label;
   renderReport(period, periodKey, current, previous);
+}
+
+// Custom date range — auto-picks a sensible bucket size based on how
+// long the range is, so a 5-day custom range doesn't render as one
+// giant monthly bar, and a 400-day range doesn't render as 400 daily bars.
+async function loadCustomReport(start, end) {
+  var content = document.getElementById('sr-report-content');
+  content.innerHTML = '<div style="text-align:center;padding:60px;color:rgba(255,255,255,.4);font-size:13px">Loading report…</div>';
+
+  await ensureReportLibs();
+
+  var rangeDays = Math.max(1, Math.round((end - start) / 86400000));
+  var bucket = rangeDays <= 2 ? 'hour' : (rangeDays <= 60 ? 'day' : (rangeDays <= 180 ? 'week' : 'month'));
+  var prevStart = new Date(start.getTime() - (end - start));
+
+  var curRes = await db.from('store_orders')
+    .select('total, created_at, payment_method, payment_status, items')
+    .gte('created_at', start.toISOString())
+    .lte('created_at', end.toISOString())
+    .not('status', 'eq', 'cancelled');
+  var prevRes = await db.from('store_orders')
+    .select('total')
+    .gte('created_at', prevStart.toISOString())
+    .lt('created_at', start.toISOString())
+    .not('status', 'eq', 'cancelled');
+
+  var current = curRes.data || [];
+  var previous = prevRes.data || [];
+
+  var startLbl = start.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  var endLbl = end.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  var customPeriod = { label: startLbl + ' – ' + endLbl, bucket: bucket };
+  _srCurrentLabel = customPeriod.label;
+
+  renderReport(customPeriod, 'custom', current, previous);
 }
 
 function bucketLabel(date, bucketType) {
@@ -194,11 +280,12 @@ function renderReport(period, periodKey, orders, prevOrders) {
   });
 
   var content = document.getElementById('sr-report-content');
+  var compareLabel = periodKey === 'custom' ? 'previous period' : ('previous ' + period.label.toLowerCase().replace('ly', ''));
   var changeHtml = revenueChange === null
     ? '<span style="color:rgba(255,255,255,.3)">No prior data</span>'
     : (revenueChange >= 0
-        ? '<span style="color:#4ade80">▲ ' + revenueChange.toFixed(1) + '% vs previous ' + period.label.toLowerCase().replace('ly', '') + '</span>'
-        : '<span style="color:#f87171">▼ ' + Math.abs(revenueChange).toFixed(1) + '% vs previous ' + period.label.toLowerCase().replace('ly', '') + '</span>');
+        ? '<span style="color:#4ade80">▲ ' + revenueChange.toFixed(1) + '% vs ' + compareLabel + '</span>'
+        : '<span style="color:#f87171">▼ ' + Math.abs(revenueChange).toFixed(1) + '% vs ' + compareLabel + '</span>');
 
   content.innerHTML =
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:20px">'
@@ -296,7 +383,7 @@ async function downloadReportPdf() {
     pdf.rect(0, 0, pageWidth, pageHeight, 'F');
     pdf.setTextColor(255, 255, 255);
     pdf.setFontSize(16);
-    pdf.text('ChocoCravings — ' + REPORT_PERIODS[_srPeriod].label + ' Sales Report', 20, 30);
+    pdf.text('ChocoCravings — ' + _srCurrentLabel + ' Sales Report', 20, 30);
     pdf.setFontSize(9);
     pdf.setTextColor(200, 180, 220);
     pdf.text(new Date().toLocaleString('en-IN'), 20, 44);
