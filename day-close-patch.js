@@ -117,6 +117,12 @@ async function loadDayClose() {
   var existingRes = await db.from('day_close_records').select('*').eq('close_date', today).maybeSingle();
   _dcRecord = existingRes.data || null;
 
+  // Uses the shared getExpensesTotal() helper from daily-expenses-patch.js
+  // if it's loaded — falls back to 0 gracefully if that patch isn't
+  // present, so Day Close never breaks without it.
+  var todayExpenses = typeof getExpensesTotal === 'function' ? await getExpensesTotal(today, today) : 0;
+  var netProfit = totalRevenue - todayExpenses;
+
   var statusBadge = _dcRecord && _dcRecord.closed_at
     ? '<div style="display:inline-flex;align-items:center;gap:6px;background:rgba(34,197,94,0.1);'
       + 'border:1px solid rgba(34,197,94,0.3);border-radius:20px;padding:5px 12px;font-size:11px;'
@@ -147,7 +153,7 @@ async function loadDayClose() {
   var savedNotes = _dcRecord && _dcRecord.notes ? _dcRecord.notes : '';
 
   body.innerHTML = statusBadge
-    + '<div style="display:flex;gap:10px;margin-bottom:16px">'
+    + '<div style="display:flex;gap:10px;margin-bottom:10px">'
     + '<div style="flex:1;background:#f5eeff;border-radius:14px;padding:14px;text-align:center">'
     + '<div style="font-size:10px;font-weight:700;color:#9c0ca1;letter-spacing:1px">TOTAL REVENUE</div>'
     + '<div style="font-family:Fraunces,Georgia,serif;font-size:24px;font-weight:900;color:#6e0977;margin-top:4px">₹' + totalRevenue.toFixed(2) + '</div>'
@@ -155,6 +161,17 @@ async function loadDayClose() {
     + '<div style="flex:1;background:#f5eeff;border-radius:14px;padding:14px;text-align:center">'
     + '<div style="font-size:10px;font-weight:700;color:#9c0ca1;letter-spacing:1px">TOTAL ORDERS</div>'
     + '<div style="font-family:Fraunces,Georgia,serif;font-size:24px;font-weight:900;color:#6e0977;margin-top:4px">' + totalOrders + '</div>'
+    + '</div></div>'
+
+    + '<div style="display:flex;gap:10px;margin-bottom:16px">'
+    + '<div style="flex:1;background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.2);border-radius:14px;padding:14px;text-align:center">'
+    + '<div style="font-size:10px;font-weight:700;color:#dc2626;letter-spacing:1px">TODAY\'S EXPENSES</div>'
+    + '<div style="font-family:Fraunces,Georgia,serif;font-size:22px;font-weight:900;color:#dc2626;margin-top:4px">₹' + todayExpenses.toFixed(2) + '</div>'
+    + '</div>'
+    + '<div style="flex:1;background:' + (netProfit >= 0 ? 'rgba(34,197,94,0.08)' : 'rgba(220,38,38,0.08)') + ';'
+    + 'border:1px solid ' + (netProfit >= 0 ? 'rgba(34,197,94,0.25)' : 'rgba(220,38,38,0.25)') + ';border-radius:14px;padding:14px;text-align:center">'
+    + '<div style="font-size:10px;font-weight:700;color:' + (netProfit >= 0 ? '#15803d' : '#dc2626') + ';letter-spacing:1px">NET PROFIT</div>'
+    + '<div style="font-family:Fraunces,Georgia,serif;font-size:22px;font-weight:900;color:' + (netProfit >= 0 ? '#15803d' : '#dc2626') + ';margin-top:4px">₹' + netProfit.toFixed(2) + '</div>'
     + '</div></div>'
 
     + '<div style="font-size:10px;letter-spacing:2px;color:#c2607a;font-weight:700;margin-bottom:6px">PAYMENT BREAKDOWN</div>'
