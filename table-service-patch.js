@@ -504,7 +504,7 @@ function renderKitchen(orders) {
       + '<div class="k-actions">'
       + '<button class="k-btn k-start" onclick="kBump(\'' + o.id + '\',\'preparing\')">' + startTxt + '</button>'
       + '<button class="k-btn k-ready" onclick="kBump(\'' + o.id + '\',\'ready\')">' + readyTxt + '</button>'
-      + '<button class="k-btn k-done"  onclick="kBump(\'' + o.id + '\',\'collected\')">Collected ✓</button>'
+      + '<button class="k-btn k-done"  onclick="kCollectOrder(\'' + o.id + '\',\'' + (o.payment_status || 'pending') + '\')">Collected ✓</button>'
       + '<button class="k-btn" onclick="printStoreInvoice(\'' + o.id + '\')" style="background:rgba(240,201,107,0.1);'
       + 'border:1px solid rgba(240,201,107,0.3);color:#b87410">🖨️ Print</button>'
       + '<button class="k-btn" onclick="kCancelOrder(\'' + o.id + '\')" style="background:rgba(239,68,68,0.1);'
@@ -600,5 +600,76 @@ async function kitchenManualRefresh() {
     showStoreToast('Refresh error: ' + e.message);
   } finally {
     if (icon) setTimeout(function () { icon.style.animation = ''; }, 600);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// Collected button — payment-aware
+// ══════════════════════════════════════════════════════════════
+// If the order was already paid (self-checkout, advance UPI, etc.),
+// "Collected" behaves exactly as before — one tap, done. If it's still
+// unpaid (typically cash COD), it asks HOW it was just paid before
+// marking it collected, so payment_status/payment_method get resolved
+// at the same time — otherwise cash orders would sit forever in Day
+// Close's "Pending COD" bucket even after being paid and picked up.
+function kCollectOrder(id, paymentStatus) {
+  if (paymentStatus === 'paid' || paymentStatus === 'complimentary') {
+    kBump(id, 'collected');
+    return;
+  }
+  openCollectPaymentPicker(id);
+}
+
+function openCollectPaymentPicker(id) {
+  var existing = document.getElementById('kc-picker-overlay');
+  if (existing) existing.remove();
+
+  var overlay = document.createElement('div');
+  overlay.id = 'kc-picker-overlay';
+  overlay.onclick = function (e) { if (e.target === overlay) closeCollectPaymentPicker(); };
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:4200;'
+    + 'display:flex;align-items:center;justify-content:center;padding:20px';
+
+  var box = document.createElement('div');
+  box.style.cssText = 'background:#fff;border-radius:20px;padding:22px;max-width:340px;width:100%;'
+    + 'font-family:\'DM Sans\',sans-serif';
+  box.innerHTML =
+      '<div style="font-size:15px;font-weight:700;color:#1a0820;margin-bottom:4px">How was this paid?</div>'
+    + '<div style="font-size:12px;color:#9a8aaa;margin-bottom:16px">This order hasn\'t been marked paid yet — pick how the customer just paid.</div>'
+    + '<div style="display:flex;flex-direction:column;gap:8px">'
+    +   '<button onclick="collectWithPayment(\'' + id + '\',\'cash\')" style="padding:14px;border-radius:12px;'
+    +     'background:rgba(184,116,16,0.1);border:1.5px solid rgba(184,116,16,0.3);color:#b87410;'
+    +     'font-size:14px;font-weight:700;cursor:pointer">💵 Cash</button>'
+    +   '<button onclick="collectWithPayment(\'' + id + '\',\'upi\')" style="padding:14px;border-radius:12px;'
+    +     'background:rgba(110,9,119,0.1);border:1.5px solid rgba(110,9,119,0.3);color:#6e0977;'
+    +     'font-size:14px;font-weight:700;cursor:pointer">📱 UPI</button>'
+    +   '<button onclick="collectWithPayment(\'' + id + '\',\'upi_qr\')" style="padding:14px;border-radius:12px;'
+    +     'background:rgba(34,197,94,0.1);border:1.5px solid rgba(34,197,94,0.3);color:#15803d;'
+    +     'font-size:14px;font-weight:700;cursor:pointer">📲 Scan QR</button>'
+    +   '<button onclick="closeCollectPaymentPicker()" style="padding:11px;border-radius:12px;'
+    +     'background:transparent;border:none;color:#9a8aaa;font-size:12px;cursor:pointer;margin-top:4px">Cancel</button>'
+    + '</div>';
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+}
+
+function closeCollectPaymentPicker() {
+  var el = document.getElementById('kc-picker-overlay');
+  if (el) el.remove();
+}
+
+async function collectWithPayment(id, method) {
+  var labels = { cash: '💵 Cash', upi: '📱 UPI', upi_qr: '📲 Scan QR' };
+  try {
+    await db.from('store_orders').update({
+      status: 'collected',
+      payment_status: 'paid',
+      payment_method: method
+    }).eq('id', id);
+    closeCollectPaymentPicker();
+    showStoreToast('✅ Collected · ' + (labels[method] || method));
+  } catch (e) {
+    showStoreToast('Error: ' + e.message);
   }
 }
