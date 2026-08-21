@@ -146,17 +146,26 @@ function closeTablesBoard() {
 async function loadTablesStatus() {
   var today = new Date().toISOString().slice(0, 10);
   var res = await db.from('store_orders')
-    .select('id, table_code, items, total, status, staff_name')
+    .select('id, table_code, items, total, status, staff_name, created_at')
     .not('table_code', 'is', null)
     .not('status', 'in', '("collected","cancelled")')
     .gte('created_at', today + 'T00:00:00.000Z');
 
   var map = {};
   (res.data || []).forEach(function (o) { map[o.table_code] = o; });
-  renderTablesGrid(map);
+
+  // Rank occupied tables by whose order arrived first — helps staff serve
+  // in first-come-first-served order instead of just whichever looks busy.
+  var rankMap = {};
+  Object.keys(map)
+    .sort(function (a, b) { return new Date(map[a].created_at) - new Date(map[b].created_at); })
+    .forEach(function (code, idx) { rankMap[code] = idx + 1; });
+
+  renderTablesGrid(map, rankMap);
 }
 
-function renderTablesGrid(map) {
+function renderTablesGrid(map, rankMap) {
+  rankMap = rankMap || {};
   var grid = document.getElementById('ts-grid');
   if (!grid) return;
   grid.innerHTML = TABLE_CODES.map(function (code) {
@@ -165,11 +174,25 @@ function renderTablesGrid(map) {
       var rawItems = o.items;
       var items = Array.isArray(rawItems) ? rawItems : JSON.parse(rawItems || '[]');
       var count = items.reduce(function (s, i) { return s + (i.qty || 1); }, 0);
-      var statusLbl = { pending: 'Pending', preparing: 'Preparing', ready: 'Ready!' }[o.status] || o.status;
+      var statusLbl = { pending: 'Pending', preparing: 'Preparing', ready: 'Ready!', delivered: 'Waiting for Bill' }[o.status] || o.status;
       var staffBadge = o.staff_name ? ('<div style="font-size:10px;color:#8a6a3a;margin-top:2px">👤 ' + o.staff_name + '</div>') : '';
-      return '<div onclick="openTableOrderSheet(\'' + code + '\')" style="background:rgba(184,116,16,0.09);'
+
+      // Arrival-order badge — 1st (longest waiting) is most urgent, colors
+      // step down through the queue so staff can see priority at a glance.
+      var rank = rankMap[code];
+      var rankColors = ['#dc2626', '#f97316', '#eab308', '#8b5cf6', '#6b7280'];
+      var rankColor = rankColors[Math.min((rank || 1) - 1, rankColors.length - 1)];
+      var rankBadge = rank
+        ? '<div style="position:absolute;top:-8px;right:-8px;width:26px;height:26px;border-radius:50%;'
+          + 'background:' + rankColor + ';color:#fff;font-size:12px;font-weight:900;display:flex;'
+          + 'align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.25);'
+          + 'font-family:Fraunces,Georgia,serif;border:2px solid #fff">' + rank + '</div>'
+        : '';
+
+      return '<div onclick="openTableOrderSheet(\'' + code + '\')" style="position:relative;background:rgba(184,116,16,0.09);'
         + 'border:1.5px solid rgba(184,116,16,0.35);border-radius:14px;padding:14px;cursor:pointer;'
         + 'text-align:center">'
+        + rankBadge
         + '<div style="font-family:Fraunces,Georgia,serif;font-size:22px;font-weight:900;color:#b87410">' + code + '</div>'
         + '<div style="font-size:10px;font-weight:700;color:#b87410;letter-spacing:1px;margin-top:2px">' + statusLbl.toUpperCase() + '</div>'
         + '<div style="font-size:12px;color:#8a6a3a;margin-top:6px">' + count + ' items · ₹' + o.total + '</div>'
@@ -217,7 +240,11 @@ function openTableOrderSheet(code) {
         _tsExistingOrder = res.data;
         var rawItems = res.data.items;
         _tsItems = (Array.isArray(rawItems) ? rawItems : JSON.parse(rawItems || '[]')).map(function (i) {
-          return { name: i.name, price: i.price, qty: i.qty };
+          // _origQty and delivered are internal tracking fields, stripped
+          // before saving — see tsSubmit(). They let us detect when staff
+          // add MORE of an already-delivered item, so its checkbox
+          // correctly resets instead of staying falsely checked.
+          return { name: i.name, price: i.price, qty: i.qty, delivered: !!i.delivered, _origQty: i.qty };
         });
         sendBtn.textContent = '➕ Add Items';
         billBtn.style.display = 'block';
@@ -353,14 +380,29 @@ async function tsSubmit() {
   var btn = document.getElementById('ts-send-btn');
   var total = tsCalcTotal();
 
+  // Resolve the final delivered state per item: brand-new items start
+  // undelivered; existing items keep their delivered state UNLESS more
+  // quantity was just added, in which case they reset to undelivered
+  // since there's now an unfulfilled unit mixed into that line.
+  var finalItems = _tsItems.map(function (item) {
+    var isNew = item._origQty === undefined;
+    var qtyIncreased = !isNew && item.qty > item._origQty;
+    return {
+      name: item.name,
+      price: item.price,
+      qty: item.qty,
+      delivered: (isNew || qtyIncreased) ? false : !!item.delivered
+    };
+  });
+
   try {
     if (_tsExistingOrder) {
       btn.disabled = true; btn.textContent = 'Sending…';
-      var updatePayload = { items: JSON.stringify(_tsItems), total: total };
+      var updatePayload = { items: JSON.stringify(finalItems), total: total };
       // If kitchen had already marked this ticket "ready", adding new items
       // means there's unprepared food again — bump it back into the active
       // queue so it doesn't get missed sitting under a stale "Ready" badge.
-      var wasReady = _tsExistingOrder.status === 'ready';
+      var wasReady = _tsExistingOrder.status === 'ready' || _tsExistingOrder.status === 'delivered';
       if (wasReady) updatePayload.status = 'preparing';
 
       var upd = await db.from('store_orders')
@@ -382,7 +424,7 @@ async function tsSubmit() {
         customer_name:   'Table ' + _tsTableCode,
         customer_phone:  null,
         staff_name:      placedBy,
-        items:           JSON.stringify(_tsItems),
+        items:           JSON.stringify(finalItems),
         total:           total,
         payment_method:  'cash',
         payment_status:  'pending',
@@ -481,13 +523,30 @@ function renderKitchen(orders) {
       + 'border-radius:20px;background:' + pay.bg + ';color:' + pay.color + ';border:1px solid ' + pay.border
       + ';margin-left:8px;vertical-align:middle">' + pay.label + '</span>';
 
-    // Items — one per line, clearer contrast than the old dense dot-joined string
-    var itemsHtml = (itemsArr || []).map(function (i) {
-      return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">'
-        + '<span style="font-size:13px;color:#f5eadc;font-weight:500">' + i.name + '</span>'
-        + '<span style="font-size:12px;color:#f5c430;font-weight:700;flex-shrink:0;margin-left:10px">×' + i.qty + '</span>'
-        + '</div>';
-    }).join('');
+    // Items — for table orders, each one is an individually tappable
+    // checkbox (per-item delivery tracking); walk-in/token orders keep
+    // the plain list since they're collected as a whole batch anyway.
+    var itemsHtml = o.table_code
+      ? (itemsArr || []).map(function (i, idx) {
+          var delivered = !!i.delivered;
+          return '<div onclick="kToggleItemDelivered(\'' + o.id + '\',' + idx + ')" style="display:flex;'
+            + 'align-items:center;gap:9px;padding:5px 0;cursor:pointer">'
+            + '<span style="width:18px;height:18px;border-radius:5px;flex-shrink:0;display:flex;'
+            + 'align-items:center;justify-content:center;font-size:11px;color:#0c0810;'
+            + 'border:1.5px solid ' + (delivered ? '#4ade80' : 'rgba(255,255,255,.25)') + ';'
+            + 'background:' + (delivered ? '#4ade80' : 'transparent') + '">' + (delivered ? '✓' : '') + '</span>'
+            + '<span style="flex:1;font-size:13px;font-weight:500;'
+            + 'color:' + (delivered ? 'rgba(245,234,220,.4)' : '#f5eadc') + ';'
+            + 'text-decoration:' + (delivered ? 'line-through' : 'none') + '">' + i.name + '</span>'
+            + '<span style="font-size:12px;color:#f5c430;font-weight:700;flex-shrink:0">×' + i.qty + '</span>'
+            + '</div>';
+        }).join('')
+      : (itemsArr || []).map(function (i) {
+          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">'
+            + '<span style="font-size:13px;color:#f5eadc;font-weight:500">' + i.name + '</span>'
+            + '<span style="font-size:12px;color:#f5c430;font-weight:700;flex-shrink:0;margin-left:10px">×' + i.qty + '</span>'
+            + '</div>';
+        }).join('');
 
     return '<div class="k-ticket" id="kt-' + o.id + '" data-s="' + o.status + '">'
       + '<div class="k-top"><div class="k-tok">' + headline + '</div>'
@@ -504,7 +563,9 @@ function renderKitchen(orders) {
       + '<div class="k-actions">'
       + '<button class="k-btn k-start" onclick="kBump(\'' + o.id + '\',\'preparing\')">' + startTxt + '</button>'
       + '<button class="k-btn k-ready" onclick="kBump(\'' + o.id + '\',\'ready\')">' + readyTxt + '</button>'
-      + '<button class="k-btn k-done"  onclick="kCollectOrder(\'' + o.id + '\',\'' + (o.payment_status || 'pending') + '\')">Collected ✓</button>'
+      + (o.table_code
+          ? '<button class="k-btn k-done" onclick="kMarkDelivered(\'' + o.id + '\')">🍽️ Mark All Delivered</button>'
+          : '<button class="k-btn k-done" onclick="kCollectOrder(\'' + o.id + '\',\'' + (o.payment_status || 'pending') + '\')">Collected ✓</button>')
       + '<button class="k-btn" onclick="printStoreInvoice(\'' + o.id + '\')" style="background:rgba(240,201,107,0.1);'
       + 'border:1px solid rgba(240,201,107,0.3);color:#b87410">🖨️ Print</button>'
       + '<button class="k-btn" onclick="kCancelOrder(\'' + o.id + '\')" style="background:rgba(239,68,68,0.1);'
@@ -612,6 +673,54 @@ async function kitchenManualRefresh() {
 // marking it collected, so payment_status/payment_method get resolved
 // at the same time — otherwise cash orders would sit forever in Day
 // Close's "Pending COD" bucket even after being paid and picked up.
+// Shortcut for when nothing needs splitting — marks every item on the
+// order delivered in one tap, same as checking each one individually.
+async function kMarkDelivered(id) {
+  try {
+    var res = await db.from('store_orders').select('items').eq('id', id).single();
+    if (res.error) throw res.error;
+    var items = Array.isArray(res.data.items) ? res.data.items : JSON.parse(res.data.items || '[]');
+    items.forEach(function (i) { i.delivered = true; });
+
+    await db.from('store_orders').update({
+      status: 'delivered',
+      items: JSON.stringify(items)
+    }).eq('id', id);
+
+    showStoreToast('🍽️ Delivered — table now waiting for bill');
+    kitchenManualRefresh();
+  } catch (e) {
+    showStoreToast('Error: ' + e.message);
+  }
+}
+
+// Per-item checkbox toggle. Once every item on the order is checked,
+// the order automatically flips to 'delivered' (Waiting for Bill on the
+// Tables board) — same end state as tapping "Mark All Delivered", just
+// reached one item at a time.
+async function kToggleItemDelivered(orderId, itemIndex) {
+  try {
+    var res = await db.from('store_orders').select('items, status').eq('id', orderId).single();
+    if (res.error) throw res.error;
+    var items = Array.isArray(res.data.items) ? res.data.items : JSON.parse(res.data.items || '[]');
+    if (!items[itemIndex]) return;
+
+    items[itemIndex].delivered = !items[itemIndex].delivered;
+    var allDelivered = items.every(function (i) { return !!i.delivered; });
+
+    var payload = { items: JSON.stringify(items) };
+    if (allDelivered) payload.status = 'delivered';
+    else if (res.data.status === 'delivered') payload.status = 'ready'; // un-checked one after all were done
+
+    await db.from('store_orders').update(payload).eq('id', orderId);
+
+    if (allDelivered) showStoreToast('🍽️ All items delivered — table now waiting for bill');
+    kitchenManualRefresh();
+  } catch (e) {
+    showStoreToast('Error: ' + e.message);
+  }
+}
+
 function kCollectOrder(id, paymentStatus) {
   if (paymentStatus === 'paid' || paymentStatus === 'complimentary') {
     kBump(id, 'collected');
