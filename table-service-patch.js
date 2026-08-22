@@ -105,6 +105,9 @@ function buildTablesBoardDOM() {
     +   '<div id="ts-items-list" style="display:flex;flex-direction:column;gap:8px">'
     +     '<div style="font-size:12px;color:#b090c0;text-align:center;padding:10px">No items yet</div>'
     +   '</div>'
+    +   '<input id="ts-cust-phone" type="tel" inputmode="numeric" maxlength="10" placeholder="📱 Customer phone (optional)" '
+    +     'style="width:100%;padding:12px 14px;border:1.5px solid #e0c8f0;border-radius:12px;font-size:14px;'
+    +     'font-family:\'DM Sans\',sans-serif;outline:none;box-sizing:border-box">'
     +   '<input id="ts-search" type="text" placeholder="🔍 Search items..." oninput="tsFilterItems()" '
     +     'style="width:100%;padding:12px 14px;border:1.5px solid #e0c8f0;border-radius:12px;font-size:14px;'
     +     'font-family:\'DM Sans\',sans-serif;outline:none;box-sizing:border-box">'
@@ -234,13 +237,14 @@ function openTableOrderSheet(code) {
   var undoBtn = document.getElementById('ts-undo-btn');
 
   db.from('store_orders')
-    .select('id, items, total, status, created_at, staff_name')
+    .select('id, items, total, status, created_at, staff_name, customer_phone')
     .eq('table_code', code)
     .not('status', 'in', '("collected","cancelled")')
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()
     .then(function (res) {
+      var phoneInput = document.getElementById('ts-cust-phone');
       if (res.data) {
         _tsExistingOrder = res.data;
         var rawItems = res.data.items;
@@ -254,10 +258,13 @@ function openTableOrderSheet(code) {
         sendBtn.textContent = '➕ Add Items';
         billBtn.style.display = 'block';
         undoBtn.style.display = res.data.status === 'delivered' ? 'block' : 'none';
+        // Strip the +91 prefix for display, since the field only takes 10 digits.
+        phoneInput.value = (res.data.customer_phone || '').replace(/^\+?91/, '');
       } else {
         sendBtn.textContent = '➕ Send to Kitchen';
         billBtn.style.display = 'none';
         undoBtn.style.display = 'none';
+        phoneInput.value = '';
       }
       tsRenderItems();
       tsCalcTotal();
@@ -387,6 +394,9 @@ async function tsSubmit() {
   var btn = document.getElementById('ts-send-btn');
   var total = tsCalcTotal();
 
+  var phoneRaw = (document.getElementById('ts-cust-phone').value || '').replace(/\D/g, '');
+  var phone = phoneRaw.length === 10 ? '+91' + phoneRaw : null;
+
   // Resolve the final delivered state per item: brand-new items start
   // undelivered; existing items keep their delivered state UNLESS more
   // quantity was just added, in which case they reset to undelivered
@@ -406,6 +416,7 @@ async function tsSubmit() {
     if (_tsExistingOrder) {
       btn.disabled = true; btn.textContent = 'Sending…';
       var updatePayload = { items: JSON.stringify(finalItems), total: total };
+      if (phone) updatePayload.customer_phone = phone; // only overwrite if something was actually entered
       // If kitchen had already marked this ticket "ready", adding new items
       // means there's unprepared food again — bump it back into the active
       // queue so it doesn't get missed sitting under a stale "Ready" badge.
@@ -429,7 +440,7 @@ async function tsSubmit() {
         token:           token,
         table_code:      _tsTableCode,
         customer_name:   'Table ' + _tsTableCode,
-        customer_phone:  null,
+        customer_phone:  phone,
         staff_name:      placedBy,
         items:           JSON.stringify(finalItems),
         total:           total,
