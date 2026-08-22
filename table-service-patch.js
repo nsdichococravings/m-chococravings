@@ -125,6 +125,10 @@ function buildTablesBoardDOM() {
     +     'background:rgba(34,197,94,0.1);color:#15803d;font-size:13px;font-weight:700;'
     +     'border:1.5px solid rgba(34,197,94,0.35);border-radius:14px;cursor:pointer;letter-spacing:1px;'
     +     'font-family:\'DM Sans\',sans-serif">💰 Bill &amp; Close Table</button>'
+    +   '<button id="ts-undo-btn" onclick="tsUndoDelivered()" style="display:none;width:100%;padding:13px;'
+    +     'background:rgba(220,38,38,0.08);color:#dc2626;font-size:12px;font-weight:700;'
+    +     'border:1.5px solid rgba(220,38,38,0.25);border-radius:14px;cursor:pointer;letter-spacing:.5px;'
+    +     'font-family:\'DM Sans\',sans-serif;margin-top:8px">↩️ Undo Delivered — back to Kitchen</button>'
     + '</div>';
   document.body.appendChild(tSheet);
 }
@@ -227,6 +231,7 @@ function openTableOrderSheet(code) {
 
   var sendBtn = document.getElementById('ts-send-btn');
   var billBtn = document.getElementById('ts-bill-btn');
+  var undoBtn = document.getElementById('ts-undo-btn');
 
   db.from('store_orders')
     .select('id, items, total, status, created_at, staff_name')
@@ -248,9 +253,11 @@ function openTableOrderSheet(code) {
         });
         sendBtn.textContent = '➕ Add Items';
         billBtn.style.display = 'block';
+        undoBtn.style.display = res.data.status === 'delivered' ? 'block' : 'none';
       } else {
         sendBtn.textContent = '➕ Send to Kitchen';
         billBtn.style.display = 'none';
+        undoBtn.style.display = 'none';
       }
       tsRenderItems();
       tsCalcTotal();
@@ -446,6 +453,31 @@ async function tsSubmit() {
   }
 }
 
+// Undoes a mistaken "Delivered" (whether from the per-item checkboxes or
+// the "Mark All Delivered" shortcut) — reverts the order back to Ready
+// and un-checks every item, so it reappears properly in the Kitchen
+// queue for staff to re-check items as they're actually served.
+async function tsUndoDelivered() {
+  if (!_tsExistingOrder) return;
+  if (!confirm('Undo delivered status for ' + _tsTableCode + '? This puts it back in the kitchen queue as Ready.')) return;
+
+  try {
+    var rawItems = _tsExistingOrder.items;
+    var items = Array.isArray(rawItems) ? rawItems : JSON.parse(rawItems || '[]');
+    items.forEach(function (i) { i.delivered = false; });
+
+    var upd = await db.from('store_orders')
+      .update({ status: 'ready', items: JSON.stringify(items) })
+      .eq('id', _tsExistingOrder.id);
+    if (upd.error) throw upd.error;
+
+    showStoreToast('↩️ ' + _tsTableCode + ' reverted — back in kitchen queue as Ready');
+    closeTableOrderSheet();
+  } catch (e) {
+    showStoreToast('Error: ' + e.message);
+  }
+}
+
 async function tsBillAndClose() {
   if (!_tsExistingOrder) return;
   var total = _tsExistingOrder.total;
@@ -565,6 +597,8 @@ function renderKitchen(orders) {
       + '<button class="k-btn k-ready" onclick="kBump(\'' + o.id + '\',\'ready\')">' + readyTxt + '</button>'
       + (o.table_code
           ? '<button class="k-btn k-done" onclick="kMarkDelivered(\'' + o.id + '\')">🍽️ Mark All Delivered</button>'
+            + '<button class="k-btn" onclick="openTableCollectPicker(\'' + o.id + '\',\'' + o.table_code + '\')" '
+            + 'style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:#15803d">💰 Mark Bill Collected</button>'
           : '<button class="k-btn k-done" onclick="kCollectOrder(\'' + o.id + '\',\'' + (o.payment_status || 'pending') + '\')">Collected ✓</button>')
       + '<button class="k-btn" onclick="printStoreInvoice(\'' + o.id + '\')" style="background:rgba(240,201,107,0.1);'
       + 'border:1px solid rgba(240,201,107,0.3);color:#b87410">🖨️ Print</button>'
@@ -682,12 +716,10 @@ async function kMarkDelivered(id) {
     var items = Array.isArray(res.data.items) ? res.data.items : JSON.parse(res.data.items || '[]');
     items.forEach(function (i) { i.delivered = true; });
 
-    await db.from('store_orders').update({
-      status: 'delivered',
-      items: JSON.stringify(items)
-    }).eq('id', id);
+    // No status change here anymore — see kToggleItemDelivered for why.
+    await db.from('store_orders').update({ items: JSON.stringify(items) }).eq('id', id);
 
-    showStoreToast('🍽️ Delivered — table now waiting for bill');
+    showStoreToast('🍽️ All items checked off');
     kitchenManualRefresh();
   } catch (e) {
     showStoreToast('Error: ' + e.message);
@@ -700,21 +732,18 @@ async function kMarkDelivered(id) {
 // reached one item at a time.
 async function kToggleItemDelivered(orderId, itemIndex) {
   try {
-    var res = await db.from('store_orders').select('items, status').eq('id', orderId).single();
+    var res = await db.from('store_orders').select('items').eq('id', orderId).single();
     if (res.error) throw res.error;
     var items = Array.isArray(res.data.items) ? res.data.items : JSON.parse(res.data.items || '[]');
     if (!items[itemIndex]) return;
 
     items[itemIndex].delivered = !items[itemIndex].delivered;
-    var allDelivered = items.every(function (i) { return !!i.delivered; });
 
-    var payload = { items: JSON.stringify(items) };
-    if (allDelivered) payload.status = 'delivered';
-    else if (res.data.status === 'delivered') payload.status = 'ready'; // un-checked one after all were done
-
-    await db.from('store_orders').update(payload).eq('id', orderId);
-
-    if (allDelivered) showStoreToast('🍽️ All items delivered — table now waiting for bill');
+    // Deliberately does NOT change order status here anymore — checking
+    // items is purely informational tracking now. The table only moves
+    // to "closed" when staff explicitly tap "Mark Bill Collected" below,
+    // even if every item happens to already be checked.
+    await db.from('store_orders').update({ items: JSON.stringify(items) }).eq('id', orderId);
     kitchenManualRefresh();
   } catch (e) {
     showStoreToast('Error: ' + e.message);
@@ -778,6 +807,98 @@ async function collectWithPayment(id, method) {
     }).eq('id', id);
     closeCollectPaymentPicker();
     showStoreToast('✅ Collected · ' + (labels[method] || method));
+  } catch (e) {
+    showStoreToast('Error: ' + e.message);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// Mark Bill Collected — table order closing, direct from Kitchen
+// ══════════════════════════════════════════════════════════════
+// Same end state as tsBillAndClose() on the Tables board (status:
+// 'collected', payment recorded) — just reachable directly from the
+// Kitchen ticket too. Also asks for the customer's phone number to
+// send the bill on WhatsApp (manual — opens WhatsApp with the message
+// ready, staff taps Send themselves, same pattern as your existing
+// invoice feature).
+function openTableCollectPicker(id, tableCode) {
+  var existing = document.getElementById('tc-picker-overlay');
+  if (existing) existing.remove();
+
+  var overlay = document.createElement('div');
+  overlay.id = 'tc-picker-overlay';
+  overlay.onclick = function (e) { if (e.target === overlay) closeTableCollectPicker(); };
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:4300;'
+    + 'display:flex;align-items:center;justify-content:center;padding:20px';
+
+  var box = document.createElement('div');
+  box.style.cssText = 'background:#fff;border-radius:20px;padding:22px;max-width:340px;width:100%;'
+    + 'font-family:\'DM Sans\',sans-serif';
+  box.innerHTML =
+      '<div style="font-size:15px;font-weight:700;color:#1a0820;margin-bottom:4px">How was ' + tableCode + '\'s bill paid?</div>'
+    + '<div style="font-size:12px;color:#9a8aaa;margin-bottom:16px">This closes the table and asks for a phone number to send the bill on WhatsApp.</div>'
+    + '<div style="display:flex;flex-direction:column;gap:8px">'
+    +   '<button onclick="collectTableWithPayment(\'' + id + '\',\'' + tableCode + '\',\'cash\')" style="padding:14px;border-radius:12px;'
+    +     'background:rgba(184,116,16,0.1);border:1.5px solid rgba(184,116,16,0.3);color:#b87410;'
+    +     'font-size:14px;font-weight:700;cursor:pointer">💵 Cash</button>'
+    +   '<button onclick="collectTableWithPayment(\'' + id + '\',\'' + tableCode + '\',\'upi\')" style="padding:14px;border-radius:12px;'
+    +     'background:rgba(110,9,119,0.1);border:1.5px solid rgba(110,9,119,0.3);color:#6e0977;'
+    +     'font-size:14px;font-weight:700;cursor:pointer">📱 UPI</button>'
+    +   '<button onclick="collectTableWithPayment(\'' + id + '\',\'' + tableCode + '\',\'upi_qr\')" style="padding:14px;border-radius:12px;'
+    +     'background:rgba(34,197,94,0.1);border:1.5px solid rgba(34,197,94,0.3);color:#15803d;'
+    +     'font-size:14px;font-weight:700;cursor:pointer">📲 Scan QR</button>'
+    +   '<button onclick="closeTableCollectPicker()" style="padding:11px;border-radius:12px;'
+    +     'background:transparent;border:none;color:#9a8aaa;font-size:12px;cursor:pointer;margin-top:4px">Cancel</button>'
+    + '</div>';
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+}
+
+function closeTableCollectPicker() {
+  var el = document.getElementById('tc-picker-overlay');
+  if (el) el.remove();
+}
+
+async function collectTableWithPayment(id, tableCode, method) {
+  closeTableCollectPicker();
+  var labels = { cash: 'Cash', upi: 'UPI', upi_qr: 'Scan QR' };
+
+  try {
+    var res = await db.from('store_orders').select('items, total, customer_phone').eq('id', id).single();
+    if (res.error) throw res.error;
+    var items = Array.isArray(res.data.items) ? res.data.items : JSON.parse(res.data.items || '[]');
+    var total = res.data.total || 0;
+
+    var phone = prompt(
+      'Customer phone number for WhatsApp bill (leave blank to skip):',
+      res.data.customer_phone || ''
+    );
+
+    await db.from('store_orders').update({
+      status: 'collected',
+      payment_status: 'paid',
+      payment_method: method
+    }).eq('id', id);
+
+    showStoreToast('✅ ' + tableCode + ' bill collected · ' + labels[method]);
+    kitchenManualRefresh();
+
+    if (phone) {
+      var digits = phone.replace(/\D/g, '').slice(-10);
+      if (digits.length === 10) {
+        var lines = items.map(function (i) { return i.name + ' ×' + i.qty + ' — ₹' + (i.price * i.qty); });
+        var message = '🧾 ChocoCravings Bill\n'
+          + 'Table: ' + tableCode + '\n\n'
+          + lines.join('\n') + '\n\n'
+          + 'Total: ₹' + total + '\n'
+          + 'Paid via: ' + labels[method] + '\n\n'
+          + 'Thank you for visiting! 🍫';
+        window.open('https://wa.me/91' + digits + '?text=' + encodeURIComponent(message), '_blank');
+      } else {
+        showStoreToast('Skipped WhatsApp — enter a valid 10-digit number next time');
+      }
+    }
   } catch (e) {
     showStoreToast('Error: ' + e.message);
   }
