@@ -899,12 +899,14 @@ async function collectTableWithPayment(id, tableCode, method) {
       var digits = phone.replace(/\D/g, '').slice(-10);
       if (digits.length === 10) {
         var lines = items.map(function (i) { return i.name + ' ×' + i.qty + ' — ₹' + (i.price * i.qty); });
-        var message = '🧾 ChocoCravings Bill\n'
+        var message = '🧾NSDI Choco Cravings Bill\n'
           + 'Table: ' + tableCode + '\n\n'
           + lines.join('\n') + '\n\n'
           + 'Total: ₹' + total + '\n'
           + 'Paid via: ' + labels[method] + '\n\n'
-          + 'Thank you for visiting! 🍫';
+          + 'Thank you for visiting! 🍫\n'
+          + 'Order again: https://chococravings.netlify.app/chococravings_n.apk'
+          + '\n Insta Page : https://www.instagram.com/nsdi.chococravings';
         window.open('https://wa.me/91' + digits + '?text=' + encodeURIComponent(message), '_blank');
       } else {
         showStoreToast('Skipped WhatsApp — enter a valid 10-digit number next time');
