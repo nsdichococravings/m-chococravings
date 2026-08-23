@@ -125,7 +125,7 @@ input,select{font-family:inherit}
   <div style="padding:16px">
     <div id="event-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px"></div>
     <input class="login-input" id="new-event-name" placeholder="New event name (e.g. Onam Stall — XYZ College)">
-    <button class="login-btn" onclick="createEvent()">➕ Create &amp; Start New Event</button>
+    <button class="login-btn" onclick="createStallEvent()">➕ Create &amp; Start New Event</button>
   </div>
 </div>
 
@@ -249,7 +249,7 @@ async function loadEventList() {
   }).join('');
 }
 
-async function createEvent() {
+async function createStallEvent() {
   var nameInput = document.getElementById('new-event-name');
   var name = nameInput.value.trim();
   if (!name) { showToast('Enter an event name'); return; }
