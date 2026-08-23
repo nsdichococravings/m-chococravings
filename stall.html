@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>NSDI ChocoCravings — Stall</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,400&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Instrument Sans',system-ui,sans-serif;background:#fdf5e3;color:#120a1e}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+input,select{font-family:inherit}
+
+:root{--p:#6e0977;--amber:#b87410;--rose:#c2607a;--ink:#120a1e;--muted:#9a8aaa;--cream:#fdf5e3}
+
+.page{position:fixed;inset:0;overflow-y:auto;display:none}
+.page.show{display:block}
+
+#login-page{display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{background:#fff;border-radius:24px;padding:32px 26px;max-width:380px;width:100%;
+  box-shadow:0 20px 60px rgba(110,9,119,0.15)}
+.login-emoji{font-size:40px;text-align:center;margin-bottom:6px}
+.login-title{font-family:'Fraunces',serif;font-size:24px;font-weight:900;color:var(--p);text-align:center}
+.login-sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:22px}
+.login-input{width:100%;padding:14px 16px;border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);
+  font-size:15px;outline:none;margin-bottom:12px;background:#fff}
+.login-btn{width:100%;padding:15px;background:linear-gradient(135deg,#6e0977,#9c0ca1);color:#fff;
+  font-size:14px;font-weight:700;border-radius:14px;letter-spacing:.5px}
+.login-err{color:#dc2626;font-size:12px;text-align:center;min-height:16px;margin-top:8px}
+
+.topbar{background:#fff;border-bottom:2px solid rgba(110,9,119,0.1);padding:14px 16px;
+  display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
+.brand{display:flex;align-items:center;gap:8px}
+.brand-emoji{font-size:22px}
+.brand-title{font-family:'Fraunces',serif;font-size:17px;font-weight:900;color:var(--p);line-height:1.1}
+.brand-sub{font-size:9px;color:var(--rose);font-weight:700;letter-spacing:1.5px}
+.staff-pill{background:#f5eeff;border-radius:20px;padding:6px 12px;font-size:11px;font-weight:700;color:var(--p)}
+
+.tabbar{display:flex;background:#fff;border-bottom:1px solid rgba(18,10,30,0.06);position:sticky;top:61px;z-index:19}
+.tabbtn{flex:1;padding:13px;text-align:center;font-size:13px;font-weight:700;color:var(--muted);
+  border-bottom:3px solid transparent;position:relative}
+.tabbtn.on{color:var(--p);border-bottom-color:var(--p)}
+.tab-badge{background:#dc2626;color:#fff;font-size:10px;font-weight:700;border-radius:20px;
+  padding:1px 6px;margin-left:5px}
+
+.cats{display:flex;gap:8px;overflow-x:auto;padding:12px 16px;background:#fff}
+.cat{flex-shrink:0;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:700;
+  background:#f5eeff;color:var(--p);white-space:nowrap}
+.cat.on{background:var(--p);color:#fff}
+.item-grid{padding:14px 16px 140px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.item-card{background:#fff;border:1.5px solid rgba(18,10,30,0.06);border-radius:14px;padding:14px;
+  cursor:pointer;transition:transform .1s}
+.item-card:active{transform:scale(.96)}
+.item-card.selected{border-color:var(--amber);background:#fff8e6}
+.item-name{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:4px}
+.item-price{font-family:'Fraunces',serif;font-size:17px;font-weight:900;color:var(--amber)}
+.item-qty-badge{display:none;margin-top:6px;background:var(--amber);color:#fff;font-size:11px;
+  font-weight:700;padding:3px 10px;border-radius:20px;text-align:center}
+.item-card.selected .item-qty-badge{display:block}
+
+.cart-bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid rgba(110,9,119,0.1);
+  padding:12px 16px;box-shadow:0 -8px 24px rgba(0,0,0,0.06);z-index:15}
+.cart-summary{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.cart-count{font-size:12px;color:var(--muted)}
+.cart-total{font-family:'Fraunces',serif;font-size:22px;font-weight:900;color:var(--p)}
+.pay-toggle{display:flex;gap:8px;margin-bottom:10px}
+.pay-btn{flex:1;padding:9px;border-radius:10px;border:1.5px solid rgba(18,10,30,0.1);
+  font-size:12px;font-weight:700;color:var(--muted);text-align:center}
+.pay-btn.on{background:var(--p);border-color:var(--p);color:#fff}
+.send-btn{width:100%;padding:16px;background:linear-gradient(135deg,#6e0977,#9c0ca1);color:#fff;
+  font-size:14px;font-weight:700;border-radius:14px;letter-spacing:.5px}
+.send-btn:disabled{opacity:.4}
+
+.track-list{padding:16px;display:flex;flex-direction:column;gap:12px;padding-bottom:40px}
+.ticket{background:#fff;border-radius:18px;padding:16px;border-left:6px solid var(--amber);
+  box-shadow:0 2px 12px rgba(0,0,0,0.05)}
+.ticket[data-status="preparing"]{border-left-color:var(--p);background:#fdf0ff}
+.ticket[data-status="ready"]{border-left-color:#15803d;background:#f0faf0}
+.ticket-top{display:flex;align-items:center;margin-bottom:8px}
+.ticket-token{font-family:'Fraunces',serif;font-size:32px;font-weight:900;color:var(--ink)}
+.ticket-badge{margin-left:10px;font-size:10px;font-weight:700;letter-spacing:1px;padding:4px 10px;
+  border-radius:20px;background:rgba(184,116,16,0.12);color:var(--amber)}
+.ticket[data-status="preparing"] .ticket-badge{background:rgba(110,9,119,0.12);color:var(--p)}
+.ticket[data-status="ready"] .ticket-badge{background:rgba(34,197,94,0.15);color:#15803d}
+.ticket-age{margin-left:auto;font-size:11px;color:var(--muted)}
+.ticket-items{font-size:13px;color:#4a3a5a;margin-bottom:10px;line-height:1.5}
+.ticket-bottom{display:flex;align-items:center;justify-content:space-between}
+.ticket-total{font-family:'Fraunces',serif;font-size:18px;font-weight:900;color:var(--amber)}
+.ticket-actions{display:flex;gap:7px}
+.tbtn{padding:9px 14px;border-radius:10px;font-size:11.5px;font-weight:700}
+.tbtn-start{background:rgba(110,9,119,0.1);color:var(--p);border:1px solid rgba(110,9,119,0.25)}
+.tbtn-ready{background:rgba(34,197,94,0.1);color:#15803d;border:1px solid rgba(34,197,94,0.25)}
+.tbtn-done{background:rgba(18,10,30,0.06);color:#4a3a5a;border:1px solid rgba(18,10,30,0.1)}
+.track-empty{text-align:center;padding:60px 20px;color:var(--muted);font-family:'Fraunces',serif;font-size:15px}
+
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#120a1e;color:#fff;
+  padding:12px 22px;border-radius:24px;font-size:13px;font-weight:600;z-index:200;display:none;
+  box-shadow:0 8px 24px rgba(0,0,0,0.3)}
+</style>
+</head>
+<body>
+
+<div class="page show" id="login-page">
+  <div class="login-card">
+    <div class="login-emoji">🎪</div>
+    <div class="login-title">Stall Mode</div>
+    <div class="login-sub">NSDI ChocoCravings — Staff Sign In</div>
+    <select class="login-input" id="login-name"><option value="">Loading staff…</option></select>
+    <input class="login-input" id="login-pin" type="password" inputmode="numeric" maxlength="6" placeholder="PIN">
+    <div class="login-err" id="login-err"></div>
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+  </div>
+</div>
+
+<div class="page" id="event-page">
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-emoji">🎪</div>
+      <div><div class="brand-sub">CHOCOCRAVINGS</div><div class="brand-title">Choose Event</div></div>
+    </div>
+    <div class="staff-pill" id="staff-pill-2">👤</div>
+  </div>
+  <div style="padding:16px">
+    <div id="event-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px"></div>
+    <input class="login-input" id="new-event-name" placeholder="New event name (e.g. Onam Stall — XYZ College)">
+    <button class="login-btn" onclick="createEvent()">➕ Create &amp; Start New Event</button>
+  </div>
+</div>
+
+<div class="page" id="app-page">
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-emoji">🎪</div>
+      <div><div class="brand-sub" id="event-name-sub">CHOCOCRAVINGS</div><div class="brand-title" id="event-name-title">Stall</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="staff-pill" id="staff-pill" onclick="switchEvent()" style="cursor:pointer">👤</div>
+      <div class="staff-pill" onclick="endEvent()" style="cursor:pointer;background:rgba(220,38,38,0.1);color:#dc2626">🏁 End</div>
+    </div>
+  </div>
+  <div class="tabbar">
+    <div class="tabbtn on" id="tab-order" onclick="setTab('order')">🛒 Take Order</div>
+    <div class="tabbtn" id="tab-track" onclick="setTab('track')">📋 Track Orders <span class="tab-badge" id="track-badge" style="display:none">0</span></div>
+  </div>
+
+  <div id="order-view">
+    <div class="cats" id="cats"></div>
+    <div class="item-grid" id="item-grid"></div>
+  </div>
+  <div class="cart-bar" id="cart-bar" style="display:none">
+    <div class="cart-summary">
+      <div class="cart-count" id="cart-count">0 items</div>
+      <div class="cart-total" id="cart-total">₹0</div>
+    </div>
+    <div class="pay-toggle">
+      <div class="pay-btn on" id="pay-cash" onclick="setPay('cash')">💵 Cash</div>
+      <div class="pay-btn" id="pay-upi" onclick="setPay('upi')">📱 UPI</div>
+    </div>
+    <button class="send-btn" id="send-btn" onclick="sendStallOrder()">Send Order</button>
+  </div>
+
+  <div id="track-view" style="display:none">
+    <div class="track-list" id="track-list"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://yjbfditboewwpgyqzryd.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqYmZkaXRib2V3d3BneXF6cnlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNTgwNjcsImV4cCI6MjA4ODczNDA2N30.08Tvq71w2DBeWZrZb-IaiKfoI-2P_1MPJygzSPiRq24';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+var staffName = null;
+var currentEvent = null; // {id, name}
+var menu = {};
+var activeCat = null;
+var cart = {};
+var payMethod = 'cash';
+var currentTab = 'order';
+var tokenCounter = 0;
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(function () { t.style.display = 'none'; }, 2400);
+}
+
+window.addEventListener('DOMContentLoaded', async function () {
+  try {
+    var res = await db.from('store_staff').select('name').eq('active', true).order('name');
+    var staff = res.data || [];
+    var sel = document.getElementById('login-name');
+    sel.innerHTML = staff.length
+      ? '<option value="">Select your name...</option>' + staff.map(function (s) {
+          return '<option value="' + s.name.replace(/"/g, '&quot;') + '">' + s.name + '</option>';
+        }).join('')
+      : '<option value="">No staff found — check store_staff table</option>';
+  } catch (e) {
+    document.getElementById('login-name').innerHTML = '<option value="">Could not load staff</option>';
+  }
+});
+
+async function doLogin() {
+  var name = document.getElementById('login-name').value;
+  var pin = document.getElementById('login-pin').value.trim();
+  var errEl = document.getElementById('login-err');
+  errEl.textContent = '';
+  if (!name) { errEl.textContent = 'Select your name'; return; }
+  if (!pin) { errEl.textContent = 'Enter your PIN'; return; }
+
+  try {
+    var res = await db.rpc('rpc_staff_login', { p_name: name, p_pin: pin });
+    if (res.error || !res.data || !res.data.ok) {
+      errEl.textContent = (res.data && res.data.error) || 'Login failed';
+      return;
+    }
+    staffName = res.data.name;
+    document.getElementById('staff-pill-2').textContent = '👤 ' + staffName;
+    document.getElementById('login-page').classList.remove('show');
+    document.getElementById('event-page').classList.add('show');
+    loadEventList();
+  } catch (e) {
+    errEl.textContent = 'Something went wrong';
+  }
+}
+
+// ══ EVENT PICKER ══
+async function loadEventList() {
+  var list = document.getElementById('event-list');
+  list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">Loading events…</div>';
+  var res = await db.from('stall_events').select('*').eq('active', true).order('created_at', { ascending: false });
+  var events = res.data || [];
+  if (!events.length) {
+    list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">No active events — create one below to get started.</div>';
+    return;
+  }
+  list.innerHTML = events.map(function (e) {
+    return '<div onclick="selectEvent(\'' + e.id + '\',\'' + e.name.replace(/'/g, "\\'") + '\')" style="background:#fff;'
+      + 'border:1.5px solid rgba(110,9,119,0.15);border-radius:14px;padding:16px;cursor:pointer;'
+      + 'display:flex;align-items:center;justify-content:space-between">'
+      + '<div><div style="font-size:14px;font-weight:700;color:var(--ink)">' + e.name + '</div>'
+      + '<div style="font-size:11px;color:var(--muted);margin-top:2px">Started ' + new Date(e.created_at).toLocaleDateString('en-IN') + '</div></div>'
+      + '<div style="color:var(--p);font-size:18px">›</div></div>';
+  }).join('');
+}
+
+async function createEvent() {
+  var nameInput = document.getElementById('new-event-name');
+  var name = nameInput.value.trim();
+  if (!name) { showToast('Enter an event name'); return; }
+  try {
+    var res = await db.from('stall_events').insert([{ name: name, active: true, created_by: staffName }]).select('id, name').single();
+    if (res.error) throw res.error;
+    nameInput.value = '';
+    selectEvent(res.data.id, res.data.name);
+  } catch (e) {
+    showToast('Error: ' + e.message);
+  }
+}
+
+function selectEvent(id, name) {
+  currentEvent = { id: id, name: name };
+  document.getElementById('event-name-sub').textContent = 'STALL EVENT';
+  document.getElementById('event-name-title').textContent = name;
+  document.getElementById('staff-pill').textContent = '👤 ' + staffName;
+  document.getElementById('event-page').classList.remove('show');
+  document.getElementById('app-page').classList.add('show');
+  initApp();
+}
+
+function switchEvent() {
+  if (!confirm('Switch to a different event? You can come back to this one anytime from the event list.')) return;
+  document.getElementById('app-page').classList.remove('show');
+  document.getElementById('event-page').classList.add('show');
+  loadEventList();
+}
+
+async function endEvent() {
+  if (!currentEvent) return;
+  if (!confirm('End "' + currentEvent.name + '"? This removes it from the active list — its order history stays intact.')) return;
+  await db.from('stall_events').update({ active: false, ended_at: new Date().toISOString() }).eq('id', currentEvent.id);
+  showToast('🏁 Event ended');
+  switchEvent();
+}
+
+async function initApp() {
+  await loadMenu();
+  await loadTodayTokenCounter();
+  setTab('order');
+  subscribeStallOrders();
+  refreshTrackBadge();
+}
+
+async function loadMenu() {
+  var res = await db.from('store_menu').select('name, category, price').eq('available', true).order('category').order('name');
+  var rows = res.data || [];
+  menu = {};
+  rows.forEach(function (r) {
+    if (!menu[r.category]) menu[r.category] = [];
+    menu[r.category].push({ name: r.name, price: r.price });
+  });
+  var cats = Object.keys(menu);
+  activeCat = cats[0] || null;
+
+  var catsEl = document.getElementById('cats');
+  catsEl.innerHTML = cats.map(function (c) {
+    return '<div class="cat' + (c === activeCat ? ' on' : '') + '" onclick="setCat(\'' + c.replace(/'/g, "\\'") + '\')">' + c + '</div>';
+  }).join('');
+  renderItemGrid();
+}
+
+async function loadTodayTokenCounter() {
+  var res = await db.from('stall_orders').select('token').eq('event_id', currentEvent.id);
+  var rows = res.data || [];
+  var max = 0;
+  rows.forEach(function (r) {
+    var n = parseInt((r.token || '').replace(/\D/g, ''));
+    if (!isNaN(n) && n > max) max = n;
+  });
+  tokenCounter = max;
+}
+
+function setCat(cat) {
+  activeCat = cat;
+  document.querySelectorAll('.cat').forEach(function (el) {
+    el.classList.toggle('on', el.textContent === cat);
+  });
+  renderItemGrid();
+}
+
+function renderItemGrid() {
+  var grid = document.getElementById('item-grid');
+  var items = menu[activeCat] || [];
+  grid.innerHTML = items.map(function (item) {
+    var inCart = cart[item.name];
+    var qty = inCart ? inCart.qty : 0;
+    return '<div class="item-card' + (qty > 0 ? ' selected' : '') + '" onclick="addToCart(\''
+      + item.name.replace(/'/g, "\\'") + '\',' + item.price + ')">'
+      + '<div class="item-name">' + item.name + '</div>'
+      + '<div class="item-price">₹' + item.price + '</div>'
+      + '<div class="item-qty-badge">×' + qty + ' — tap to add more</div>'
+      + '</div>';
+  }).join('');
+}
+
+function addToCart(name, price) {
+  if (cart[name]) cart[name].qty++;
+  else cart[name] = { name: name, price: price, qty: 1 };
+  renderItemGrid();
+  renderCartBar();
+}
+
+function renderCartBar() {
+  var items = Object.values(cart);
+  var count = items.reduce(function (s, i) { return s + i.qty; }, 0);
+  var total = items.reduce(function (s, i) { return s + i.price * i.qty; }, 0);
+  var bar = document.getElementById('cart-bar');
+  if (count === 0) { bar.style.display = 'none'; return; }
+  bar.style.display = 'block';
+  document.getElementById('cart-count').textContent = count + ' item' + (count === 1 ? '' : 's');
+  document.getElementById('cart-total').textContent = '₹' + total;
+}
+
+function setPay(method) {
+  payMethod = method;
+  document.getElementById('pay-cash').classList.toggle('on', method === 'cash');
+  document.getElementById('pay-upi').classList.toggle('on', method === 'upi');
+}
+
+async function sendStallOrder() {
+  var items = Object.values(cart);
+  if (!items.length) return;
+  var total = items.reduce(function (s, i) { return s + i.price * i.qty; }, 0);
+  var btn = document.getElementById('send-btn');
+  btn.disabled = true; btn.textContent = 'Sending…';
+
+  try {
+    tokenCounter++;
+    var token = 'S' + tokenCounter;
+    var res = await db.from('stall_orders').insert([{
+      token: token,
+      event_id: currentEvent.id,
+      items: items.map(function (i) { return { name: i.name, qty: i.qty, price: i.price }; }),
+      total: total,
+      status: 'pending',
+      payment_method: payMethod,
+      payment_status: payMethod === 'cash' ? 'pending' : 'paid',
+      placed_by: staffName
+    }]);
+    if (res.error) throw res.error;
+
+    showToast('✅ Order ' + token + ' sent — ₹' + total);
+    cart = {};
+    renderItemGrid();
+    renderCartBar();
+  } catch (e) {
+    showToast('Error: ' + e.message);
+    tokenCounter--;
+  } finally {
+    btn.disabled = false; btn.textContent = 'Send Order';
+  }
+}
+
+function setTab(tab) {
+  currentTab = tab;
+  document.getElementById('tab-order').classList.toggle('on', tab === 'order');
+  document.getElementById('tab-track').classList.toggle('on', tab === 'track');
+  document.getElementById('order-view').style.display = tab === 'order' ? 'block' : 'none';
+  document.getElementById('cart-bar').style.display = tab === 'order' ? (Object.keys(cart).length ? 'block' : 'none') : 'none';
+  document.getElementById('track-view').style.display = tab === 'track' ? 'block' : 'none';
+  if (tab === 'track') loadTrackList();
+}
+
+function ageStr(iso) {
+  var mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return mins + 'm ago';
+  return Math.floor(mins / 60) + 'h ' + (mins % 60) + 'm ago';
+}
+
+async function loadTrackList() {
+  var res = await db.from('stall_orders').select('*')
+    .eq('event_id', currentEvent.id)
+    .in('status', ['pending', 'preparing', 'ready'])
+    .order('created_at', { ascending: true });
+  renderTrackList(res.data || []);
+  refreshTrackBadge(res.data || []);
+}
+
+function renderTrackList(orders) {
+  var list = document.getElementById('track-list');
+  if (!orders.length) {
+    list.innerHTML = '<div class="track-empty">No active orders ✅</div>';
+    return;
+  }
+  list.innerHTML = orders.map(function (o) {
+    var itemsTxt = (o.items || []).map(function (i) { return i.name + ' ×' + i.qty; }).join(' · ');
+    var startTxt = o.status === 'preparing' ? '⏳ Making…' : '▶ Start';
+    var readyTxt = o.status === 'ready' ? '✓ Ready!' : '✓ Mark Ready';
+    return '<div class="ticket" data-status="' + o.status + '">'
+      + '<div class="ticket-top"><div class="ticket-token">' + o.token + '</div>'
+      + '<div class="ticket-badge">' + o.status.toUpperCase() + '</div>'
+      + '<div class="ticket-age">' + ageStr(o.created_at) + '</div></div>'
+      + '<div class="ticket-items">' + itemsTxt + '</div>'
+      + '<div class="ticket-bottom">'
+      + '<div class="ticket-total">₹' + o.total + '</div>'
+      + '<div class="ticket-actions">'
+      + '<button class="tbtn tbtn-start" onclick="bumpStall(\'' + o.id + '\',\'preparing\')">' + startTxt + '</button>'
+      + '<button class="tbtn tbtn-ready" onclick="bumpStall(\'' + o.id + '\',\'ready\')">' + readyTxt + '</button>'
+      + '<button class="tbtn tbtn-done" onclick="bumpStall(\'' + o.id + '\',\'collected\')">Collected ✓</button>'
+      + '</div></div></div>';
+  }).join('');
+}
+
+async function bumpStall(id, status) {
+  await db.from('stall_orders').update({ status: status }).eq('id', id);
+  if (currentTab === 'track') loadTrackList();
+}
+
+function refreshTrackBadge(orders) {
+  var badge = document.getElementById('track-badge');
+  if (!orders) {
+    if (!currentEvent) return;
+    db.from('stall_orders').select('id', { count: 'exact', head: true })
+      .eq('event_id', currentEvent.id)
+      .in('status', ['pending', 'preparing', 'ready'])
+      .then(function (res) {
+        var c = res.count || 0;
+        badge.textContent = c;
+        badge.style.display = c > 0 ? 'inline-block' : 'none';
+      });
+    return;
+  }
+  var count = orders.length;
+  badge.textContent = count;
+  badge.style.display = count > 0 ? 'inline-block' : 'none';
+}
+
+var stallCh = null;
+function subscribeStallOrders() {
+  if (stallCh) return;
+  stallCh = db.channel('stall-orders-live')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'stall_orders' }, function () {
+      refreshTrackBadge();
+      if (currentTab === 'track') loadTrackList();
+    })
+    .subscribe();
+}
+</script>
+</body>
+</html>
