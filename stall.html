@@ -18,7 +18,7 @@ input,select{font-family:inherit}
 .page{position:fixed;inset:0;overflow-y:auto;display:none}
 .page.show{display:block}
 
-#login-page{display:flex;align-items:center;justify-content:center;padding:20px}
+#login-page.show{display:flex;align-items:center;justify-content:center;padding:20px}
 .login-card{background:#fff;border-radius:24px;padding:32px 26px;max-width:380px;width:100%;
   box-shadow:0 20px 60px rgba(110,9,119,0.15)}
 .login-emoji{font-size:40px;text-align:center;margin-bottom:6px}
@@ -117,6 +117,8 @@ input,select{font-family:inherit}
 <div class="page" id="event-page">
   <div class="topbar">
     <div class="brand">
+      <div onclick="window.location.href='/'" style="width:34px;height:34px;border-radius:50%;background:#f5eeff;
+        display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--p);margin-right:4px">←</div>
       <div class="brand-emoji">🎪</div>
       <div><div class="brand-sub">CHOCOCRAVINGS</div><div class="brand-title">Choose Event</div></div>
     </div>
@@ -132,6 +134,8 @@ input,select{font-family:inherit}
 <div class="page" id="app-page">
   <div class="topbar">
     <div class="brand">
+      <div onclick="window.location.href='/'" style="width:34px;height:34px;border-radius:50%;background:#f5eeff;
+        display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--p);margin-right:4px">←</div>
       <div class="brand-emoji">🎪</div>
       <div><div class="brand-sub" id="event-name-sub">CHOCOCRAVINGS</div><div class="brand-title" id="event-name-title">Stall</div></div>
     </div>
@@ -143,9 +147,19 @@ input,select{font-family:inherit}
   <div class="tabbar">
     <div class="tabbtn on" id="tab-order" onclick="setTab('order')">🛒 Take Order</div>
     <div class="tabbtn" id="tab-track" onclick="setTab('track')">📋 Track Orders <span class="tab-badge" id="track-badge" style="display:none">0</span></div>
+    <div class="tabbtn" id="tab-expenses" onclick="setTab('expenses')">💰 Expenses</div>
+    <div class="tabbtn" id="tab-reports" onclick="setTab('reports')" style="display:none">📊 Reports</div>
   </div>
 
   <div id="order-view">
+    <div style="padding:12px 16px 0;background:#fff">
+      <div style="position:relative">
+        <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--muted)">🔍</span>
+        <input id="item-search" type="text" placeholder="Search menu..." oninput="onItemSearchInput()" style="width:100%;
+          padding:11px 14px 11px 38px;border-radius:22px;border:1.5px solid rgba(18,10,30,0.1);background:#f5eeff;
+          font-family:inherit;font-size:13px;outline:none;box-sizing:border-box;color:var(--ink)">
+      </div>
+    </div>
     <div class="cats" id="cats"></div>
     <div class="item-grid" id="item-grid"></div>
   </div>
@@ -164,6 +178,31 @@ input,select{font-family:inherit}
   <div id="track-view" style="display:none">
     <div class="track-list" id="track-list"></div>
   </div>
+
+  <div id="expenses-view" style="display:none">
+    <div style="padding:16px">
+      <div style="background:linear-gradient(135deg,rgba(220,38,38,0.08),rgba(220,38,38,0.02));
+        border:1.5px solid rgba(220,38,38,0.25);border-radius:14px;padding:16px;text-align:center;margin-bottom:16px">
+        <div style="font-size:10px;font-weight:700;color:#dc2626;letter-spacing:1.5px">EVENT TOTAL EXPENSES</div>
+        <div id="expense-total" style="font-family:'Fraunces',serif;font-size:26px;font-weight:900;color:#dc2626;margin-top:4px">₹0</div>
+      </div>
+      <select class="login-input" id="expense-category">
+        <option>Milk &amp; Dairy</option><option>Vegetables</option><option>Fruits</option>
+        <option>Bread &amp; Bakery</option><option>Sugar &amp; Staples</option><option>Ice &amp; Supplies</option><option>Other</option>
+      </select>
+      <input class="login-input" id="expense-item" placeholder="What did you buy?">
+      <div style="display:flex;gap:8px">
+        <input class="login-input" id="expense-amount" type="number" placeholder="Amount (₹)">
+        <input class="login-input" id="expense-vendor" placeholder="Vendor (optional)">
+      </div>
+      <button class="login-btn" onclick="addStallExpense()" style="margin-bottom:16px">➕ Add Expense</button>
+      <div id="expense-list" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+  </div>
+
+  <div id="reports-view" style="display:none">
+    <div style="padding:16px" id="reports-body"></div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -174,6 +213,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 var staffName = null;
+var staffRole = 'Employee';
 var currentEvent = null; // {id, name}
 var menu = {};
 var activeCat = null;
@@ -220,6 +260,10 @@ async function doLogin() {
       return;
     }
     staffName = res.data.name;
+    try {
+      var roleRes = await db.from('store_staff').select('role').eq('name', staffName).single();
+      staffRole = (roleRes.data && roleRes.data.role) || 'Employee';
+    } catch (e) { staffRole = 'Employee'; }
     document.getElementById('staff-pill-2').textContent = '👤 ' + staffName;
     document.getElementById('login-page').classList.remove('show');
     document.getElementById('event-page').classList.add('show');
@@ -268,6 +312,7 @@ function selectEvent(id, name) {
   document.getElementById('event-name-sub').textContent = 'STALL EVENT';
   document.getElementById('event-name-title').textContent = name;
   document.getElementById('staff-pill').textContent = '👤 ' + staffName;
+  document.getElementById('tab-reports').style.display = staffRole === 'Admin' ? 'block' : 'none';
   document.getElementById('event-page').classList.remove('show');
   document.getElementById('app-page').classList.add('show');
   initApp();
@@ -327,15 +372,41 @@ async function loadTodayTokenCounter() {
 
 function setCat(cat) {
   activeCat = cat;
+  var searchEl = document.getElementById('item-search');
+  if (searchEl) searchEl.value = '';
   document.querySelectorAll('.cat').forEach(function (el) {
     el.classList.toggle('on', el.textContent === cat);
   });
   renderItemGrid();
 }
 
+function onItemSearchInput() {
+  renderItemGrid();
+}
+
 function renderItemGrid() {
   var grid = document.getElementById('item-grid');
-  var items = menu[activeCat] || [];
+  var searchEl = document.getElementById('item-search');
+  var query = searchEl ? searchEl.value.trim().toLowerCase() : '';
+
+  var items;
+  if (query) {
+    items = [];
+    Object.keys(menu).forEach(function (cat) {
+      menu[cat].forEach(function (item) {
+        if (item.name.toLowerCase().indexOf(query) !== -1) items.push(item);
+      });
+    });
+  } else {
+    items = menu[activeCat] || [];
+  }
+
+  if (!items.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--muted);'
+      + 'font-family:Fraunces,serif;font-size:14px">No items match "' + query + '"</div>';
+    return;
+  }
+
   grid.innerHTML = items.map(function (item) {
     var inCart = cart[item.name];
     var qty = inCart ? inCart.qty : 0;
@@ -408,12 +479,18 @@ async function sendStallOrder() {
 
 function setTab(tab) {
   currentTab = tab;
-  document.getElementById('tab-order').classList.toggle('on', tab === 'order');
-  document.getElementById('tab-track').classList.toggle('on', tab === 'track');
+  ['order', 'track', 'expenses', 'reports'].forEach(function (t) {
+    var el = document.getElementById('tab-' + t);
+    if (el) el.classList.toggle('on', t === tab);
+  });
   document.getElementById('order-view').style.display = tab === 'order' ? 'block' : 'none';
   document.getElementById('cart-bar').style.display = tab === 'order' ? (Object.keys(cart).length ? 'block' : 'none') : 'none';
   document.getElementById('track-view').style.display = tab === 'track' ? 'block' : 'none';
+  document.getElementById('expenses-view').style.display = tab === 'expenses' ? 'block' : 'none';
+  document.getElementById('reports-view').style.display = tab === 'reports' ? 'block' : 'none';
   if (tab === 'track') loadTrackList();
+  if (tab === 'expenses') loadStallExpenses();
+  if (tab === 'reports') loadEventReports();
 }
 
 function ageStr(iso) {
@@ -452,7 +529,7 @@ function renderTrackList(orders) {
       + '<div class="ticket-actions">'
       + '<button class="tbtn tbtn-start" onclick="bumpStall(\'' + o.id + '\',\'preparing\')">' + startTxt + '</button>'
       + '<button class="tbtn tbtn-ready" onclick="bumpStall(\'' + o.id + '\',\'ready\')">' + readyTxt + '</button>'
-      + '<button class="tbtn tbtn-done" onclick="bumpStall(\'' + o.id + '\',\'collected\')">Collected ✓</button>'
+      + '<button class="tbtn tbtn-done" onclick="collectStallOrder(\'' + o.id + '\',\'' + (o.payment_status || 'pending') + '\')">Collected ✓</button>'
       + '</div></div></div>';
   }).join('');
 }
@@ -479,6 +556,175 @@ function refreshTrackBadge(orders) {
   var count = orders.length;
   badge.textContent = count;
   badge.style.display = count > 0 ? 'inline-block' : 'none';
+}
+
+// Same workflow as store.html's Kitchen "Collected" flow — already-paid
+// orders (UPI, since payment_status was set to 'paid' at order time)
+// collect in one tap. Cash orders (payment_status still 'pending' from
+// order time) ask staff to confirm how it was actually paid, since a
+// customer might pay differently than they first said at the counter.
+function collectStallOrder(id, paymentStatus) {
+  if (paymentStatus === 'paid') {
+    bumpStall(id, 'collected');
+    return;
+  }
+  openStallCollectPicker(id);
+}
+
+function openStallCollectPicker(id) {
+  var existing = document.getElementById('sc-picker-overlay');
+  if (existing) existing.remove();
+
+  var overlay = document.createElement('div');
+  overlay.id = 'sc-picker-overlay';
+  overlay.onclick = function (e) { if (e.target === overlay) closeStallCollectPicker(); };
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:300;'
+    + 'display:flex;align-items:center;justify-content:center;padding:20px';
+
+  var box = document.createElement('div');
+  box.style.cssText = 'background:#fff;border-radius:20px;padding:22px;max-width:340px;width:100%;'
+    + 'font-family:\'Instrument Sans\',sans-serif';
+  box.innerHTML =
+      '<div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:4px">How was this paid?</div>'
+    + '<div style="font-size:12px;color:var(--muted);margin-bottom:16px">Confirm how the customer actually paid before marking collected.</div>'
+    + '<div style="display:flex;flex-direction:column;gap:8px">'
+    +   '<button onclick="stallCollectWithPayment(\'' + id + '\',\'cash\')" style="padding:14px;border-radius:12px;'
+    +     'background:rgba(184,116,16,0.1);border:1.5px solid rgba(184,116,16,0.3);color:var(--amber);'
+    +     'font-size:14px;font-weight:700;cursor:pointer">💵 Cash</button>'
+    +   '<button onclick="stallCollectWithPayment(\'' + id + '\',\'upi\')" style="padding:14px;border-radius:12px;'
+    +     'background:rgba(110,9,119,0.1);border:1.5px solid rgba(110,9,119,0.3);color:var(--p);'
+    +     'font-size:14px;font-weight:700;cursor:pointer">📱 UPI</button>'
+    +   '<button onclick="stallCollectWithPayment(\'' + id + '\',\'upi_qr\')" style="padding:14px;border-radius:12px;'
+    +     'background:rgba(34,197,94,0.1);border:1.5px solid rgba(34,197,94,0.3);color:#15803d;'
+    +     'font-size:14px;font-weight:700;cursor:pointer">📲 Scan QR</button>'
+    +   '<button onclick="closeStallCollectPicker()" style="padding:11px;border-radius:12px;'
+    +     'background:transparent;border:none;color:var(--muted);font-size:12px;cursor:pointer;margin-top:4px">Cancel</button>'
+    + '</div>';
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+}
+
+function closeStallCollectPicker() {
+  var el = document.getElementById('sc-picker-overlay');
+  if (el) el.remove();
+}
+
+async function stallCollectWithPayment(id, method) {
+  var labels = { cash: 'Cash', upi: 'UPI', upi_qr: 'Scan QR' };
+  try {
+    await db.from('stall_orders').update({
+      status: 'collected',
+      payment_status: 'paid',
+      payment_method: method
+    }).eq('id', id);
+    closeStallCollectPicker();
+    showToast('✅ Collected · ' + labels[method]);
+    if (currentTab === 'track') loadTrackList();
+  } catch (e) {
+    showToast('Error: ' + e.message);
+  }
+}
+
+// ══ EXPENSES — logged per event, visible to any signed-in staff ══
+async function loadStallExpenses() {
+  var res = await db.from('stall_expenses').select('*').eq('event_id', currentEvent.id).order('created_at', { ascending: false });
+  var rows = res.data || [];
+  var total = rows.reduce(function (s, r) { return s + (r.amount || 0); }, 0);
+  document.getElementById('expense-total').textContent = '₹' + total.toFixed(2);
+
+  var list = document.getElementById('expense-list');
+  if (!rows.length) {
+    list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">No expenses logged yet for this event.</div>';
+    return;
+  }
+  list.innerHTML = rows.map(function (r) {
+    return '<div style="display:flex;justify-content:space-between;align-items:center;background:#f5eeff;'
+      + 'border:1px solid #e0c8f0;border-radius:12px;padding:10px 14px">'
+      + '<div><div style="font-size:13px;font-weight:700;color:var(--ink)">' + r.item_name + '</div>'
+      + '<div style="font-size:11px;color:var(--p)">' + r.category + (r.vendor ? ' · ' + r.vendor : '') + '</div></div>'
+      + '<div style="font-size:14px;font-weight:700;color:#dc2626">₹' + r.amount.toFixed(2) + '</div></div>';
+  }).join('');
+}
+
+async function addStallExpense() {
+  var category = document.getElementById('expense-category').value;
+  var itemName = document.getElementById('expense-item').value.trim();
+  var amount = parseFloat(document.getElementById('expense-amount').value);
+  var vendor = document.getElementById('expense-vendor').value.trim();
+
+  if (!itemName) { showToast('Enter what you bought'); return; }
+  if (isNaN(amount) || amount <= 0) { showToast('Enter a valid amount'); return; }
+
+  try {
+    await db.from('stall_expenses').insert([{
+      event_id: currentEvent.id, category: category, item_name: itemName,
+      amount: amount, vendor: vendor || null, logged_by: staffName
+    }]);
+    document.getElementById('expense-item').value = '';
+    document.getElementById('expense-amount').value = '';
+    document.getElementById('expense-vendor').value = '';
+    showToast('✅ ' + itemName + ' added');
+    loadStallExpenses();
+  } catch (e) {
+    showToast('Error: ' + e.message);
+  }
+}
+
+// ══ REPORTS — Admin-role staff only ══
+async function loadEventReports() {
+  var body = document.getElementById('reports-body');
+  body.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-size:12px">Loading…</div>';
+
+  var ordersRes = await db.from('stall_orders').select('total, payment_method, payment_status, status')
+    .eq('event_id', currentEvent.id).not('status', 'eq', 'cancelled');
+  var orders = ordersRes.data || [];
+
+  var expensesRes = await db.from('stall_expenses').select('amount').eq('event_id', currentEvent.id);
+  var expenses = expensesRes.data || [];
+  var totalExpenses = expenses.reduce(function (s, r) { return s + (r.amount || 0); }, 0);
+
+  var totalRevenue = 0, cashPaid = 0, cashPending = 0, upiTotal = 0;
+  orders.forEach(function (o) {
+    var amt = o.total || 0;
+    totalRevenue += amt;
+    var pm = (o.payment_method || '').toLowerCase();
+    if (pm === 'cash') { if (o.payment_status === 'paid') cashPaid += amt; else cashPending += amt; }
+    else upiTotal += amt;
+  });
+  var netProfit = totalRevenue - totalExpenses;
+
+  body.innerHTML =
+      '<div style="font-size:10px;letter-spacing:2px;color:var(--rose);font-weight:700;margin-bottom:10px">EVENT CLOSE REPORT — ' + currentEvent.name + '</div>'
+    + '<div style="display:flex;gap:10px;margin-bottom:10px">'
+    + '<div style="flex:1;background:#f5eeff;border-radius:14px;padding:14px;text-align:center">'
+    + '<div style="font-size:10px;font-weight:700;color:var(--p);letter-spacing:1px">TOTAL REVENUE</div>'
+    + '<div style="font-family:Fraunces,serif;font-size:22px;font-weight:900;color:var(--p);margin-top:4px">₹' + totalRevenue.toFixed(2) + '</div></div>'
+    + '<div style="flex:1;background:#f5eeff;border-radius:14px;padding:14px;text-align:center">'
+    + '<div style="font-size:10px;font-weight:700;color:var(--p);letter-spacing:1px">ORDERS</div>'
+    + '<div style="font-family:Fraunces,serif;font-size:22px;font-weight:900;color:var(--p);margin-top:4px">' + orders.length + '</div></div></div>'
+
+    + '<div style="background:#fff;border:1.5px solid #e0c8f0;border-radius:14px;padding:4px 14px;margin-bottom:16px">'
+    + reportRow('💵 Cash (Collected)', cashPaid, '#15803d')
+    + reportRow('📱 UPI', upiTotal, 'var(--p)')
+    + reportRow('⏳ Cash (Pending)', cashPending, '#dc2626')
+    + '</div>'
+
+    + '<div style="font-size:10px;letter-spacing:2px;color:var(--rose);font-weight:700;margin-bottom:10px">EXPENSE REPORT</div>'
+    + '<div style="display:flex;gap:10px;margin-bottom:16px">'
+    + '<div style="flex:1;background:rgba(220,38,38,0.06);border:1px solid rgba(220,38,38,0.2);border-radius:14px;padding:14px;text-align:center">'
+    + '<div style="font-size:10px;font-weight:700;color:#dc2626;letter-spacing:1px">TOTAL EXPENSES</div>'
+    + '<div style="font-family:Fraunces,serif;font-size:20px;font-weight:900;color:#dc2626;margin-top:4px">₹' + totalExpenses.toFixed(2) + '</div></div>'
+    + '<div style="flex:1;background:' + (netProfit >= 0 ? 'rgba(34,197,94,0.08)' : 'rgba(220,38,38,0.08)') + ';'
+    + 'border:1px solid ' + (netProfit >= 0 ? 'rgba(34,197,94,0.25)' : 'rgba(220,38,38,0.25)') + ';border-radius:14px;padding:14px;text-align:center">'
+    + '<div style="font-size:10px;font-weight:700;color:' + (netProfit >= 0 ? '#15803d' : '#dc2626') + ';letter-spacing:1px">NET PROFIT</div>'
+    + '<div style="font-family:Fraunces,serif;font-size:20px;font-weight:900;color:' + (netProfit >= 0 ? '#15803d' : '#dc2626') + ';margin-top:4px">₹' + netProfit.toFixed(2) + '</div></div></div>';
+}
+
+function reportRow(label, amt, color) {
+  return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;'
+    + 'border-bottom:1px solid #f5f0f8"><span style="font-size:13px;color:var(--ink);font-weight:600">' + label + '</span>'
+    + '<span style="font-size:14px;font-weight:700;color:' + color + '">₹' + amt.toFixed(2) + '</span></div>';
 }
 
 var stallCh = null;
