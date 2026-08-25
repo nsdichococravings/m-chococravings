@@ -29,7 +29,10 @@ document.addEventListener('DOMContentLoaded', function () {
   waitForAdminThenInject();
 });
 
+var _rhInitStarted = false;
 function waitForAdminThenInject() {
+  if (_rhInitStarted) return; // never start a second polling loop
+  _rhInitStarted = true;
   var attempts = 0;
   var poll = setInterval(function () {
     attempts++;
@@ -59,10 +62,12 @@ async function checkSuperUserAccess() {
 }
 
 function injectReportsHubMenuEntry() {
+  if (document.getElementById('reports-hub-menu-entry')) return; // already injected — never duplicate
   var fabMenu = document.getElementById('admin-fab-menu');
   if (!fabMenu) return;
 
   var entry = document.createElement('div');
+  entry.id = 'reports-hub-menu-entry';
   entry.onclick = function () { openReportsHub(); closeAdminMenu(); };
   entry.style.cssText = 'display:flex;align-items:center;gap:10px;padding:13px 16px;'
     + 'cursor:pointer;transition:background .15s;border-bottom:1px solid #f5f0f8';
