@@ -2,22 +2,26 @@
  * sales-reports-patch.js — ChocoCravings On Store
  * Feature: Sales Reports — a dedicated full-screen dashboard, separate
  * from Day Close. Five period tabs (Daily/Weekly/Monthly/Quarterly/
- * Yearly), each showing a revenue trend chart, top-selling items, and
- * payment method breakdown, with % change vs the previous period.
- * Downloadable as a styled PDF snapshot.
+ * Yearly) plus a Custom date range, each showing a revenue trend chart,
+ * top-selling items, payment method breakdown, Peak Hours, Best Days of
+ * Week, and Total Expenses/Net Profit — with % change vs the previous
+ * period. Downloadable as a styled PDF snapshot.
  *
  * Load AFTER store-patch.js, right before </body>:
  *   <script src="sales-reports-patch.js"></script>
  *
- * Requires: `db`, `showStoreToast()` — already global. Loads Chart.js,
- * html2canvas, and jsPDF dynamically from CDN on first use (not on every
- * page load), matching the pattern already used elsewhere in this app
- * (e.g. QRCode.js in hrm-admin-patch.js).
+ * Requires: `db`, `showStoreToast()` — already global. Also uses
+ * `getExpensesTotal()` from daily-expenses-patch.js if loaded (falls
+ * back to 0 gracefully if not). Loads Chart.js, html2canvas, and jsPDF
+ * dynamically from CDN on first use.
+ *
+ * Access: this whole feature is only ever opened via openReports(),
+ * which reports-hub-patch.js only calls for confirmed Super User
+ * accounts — this file itself doesn't need its own gating.
  *
  * NOTE on periods: Weekly/Monthly/Quarterly/Yearly use ROLLING windows
- * (last 7/30/90/365 days) rather than exact calendar boundaries — this
- * avoids a lot of calendar-math edge cases and is standard for small
- * business reporting tools. Only "Daily" is a true calendar day.
+ * (last 7/30/90/365 days) rather than exact calendar boundaries. Only
+ * "Daily" is a true calendar day.
  */
 
 var REPORT_PERIODS = {
@@ -29,12 +33,11 @@ var REPORT_PERIODS = {
 };
 var _srPeriod = 'daily';
 var _srCharts = {};
-var _srCurrentLabel = 'Daily'; // used by PDF export — works for both preset and custom periods
+var _srCurrentLabel = 'Daily';
 
 document.addEventListener('DOMContentLoaded', function () {
   buildReportsUI();
 });
-
 
 function loadScriptOnce(src) {
   return new Promise(function (resolve, reject) {
@@ -53,7 +56,6 @@ async function ensureReportLibs() {
   if (typeof html2canvas === 'undefined') await loadScriptOnce('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js');
   if (typeof window.jspdf === 'undefined') await loadScriptOnce('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js');
 }
-
 
 function buildReportsUI() {
   var page = document.createElement('div');
@@ -100,8 +102,6 @@ function buildReportsUI() {
     t.textContent = REPORT_PERIODS[key].label;
     tabsEl.appendChild(t);
   });
-  // "Custom" tab is separate from the REPORT_PERIODS lookup since its
-  // range comes from the date pickers instead of a fixed day count.
   var customTab = document.createElement('div');
   customTab.id = 'sr-tab-custom';
   customTab.onclick = function () { srSetPeriod('custom'); };
@@ -121,9 +121,6 @@ function openReports() {
 }
 function closeReports() {
   document.getElementById('sr-page').style.display = 'none';
-  // Return to the Reports Hub rather than closing everything — matches
-  // how Kitchen's navigation keeps you inside a section instead of
-  // dropping you all the way back out every time.
   if (typeof openReportsHub === 'function') openReportsHub();
 }
 
@@ -140,7 +137,7 @@ function srSetPeriod(key) {
   var rangeBar = document.getElementById('sr-custom-range');
   if (key === 'custom') {
     rangeBar.style.display = 'flex';
-    srApplyCustomRange(); // load immediately with the default 7-day range
+    srApplyCustomRange();
   } else {
     rangeBar.style.display = 'none';
     loadReport(key);
@@ -184,12 +181,12 @@ async function loadReport(periodKey) {
   var previous = prevRes.data || [];
 
   _srCurrentLabel = period.label;
-  renderReport(period, periodKey, current, previous);
+  var expensesTotal = typeof getExpensesTotal === 'function'
+    ? await getExpensesTotal(rangeStart.toISOString().slice(0, 10), now.toISOString().slice(0, 10))
+    : 0;
+  renderReport(period, periodKey, current, previous, expensesTotal);
 }
 
-// Custom date range — auto-picks a sensible bucket size based on how
-// long the range is, so a 5-day custom range doesn't render as one
-// giant monthly bar, and a 400-day range doesn't render as 400 daily bars.
 async function loadCustomReport(start, end) {
   var content = document.getElementById('sr-report-content');
   content.innerHTML = '<div style="text-align:center;padding:60px;color:rgba(255,255,255,.4);font-size:13px">Loading report…</div>';
@@ -219,7 +216,10 @@ async function loadCustomReport(start, end) {
   var customPeriod = { label: startLbl + ' – ' + endLbl, bucket: bucket };
   _srCurrentLabel = customPeriod.label;
 
-  renderReport(customPeriod, 'custom', current, previous);
+  var expensesTotal = typeof getExpensesTotal === 'function'
+    ? await getExpensesTotal(start.toISOString().slice(0, 10), end.toISOString().slice(0, 10))
+    : 0;
+  renderReport(customPeriod, 'custom', current, previous, expensesTotal);
 }
 
 function bucketLabel(date, bucketType) {
@@ -240,10 +240,12 @@ function bucketKey(date, bucketType) {
   return date.toISOString().slice(0, 7);
 }
 
-function renderReport(period, periodKey, orders, prevOrders) {
+function renderReport(period, periodKey, orders, prevOrders, expensesTotal) {
+  expensesTotal = expensesTotal || 0;
   var totalRevenue = orders.reduce(function (s, o) { return s + (o.total || 0); }, 0);
   var totalOrders = orders.length;
   var avgOrder = totalOrders ? totalRevenue / totalOrders : 0;
+  var netProfit = totalRevenue - expensesTotal;
   var prevRevenue = prevOrders.reduce(function (s, o) { return s + (o.total || 0); }, 0);
   var revenueChange = prevRevenue > 0 ? ((totalRevenue - prevRevenue) / prevRevenue) * 100 : null;
 
@@ -279,6 +281,29 @@ function renderReport(period, periodKey, orders, prevOrders) {
     else payTotals['Other Digital'] += amt;
   });
 
+  // ── Peak Hours — aggregate revenue by hour-of-day (0-23), regardless
+  // of which specific date, across the whole selected period.
+  var hourTotals = new Array(24).fill(0);
+  orders.forEach(function (o) {
+    var h = new Date(o.created_at).getHours();
+    hourTotals[h] += o.total || 0;
+  });
+  var hourLabels = hourTotals.map(function (_, h) {
+    return h === 0 ? '12am' : h < 12 ? h + 'am' : h === 12 ? '12pm' : (h - 12) + 'pm';
+  });
+  var peakHourIdx = hourTotals.indexOf(Math.max.apply(null, hourTotals));
+  var peakHourLabel = hourLabels[peakHourIdx];
+
+  // ── Best Days of Week — aggregate revenue by day-of-week (Sun-Sat).
+  var dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  var dayTotals = new Array(7).fill(0);
+  orders.forEach(function (o) {
+    var d = new Date(o.created_at).getDay();
+    dayTotals[d] += o.total || 0;
+  });
+  var bestDayIdx = dayTotals.indexOf(Math.max.apply(null, dayTotals));
+  var bestDayLabel = dayNames[bestDayIdx];
+
   var content = document.getElementById('sr-report-content');
   var compareLabel = periodKey === 'custom' ? 'previous period' : ('previous ' + period.label.toLowerCase().replace('ly', ''));
   var changeHtml = revenueChange === null
@@ -292,12 +317,36 @@ function renderReport(period, periodKey, orders, prevOrders) {
     + srStatCard('TOTAL REVENUE', '₹' + totalRevenue.toLocaleString('en-IN', { maximumFractionDigits: 0 }), changeHtml)
     + srStatCard('TOTAL ORDERS', totalOrders.toLocaleString('en-IN'), '')
     + srStatCard('AVG ORDER VALUE', '₹' + avgOrder.toFixed(0), '')
+    + srStatCard('TOTAL EXPENSES', '₹' + expensesTotal.toLocaleString('en-IN', { maximumFractionDigits: 0 }), '')
+    + srStatCard('NET PROFIT', '₹' + netProfit.toLocaleString('en-IN', { maximumFractionDigits: 0 }),
+        netProfit >= 0 ? '<span style="color:#4ade80">Profitable</span>' : '<span style="color:#f87171">Loss</span>')
     + '</div>'
+
+    + '<div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">'
+    + '<div style="flex:1;min-width:200px;background:linear-gradient(135deg,rgba(245,196,48,0.15),rgba(245,196,48,0.03));'
+    + 'border:1px solid rgba(245,196,48,0.3);border-radius:16px;padding:16px;text-align:center">'
+    + '<div style="font-size:10px;letter-spacing:1.5px;color:#f5c430;font-weight:700">🔥 PEAK HOUR</div>'
+    + '<div style="font-family:Fraunces,Georgia,serif;font-size:24px;font-weight:900;color:#fff;margin-top:4px">' + peakHourLabel + '</div>'
+    + '</div>'
+    + '<div style="flex:1;min-width:200px;background:linear-gradient(135deg,rgba(192,132,252,0.15),rgba(192,132,252,0.03));'
+    + 'border:1px solid rgba(192,132,252,0.3);border-radius:16px;padding:16px;text-align:center">'
+    + '<div style="font-size:10px;letter-spacing:1.5px;color:#c084fc;font-weight:700">📅 BEST DAY</div>'
+    + '<div style="font-family:Fraunces,Georgia,serif;font-size:24px;font-weight:900;color:#fff;margin-top:4px">' + bestDayLabel + '</div>'
+    + '</div></div>'
 
     + '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:18px;'
     + 'padding:20px;margin-bottom:16px">'
     + '<div style="font-size:11px;letter-spacing:2px;color:#c084fc;font-weight:700;margin-bottom:14px">REVENUE TREND</div>'
     + '<canvas id="sr-trend-chart" height="90"></canvas></div>'
+
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">'
+    + '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:20px">'
+    + '<div style="font-size:11px;letter-spacing:2px;color:#c084fc;font-weight:700;margin-bottom:14px">PEAK HOURS</div>'
+    + '<canvas id="sr-hours-chart" height="180"></canvas></div>'
+    + '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:20px">'
+    + '<div style="font-size:11px;letter-spacing:2px;color:#c084fc;font-weight:700;margin-bottom:14px">BEST DAYS OF WEEK</div>'
+    + '<canvas id="sr-days-chart" height="180"></canvas></div>'
+    + '</div>'
 
     + '<div style="display:grid;grid-template-columns:1.3fr 1fr;gap:16px" id="sr-grid-2col">'
     + '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:20px">'
@@ -325,6 +374,44 @@ function renderReport(period, periodKey, orders, prevOrders) {
       plugins: { legend: { display: false } },
       scales: {
         x: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor } },
+        y: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor } }
+      }
+    }
+  });
+
+  _srCharts.hours = new Chart(document.getElementById('sr-hours-chart'), {
+    type: 'bar',
+    data: {
+      labels: hourLabels,
+      datasets: [{
+        data: hourTotals,
+        backgroundColor: hourTotals.map(function (_, i) { return i === peakHourIdx ? '#f5c430' : 'rgba(245,196,48,0.25)'; }),
+        borderRadius: 4
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: textColor, font: { size: 8 }, maxRotation: 90, minRotation: 90 }, grid: { display: false } },
+        y: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor } }
+      }
+    }
+  });
+
+  _srCharts.days = new Chart(document.getElementById('sr-days-chart'), {
+    type: 'bar',
+    data: {
+      labels: dayNames,
+      datasets: [{
+        data: dayTotals,
+        backgroundColor: dayTotals.map(function (_, i) { return i === bestDayIdx ? '#c084fc' : 'rgba(192,132,252,0.25)'; }),
+        borderRadius: 6
+      }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: textColor, font: { size: 11 } }, grid: { display: false } },
         y: { ticks: { color: textColor, font: { size: 10 } }, grid: { color: gridColor } }
       }
     }
@@ -383,7 +470,7 @@ async function downloadReportPdf() {
     pdf.rect(0, 0, pageWidth, pageHeight, 'F');
     pdf.setTextColor(255, 255, 255);
     pdf.setFontSize(16);
-    pdf.text('ChocoCravings — ' + _srCurrentLabel + ' Sales Report', 20, 30);
+    pdf.text('NSDI ChocoCravings — ' + _srCurrentLabel + ' Sales Report', 20, 30);
     pdf.setFontSize(9);
     pdf.setTextColor(200, 180, 220);
     pdf.text(new Date().toLocaleString('en-IN'), 20, 44);
