@@ -168,7 +168,7 @@ async function loadReport(periodKey) {
   var prevStart = new Date(rangeStart.getTime() - period.days * 24 * 60 * 60 * 1000);
 
   var curRes = await db.from('store_orders')
-    .select('total, created_at, payment_method, payment_status, items')
+    .select('total, created_at, payment_method, payment_status, items, customer_phone')
     .gte('created_at', rangeStart.toISOString())
     .not('status', 'eq', 'cancelled');
   var prevRes = await db.from('store_orders')
@@ -184,7 +184,8 @@ async function loadReport(periodKey) {
   var expensesTotal = typeof getExpensesTotal === 'function'
     ? await getExpensesTotal(rangeStart.toISOString().slice(0, 10), now.toISOString().slice(0, 10))
     : 0;
-  renderReport(period, periodKey, current, previous, expensesTotal);
+  var repeatBreakdown = await getRepeatCustomerBreakdown(current);
+  renderReport(period, periodKey, current, previous, expensesTotal, repeatBreakdown);
 }
 
 async function loadCustomReport(start, end) {
@@ -198,7 +199,7 @@ async function loadCustomReport(start, end) {
   var prevStart = new Date(start.getTime() - (end - start));
 
   var curRes = await db.from('store_orders')
-    .select('total, created_at, payment_method, payment_status, items')
+    .select('total, created_at, payment_method, payment_status, items, customer_phone')
     .gte('created_at', start.toISOString())
     .lte('created_at', end.toISOString())
     .not('status', 'eq', 'cancelled');
@@ -219,7 +220,54 @@ async function loadCustomReport(start, end) {
   var expensesTotal = typeof getExpensesTotal === 'function'
     ? await getExpensesTotal(start.toISOString().slice(0, 10), end.toISOString().slice(0, 10))
     : 0;
-  renderReport(customPeriod, 'custom', current, previous, expensesTotal);
+  var repeatBreakdown = await getRepeatCustomerBreakdown(current);
+  renderReport(customPeriod, 'custom', current, previous, expensesTotal, repeatBreakdown);
+}
+
+// Classifies revenue in the current period into New Customer / Repeat
+// Customer / No Phone. "New" means this order is that phone number's
+// FIRST EVER order (checked against their full history, not just this
+// period) — so a customer whose actual first order was last year still
+// correctly counts as "repeat" today, even though it's their first
+// order visible within a short period like "Daily".
+async function getRepeatCustomerBreakdown(periodOrders) {
+  try {
+    // Lightweight: only phone + timestamp, across ALL history, to find
+    // each phone's true first order date.
+    var allRes = await db.from('store_orders')
+      .select('customer_phone, created_at')
+      .not('customer_phone', 'is', null)
+      .not('status', 'eq', 'cancelled')
+      .order('created_at', { ascending: true });
+    var allRows = allRes.data || [];
+
+    var firstOrderDate = {};
+    allRows.forEach(function (r) {
+      if (!firstOrderDate[r.customer_phone]) firstOrderDate[r.customer_phone] = r.created_at;
+    });
+
+    var newRevenue = 0, repeatRevenue = 0, noPhoneRevenue = 0;
+    var newPhones = {}, repeatPhones = {};
+
+    periodOrders.forEach(function (o) {
+      var amt = o.total || 0;
+      if (!o.customer_phone) { noPhoneRevenue += amt; return; }
+      if (firstOrderDate[o.customer_phone] === o.created_at) {
+        newRevenue += amt;
+        newPhones[o.customer_phone] = true;
+      } else {
+        repeatRevenue += amt;
+        repeatPhones[o.customer_phone] = true;
+      }
+    });
+
+    return {
+      newRevenue: newRevenue, repeatRevenue: repeatRevenue, noPhoneRevenue: noPhoneRevenue,
+      newCount: Object.keys(newPhones).length, repeatCount: Object.keys(repeatPhones).length
+    };
+  } catch (e) {
+    return { newRevenue: 0, repeatRevenue: 0, noPhoneRevenue: 0, newCount: 0, repeatCount: 0 };
+  }
 }
 
 function bucketLabel(date, bucketType) {
@@ -240,7 +288,8 @@ function bucketKey(date, bucketType) {
   return date.toISOString().slice(0, 7);
 }
 
-function renderReport(period, periodKey, orders, prevOrders, expensesTotal) {
+function renderReport(period, periodKey, orders, prevOrders, expensesTotal, repeatBreakdown) {
+  repeatBreakdown = repeatBreakdown || { newRevenue: 0, repeatRevenue: 0, noPhoneRevenue: 0, newCount: 0, repeatCount: 0 };
   expensesTotal = expensesTotal || 0;
   var totalRevenue = orders.reduce(function (s, o) { return s + (o.total || 0); }, 0);
   var totalOrders = orders.length;
@@ -348,6 +397,18 @@ function renderReport(period, periodKey, orders, prevOrders, expensesTotal) {
     + '<canvas id="sr-days-chart" height="180"></canvas></div>'
     + '</div>'
 
+    + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">'
+    + '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:20px">'
+    + '<div style="font-size:11px;letter-spacing:2px;color:#c084fc;font-weight:700;margin-bottom:14px">REPEAT VS NEW CUSTOMERS</div>'
+    + '<canvas id="sr-repeat-chart" height="180"></canvas></div>'
+    + '<div style="display:flex;flex-direction:column;gap:12px;justify-content:center">'
+    + srRepeatStatCard('🔁 Repeat Customers', repeatBreakdown.repeatRevenue, repeatBreakdown.repeatCount, '#4ade80')
+    + srRepeatStatCard('✨ New Customers', repeatBreakdown.newRevenue, repeatBreakdown.newCount, '#f5c430')
+    + (repeatBreakdown.noPhoneRevenue > 0
+        ? '<div style="font-size:10px;color:rgba(255,255,255,.3);text-align:center">+ ₹' + repeatBreakdown.noPhoneRevenue.toFixed(0) + ' from orders with no phone on file</div>'
+        : '')
+    + '</div></div>'
+
     + '<div style="display:grid;grid-template-columns:1.3fr 1fr;gap:16px" id="sr-grid-2col">'
     + '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:20px">'
     + '<div style="font-size:11px;letter-spacing:2px;color:#c084fc;font-weight:700;margin-bottom:14px">TOP SELLING ITEMS</div>'
@@ -417,6 +478,19 @@ function renderReport(period, periodKey, orders, prevOrders, expensesTotal) {
     }
   });
 
+  _srCharts.repeat = new Chart(document.getElementById('sr-repeat-chart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Repeat', 'New', 'No Phone'],
+      datasets: [{
+        data: [repeatBreakdown.repeatRevenue, repeatBreakdown.newRevenue, repeatBreakdown.noPhoneRevenue],
+        backgroundColor: ['#4ade80', '#f5c430', 'rgba(255,255,255,.15)'],
+        borderWidth: 0
+      }]
+    },
+    options: { plugins: { legend: { position: 'bottom', labels: { color: '#fff', font: { size: 10 }, padding: 12 } } } }
+  });
+
   _srCharts.items = new Chart(document.getElementById('sr-items-chart'), {
     type: 'bar',
     data: {
@@ -441,6 +515,13 @@ function renderReport(period, periodKey, orders, prevOrders, expensesTotal) {
     },
     options: { plugins: { legend: { position: 'bottom', labels: { color: '#fff', font: { size: 10 }, padding: 12 } } } }
   });
+}
+
+function srRepeatStatCard(label, revenue, count, color) {
+  return '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px">'
+    + '<div style="font-size:11px;font-weight:700;color:' + color + '">' + label + '</div>'
+    + '<div style="font-family:Fraunces,Georgia,serif;font-size:20px;font-weight:900;color:#fff;margin:4px 0 2px">₹' + revenue.toLocaleString('en-IN', { maximumFractionDigits: 0 }) + '</div>'
+    + '<div style="font-size:11px;color:rgba(255,255,255,.4)">' + count + ' customer' + (count === 1 ? '' : 's') + '</div></div>';
 }
 
 function srStatCard(label, value, sub) {
