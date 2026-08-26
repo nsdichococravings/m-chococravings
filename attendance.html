@@ -18,7 +18,7 @@ input,select{font-family:inherit}
 .page{position:fixed;inset:0;overflow-y:auto;display:none}
 .page.show{display:block}
 
-#login-page{display:flex;align-items:center;justify-content:center;padding:20px}
+#login-page.show{display:flex;align-items:center;justify-content:center;padding:20px}
 .login-card{background:#fff;border-radius:24px;padding:32px 26px;max-width:380px;width:100%;
   box-shadow:0 20px 60px rgba(110,9,119,0.15)}
 .login-emoji{font-size:40px;text-align:center;margin-bottom:6px}
@@ -44,21 +44,36 @@ input,select{font-family:inherit}
   border-bottom:3px solid transparent}
 .tabbtn.on{color:var(--p);border-bottom-color:var(--p)}
 
-.clock-view{padding:40px 20px;text-align:center}
-.clock-status{font-size:11px;font-weight:700;letter-spacing:2px;color:var(--muted);margin-bottom:8px}
-.clock-time{font-family:'Fraunces',serif;font-size:48px;font-weight:900;color:var(--ink);margin-bottom:20px}
-.clock-btn{width:180px;height:180px;border-radius:50%;margin:0 auto;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:6px;font-size:16px;font-weight:700;color:#fff;box-shadow:0 12px 30px rgba(0,0,0,0.15)}
-.clock-in-btn{background:linear-gradient(135deg,#15803d,#22c55e)}
-.clock-out-btn{background:linear-gradient(135deg,#b91c1c,#ef4444)}
-.clock-icon{font-size:36px}
-.elapsed{margin-top:20px;font-size:13px;color:var(--muted)}
-.elapsed-val{font-family:'Fraunces',serif;font-size:22px;font-weight:900;color:var(--p)}
+.clock-view{padding:48px 24px 32px;text-align:center;position:relative}
+.clock-status{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:700;letter-spacing:2.5px;
+  color:var(--muted);margin-bottom:14px;padding:6px 16px;border-radius:20px;background:rgba(18,10,30,0.04)}
+.status-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.clock-time{font-family:'Fraunces',serif;font-size:44px;font-weight:900;color:var(--ink);margin-bottom:28px;
+  letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.clock-btn-wrap{position:relative;width:196px;height:196px;margin:0 auto}
+.clock-btn-ring{position:absolute;inset:-8px;border-radius:50%;opacity:.35}
+.clock-in-ring{background:conic-gradient(from 0deg,#22c55e,#15803d,#22c55e)}
+.clock-out-ring{background:conic-gradient(from 0deg,#ef4444,#b91c1c,#ef4444)}
+.clock-btn{position:relative;width:180px;height:180px;border-radius:50%;margin:8px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:5px;font-size:15px;font-weight:700;color:#fff;letter-spacing:.3px;
+  transition:transform .15s ease}
+.clock-btn:active{transform:scale(.97)}
+.clock-in-btn{background:radial-gradient(circle at 35% 30%,#2fbf5f,#15803d 70%);box-shadow:0 16px 36px rgba(21,128,61,0.35),inset 0 2px 6px rgba(255,255,255,0.25)}
+.clock-out-btn{background:radial-gradient(circle at 35% 30%,#f04b4b,#b91c1c 70%);box-shadow:0 16px 36px rgba(185,28,28,0.35),inset 0 2px 6px rgba(255,255,255,0.25)}
+.clock-icon{font-size:34px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.15))}
+.clock-btn-label{font-family:'Fraunces',serif;font-size:19px;font-weight:900}
+.elapsed{margin-top:26px;display:inline-flex;flex-direction:column;align-items:center;gap:2px;padding:12px 24px;
+  border-radius:16px;background:#fff;border:1px solid rgba(18,10,30,0.06);box-shadow:0 4px 14px rgba(18,10,30,0.04)}
+.elapsed-lbl{font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--muted)}
+.elapsed-val{font-family:'Fraunces',serif;font-size:24px;font-weight:900;color:var(--p);margin-top:2px}
 
-.today-log{padding:0 20px 40px}
-.log-hdr{font-size:11px;letter-spacing:2px;color:var(--rose);font-weight:700;margin-bottom:10px}
-.log-row{display:flex;justify-content:space-between;background:#fff;border:1px solid #e0c8f0;border-radius:12px;
-  padding:12px 14px;margin-bottom:8px;font-size:13px}
+.today-log{padding:0 22px 40px}
+.log-hdr{font-size:10px;letter-spacing:2.5px;color:var(--rose);font-weight:700;margin-bottom:12px}
+.log-row{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid rgba(224,200,240,0.6);
+  border-radius:14px;padding:13px 16px;margin-bottom:8px;box-shadow:0 2px 8px rgba(18,10,30,0.03)}
+.log-name{font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px}
+.log-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--p),#9c0ca1);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
 
 .payroll-view{padding:20px}
 .month-picker{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:20px}
@@ -116,13 +131,19 @@ input,select{font-family:inherit}
 
   <div id="clock-view">
     <div class="clock-view">
-      <div class="clock-status" id="clock-status">CHECKING STATUS…</div>
+      <div class="clock-status" id="clock-status"><span class="status-dot"></span>CHECKING STATUS…</div>
       <div class="clock-time" id="clock-time">--:--</div>
-      <button class="clock-btn" id="clock-action-btn" onclick="handleClockAction()">
-        <span class="clock-icon" id="clock-icon">⏳</span>
-        <span id="clock-btn-label">Loading</span>
-      </button>
-      <div class="elapsed" id="elapsed-wrap" style="display:none">Time today: <span class="elapsed-val" id="elapsed-val">0h 0m</span></div>
+      <div class="clock-btn-wrap">
+        <div class="clock-btn-ring" id="clock-ring"></div>
+        <button class="clock-btn" id="clock-action-btn" onclick="handleClockAction()">
+          <span class="clock-icon" id="clock-icon">⏳</span>
+          <span class="clock-btn-label" id="clock-btn-label">Loading</span>
+        </button>
+      </div>
+      <div class="elapsed" id="elapsed-wrap" style="display:none">
+        <span class="elapsed-lbl">TIME TODAY</span>
+        <span class="elapsed-val" id="elapsed-val">0h 0m</span>
+      </div>
     </div>
     <div class="today-log">
       <div class="log-hdr">TODAY'S ATTENDANCE — ALL STAFF</div>
@@ -151,9 +172,10 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 var staffName = null;
 var staffRole = 'Employee';
+var isSuperAdmin = false;
+var monthOffset = 0;
 var currentTab = 'clock';
 var openAttendanceRow = null;
-var monthOffset = 0;
 
 function showToast(msg) {
   var t = document.getElementById('toast');
@@ -195,12 +217,17 @@ async function doLogin() {
     staffName = res.data.name;
 
     try {
-      var roleRes = await db.from('store_staff').select('role').eq('name', staffName).eq('active', true).order('role', { ascending: true }).limit(1);
-      staffRole = (roleRes.data && roleRes.data[0] && roleRes.data[0].role) || 'Employee';
-    } catch (e) { staffRole = 'Employee'; }
+      var roleRes = await db.from('store_staff').select('role, is_super_admin').eq('name', staffName).eq('active', true).order('role', { ascending: true }).limit(1);
+      var row = roleRes.data && roleRes.data[0];
+      staffRole = (row && row.role) || 'Employee';
+      isSuperAdmin = !!(row && row.is_super_admin);
+    } catch (e) { staffRole = 'Employee'; isSuperAdmin = false; }
 
     document.getElementById('staff-pill').textContent = '👤 ' + staffName;
-    document.getElementById('tab-payroll').style.display = staffRole === 'Admin' ? 'block' : 'none';
+    // Payroll is now visible to EVERY staff member — each person sees
+    // their own salary breakdown. Only the notification bell stays
+    // Admin-role gated (check-in alerts are an admin-only concern).
+    document.getElementById('tab-payroll').style.display = 'block';
     document.getElementById('notif-bell').style.display = staffRole === 'Admin' ? 'flex' : 'none';
     document.getElementById('login-page').classList.remove('show');
     document.getElementById('app-page').classList.add('show');
@@ -251,19 +278,24 @@ function renderClockButton() {
   var icon = document.getElementById('clock-icon');
   var label = document.getElementById('clock-btn-label');
   var status = document.getElementById('clock-status');
+  var ring = document.getElementById('clock-ring');
   var elapsedWrap = document.getElementById('elapsed-wrap');
 
   if (openAttendanceRow) {
     btn.className = 'clock-btn clock-out-btn';
+    ring.className = 'clock-btn-ring clock-out-ring';
     icon.textContent = '🔴';
     label.textContent = 'Clock Out';
-    status.textContent = 'CURRENTLY CLOCKED IN';
-    elapsedWrap.style.display = 'block';
+    status.innerHTML = '<span class="status-dot"></span>CURRENTLY CLOCKED IN';
+    status.style.color = '#b91c1c';
+    elapsedWrap.style.display = 'inline-flex';
   } else {
     btn.className = 'clock-btn clock-in-btn';
+    ring.className = 'clock-btn-ring clock-in-ring';
     icon.textContent = '🟢';
     label.textContent = 'Clock In';
-    status.textContent = 'NOT CLOCKED IN';
+    status.innerHTML = '<span class="status-dot"></span>NOT CLOCKED IN';
+    status.style.color = 'var(--muted)';
     elapsedWrap.style.display = 'none';
   }
 }
@@ -304,8 +336,9 @@ async function loadTodayLog() {
   list.innerHTML = rows.map(function (r) {
     var inTime = new Date(r.clock_in).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
     var outTime = r.clock_out ? new Date(r.clock_out).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : 'Still in';
-    return '<div class="log-row"><span style="font-weight:700">' + r.staff_name + '</span>'
-      + '<span style="color:var(--muted)">' + inTime + ' → ' + outTime + '</span></div>';
+    var initial = r.staff_name.charAt(0).toUpperCase();
+    return '<div class="log-row"><span class="log-name"><span class="log-avatar">' + initial + '</span>' + r.staff_name + '</span>'
+      + '<span style="color:var(--muted);font-size:12px">' + inTime + ' → ' + outTime + '</span></div>';
   }).join('');
 }
 
@@ -322,6 +355,13 @@ function shiftMonth(dir) {
   loadPayroll();
 }
 
+// ══════════════════════════════════════════════════════════════
+// Payroll — every staff member sees THEIR OWN structured salary
+// (Basic + bonuses, with No Leave Allowance forfeited if more than 1
+// leave day that month) plus a monthly calendar showing which days
+// they clocked in vs. which were automatically marked Leave (any day
+// with no clock-in record). Only is_super_admin can edit the amounts.
+// ══════════════════════════════════════════════════════════════
 async function loadPayroll() {
   var range = getMonthRange(monthOffset);
   document.getElementById('month-label').textContent = range.label;
@@ -329,50 +369,141 @@ async function loadPayroll() {
   var list = document.getElementById('payroll-list');
   list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">Loading…</div>';
 
-  var attRes = await db.from('staff_attendance').select('staff_name, clock_in, clock_out')
-    .gte('work_date', range.start.toISOString().slice(0, 10))
-    .lte('work_date', range.end.toISOString().slice(0, 10))
-    .not('clock_out', 'is', null);
-  var rows = attRes.data || [];
+  var leaveDays = await getLeaveDaysInMonth(staffName, range);
+  var sRes = await db.from('store_staff').select('*').eq('name', staffName).single();
+  var s = sRes.data || {};
 
-  var ratesRes = await db.from('store_staff').select('name, hourly_rate').eq('active', true);
-  var rates = {};
-  (ratesRes.data || []).forEach(function (s) { rates[s.name] = s.hourly_rate || 0; });
+  var noLeaveForfeited = leaveDays.length > 1;
+  var noLeaveAmt = noLeaveForfeited ? 0 : (s.no_leave_allowance || 0);
+  var total = (s.basic_salary || 0) + (s.customer_feedback_bonus || 0) + (s.sales_target_bonus || 0) + noLeaveAmt;
 
-  var hoursByStaff = {};
-  rows.forEach(function (r) {
-    var hrs = (new Date(r.clock_out) - new Date(r.clock_in)) / 3600000;
-    hoursByStaff[r.staff_name] = (hoursByStaff[r.staff_name] || 0) + hrs;
-  });
+  var html = mySalaryCard(s, noLeaveAmt, noLeaveForfeited, leaveDays.length, total)
+    + monthCalendarCard(range, leaveDays);
 
-  var names = Object.keys(hoursByStaff);
-  if (!names.length) {
-    list.innerHTML = '<div style="text-align:center;padding:30px 20px;color:var(--muted);font-size:13px">No completed shifts this month yet.</div>';
-    return;
+  if (isSuperAdmin) {
+    html += await manageSalariesCard();
   }
 
-  list.innerHTML = names.sort().map(function (name) {
-    var hrs = hoursByStaff[name];
-    var rate = rates[name] || 0;
-    var pay = hrs * rate;
-    return '<div class="payroll-card">'
-      + '<div class="payroll-name">' + name + '</div>'
-      + '<div class="payroll-detail">' + hrs.toFixed(1) + ' hours × ₹' + rate + '/hr' + (rate === 0 ? ' — set hourly rate below' : '') + '</div>'
-      + '<div class="payroll-pay">₹' + pay.toFixed(0) + '</div>'
-      + (rate === 0 ? '<button onclick="setHourlyRate(\'' + name.replace(/'/g, "\\'") + '\')" style="margin-top:8px;padding:8px 14px;'
-        + 'border-radius:10px;background:rgba(110,9,119,0.1);border:1px solid rgba(110,9,119,0.3);color:var(--p);'
-        + 'font-size:11px;font-weight:700;cursor:pointer">Set Hourly Rate</button>' : '')
-      + '</div>';
-  }).join('');
+  list.innerHTML = html;
 }
 
-async function setHourlyRate(name) {
-  var val = prompt('Hourly rate for ' + name + ' (₹):');
+function mySalaryCard(s, noLeaveAmt, forfeited, leaveCount, total) {
+  return '<div class="payroll-card">'
+    + '<div class="payroll-name">💰 Your Salary — ' + staffName + '</div>'
+    + salaryRow('Basic Salary', s.basic_salary || 0, false, '')
+    + salaryRow('Customer Feedback Bonus', s.customer_feedback_bonus || 0, false, '')
+    + salaryRow('Sales Target Bonus', s.sales_target_bonus || 0, false, '')
+    + salaryRow('No Leave Allowance', noLeaveAmt, forfeited, forfeited ? leaveCount + ' leave days this month — forfeited' : '')
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid rgba(18,10,30,0.08)">'
+    + '<span style="font-size:13px;font-weight:700;color:var(--ink)">Total This Month</span>'
+    + '<span class="payroll-pay">₹' + total.toFixed(0) + '</span></div>'
+    + '</div>';
+}
+
+function salaryRow(label, amount, struckOut, note) {
+  return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0">'
+    + '<span style="font-size:12px;color:var(--muted)">' + label + (note ? ' <span style="color:#dc2626;font-size:10px">(' + note + ')</span>' : '') + '</span>'
+    + '<span style="font-size:13px;font-weight:700;' + (struckOut ? 'color:#dc2626;text-decoration:line-through' : 'color:var(--ink)') + '">₹' + amount.toFixed(0) + '</span>'
+    + '</div>';
+}
+
+// Returns the list of dates (YYYY-MM-DD) in the given month range where
+// this staff member has NO attendance record at all — i.e. automatic
+// Leave days. Only counts days up to today (never marks future days).
+async function getLeaveDaysInMonth(name, range) {
+  var today = new Date();
+  var effectiveEnd = range.end > today ? today : range.end;
+
+  var res = await db.from('staff_attendance').select('work_date').eq('staff_name', name)
+    .gte('work_date', range.start.toISOString().slice(0, 10))
+    .lte('work_date', range.end.toISOString().slice(0, 10));
+  var presentDates = {};
+  (res.data || []).forEach(function (r) { presentDates[r.work_date] = true; });
+
+  var leaveDays = [];
+  var cursor = new Date(range.start);
+  while (cursor <= effectiveEnd) {
+    var dateStr = cursor.toISOString().slice(0, 10);
+    if (!presentDates[dateStr]) leaveDays.push(dateStr);
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return leaveDays;
+}
+
+function monthCalendarCard(range, leaveDays) {
+  var leaveSet = {};
+  leaveDays.forEach(function (d) { leaveSet[d] = true; });
+
+  var today = new Date();
+  var firstDay = range.start.getDay(); // 0=Sun
+  var daysInMonth = range.end.getDate();
+  var cellsHtml = '';
+
+  for (var i = 0; i < firstDay; i++) cellsHtml += '<div></div>';
+
+  for (var d = 1; d <= daysInMonth; d++) {
+    var cellDate = new Date(range.start.getFullYear(), range.start.getMonth(), d);
+    var dateStr = cellDate.toISOString().slice(0, 10);
+    var isFuture = cellDate > today;
+    var isLeave = !isFuture && leaveSet[dateStr];
+    var isToday = dateStr === today.toISOString().slice(0, 10);
+
+    var bg = isFuture ? 'rgba(18,10,30,0.03)' : isLeave ? 'rgba(220,38,38,0.1)' : 'rgba(34,197,94,0.12)';
+    var color = isFuture ? 'var(--muted)' : isLeave ? '#dc2626' : '#15803d';
+    var border = isToday ? '1.5px solid var(--p)' : 'none';
+
+    cellsHtml += '<div style="aspect-ratio:1;border-radius:8px;background:' + bg + ';border:' + border + ';'
+      + 'display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:' + color + '">' + d + '</div>';
+  }
+
+  return '<div class="payroll-card">'
+    + '<div class="payroll-name" style="margin-bottom:10px">📅 Attendance Calendar</div>'
+    + '<div style="display:flex;gap:10px;margin-bottom:10px;font-size:10px;color:var(--muted)">'
+    + '<span>🟢 Present</span><span>🔴 Leave</span></div>'
+    + '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px">' + cellsHtml + '</div>'
+    + '</div>';
+}
+
+// ══════════════════════════════════════════════════════════════
+// Super Admin only — manage every staff member's salary components
+// ══════════════════════════════════════════════════════════════
+async function manageSalariesCard() {
+  var res = await db.from('store_staff').select('*').eq('active', true).order('name');
+  var rows = res.data || [];
+
+  var rowsHtml = rows.map(function (s) {
+    return '<div style="background:rgba(255,255,255,.5);border-radius:12px;padding:12px;margin-bottom:8px">'
+      + '<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px">' + s.name + '</div>'
+      + salaryEditRow(s.name, 'basic_salary', 'Basic Salary', s.basic_salary)
+      + salaryEditRow(s.name, 'customer_feedback_bonus', 'Customer Feedback Bonus', s.customer_feedback_bonus)
+      + salaryEditRow(s.name, 'sales_target_bonus', 'Sales Target Bonus', s.sales_target_bonus)
+      + salaryEditRow(s.name, 'no_leave_allowance', 'No Leave Allowance', s.no_leave_allowance)
+      + '</div>';
+  }).join('');
+
+  return '<div class="payroll-card">'
+    + '<div class="payroll-name" style="margin-bottom:4px">⚙️ Manage Salaries (Super Admin)</div>'
+    + '<div style="font-size:11px;color:var(--muted);margin-bottom:12px">Tap any amount to update it.</div>'
+    + rowsHtml + '</div>';
+}
+
+function salaryEditRow(staffNameForRow, field, label, value) {
+  return '<div onclick="editSalaryComponent(\'' + staffNameForRow.replace(/'/g, "\\'") + '\',\'' + field + '\',\'' + label + '\',' + (value || 0) + ')" '
+    + 'style="display:flex;justify-content:space-between;padding:6px 0;cursor:pointer">'
+    + '<span style="font-size:11px;color:var(--muted)">' + label + '</span>'
+    + '<span style="font-size:12px;font-weight:700;color:var(--p)">₹' + (value || 0).toFixed(0) + ' ✎</span></div>';
+}
+
+async function editSalaryComponent(staffNameForRow, field, label, current) {
+  var val = prompt(label + ' for ' + staffNameForRow + ' (₹):', current);
   if (val === null) return;
   var num = parseFloat(val);
   if (isNaN(num) || num < 0) { showToast('Enter a valid amount'); return; }
-  await db.from('store_staff').update({ hourly_rate: num }).eq('name', name);
-  showToast('✅ Rate updated');
+
+  var payload = {};
+  payload[field] = num;
+  await db.from('store_staff').update(payload).eq('name', staffNameForRow);
+  showToast('✅ Updated');
   loadPayroll();
 }
 
