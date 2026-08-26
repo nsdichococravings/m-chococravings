@@ -1448,9 +1448,13 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
       </div>
       <div class="nlbl">On Store</div>
     </div>
-        <div class="ntab" id="nav-stall" onclick="window.location.href='/stall'">
+        <div class="ntab" id="nav-stall" style="display:none" onclick="window.location.href='/stall'">
       <div class="nicon" style="position:relative;display:inline-block">🎪</div>
       <div class="nlbl">Stall</div>
+    </div>
+    <div class="ntab" id="nav-attendance" style="display:none" onclick="window.location.href='/attendance'">
+      <div class="nicon" style="position:relative;display:inline-block">⏰</div>
+      <div class="nlbl">Attendance</div>
     </div>
     </div>
     <!-- ═══ HOME ═══ -->
@@ -4259,9 +4263,12 @@ async function loadProfileData() {
 }
 
 async function checkAndShowAdminTab() {
-  // Always hide admin menu item first
   var adminItem = document.getElementById('hamburger-admin-item');
   if (adminItem) adminItem.style.display = 'none';
+  var stallTab = document.getElementById('nav-stall');
+  if (stallTab) stallTab.style.display = 'none';
+  var attendanceTab = document.getElementById('nav-attendance');
+  if (attendanceTab) attendanceTab.style.display = 'none';
   currentUser.is_admin = false;
 
   if (!currentUser || !currentUser.db_id) return;
@@ -4269,7 +4276,7 @@ async function checkAndShowAdminTab() {
   try {
     var { data: cust, error } = await db
       .from('customers')
-      .select('is_admin, name')
+      .select('is_admin, is_employee, name')
       .eq('id', currentUser.db_id)
       .single();
 
@@ -4277,14 +4284,14 @@ async function checkAndShowAdminTab() {
 
     if (cust.is_admin === true) {
       if (adminItem) adminItem.style.display = 'flex';
+      if (stallTab) stallTab.style.display = 'flex';
       currentUser.is_admin = true;
-      console.log('✅ Admin menu enabled for', cust.name);
-    } else {
-      console.log('ℹ️ Not admin — menu item hidden');
     }
-  } catch(e) {
-    console.warn('Admin check error:', e.message);
-  }
+
+    if (cust.is_employee === true || cust.is_admin === true) {
+      if (attendanceTab) attendanceTab.style.display = 'flex';
+    }
+  } catch(e) {}
 }
 
 async function checkStoreOpenStatus() {

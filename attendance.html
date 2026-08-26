@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>NSDI ChocoCravings — Attendance</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,400&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Instrument Sans',system-ui,sans-serif;background:#fdf5e3;color:#120a1e}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+input,select{font-family:inherit}
+
+:root{--p:#6e0977;--amber:#b87410;--rose:#c2607a;--ink:#120a1e;--muted:#9a8aaa}
+
+.page{position:fixed;inset:0;overflow-y:auto;display:none}
+.page.show{display:block}
+
+#login-page{display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{background:#fff;border-radius:24px;padding:32px 26px;max-width:380px;width:100%;
+  box-shadow:0 20px 60px rgba(110,9,119,0.15)}
+.login-emoji{font-size:40px;text-align:center;margin-bottom:6px}
+.login-title{font-family:'Fraunces',serif;font-size:24px;font-weight:900;color:var(--p);text-align:center}
+.login-sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:22px}
+.login-input{width:100%;padding:14px 16px;border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);
+  font-size:15px;outline:none;margin-bottom:12px;background:#fff}
+.login-btn{width:100%;padding:15px;background:linear-gradient(135deg,#6e0977,#9c0ca1);color:#fff;
+  font-size:14px;font-weight:700;border-radius:14px;letter-spacing:.5px}
+.login-err{color:#dc2626;font-size:12px;text-align:center;min-height:16px;margin-top:8px}
+
+.topbar{background:#fff;border-bottom:2px solid rgba(110,9,119,0.1);padding:14px 16px;
+  display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
+.brand{display:flex;align-items:center;gap:8px}
+.back-btn{width:34px;height:34px;border-radius:50%;background:#f5eeff;display:flex;align-items:center;
+  justify-content:center;cursor:pointer;font-size:16px;color:var(--p);margin-right:4px}
+.brand-sub{font-size:9px;letter-spacing:3px;color:var(--rose);font-weight:700}
+.brand-title{font-family:'Fraunces',serif;font-size:17px;font-weight:900;color:var(--p);line-height:1.1}
+.staff-pill{background:#f5eeff;border-radius:20px;padding:6px 12px;font-size:11px;font-weight:700;color:var(--p)}
+
+.tabbar{display:flex;background:#fff;border-bottom:1px solid rgba(18,10,30,0.06)}
+.tabbtn{flex:1;padding:13px;text-align:center;font-size:13px;font-weight:700;color:var(--muted);
+  border-bottom:3px solid transparent}
+.tabbtn.on{color:var(--p);border-bottom-color:var(--p)}
+
+.clock-view{padding:40px 20px;text-align:center}
+.clock-status{font-size:11px;font-weight:700;letter-spacing:2px;color:var(--muted);margin-bottom:8px}
+.clock-time{font-family:'Fraunces',serif;font-size:48px;font-weight:900;color:var(--ink);margin-bottom:20px}
+.clock-btn{width:180px;height:180px;border-radius:50%;margin:0 auto;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:6px;font-size:16px;font-weight:700;color:#fff;box-shadow:0 12px 30px rgba(0,0,0,0.15)}
+.clock-in-btn{background:linear-gradient(135deg,#15803d,#22c55e)}
+.clock-out-btn{background:linear-gradient(135deg,#b91c1c,#ef4444)}
+.clock-icon{font-size:36px}
+.elapsed{margin-top:20px;font-size:13px;color:var(--muted)}
+.elapsed-val{font-family:'Fraunces',serif;font-size:22px;font-weight:900;color:var(--p)}
+
+.today-log{padding:0 20px 40px}
+.log-hdr{font-size:11px;letter-spacing:2px;color:var(--rose);font-weight:700;margin-bottom:10px}
+.log-row{display:flex;justify-content:space-between;background:#fff;border:1px solid #e0c8f0;border-radius:12px;
+  padding:12px 14px;margin-bottom:8px;font-size:13px}
+
+.payroll-view{padding:20px}
+.month-picker{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:20px}
+.month-nav{width:36px;height:36px;border-radius:50%;background:#f5eeff;display:flex;align-items:center;
+  justify-content:center;cursor:pointer;font-size:16px;color:var(--p)}
+.month-label{font-family:'Fraunces',serif;font-size:18px;font-weight:900;color:var(--ink);min-width:140px;text-align:center}
+.payroll-card{background:#fff;border:1.5px solid #e0c8f0;border-radius:16px;padding:16px;margin-bottom:10px}
+.payroll-name{font-size:14px;font-weight:700;color:var(--ink)}
+.payroll-detail{font-size:11px;color:var(--muted);margin-top:2px}
+.payroll-pay{font-family:'Fraunces',serif;font-size:20px;font-weight:900;color:#15803d;margin-top:6px}
+
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#120a1e;color:#fff;
+  padding:12px 22px;border-radius:24px;font-size:13px;font-weight:600;z-index:200;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.3)}
+</style>
+</head>
+<body>
+
+<div class="page show" id="login-page">
+  <div class="login-card">
+    <div class="login-emoji">⏰</div>
+    <div class="login-title">Attendance</div>
+    <div class="login-sub">NSDI ChocoCravings — Staff Sign In</div>
+    <select class="login-input" id="login-name"><option value="">Loading staff…</option></select>
+    <input class="login-input" id="login-pin" type="password" inputmode="numeric" maxlength="6" placeholder="PIN">
+    <div class="login-err" id="login-err"></div>
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+  </div>
+</div>
+
+<div class="page" id="app-page">
+  <div class="topbar">
+    <div class="brand">
+      <div class="back-btn" onclick="window.location.href='/'">←</div>
+      <div><div class="brand-sub">CHOCOCRAVINGS</div><div class="brand-title">Attendance</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div id="notif-bell" onclick="toggleNotifPanel()" style="display:none;position:relative;width:38px;height:38px;
+        border-radius:50%;background:#f5eeff;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:17px">
+        🔔<span id="notif-badge" style="display:none;position:absolute;top:-2px;right:-2px;min-width:16px;height:16px;
+          border-radius:20px;background:#dc2626;color:#fff;font-size:9px;font-weight:700;align-items:center;
+          justify-content:center;padding:0 4px;border:2px solid #fff">0</span>
+      </div>
+      <div class="staff-pill" id="staff-pill">👤</div>
+    </div>
+  </div>
+  <div id="notif-panel" style="display:none;position:absolute;top:60px;right:16px;width:280px;background:#fff;
+    border-radius:16px;border:1px solid #e0c8f0;box-shadow:0 12px 32px rgba(0,0,0,0.15);z-index:30;max-height:340px;overflow-y:auto">
+    <div style="padding:14px 16px;border-bottom:1px solid #f0e8f8;font-size:12px;font-weight:700;color:var(--p)">TODAY'S CHECK-INS</div>
+    <div id="notif-list" style="padding:8px"></div>
+  </div>
+  <div class="tabbar">
+    <div class="tabbtn on" id="tab-clock" onclick="setTab('clock')">⏰ Clock In/Out</div>
+    <div class="tabbtn" id="tab-payroll" onclick="setTab('payroll')" style="display:none">💵 Payroll</div>
+  </div>
+
+  <div id="clock-view">
+    <div class="clock-view">
+      <div class="clock-status" id="clock-status">CHECKING STATUS…</div>
+      <div class="clock-time" id="clock-time">--:--</div>
+      <button class="clock-btn" id="clock-action-btn" onclick="handleClockAction()">
+        <span class="clock-icon" id="clock-icon">⏳</span>
+        <span id="clock-btn-label">Loading</span>
+      </button>
+      <div class="elapsed" id="elapsed-wrap" style="display:none">Time today: <span class="elapsed-val" id="elapsed-val">0h 0m</span></div>
+    </div>
+    <div class="today-log">
+      <div class="log-hdr">TODAY'S ATTENDANCE — ALL STAFF</div>
+      <div id="today-log-list"></div>
+    </div>
+  </div>
+
+  <div id="payroll-view" style="display:none">
+    <div class="payroll-view">
+      <div class="month-picker">
+        <div class="month-nav" onclick="shiftMonth(-1)">‹</div>
+        <div class="month-label" id="month-label">—</div>
+        <div class="month-nav" onclick="shiftMonth(1)">›</div>
+      </div>
+      <div id="payroll-list"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://yjbfditboewwpgyqzryd.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqYmZkaXRib2V3d3BneXF6cnlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNTgwNjcsImV4cCI6MjA4ODczNDA2N30.08Tvq71w2DBeWZrZb-IaiKfoI-2P_1MPJygzSPiRq24';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+var staffName = null;
+var staffRole = 'Employee';
+var currentTab = 'clock';
+var openAttendanceRow = null;
+var monthOffset = 0;
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(function () { t.style.display = 'none'; }, 2400);
+}
+
+window.addEventListener('DOMContentLoaded', async function () {
+  try {
+    var res = await db.from('store_staff').select('name').eq('active', true).order('name');
+    var staff = res.data || [];
+    var sel = document.getElementById('login-name');
+    sel.innerHTML = staff.length
+      ? '<option value="">Select your name...</option>' + staff.map(function (s) {
+          return '<option value="' + s.name.replace(/"/g, '&quot;') + '">' + s.name + '</option>';
+        }).join('')
+      : '<option value="">No staff found</option>';
+  } catch (e) {
+    document.getElementById('login-name').innerHTML = '<option value="">Could not load staff</option>';
+  }
+});
+
+async function doLogin() {
+  var name = document.getElementById('login-name').value;
+  var pin = document.getElementById('login-pin').value.trim();
+  var errEl = document.getElementById('login-err');
+  errEl.textContent = '';
+  if (!name) { errEl.textContent = 'Select your name'; return; }
+  if (!pin) { errEl.textContent = 'Enter your PIN'; return; }
+
+  try {
+    var res = await db.rpc('rpc_staff_login', { p_name: name, p_pin: pin });
+    if (res.error || !res.data || !res.data.ok) {
+      errEl.textContent = (res.data && res.data.error) || 'Login failed';
+      return;
+    }
+    staffName = res.data.name;
+
+    try {
+      var roleRes = await db.from('store_staff').select('role').eq('name', staffName).eq('active', true).order('role', { ascending: true }).limit(1);
+      staffRole = (roleRes.data && roleRes.data[0] && roleRes.data[0].role) || 'Employee';
+    } catch (e) { staffRole = 'Employee'; }
+
+    document.getElementById('staff-pill').textContent = '👤 ' + staffName;
+    document.getElementById('tab-payroll').style.display = staffRole === 'Admin' ? 'block' : 'none';
+    document.getElementById('notif-bell').style.display = staffRole === 'Admin' ? 'flex' : 'none';
+    document.getElementById('login-page').classList.remove('show');
+    document.getElementById('app-page').classList.add('show');
+    initApp();
+  } catch (e) {
+    errEl.textContent = 'Something went wrong';
+  }
+}
+
+function initApp() {
+  setTab('clock');
+  loadClockStatus();
+  loadTodayLog();
+  setInterval(updateClockDisplay, 1000);
+  if (staffRole === 'Admin') {
+    loadNotifCount();
+    subscribeCheckIns();
+  }
+}
+
+function setTab(tab) {
+  currentTab = tab;
+  document.getElementById('tab-clock').classList.toggle('on', tab === 'clock');
+  document.getElementById('tab-payroll').classList.toggle('on', tab === 'payroll');
+  document.getElementById('clock-view').style.display = tab === 'clock' ? 'block' : 'none';
+  document.getElementById('payroll-view').style.display = tab === 'payroll' ? 'block' : 'none';
+  if (tab === 'payroll') loadPayroll();
+}
+
+function updateClockDisplay() {
+  document.getElementById('clock-time').textContent = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  if (openAttendanceRow) {
+    var mins = Math.floor((Date.now() - new Date(openAttendanceRow.clock_in).getTime()) / 60000);
+    var h = Math.floor(mins / 60), m = mins % 60;
+    document.getElementById('elapsed-val').textContent = h + 'h ' + m + 'm';
+  }
+}
+
+async function loadClockStatus() {
+  var today = new Date().toISOString().slice(0, 10);
+  var res = await db.from('staff_attendance').select('*').eq('staff_name', staffName).eq('work_date', today).is('clock_out', null).maybeSingle();
+  openAttendanceRow = res.data || null;
+  renderClockButton();
+}
+
+function renderClockButton() {
+  var btn = document.getElementById('clock-action-btn');
+  var icon = document.getElementById('clock-icon');
+  var label = document.getElementById('clock-btn-label');
+  var status = document.getElementById('clock-status');
+  var elapsedWrap = document.getElementById('elapsed-wrap');
+
+  if (openAttendanceRow) {
+    btn.className = 'clock-btn clock-out-btn';
+    icon.textContent = '🔴';
+    label.textContent = 'Clock Out';
+    status.textContent = 'CURRENTLY CLOCKED IN';
+    elapsedWrap.style.display = 'block';
+  } else {
+    btn.className = 'clock-btn clock-in-btn';
+    icon.textContent = '🟢';
+    label.textContent = 'Clock In';
+    status.textContent = 'NOT CLOCKED IN';
+    elapsedWrap.style.display = 'none';
+  }
+}
+
+async function handleClockAction() {
+  var btn = document.getElementById('clock-action-btn');
+  btn.style.opacity = '0.6';
+  try {
+    if (openAttendanceRow) {
+      await db.from('staff_attendance').update({ clock_out: new Date().toISOString() }).eq('id', openAttendanceRow.id);
+      showToast('🔴 Clocked out — see you next time!');
+      openAttendanceRow = null;
+    } else {
+      var today = new Date().toISOString().slice(0, 10);
+      var res = await db.from('staff_attendance').insert([{ staff_name: staffName, work_date: today }]).select('*').single();
+      if (res.error) throw res.error;
+      openAttendanceRow = res.data;
+      showToast('🟢 Clocked in — have a great shift!');
+    }
+    renderClockButton();
+    loadTodayLog();
+  } catch (e) {
+    showToast('Error: ' + e.message);
+  } finally {
+    btn.style.opacity = '1';
+  }
+}
+
+async function loadTodayLog() {
+  var today = new Date().toISOString().slice(0, 10);
+  var res = await db.from('staff_attendance').select('*').eq('work_date', today).order('clock_in', { ascending: false });
+  var rows = res.data || [];
+  var list = document.getElementById('today-log-list');
+  if (!rows.length) {
+    list.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:12px">No one has clocked in yet today.</div>';
+    return;
+  }
+  list.innerHTML = rows.map(function (r) {
+    var inTime = new Date(r.clock_in).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    var outTime = r.clock_out ? new Date(r.clock_out).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : 'Still in';
+    return '<div class="log-row"><span style="font-weight:700">' + r.staff_name + '</span>'
+      + '<span style="color:var(--muted)">' + inTime + ' → ' + outTime + '</span></div>';
+  }).join('');
+}
+
+function getMonthRange(offset) {
+  var d = new Date();
+  d.setMonth(d.getMonth() + offset);
+  var start = new Date(d.getFullYear(), d.getMonth(), 1);
+  var end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59);
+  return { start: start, end: end, label: start.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }) };
+}
+
+function shiftMonth(dir) {
+  monthOffset += dir;
+  loadPayroll();
+}
+
+async function loadPayroll() {
+  var range = getMonthRange(monthOffset);
+  document.getElementById('month-label').textContent = range.label;
+
+  var list = document.getElementById('payroll-list');
+  list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">Loading…</div>';
+
+  var attRes = await db.from('staff_attendance').select('staff_name, clock_in, clock_out')
+    .gte('work_date', range.start.toISOString().slice(0, 10))
+    .lte('work_date', range.end.toISOString().slice(0, 10))
+    .not('clock_out', 'is', null);
+  var rows = attRes.data || [];
+
+  var ratesRes = await db.from('store_staff').select('name, hourly_rate').eq('active', true);
+  var rates = {};
+  (ratesRes.data || []).forEach(function (s) { rates[s.name] = s.hourly_rate || 0; });
+
+  var hoursByStaff = {};
+  rows.forEach(function (r) {
+    var hrs = (new Date(r.clock_out) - new Date(r.clock_in)) / 3600000;
+    hoursByStaff[r.staff_name] = (hoursByStaff[r.staff_name] || 0) + hrs;
+  });
+
+  var names = Object.keys(hoursByStaff);
+  if (!names.length) {
+    list.innerHTML = '<div style="text-align:center;padding:30px 20px;color:var(--muted);font-size:13px">No completed shifts this month yet.</div>';
+    return;
+  }
+
+  list.innerHTML = names.sort().map(function (name) {
+    var hrs = hoursByStaff[name];
+    var rate = rates[name] || 0;
+    var pay = hrs * rate;
+    return '<div class="payroll-card">'
+      + '<div class="payroll-name">' + name + '</div>'
+      + '<div class="payroll-detail">' + hrs.toFixed(1) + ' hours × ₹' + rate + '/hr' + (rate === 0 ? ' — set hourly rate below' : '') + '</div>'
+      + '<div class="payroll-pay">₹' + pay.toFixed(0) + '</div>'
+      + (rate === 0 ? '<button onclick="setHourlyRate(\'' + name.replace(/'/g, "\\'") + '\')" style="margin-top:8px;padding:8px 14px;'
+        + 'border-radius:10px;background:rgba(110,9,119,0.1);border:1px solid rgba(110,9,119,0.3);color:var(--p);'
+        + 'font-size:11px;font-weight:700;cursor:pointer">Set Hourly Rate</button>' : '')
+      + '</div>';
+  }).join('');
+}
+
+async function setHourlyRate(name) {
+  var val = prompt('Hourly rate for ' + name + ' (₹):');
+  if (val === null) return;
+  var num = parseFloat(val);
+  if (isNaN(num) || num < 0) { showToast('Enter a valid amount'); return; }
+  await db.from('store_staff').update({ hourly_rate: num }).eq('name', name);
+  showToast('✅ Rate updated');
+  loadPayroll();
+}
+
+// ══════════════════════════════════════════════════════════════
+// Admin/Super Admin notifications — live toast + badge on check-in
+// ══════════════════════════════════════════════════════════════
+async function loadNotifCount() {
+  var today = new Date().toISOString().slice(0, 10);
+  var res = await db.from('staff_attendance').select('id', { count: 'exact', head: true }).eq('work_date', today);
+  updateNotifBadge(res.count || 0);
+}
+
+function updateNotifBadge(count) {
+  var badge = document.getElementById('notif-badge');
+  badge.textContent = count > 99 ? '99+' : count;
+  badge.style.display = count > 0 ? 'flex' : 'none';
+}
+
+function toggleNotifPanel() {
+  var panel = document.getElementById('notif-panel');
+  var isOpen = panel.style.display === 'block';
+  if (isOpen) { panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+  renderNotifList();
+}
+
+async function renderNotifList() {
+  var today = new Date().toISOString().slice(0, 10);
+  var res = await db.from('staff_attendance').select('*').eq('work_date', today).order('clock_in', { ascending: false });
+  var rows = res.data || [];
+  var list = document.getElementById('notif-list');
+  if (!rows.length) {
+    list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">No check-ins yet today.</div>';
+    return;
+  }
+  list.innerHTML = rows.map(function (r) {
+    var time = new Date(r.clock_in).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    var statusTxt = r.clock_out ? 'Clocked out' : 'Still clocked in';
+    return '<div style="padding:10px 8px;border-bottom:1px solid #f5f0f8">'
+      + '<div style="font-size:13px;font-weight:700;color:var(--ink)">🟢 ' + r.staff_name + ' checked in</div>'
+      + '<div style="font-size:11px;color:var(--muted)">' + time + ' · ' + statusTxt + '</div></div>';
+  }).join('');
+}
+
+// Single subscription for the whole session — never re-subscribed, so
+// it can't cause the reconnect-churn issue we fixed elsewhere in this
+// app (dropped realtime events from tearing the channel down repeatedly).
+var _attendanceCh = null;
+function subscribeCheckIns() {
+  if (_attendanceCh) return;
+  _attendanceCh = db.channel('staff-checkins-live')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'staff_attendance' }, function (payload) {
+      var row = payload.new;
+      if (!row) return;
+      showToast('🔔 ' + row.staff_name + ' just checked in');
+      loadNotifCount();
+      var panel = document.getElementById('notif-panel');
+      if (panel && panel.style.display === 'block') renderNotifList();
+      if (currentTab === 'clock') loadTodayLog();
+    })
+    .subscribe();
+}
+</script>
+</body>
+</html>
