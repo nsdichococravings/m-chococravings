@@ -25,22 +25,11 @@ var RECURRING_FREQUENCIES = ['daily', 'weekly', 'monthly'];
 var _deTodayList = [];
 
 document.addEventListener('DOMContentLoaded', function () {
-  buildExpensesUI();
-  waitForAdminThenInject();
+  buildExpensesUI(); // DOM setup only, no query — safe to always run
+  // No FAB entry injected here anymore — reports-hub-patch.js owns the
+  // single "📈 Reports" entry and calls openExpenses() directly when its
+  // "Daily Expenses" card is tapped.
 });
-
-function waitForAdminThenInject() {
-  var attempts = 0;
-  var poll = setInterval(function () {
-    attempts++;
-    if (typeof isAdmin !== 'undefined' && isAdmin) {
-      clearInterval(poll);
-      injectExpensesMenuEntry();
-    } else if (attempts >= 20) {
-      clearInterval(poll);
-    }
-  }, 300);
-}
 
 function deLogName() {
   if (typeof _staffSession !== 'undefined' && _staffSession && _staffSession.name) return _staffSession.name;
@@ -93,23 +82,6 @@ async function getRecurringExpensesProrated(startDate, endDate) {
 // ══════════════════════════════════════════════════════════════
 // Admin FAB entry
 // ══════════════════════════════════════════════════════════════
-function injectExpensesMenuEntry() {
-  var fabMenu = document.getElementById('admin-fab-menu');
-  if (!fabMenu) return;
-  var entry = document.createElement('div');
-  entry.onclick = function () { openExpenses(); closeAdminMenu(); };
-  entry.style.cssText = 'display:flex;align-items:center;gap:10px;padding:13px 16px;'
-    + 'cursor:pointer;transition:background .15s;border-bottom:1px solid #f5f0f8';
-  entry.onmouseover = function () { entry.style.background = '#f5eeff'; };
-  entry.onmouseout  = function () { entry.style.background = 'transparent'; };
-  entry.innerHTML =
-      '<div style="width:32px;height:32px;border-radius:8px;background:rgba(110,9,119,0.1);'
-    + 'display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">💰</div>'
-    + '<div><div style="font-size:13px;font-weight:600;color:#1a0820">Daily Expenses</div>'
-    + '<div style="font-size:11px;color:#9c0ca1;margin-top:1px">Purchases &amp; fixed costs</div></div>';
-  fabMenu.appendChild(entry);
-}
-
 // ══════════════════════════════════════════════════════════════
 // Main sheet — tabs: Today / History / Recurring
 // ══════════════════════════════════════════════════════════════

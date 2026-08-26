@@ -135,6 +135,7 @@ function renderReportsHubCards() {
 
   // Always visible to any admin who reached the hub.
   html += reportCard('🧾', 'Daily Close Reports', 'Cash reconciliation & payment breakdown', "rhOpen('daily-close')");
+  html += reportCard('💰', 'Daily Expenses', 'Purchases, history & recurring fixed costs', "rhOpen('expenses')");
 
   // Only shown to the actual super user — regular admins never see this
   // card exist at all, not even greyed out.
@@ -159,6 +160,9 @@ function rhOpen(which) {
   if (which === 'daily-close') {
     if (typeof openDayClose === 'function') openDayClose();
     else alert('Day Close module not loaded — check that day-close-patch.js is included.');
+  } else if (which === 'expenses') {
+    if (typeof openExpenses === 'function') openExpenses();
+    else alert('Daily Expenses module not loaded — check that daily-expenses-patch.js is included.');
   } else if (which === 'sales-reports') {
     if (typeof openReports === 'function') openReports();
     else alert('Sales Reports module not loaded — check that sales-reports-patch.js is included.');
