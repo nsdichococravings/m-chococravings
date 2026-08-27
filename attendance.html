@@ -85,6 +85,12 @@ input,select{font-family:inherit}
 .payroll-detail{font-size:11px;color:var(--muted);margin-top:2px}
 .payroll-pay{font-family:'Fraunces',serif;font-size:20px;font-weight:900;color:#15803d;margin-top:6px}
 
+.leave-type-btn{flex:1;padding:13px 10px;border-radius:14px;border:1.5px solid rgba(18,10,30,0.1);
+  background:#fff;text-align:center;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;transition:all .15s}
+.leave-type-btn.on{background:linear-gradient(135deg,#6e0977,#9c0ca1);border-color:transparent;color:#fff;
+  box-shadow:0 6px 16px rgba(110,9,119,0.3)}
+@keyframes slideUp{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
+
 .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#120a1e;color:#fff;
   padding:12px 22px;border-radius:24px;font-size:13px;font-weight:600;z-index:200;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.3)}
 </style>
@@ -124,6 +130,53 @@ input,select{font-family:inherit}
     <div style="padding:14px 16px;border-bottom:1px solid #f0e8f8;font-size:12px;font-weight:700;color:var(--p)">TODAY'S CHECK-INS</div>
     <div id="notif-list" style="padding:8px"></div>
   </div>
+
+  <div id="leave-overlay" onclick="if(event.target===this) closeLeaveModal()" style="display:none;position:fixed;
+    inset:0;background:rgba(18,10,30,0.55);backdrop-filter:blur(3px);z-index:150;align-items:flex-end;justify-content:center">
+    <div style="background:#fff;border-radius:26px 26px 0 0;width:100%;max-width:480px;padding:24px 22px 30px;
+      box-shadow:0 -12px 40px rgba(0,0,0,0.2);animation:slideUp .25s ease">
+      <div style="width:40px;height:4px;border-radius:2px;background:#e8d8f0;margin:0 auto 18px"></div>
+      <div style="font-family:'Fraunces',serif;font-size:20px;font-weight:900;color:var(--ink)">Apply for Leave</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:20px">Let your admin know in advance</div>
+
+      <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">LEAVE TYPE</div>
+      <div style="display:flex;gap:10px;margin-bottom:20px">
+        <div id="leave-type-sick" onclick="setLeaveType('sick')" class="leave-type-btn">🤒 Sick Leave</div>
+        <div id="leave-type-casual" onclick="setLeaveType('casual')" class="leave-type-btn on">🌴 Casual Leave</div>
+      </div>
+
+      <div style="display:flex;gap:12px;margin-bottom:14px">
+        <div style="flex:1">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted);margin-bottom:6px">START DATE</div>
+          <input type="date" id="leave-start-date" class="login-input" style="margin-bottom:0" oninput="onLeaveDateChange()">
+        </div>
+        <div style="flex:1">
+          <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted);margin-bottom:6px">END DATE</div>
+          <input type="date" id="leave-end-date" class="login-input" style="margin-bottom:0" oninput="onLeaveDateChange()">
+        </div>
+      </div>
+
+      <div id="half-day-row" style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:12px 14px;
+        background:#f5eeff;border-radius:12px;cursor:pointer" onclick="toggleHalfDay()">
+        <div id="half-day-check" style="width:20px;height:20px;border-radius:6px;border:1.5px solid rgba(110,9,119,0.3);
+          background:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;flex-shrink:0"></div>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--ink)">Half Day</div>
+          <div style="font-size:10px;color:var(--muted)">Only available for a single-day request</div>
+        </div>
+      </div>
+
+      <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px">REASON (OPTIONAL)</div>
+      <textarea id="leave-reason" rows="2" placeholder="e.g. Family function, feeling unwell..." style="width:100%;
+        padding:12px 14px;border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);font-family:inherit;font-size:13px;
+        outline:none;resize:none;box-sizing:border-box;margin-bottom:20px"></textarea>
+
+      <button class="login-btn" onclick="submitLeaveRequest()">📝 Submit Request</button>
+      <button onclick="closeLeaveModal()" style="width:100%;padding:12px;margin-top:8px;background:transparent;
+        color:var(--muted);font-size:12px;font-weight:600;border-radius:12px">Cancel</button>
+    </div>
+  </div>
+
   <div class="tabbar">
     <div class="tabbtn on" id="tab-clock" onclick="setTab('clock')">⏰ Clock In/Out</div>
     <div class="tabbtn" id="tab-payroll" onclick="setTab('payroll')" style="display:none">💵 Payroll</div>
@@ -488,20 +541,104 @@ function monthCalendarCard(range, leaveDays, myRequests) {
 
   return '<div class="payroll-card">'
     + '<div class="payroll-name" style="margin-bottom:4px">📅 Attendance Calendar</div>'
-    + '<div style="font-size:10px;color:var(--muted);margin-bottom:10px">Tap a future day to apply for leave.</div>'
+    + '<div style="font-size:10px;color:var(--muted);margin-bottom:10px">Tap a future day, or use the button below for a multi-day request.</div>'
     + '<div style="display:flex;gap:8px;margin-bottom:10px;font-size:9px;color:var(--muted);flex-wrap:wrap">'
     + '<span>🟢 Present</span><span>🔴 Leave</span><span>🟡 Pending</span><span>🔵 Approved</span></div>'
-    + '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px">' + cellsHtml + '</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:14px">' + cellsHtml + '</div>'
+    + '<button onclick="openLeaveModal()" style="width:100%;padding:12px;background:rgba(110,9,119,0.08);'
+    + 'border:1.5px solid rgba(110,9,119,0.25);color:var(--p);font-size:12px;font-weight:700;border-radius:12px;cursor:pointer">'
+    + '📝 Apply for Leave</button>'
     + '</div>';
 }
 
-async function applyForLeavePrompt(dateStr) {
-  var reason = prompt('Apply for leave on ' + dateStr + '?\n\nReason (optional):');
-  if (reason === null) return;
+var _leaveType = 'casual';
+var _leaveIsHalfDay = false;
+
+function applyForLeavePrompt(dateStr) {
+  openLeaveModal(dateStr, dateStr);
+}
+
+function openLeaveModal(prefilledStart, prefilledEnd) {
+  _leaveType = 'casual';
+  _leaveIsHalfDay = false;
+  setLeaveType('casual');
+  document.getElementById('half-day-check').textContent = '';
+  document.getElementById('leave-reason').value = '';
+
+  var today = new Date().toISOString().slice(0, 10);
+  var startEl = document.getElementById('leave-start-date');
+  var endEl = document.getElementById('leave-end-date');
+  startEl.min = today; endEl.min = today;
+  startEl.value = prefilledStart || '';
+  endEl.value = prefilledEnd || prefilledStart || '';
+
+  onLeaveDateChange();
+  document.getElementById('leave-overlay').style.display = 'flex';
+}
+
+function closeLeaveModal() {
+  document.getElementById('leave-overlay').style.display = 'none';
+}
+
+function setLeaveType(type) {
+  _leaveType = type;
+  document.getElementById('leave-type-sick').classList.toggle('on', type === 'sick');
+  document.getElementById('leave-type-casual').classList.toggle('on', type === 'casual');
+}
+
+function onLeaveDateChange() {
+  var startEl = document.getElementById('leave-start-date');
+  var endEl = document.getElementById('leave-end-date');
+  if (endEl.value && endEl.value < startEl.value) endEl.value = startEl.value;
+  endEl.min = startEl.value;
+
+  var isSingleDay = startEl.value && startEl.value === endEl.value;
+  var halfDayRow = document.getElementById('half-day-row');
+  halfDayRow.style.opacity = isSingleDay ? '1' : '0.4';
+  halfDayRow.style.pointerEvents = isSingleDay ? 'auto' : 'none';
+  if (!isSingleDay && _leaveIsHalfDay) { _leaveIsHalfDay = false; document.getElementById('half-day-check').textContent = ''; }
+}
+
+function toggleHalfDay() {
+  var startEl = document.getElementById('leave-start-date');
+  var endEl = document.getElementById('leave-end-date');
+  if (startEl.value !== endEl.value) return; // guarded visually too, but double-check here
+  _leaveIsHalfDay = !_leaveIsHalfDay;
+  document.getElementById('half-day-check').textContent = _leaveIsHalfDay ? '✓' : '';
+  document.getElementById('half-day-check').style.background = _leaveIsHalfDay ? 'var(--p)' : '#fff';
+}
+
+async function submitLeaveRequest() {
+  var start = document.getElementById('leave-start-date').value;
+  var end = document.getElementById('leave-end-date').value;
+  var reason = document.getElementById('leave-reason').value.trim();
+
+  if (!start || !end) { showToast('Pick both a start and end date'); return; }
+  if (end < start) { showToast('End date must be on or after start date'); return; }
+
+  // Multi-day ranges are stored as one row per calendar day — keeps the
+  // existing per-day calendar rendering and approval logic unchanged,
+  // rather than needing a separate range concept threaded everywhere.
+  var dates = [];
+  var cursor = new Date(start + 'T00:00:00');
+  var endDate = new Date(end + 'T00:00:00');
+  while (cursor <= endDate) {
+    dates.push(cursor.toISOString().slice(0, 10));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
   try {
-    var res = await db.from('leave_requests').insert([{ staff_name: staffName, leave_date: dateStr, reason: reason || null }]);
+    var rows = dates.map(function (d) {
+      return {
+        staff_name: staffName, leave_date: d, leave_type: _leaveType,
+        is_half_day: dates.length === 1 ? _leaveIsHalfDay : false,
+        reason: reason || null
+      };
+    });
+    var res = await db.from('leave_requests').insert(rows);
     if (res.error) throw res.error;
     showToast('✅ Leave request submitted — waiting for approval');
+    closeLeaveModal();
     loadPayroll();
   } catch (e) {
     showToast('Error: ' + e.message);
@@ -513,7 +650,9 @@ async function viewLeaveRequestStatus(dateStr) {
   var r = res.data;
   if (!r) return;
   var statusLabel = { pending: '🟡 Pending approval', approved: '🔵 Approved', rejected: '🔴 Rejected' }[r.status] || r.status;
-  alert('Leave request — ' + dateStr + '\n\nStatus: ' + statusLabel + (r.reason ? '\nReason: ' + r.reason : ''));
+  var typeLabel = r.leave_type === 'sick' ? '🤒 Sick Leave' : '🌴 Casual Leave';
+  alert('Leave request — ' + dateStr + '\n\nType: ' + typeLabel + (r.is_half_day ? ' (Half Day)' : '')
+    + '\nStatus: ' + statusLabel + (r.reason ? '\nReason: ' + r.reason : ''));
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -525,10 +664,12 @@ async function pendingLeaveRequestsCard() {
 
   var rowsHtml = rows.length
     ? rows.map(function (r) {
+        var typeLabel = r.leave_type === 'sick' ? '🤒 Sick' : '🌴 Casual';
         return '<div style="display:flex;align-items:center;justify-content:space-between;background:rgba(245,196,48,0.1);'
           + 'border:1px solid rgba(245,196,48,0.3);border-radius:12px;padding:12px 14px;margin-bottom:8px">'
           + '<div><div style="font-size:13px;font-weight:700;color:var(--ink)">' + r.staff_name + ' — ' + r.leave_date + '</div>'
-          + (r.reason ? '<div style="font-size:11px;color:var(--muted)">' + r.reason + '</div>' : '') + '</div>'
+          + '<div style="font-size:10px;color:#8a6a1a;font-weight:700;margin-top:2px">' + typeLabel + (r.is_half_day ? ' · Half Day' : '') + '</div>'
+          + (r.reason ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + r.reason + '</div>' : '') + '</div>'
           + '<div style="display:flex;gap:6px">'
           + '<button onclick="reviewLeaveRequest(\'' + r.id + '\',\'approved\')" style="padding:7px 12px;border-radius:8px;'
           + 'background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.35);color:#15803d;font-size:11px;font-weight:700;cursor:pointer">✓ Approve</button>'
