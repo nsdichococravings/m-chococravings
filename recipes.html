@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>NSDI ChocoCravings — Recipes</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,400&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Instrument Sans',system-ui,sans-serif;background:#fdf5e3;color:#120a1e}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+input,select,textarea{font-family:inherit}
+
+:root{--p:#6e0977;--amber:#b87410;--rose:#c2607a;--ink:#120a1e;--muted:#9a8aaa}
+
+.page{position:fixed;inset:0;overflow-y:auto;display:none}
+.page.show{display:block}
+
+#login-page.show{display:flex;align-items:center;justify-content:center;padding:20px}
+.login-card{background:#fff;border-radius:24px;padding:32px 26px;max-width:380px;width:100%;
+  box-shadow:0 20px 60px rgba(110,9,119,0.15)}
+.login-emoji{font-size:40px;text-align:center;margin-bottom:6px}
+.login-title{font-family:'Fraunces',serif;font-size:24px;font-weight:900;color:var(--p);text-align:center}
+.login-sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:22px}
+.login-input{width:100%;padding:14px 16px;border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);
+  font-size:15px;outline:none;margin-bottom:12px;background:#fff}
+.login-btn{width:100%;padding:15px;background:linear-gradient(135deg,#6e0977,#9c0ca1);color:#fff;
+  font-size:14px;font-weight:700;border-radius:14px;letter-spacing:.5px}
+.login-err{color:#dc2626;font-size:12px;text-align:center;min-height:16px;margin-top:8px}
+
+.topbar{background:#fff;border-bottom:2px solid rgba(110,9,119,0.1);padding:14px 16px;
+  display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
+.brand{display:flex;align-items:center;gap:8px}
+.back-btn{width:34px;height:34px;border-radius:50%;background:#f5eeff;display:flex;align-items:center;
+  justify-content:center;cursor:pointer;font-size:16px;color:var(--p);margin-right:4px}
+.brand-sub{font-size:9px;letter-spacing:3px;color:var(--rose);font-weight:700}
+.brand-title{font-family:'Fraunces',serif;font-size:17px;font-weight:900;color:var(--p);line-height:1.1}
+.staff-pill{background:#f5eeff;border-radius:20px;padding:6px 12px;font-size:11px;font-weight:700;color:var(--p)}
+
+.search-wrap{padding:12px 16px 0;background:#fff}
+.search-input{width:100%;padding:11px 14px 11px 38px;border-radius:22px;border:1.5px solid rgba(18,10,30,0.1);
+  background:#f5eeff;font-size:13px;outline:none;box-sizing:border-box}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--muted)}
+
+.cats{display:flex;gap:8px;overflow-x:auto;padding:12px 16px;background:#fff}
+.cat{flex-shrink:0;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:700;
+  background:#f5eeff;color:var(--p);white-space:nowrap;cursor:pointer}
+.cat.on{background:var(--p);color:#fff}
+
+.item-grid{padding:14px 16px 40px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.item-card{background:#fff;border:1.5px solid rgba(18,10,30,0.06);border-radius:14px;padding:14px;
+  cursor:pointer;position:relative}
+.item-name{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:6px}
+.item-badge{font-size:9px;font-weight:700;padding:3px 8px;border-radius:20px;display:inline-block}
+.badge-ready{background:rgba(34,197,94,0.1);color:#15803d}
+.badge-missing{background:rgba(220,38,38,0.08);color:#dc2626}
+
+.overlay{display:none;position:fixed;inset:0;background:rgba(18,10,30,0.55);backdrop-filter:blur(3px);
+  z-index:150;align-items:flex-end;justify-content:center;padding:0}
+.overlay.show{display:flex}
+.sheet{background:#fff;border-radius:26px 26px 0 0;width:100%;max-width:520px;max-height:88vh;overflow-y:auto;
+  padding:22px 22px 30px;box-shadow:0 -12px 40px rgba(0,0,0,0.2)}
+.sheet-handle{width:40px;height:4px;border-radius:2px;background:#e8d8f0;margin:0 auto 16px}
+.sheet-title{font-family:'Fraunces',serif;font-size:22px;font-weight:900;color:var(--ink)}
+.sheet-sub{font-size:11px;color:var(--muted);margin-bottom:18px}
+.section-lbl{font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--rose);margin-bottom:10px;margin-top:18px}
+.ing-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f5f0f8;font-size:13px}
+.step-row{display:flex;gap:12px;padding:10px 0;border-bottom:1px solid #f5f0f8}
+.step-num{width:26px;height:26px;border-radius:50%;background:var(--p);color:#fff;font-size:12px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-text{font-size:13px;color:var(--ink);padding-top:3px;flex:1}
+.tips-box{background:#fff8e6;border:1.5px solid rgba(245,196,48,0.35);border-radius:14px;padding:14px;margin-top:16px;font-size:12px;color:#8a6a1a}
+.empty-note{text-align:center;padding:20px;color:var(--muted);font-size:12px;background:#f5eeff;border-radius:12px}
+
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#120a1e;color:#fff;
+  padding:12px 22px;border-radius:24px;font-size:13px;font-weight:600;z-index:200;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.3)}
+</style>
+</head>
+<body>
+
+<div class="page show" id="login-page">
+  <div class="login-card">
+    <div class="login-emoji">📖</div>
+    <div class="login-title">Recipes</div>
+    <div class="login-sub">NSDI ChocoCravings — Staff Sign In</div>
+    <select class="login-input" id="login-name"><option value="">Loading staff…</option></select>
+    <input class="login-input" id="login-pin" type="password" inputmode="numeric" maxlength="6" placeholder="PIN">
+    <div class="login-err" id="login-err"></div>
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+  </div>
+</div>
+
+<div class="page" id="app-page">
+  <div class="topbar">
+    <div class="brand">
+      <div class="back-btn" onclick="window.location.href='/'">←</div>
+      <div><div class="brand-sub">CHOCOCRAVINGS</div><div class="brand-title">Recipe Guide</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div id="lang-toggle" onclick="toggleLanguage()" style="background:#f5eeff;border-radius:20px;padding:6px 12px;
+        font-size:11px;font-weight:700;color:var(--p);cursor:pointer">EN / <span style="opacity:.4">தமிழ்</span></div>
+      <div class="staff-pill" id="staff-pill">👤</div>
+    </div>
+  </div>
+
+  <div class="search-wrap">
+    <div style="position:relative">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="item-search" placeholder="Search items..." oninput="onSearchInput()">
+    </div>
+  </div>
+  <div class="cats" id="cats"></div>
+  <div class="item-grid" id="item-grid"></div>
+</div>
+
+<div class="overlay" id="detail-overlay" onclick="if(event.target===this) closeDetail()">
+  <div class="sheet" id="detail-sheet"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://yjbfditboewwpgyqzryd.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqYmZkaXRib2V3d3BneXF6cnlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNTgwNjcsImV4cCI6MjA4ODczNDA2N30.08Tvq71w2DBeWZrZb-IaiKfoI-2P_1MPJygzSPiRq24';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+var staffName = null;
+var staffRole = 'Employee';
+var menu = {};
+var activeCat = null;
+var recipeGuideMap = {};
+var currentDetailItem = null;
+var draftSteps = [];
+var draftStepsTa = [];
+var currentLang = 'en'; // 'en' | 'ta'
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(function () { t.style.display = 'none'; }, 2400);
+}
+
+window.addEventListener('DOMContentLoaded', async function () {
+  try {
+    var res = await db.from('store_staff').select('name').eq('active', true).order('name');
+    var staff = res.data || [];
+    var sel = document.getElementById('login-name');
+    sel.innerHTML = staff.length
+      ? '<option value="">Select your name...</option>' + staff.map(function (s) {
+          return '<option value="' + s.name.replace(/"/g, '&quot;') + '">' + s.name + '</option>';
+        }).join('')
+      : '<option value="">No staff found</option>';
+  } catch (e) {
+    document.getElementById('login-name').innerHTML = '<option value="">Could not load staff</option>';
+  }
+});
+
+async function doLogin() {
+  var name = document.getElementById('login-name').value;
+  var pin = document.getElementById('login-pin').value.trim();
+  var errEl = document.getElementById('login-err');
+  errEl.textContent = '';
+  if (!name) { errEl.textContent = 'Select your name'; return; }
+  if (!pin) { errEl.textContent = 'Enter your PIN'; return; }
+
+  try {
+    var res = await db.rpc('rpc_staff_login', { p_name: name, p_pin: pin });
+    if (res.error || !res.data || !res.data.ok) {
+      errEl.textContent = (res.data && res.data.error) || 'Login failed';
+      return;
+    }
+    staffName = res.data.name;
+
+    try {
+      var roleRes = await db.from('store_staff').select('role').eq('name', staffName).eq('active', true).order('role', { ascending: true }).limit(1);
+      staffRole = (roleRes.data && roleRes.data[0] && roleRes.data[0].role) || 'Employee';
+    } catch (e) { staffRole = 'Employee'; }
+
+    document.getElementById('staff-pill').textContent = '👤 ' + staffName;
+    document.getElementById('login-page').classList.remove('show');
+    document.getElementById('app-page').classList.add('show');
+    initApp();
+  } catch (e) {
+    errEl.textContent = 'Something went wrong';
+  }
+}
+
+async function initApp() {
+  await loadMenu();
+  await loadGuideAvailability();
+  renderItemGrid();
+}
+
+async function loadMenu() {
+  var res = await db.from('store_menu').select('name, category, price').eq('available', true).order('category').order('name');
+  var rows = res.data || [];
+  menu = {};
+  rows.forEach(function (r) {
+    if (!menu[r.category]) menu[r.category] = [];
+    menu[r.category].push({ name: r.name, price: r.price });
+  });
+  var cats = Object.keys(menu);
+  activeCat = cats[0] || null;
+
+  var catsEl = document.getElementById('cats');
+  catsEl.innerHTML = cats.map(function (c) {
+    return '<div class="cat' + (c === activeCat ? ' on' : '') + '" onclick="setCat(\'' + c.replace(/'/g, "\\'") + '\')">' + c + '</div>';
+  }).join('');
+}
+
+async function loadGuideAvailability() {
+  var res = await db.from('recipe_guides').select('menu_item_name');
+  recipeGuideMap = {};
+  (res.data || []).forEach(function (r) { recipeGuideMap[r.menu_item_name] = true; });
+}
+
+function setCat(cat) {
+  activeCat = cat;
+  document.getElementById('item-search').value = '';
+  document.querySelectorAll('.cat').forEach(function (el) {
+    el.classList.toggle('on', el.textContent === cat);
+  });
+  renderItemGrid();
+}
+
+function onSearchInput() { renderItemGrid(); }
+
+function renderItemGrid() {
+  var grid = document.getElementById('item-grid');
+  var query = document.getElementById('item-search').value.trim().toLowerCase();
+
+  var items;
+  if (query) {
+    items = [];
+    Object.keys(menu).forEach(function (cat) {
+      menu[cat].forEach(function (item) { if (item.name.toLowerCase().indexOf(query) !== -1) items.push(item); });
+    });
+  } else {
+    items = menu[activeCat] || [];
+  }
+
+  if (!items.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:var(--muted);font-size:13px">No items found.</div>';
+    return;
+  }
+
+  grid.innerHTML = items.map(function (item) {
+    var hasGuide = !!recipeGuideMap[item.name];
+    return '<div class="item-card" onclick="openDetail(\'' + item.name.replace(/'/g, "\\'") + '\')">'
+      + '<div class="item-name">' + item.name + '</div>'
+      + '<span class="item-badge ' + (hasGuide ? 'badge-ready' : 'badge-missing') + '">' + (hasGuide ? '📖 Guide ready' : '⚠️ Not set up') + '</span>'
+      + '</div>';
+  }).join('');
+}
+
+function toggleLanguage() {
+  currentLang = currentLang === 'en' ? 'ta' : 'en';
+  var toggle = document.getElementById('lang-toggle');
+  toggle.innerHTML = currentLang === 'en'
+    ? 'EN / <span style="opacity:.4">தமிழ்</span>'
+    : '<span style="opacity:.4">EN</span> / தமிழ்';
+  if (currentDetailItem) openDetail(currentDetailItem); // re-fetch and re-render in the new language
+}
+
+async function openDetail(itemName) {
+  currentDetailItem = itemName;
+  var sheet = document.getElementById('detail-sheet');
+  sheet.innerHTML = '<div class="sheet-handle"></div><div style="text-align:center;padding:30px;color:var(--muted);font-size:12px">Loading…</div>';
+  document.getElementById('detail-overlay').classList.add('show');
+
+  var ingRes = await db.from('menu_recipes').select('ingredient_name, quantity').eq('menu_item_name', itemName);
+  var ingredients = ingRes.data || [];
+  var unitRes = ingredients.length
+    ? await db.from('inventory_items').select('item_name, unit').in('item_name', ingredients.map(function (i) { return i.ingredient_name; }))
+    : { data: [] };
+  var unitMap = {};
+  (unitRes.data || []).forEach(function (u) { unitMap[u.item_name] = u.unit; });
+
+  var guideRes = await db.from('recipe_guides').select('*').eq('menu_item_name', itemName).maybeSingle();
+  var guide = guideRes.data;
+
+  renderDetail(itemName, ingredients, unitMap, guide);
+}
+
+function renderDetail(itemName, ingredients, unitMap, guide) {
+  var ingHtml = ingredients.length
+    ? ingredients.map(function (i) {
+        return '<div class="ing-row"><span>' + i.ingredient_name + '</span>'
+          + '<span style="font-weight:700;color:var(--amber)">' + i.quantity + ' ' + (unitMap[i.ingredient_name] || '') + '</span></div>';
+      }).join('')
+    : '<div class="empty-note">' + (currentLang === 'ta' ? 'பொருட்கள் இன்னும் அமைக்கப்படவில்லை — Menu Engineering இல் அமைக்கவும்.' : 'Ingredients not set up yet — configure in Menu Engineering.') + '</div>';
+
+  var stepsEn = (guide && guide.steps) || [];
+  var stepsTa = (guide && guide.steps_ta) || [];
+  var usingFallback = currentLang === 'ta' && stepsEn.length > 0 && stepsTa.length === 0;
+  var steps = (currentLang === 'ta' && stepsTa.length > 0) ? stepsTa : stepsEn;
+
+  var stepsHtml = steps.length
+    ? (usingFallback ? '<div style="font-size:11px;color:var(--rose);margin-bottom:10px">தமிழ் மொழிபெயர்ப்பு இன்னும் சேர்க்கப்படவில்லை — ஆங்கிலத்தில் காட்டப்படுகிறது.</div>' : '')
+      + steps.map(function (s, idx) {
+          return '<div class="step-row"><div class="step-num">' + (idx + 1) + '</div><div class="step-text">' + s + '</div></div>';
+        }).join('')
+    : '<div class="empty-note">' + (currentLang === 'ta' ? 'இன்னும் தயாரிப்பு படிகள் சேர்க்கப்படவில்லை.' : 'No preparation steps added yet.') + '</div>';
+
+  var tipText = currentLang === 'ta' && guide && guide.tips_ta ? guide.tips_ta : (guide && guide.tips);
+
+  var prepTimeHtml = guide && guide.prep_time_minutes
+    ? '<div style="display:inline-block;background:#f5eeff;border-radius:20px;padding:5px 14px;font-size:11px;font-weight:700;color:var(--p);margin-bottom:6px">⏱ ' + guide.prep_time_minutes + ' min</div>'
+    : '';
+
+  var editBtn = staffRole === 'Admin'
+    ? '<button onclick="openEditSteps(\'' + itemName.replace(/'/g, "\\'") + '\')" style="width:100%;padding:13px;margin-top:20px;'
+      + 'background:rgba(110,9,119,0.1);border:1.5px solid rgba(110,9,119,0.3);color:var(--p);font-size:13px;font-weight:700;border-radius:12px">✏️ Edit Recipe Guide</button>'
+    : '';
+
+  document.getElementById('detail-sheet').innerHTML =
+      '<div class="sheet-handle"></div>'
+    + '<div class="sheet-title">' + itemName + '</div>'
+    + prepTimeHtml
+    + '<div class="section-lbl">' + (currentLang === 'ta' ? 'பொருட்கள்' : 'INGREDIENTS') + '</div>' + ingHtml
+    + '<div class="section-lbl">' + (currentLang === 'ta' ? 'தயாரிப்பு படிகள்' : 'PREPARATION STEPS') + '</div>' + stepsHtml
+    + (tipText ? '<div class="tips-box">💡 <b>' + (currentLang === 'ta' ? 'குறிப்பு:' : 'Tip:') + '</b> ' + tipText + '</div>' : '')
+    + editBtn
+    + '<button onclick="closeDetail()" style="width:100%;padding:12px;margin-top:10px;background:transparent;color:var(--muted);font-size:12px;font-weight:600;border-radius:12px">Close</button>';
+}
+
+function closeDetail() {
+  document.getElementById('detail-overlay').classList.remove('show');
+}
+
+async function openEditSteps(itemName) {
+  var guideRes = await db.from('recipe_guides').select('*').eq('menu_item_name', itemName).maybeSingle();
+  var guide = guideRes.data || { steps: [], steps_ta: [], prep_time_minutes: null, tips: '', tips_ta: '' };
+  draftSteps = (guide.steps || []).slice();
+  draftStepsTa = (guide.steps_ta || []).slice();
+  // Keep both arrays the same length so each row always has a matching pair.
+  while (draftStepsTa.length < draftSteps.length) draftStepsTa.push('');
+
+  renderEditSheet(itemName, guide);
+}
+
+function renderEditSheet(itemName, guide) {
+  var stepsHtml = draftSteps.length
+    ? draftSteps.map(function (s, idx) {
+        return '<div style="background:#f5eeff;border-radius:12px;padding:10px;margin-bottom:8px">'
+          + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
+          + '<div class="step-num" style="flex-shrink:0;width:22px;height:22px;font-size:11px">' + (idx + 1) + '</div>'
+          + '<input value="' + s.replace(/"/g, '&quot;') + '" oninput="draftSteps[' + idx + ']=this.value" placeholder="English"'
+          + ' style="flex:1;padding:8px 10px;border-radius:8px;border:1.5px solid rgba(18,10,30,0.1);font-size:12px">'
+          + '<span onclick="removeDraftStep(' + idx + ')" style="cursor:pointer;color:#dc2626;font-size:16px;flex-shrink:0">✕</span></div>'
+          + '<input value="' + (draftStepsTa[idx] || '').replace(/"/g, '&quot;') + '" oninput="draftStepsTa[' + idx + ']=this.value" placeholder="தமிழ் (விருப்பம்)"'
+          + ' style="width:100%;margin-left:30px;padding:8px 10px;border-radius:8px;border:1.5px solid rgba(110,9,119,0.15);font-size:12px;box-sizing:border-box;width:calc(100% - 30px)"></div>';
+      }).join('')
+    : '<div style="text-align:center;padding:10px;color:var(--muted);font-size:12px">No steps yet — add one below.</div>';
+
+  document.getElementById('detail-sheet').innerHTML =
+      '<div class="sheet-handle"></div>'
+    + '<div class="sheet-title">Edit — ' + itemName + '</div>'
+    + '<div class="sheet-sub">Each step has an English field and an optional Tamil translation below it.</div>'
+    + '<div class="section-lbl">PREP TIME (MINUTES)</div>'
+    + '<input id="edit-prep-time" type="number" value="' + (guide.prep_time_minutes || '') + '" placeholder="e.g. 10" '
+    + 'style="width:100%;padding:11px 14px;border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);font-size:13px;margin-bottom:6px;box-sizing:border-box">'
+    + '<div class="section-lbl">STEPS (EN / தமிழ்)</div>'
+    + '<div id="edit-steps-list">' + stepsHtml + '</div>'
+    + '<button onclick="addDraftStep()" style="width:100%;padding:10px;margin-top:6px;background:#f5eeff;'
+    + 'border:1px solid rgba(110,9,119,0.2);color:var(--p);font-size:12px;font-weight:700;border-radius:10px">+ Add Step</button>'
+    + '<div class="section-lbl">TIP — ENGLISH (OPTIONAL)</div>'
+    + '<textarea id="edit-tips" rows="2" placeholder="e.g. Do not overheat the chocolate..." '
+    + 'style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);font-size:13px;resize:none;box-sizing:border-box">' + (guide.tips || '') + '</textarea>'
+    + '<div class="section-lbl">TIP — தமிழ் (OPTIONAL)</div>'
+    + '<textarea id="edit-tips-ta" rows="2" placeholder="தமிழில் குறிப்பு..." '
+    + 'style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid rgba(110,9,119,0.15);font-size:13px;resize:none;box-sizing:border-box">' + (guide.tips_ta || '') + '</textarea>'
+    + '<button onclick="saveRecipeGuide(\'' + itemName.replace(/'/g, "\\'") + '\')" class="login-btn" style="margin-top:18px">💾 Save Guide</button>'
+    + '<button onclick="openDetail(\'' + itemName.replace(/'/g, "\\'") + '\')" style="width:100%;padding:12px;margin-top:8px;background:transparent;color:var(--muted);font-size:12px;font-weight:600;border-radius:12px">Cancel</button>';
+}
+
+function addDraftStep() {
+  draftSteps.push('');
+  draftStepsTa.push('');
+  renderEditSheet(currentDetailItem, { steps: draftSteps, steps_ta: draftStepsTa, prep_time_minutes: document.getElementById('edit-prep-time').value, tips: document.getElementById('edit-tips').value, tips_ta: document.getElementById('edit-tips-ta').value });
+}
+function removeDraftStep(idx) {
+  draftSteps.splice(idx, 1);
+  draftStepsTa.splice(idx, 1);
+  renderEditSheet(currentDetailItem, { steps: draftSteps, steps_ta: draftStepsTa, prep_time_minutes: document.getElementById('edit-prep-time').value, tips: document.getElementById('edit-tips').value, tips_ta: document.getElementById('edit-tips-ta').value });
+}
+
+async function saveRecipeGuide(itemName) {
+  var prepTime = parseInt(document.getElementById('edit-prep-time').value) || null;
+  var tips = document.getElementById('edit-tips').value.trim();
+  var tipsTa = document.getElementById('edit-tips-ta').value.trim();
+
+  // Trim each pair together so English step N still lines up with Tamil
+  // step N even after removing steps left fully blank in both languages.
+  var steps = [], stepsTa = [];
+  draftSteps.forEach(function (s, idx) {
+    var en = s.trim(), ta = (draftStepsTa[idx] || '').trim();
+    if (en || ta) { steps.push(en); stepsTa.push(ta); }
+  });
+
+  try {
+    await db.from('recipe_guides').upsert([{
+      menu_item_name: itemName, steps: steps, steps_ta: stepsTa, prep_time_minutes: prepTime,
+      tips: tips || null, tips_ta: tipsTa || null, updated_by: staffName, updated_at: new Date().toISOString()
+    }], { onConflict: 'menu_item_name' });
+    showToast('✅ Recipe guide saved');
+    await loadGuideAvailability();
+    renderItemGrid();
+    openDetail(itemName);
+  } catch (e) {
+    showToast('Error: ' + e.message);
+  }
+}
+</script>
+</body>
+</html>
