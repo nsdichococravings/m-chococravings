@@ -38,7 +38,6 @@ document.addEventListener('DOMContentLoaded', function () {
     +   '<div style="font-size:11px;color:#9c0ca1;margin-top:1px">Dine-in table service</div>'
     + '</div>';
 
-  // Insert as the first item, above "Place Order"
   fabMenu.insertBefore(entry, fabMenu.children[1] || null);
   buildTablesBoardDOM();
   injectKitchenRefreshButton();
@@ -74,7 +73,6 @@ function buildTablesBoardDOM() {
     + '<div id="ts-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:18px 20px"></div>';
   document.body.appendChild(sheet);
 
-  // ── Order-taking sheet for a single table ──
   var tOverlay = document.createElement('div');
   tOverlay.id = 'ts-order-overlay';
   tOverlay.onclick = closeTableOrderSheet;
@@ -161,8 +159,6 @@ async function loadTablesStatus() {
   var map = {};
   (res.data || []).forEach(function (o) { map[o.table_code] = o; });
 
-  // Rank occupied tables by whose order arrived first — helps staff serve
-  // in first-come-first-served order instead of just whichever looks busy.
   var rankMap = {};
   Object.keys(map)
     .sort(function (a, b) { return new Date(map[a].created_at) - new Date(map[b].created_at); })
@@ -184,8 +180,6 @@ function renderTablesGrid(map, rankMap) {
       var statusLbl = { pending: 'Pending', preparing: 'Preparing', ready: 'Ready!', delivered: 'Waiting for Bill' }[o.status] || o.status;
       var staffBadge = o.staff_name ? ('<div style="font-size:10px;color:#8a6a3a;margin-top:2px">👤 ' + o.staff_name + '</div>') : '';
 
-      // Arrival-order badge — 1st (longest waiting) is most urgent, colors
-      // step down through the queue so staff can see priority at a glance.
       var rank = rankMap[code];
       var rankColors = ['#dc2626', '#f97316', '#eab308', '#8b5cf6', '#6b7280'];
       var rankColor = rankColors[Math.min((rank || 1) - 1, rankColors.length - 1)];
@@ -249,16 +243,11 @@ function openTableOrderSheet(code) {
         _tsExistingOrder = res.data;
         var rawItems = res.data.items;
         _tsItems = (Array.isArray(rawItems) ? rawItems : JSON.parse(rawItems || '[]')).map(function (i) {
-          // _origQty and delivered are internal tracking fields, stripped
-          // before saving — see tsSubmit(). They let us detect when staff
-          // add MORE of an already-delivered item, so its checkbox
-          // correctly resets instead of staying falsely checked.
-          return { name: i.name, price: i.price, qty: i.qty, delivered: !!i.delivered, _origQty: i.qty };
+          return { name: i.name, price: i.price, qty: i.qty, delivered: !!i.delivered, prepared_by: i.prepared_by || null, prepared_at: i.prepared_at || null, _origQty: i.qty };
         });
         sendBtn.textContent = '➕ Add Items';
         billBtn.style.display = 'block';
         undoBtn.style.display = res.data.status === 'delivered' ? 'block' : 'none';
-        // Strip the +91 prefix for display, since the field only takes 10 digits.
         phoneInput.value = (res.data.customer_phone || '').replace(/^\+?91/, '');
       } else {
         sendBtn.textContent = '➕ Send to Kitchen';
@@ -397,18 +386,17 @@ async function tsSubmit() {
   var phoneRaw = (document.getElementById('ts-cust-phone').value || '').replace(/\D/g, '');
   var phone = phoneRaw.length === 10 ? '+91' + phoneRaw : null;
 
-  // Resolve the final delivered state per item: brand-new items start
-  // undelivered; existing items keep their delivered state UNLESS more
-  // quantity was just added, in which case they reset to undelivered
-  // since there's now an unfulfilled unit mixed into that line.
   var finalItems = _tsItems.map(function (item) {
     var isNew = item._origQty === undefined;
     var qtyIncreased = !isNew && item.qty > item._origQty;
+    var resetPrep = isNew || qtyIncreased;
     return {
       name: item.name,
       price: item.price,
       qty: item.qty,
-      delivered: (isNew || qtyIncreased) ? false : !!item.delivered
+      delivered: resetPrep ? false : !!item.delivered,
+      prepared_by: resetPrep ? null : (item.prepared_by || null),
+      prepared_at: resetPrep ? null : (item.prepared_at || null)
     };
   });
 
@@ -416,10 +404,7 @@ async function tsSubmit() {
     if (_tsExistingOrder) {
       btn.disabled = true; btn.textContent = 'Sending…';
       var updatePayload = { items: JSON.stringify(finalItems), total: total };
-      if (phone) updatePayload.customer_phone = phone; // only overwrite if something was actually entered
-      // If kitchen had already marked this ticket "ready", adding new items
-      // means there's unprepared food again — bump it back into the active
-      // queue so it doesn't get missed sitting under a stale "Ready" badge.
+      if (phone) updatePayload.customer_phone = phone;
       var wasReady = _tsExistingOrder.status === 'ready' || _tsExistingOrder.status === 'delivered';
       if (wasReady) updatePayload.status = 'preparing';
 
@@ -452,10 +437,6 @@ async function tsSubmit() {
       if (ins.error) throw ins.error;
       showStoreToast('✅ Order sent for ' + _tsTableCode);
     }
-    // Not calling kitchenLoad() here on purpose — it tears down and rebuilds
-    // the realtime subscription every time, which can drop OTHER orders
-    // arriving during that split-second reconnect window. The kitchen
-    // page's own subscription already picks this order up live.
     closeTableOrderSheet();
   } catch (e) {
     showStoreToast('Error: ' + e.message);
@@ -464,10 +445,6 @@ async function tsSubmit() {
   }
 }
 
-// Undoes a mistaken "Delivered" (whether from the per-item checkboxes or
-// the "Mark All Delivered" shortcut) — reverts the order back to Ready
-// and un-checks every item, so it reappears properly in the Kitchen
-// queue for staff to re-check items as they're actually served.
 async function tsUndoDelivered() {
   if (!_tsExistingOrder) return;
   if (!confirm('Undo delivered status for ' + _tsTableCode + '? This puts it back in the kitchen queue as Ready.')) return;
@@ -504,8 +481,6 @@ async function tsBillAndClose() {
     if (upd.error) throw upd.error;
     var finalMin = tsElapsedMin(_tsExistingOrder.created_at, collectedAt);
     showStoreToast('✅ ' + _tsTableCode + ' closed — ₹' + total + ' · ' + tsFormatDuration(finalMin) + staffTxt);
-    // Same reasoning as tsSubmit — no kitchenLoad() call here, let the
-    // realtime subscription handle it without forcing a reconnect.
     closeTableOrderSheet();
   } catch (e) {
     showStoreToast('Error: ' + e.message);
@@ -526,10 +501,6 @@ function renderKitchen(orders) {
       ? '🍽️ ' + o.table_code
       : ('#' + o.token);
 
-    // Meta line: staff + timing for table orders; customer name/phone for
-    // self-orders placed by customers on their own phones — this matters
-    // just as much, since staff need to know WHO to call out or match at
-    // pickup, not just that "a token exists."
     var metaLine;
     if (o.table_code) {
       var staffLine = o.staff_name ? ('👤 ' + o.staff_name) : '';
@@ -548,8 +519,6 @@ function renderKitchen(orders) {
       metaLine = custBits.length ? custBits.join('  ·  ') : '🙋 Walk-in (no details)';
     }
 
-    // Payment badge — shows exactly how/whether this order was paid,
-    // so staff know at a glance whether cash still needs collecting.
     var pmMap = { upi: 'UPI', upi_qr: 'UPI (QR)', cash: 'Cash', razorpay: 'Razorpay', gpay: 'Google Pay', phonepe: 'PhonePe' };
     var pmLabel = pmMap[(o.payment_method || '').toLowerCase()] || (o.payment_method || 'Cash');
     var pay;
@@ -568,26 +537,42 @@ function renderKitchen(orders) {
 
     // Items — for table orders, each one is an individually tappable
     // checkbox (per-item delivery tracking); walk-in/token orders keep
-    // the plain list since they're collected as a whole batch anyway.
+    // the plain list. Both now also get a 📖 recipe icon and a
+    // "✅ [staff]" tag once someone has marked they prepared it.
     var itemsHtml = o.table_code
       ? (itemsArr || []).map(function (i, idx) {
           var delivered = !!i.delivered;
-          return '<div onclick="kToggleItemDelivered(\'' + o.id + '\',' + idx + ')" style="display:flex;'
-            + 'align-items:center;gap:9px;padding:5px 0;cursor:pointer">'
-            + '<span style="width:18px;height:18px;border-radius:5px;flex-shrink:0;display:flex;'
-            + 'align-items:center;justify-content:center;font-size:11px;color:#0c0810;'
+          var preparedTag = i.prepared_by
+            ? '<span style="font-size:9px;font-weight:700;color:#4ade80;background:rgba(74,222,128,0.12);'
+              + 'padding:2px 7px;border-radius:10px;margin-left:6px;flex-shrink:0">✅ ' + i.prepared_by + '</span>'
+            : '';
+          return '<div style="display:flex;align-items:center;gap:9px;padding:5px 0">'
+            + '<span onclick="kToggleItemDelivered(\'' + o.id + '\',' + idx + ')" style="width:18px;height:18px;border-radius:5px;flex-shrink:0;display:flex;'
+            + 'align-items:center;justify-content:center;font-size:11px;color:#0c0810;cursor:pointer;'
             + 'border:1.5px solid ' + (delivered ? '#4ade80' : 'rgba(255,255,255,.25)') + ';'
             + 'background:' + (delivered ? '#4ade80' : 'transparent') + '">' + (delivered ? '✓' : '') + '</span>'
-            + '<span style="flex:1;font-size:13px;font-weight:500;'
+            + '<span onclick="kToggleItemDelivered(\'' + o.id + '\',' + idx + ')" style="flex:1;font-size:13px;font-weight:500;cursor:pointer;'
             + 'color:' + (delivered ? 'rgba(245,234,220,.4)' : '#f5eadc') + ';'
             + 'text-decoration:' + (delivered ? 'line-through' : 'none') + '">' + i.name + '</span>'
+            + preparedTag
+            + '<span onclick="openItemRecipePopup(\'' + o.id + '\',' + idx + ')" style="width:24px;height:24px;border-radius:7px;'
+            + 'background:rgba(245,196,48,0.15);border:1px solid rgba(245,196,48,0.3);display:flex;align-items:center;'
+            + 'justify-content:center;font-size:12px;cursor:pointer;flex-shrink:0">📖</span>'
             + '<span style="font-size:12px;color:#f5c430;font-weight:700;flex-shrink:0">×' + i.qty + '</span>'
             + '</div>';
         }).join('')
-      : (itemsArr || []).map(function (i) {
-          return '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0">'
-            + '<span style="font-size:13px;color:#f5eadc;font-weight:500">' + i.name + '</span>'
-            + '<span style="font-size:12px;color:#f5c430;font-weight:700;flex-shrink:0;margin-left:10px">×' + i.qty + '</span>'
+      : (itemsArr || []).map(function (i, idx) {
+          var preparedTag = i.prepared_by
+            ? '<span style="font-size:9px;font-weight:700;color:#4ade80;background:rgba(74,222,128,0.12);'
+              + 'padding:2px 7px;border-radius:10px;margin-left:6px;flex-shrink:0">✅ ' + i.prepared_by + '</span>'
+            : '';
+          return '<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0">'
+            + '<span style="font-size:13px;color:#f5eadc;font-weight:500;flex:1">' + i.name + '</span>'
+            + preparedTag
+            + '<span onclick="openItemRecipePopup(\'' + o.id + '\',' + idx + ')" style="width:24px;height:24px;border-radius:7px;'
+            + 'background:rgba(245,196,48,0.15);border:1px solid rgba(245,196,48,0.3);display:flex;align-items:center;'
+            + 'justify-content:center;font-size:12px;cursor:pointer;flex-shrink:0;margin-left:8px">📖</span>'
+            + '<span style="font-size:12px;color:#f5c430;font-weight:700;flex-shrink:0;margin-left:8px">×' + i.qty + '</span>'
             + '</div>';
         }).join('');
 
@@ -632,10 +617,6 @@ function tsFormatDuration(min) {
   return Math.floor(min / 60) + 'h ' + (min % 60) + 'm';
 }
 
-// Override kBump (originally in store.html) to also stamp stage timestamps.
-// Only stamps a timestamp the FIRST time an order enters that stage — this
-// keeps the "prep took Xm" numbers meaningful even if an order bounces
-// back to preparing after items are added post-ready (see tsSubmit).
 async function kBump(id, status) {
   var payload = { status: status };
   if (status === 'preparing') {
@@ -655,15 +636,6 @@ function kCancelOrder(id) {
   kBump(id, 'cancelled');
 }
 
-// ══════════════════════════════════════════════════════════════
-// Kitchen manual refresh button
-// ══════════════════════════════════════════════════════════════
-// Deliberately does NOT call kitchenLoad() — that also calls
-// subscribeKitchen(), which tears down and rebuilds the realtime
-// connection every time it runs. Doing that on every manual refresh tap
-// would reintroduce the exact "orders sometimes don't show up live"
-// problem fixed elsewhere. This only re-fetches and re-renders, leaving
-// the live subscription untouched.
 function injectKitchenRefreshButton() {
   var kHdr = document.querySelector('#pg-kitchen .k-hdr');
   if (!kHdr) return;
@@ -709,17 +681,6 @@ async function kitchenManualRefresh() {
   }
 }
 
-// ══════════════════════════════════════════════════════════════
-// Collected button — payment-aware
-// ══════════════════════════════════════════════════════════════
-// If the order was already paid (self-checkout, advance UPI, etc.),
-// "Collected" behaves exactly as before — one tap, done. If it's still
-// unpaid (typically cash COD), it asks HOW it was just paid before
-// marking it collected, so payment_status/payment_method get resolved
-// at the same time — otherwise cash orders would sit forever in Day
-// Close's "Pending COD" bucket even after being paid and picked up.
-// Shortcut for when nothing needs splitting — marks every item on the
-// order delivered in one tap, same as checking each one individually.
 async function kMarkDelivered(id) {
   try {
     var res = await db.from('store_orders').select('items').eq('id', id).single();
@@ -727,7 +688,6 @@ async function kMarkDelivered(id) {
     var items = Array.isArray(res.data.items) ? res.data.items : JSON.parse(res.data.items || '[]');
     items.forEach(function (i) { i.delivered = true; });
 
-    // No status change here anymore — see kToggleItemDelivered for why.
     await db.from('store_orders').update({ items: JSON.stringify(items) }).eq('id', id);
 
     showStoreToast('🍽️ All items checked off');
@@ -737,10 +697,6 @@ async function kMarkDelivered(id) {
   }
 }
 
-// Per-item checkbox toggle. Once every item on the order is checked,
-// the order automatically flips to 'delivered' (Waiting for Bill on the
-// Tables board) — same end state as tapping "Mark All Delivered", just
-// reached one item at a time.
 async function kToggleItemDelivered(orderId, itemIndex) {
   try {
     var res = await db.from('store_orders').select('items').eq('id', orderId).single();
@@ -750,10 +706,6 @@ async function kToggleItemDelivered(orderId, itemIndex) {
 
     items[itemIndex].delivered = !items[itemIndex].delivered;
 
-    // Deliberately does NOT change order status here anymore — checking
-    // items is purely informational tracking now. The table only moves
-    // to "closed" when staff explicitly tap "Mark Bill Collected" below,
-    // even if every item happens to already be checked.
     await db.from('store_orders').update({ items: JSON.stringify(items) }).eq('id', orderId);
     kitchenManualRefresh();
   } catch (e) {
@@ -823,15 +775,6 @@ async function collectWithPayment(id, method) {
   }
 }
 
-// ══════════════════════════════════════════════════════════════
-// Mark Bill Collected — table order closing, direct from Kitchen
-// ══════════════════════════════════════════════════════════════
-// Same end state as tsBillAndClose() on the Tables board (status:
-// 'collected', payment recorded) — just reachable directly from the
-// Kitchen ticket too. Also asks for the customer's phone number to
-// send the bill on WhatsApp (manual — opens WhatsApp with the message
-// ready, staff taps Send themselves, same pattern as your existing
-// invoice feature).
 function openTableCollectPicker(id, tableCode) {
   var existing = document.getElementById('tc-picker-overlay');
   if (existing) existing.remove();
@@ -915,4 +858,204 @@ async function collectTableWithPayment(id, tableCode, method) {
   } catch (e) {
     showStoreToast('Error: ' + e.message);
   }
+}
+
+// ══════════════════════════════════════════════════════════════
+// In-Kitchen Recipe Popup — fast, one-tap, no separate login
+// ══════════════════════════════════════════════════════════════
+// Deliberately built for rush-hour use: no page navigation, no PIN
+// re-entry (staff are already viewing an authenticated Kitchen page),
+// big scannable text, and a language toggle since some staff read
+// Tamil more comfortably than English mid-shift.
+var _krLang = 'en'; // 'en' | 'ta'
+var _krOrderId = null;
+var _krItemIndex = null;
+var _krSelectedStaff = '';
+var _krStaffListCache = null;
+
+async function openItemRecipePopup(orderId, itemIndex) {
+  _krOrderId = orderId;
+  _krItemIndex = itemIndex;
+  _krSelectedStaff = '';
+
+  var existing = document.getElementById('kr-overlay');
+  if (existing) existing.remove();
+
+  var overlay = document.createElement('div');
+  overlay.id = 'kr-overlay';
+  overlay.onclick = function (e) { if (e.target === overlay) closeItemRecipePopup(); };
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:4500;'
+    + 'display:flex;align-items:center;justify-content:center;padding:16px;font-family:\'DM Sans\',sans-serif';
+
+  var card = document.createElement('div');
+  card.id = 'kr-card';
+  card.style.cssText = 'background:#fff;border-radius:24px;padding:24px 22px;max-width:400px;width:100%;'
+    + 'max-height:88vh;overflow-y:auto';
+  card.innerHTML = '<div style="text-align:center;padding:30px;color:#9a8aaa;font-size:13px">Loading…</div>';
+
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+
+  var orderRes = await db.from('store_orders').select('items').eq('id', orderId).single();
+  var items = Array.isArray(orderRes.data.items) ? orderRes.data.items : JSON.parse(orderRes.data.items || '[]');
+  var item = items[itemIndex];
+  if (!item) { closeItemRecipePopup(); return; }
+
+  var ingRes = await db.from('menu_recipes').select('ingredient_name, quantity').eq('menu_item_name', item.name);
+  var ingredients = ingRes.data || [];
+  var unitRes = ingredients.length
+    ? await db.from('inventory_items').select('item_name, unit').in('item_name', ingredients.map(function (i) { return i.ingredient_name; }))
+    : { data: [] };
+  var unitMap = {};
+  (unitRes.data || []).forEach(function (u) { unitMap[u.item_name] = u.unit; });
+
+  var guideRes = await db.from('recipe_guides').select('*').eq('menu_item_name', item.name).maybeSingle();
+  var guide = guideRes.data;
+
+  if (!_krStaffListCache) {
+    var staffRes = await db.from('store_staff').select('name').eq('active', true).order('name');
+    _krStaffListCache = (staffRes.data || []).map(function (s) { return s.name; });
+  }
+
+  renderRecipeCard(item, ingredients, unitMap, guide);
+}
+
+function krToggleLanguage() {
+  _krLang = _krLang === 'en' ? 'ta' : 'en';
+  reopenCurrentRecipeCard();
+}
+
+async function reopenCurrentRecipeCard() {
+  if (_krOrderId === null || _krItemIndex === null) return;
+  var orderRes = await db.from('store_orders').select('items').eq('id', _krOrderId).single();
+  var items = Array.isArray(orderRes.data.items) ? orderRes.data.items : JSON.parse(orderRes.data.items || '[]');
+  var item = items[_krItemIndex];
+  if (!item) return;
+
+  var ingRes = await db.from('menu_recipes').select('ingredient_name, quantity').eq('menu_item_name', item.name);
+  var ingredients = ingRes.data || [];
+  var unitRes = ingredients.length
+    ? await db.from('inventory_items').select('item_name, unit').in('item_name', ingredients.map(function (i) { return i.ingredient_name; }))
+    : { data: [] };
+  var unitMap = {};
+  (unitRes.data || []).forEach(function (u) { unitMap[u.item_name] = u.unit; });
+
+  var guideRes = await db.from('recipe_guides').select('*').eq('menu_item_name', item.name).maybeSingle();
+  renderRecipeCard(item, ingredients, unitMap, guideRes.data);
+}
+
+function renderRecipeCard(item, ingredients, unitMap, guide) {
+  var ta = _krLang === 'ta';
+
+  var ingHtml = ingredients.length
+    ? ingredients.map(function (i) {
+        return '<div style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid #f5f0f8;font-size:15px">'
+          + '<span>' + i.ingredient_name + '</span>'
+          + '<span style="font-weight:700;color:#b87410">' + i.quantity + ' ' + (unitMap[i.ingredient_name] || '') + '</span></div>';
+      }).join('')
+    : '<div style="text-align:center;padding:16px;color:#9a8aaa;font-size:12px;background:#f5eeff;border-radius:12px">'
+      + (ta ? 'பொருட்கள் இன்னும் அமைக்கப்படவில்லை.' : 'Ingredients not set up yet.') + '</div>';
+
+  var stepsEn = (guide && guide.steps) || [];
+  var stepsTa = (guide && guide.steps_ta) || [];
+  var usingFallback = ta && stepsEn.length > 0 && stepsTa.length === 0;
+  var steps = (ta && stepsTa.length > 0) ? stepsTa : stepsEn;
+
+  var stepsHtml = steps.length
+    ? (usingFallback ? '<div style="font-size:11px;color:#c2607a;margin-bottom:8px">தமிழ் மொழிபெயர்ப்பு இல்லை — ஆங்கிலத்தில்.</div>' : '')
+      + steps.map(function (s, idx) {
+          return '<div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid #f5f0f8;align-items:flex-start">'
+            + '<div style="width:30px;height:30px;border-radius:50%;background:#6e0977;color:#fff;font-size:14px;font-weight:700;'
+            + 'display:flex;align-items:center;justify-content:center;flex-shrink:0">' + (idx + 1) + '</div>'
+            + '<div style="font-size:16px;color:#1a0820;line-height:1.4;padding-top:3px;font-weight:600;flex:1">' + s + '</div></div>';
+        }).join('')
+    : '<div style="text-align:center;padding:16px;color:#9a8aaa;font-size:12px;background:#f5eeff;border-radius:12px">'
+      + (ta ? 'இன்னும் படிகள் இல்லை.' : 'No steps added yet.') + '</div>';
+
+  var tip = ta && guide && guide.tips_ta ? guide.tips_ta : (guide && guide.tips);
+  var tipHtml = tip
+    ? '<div style="background:#fff8e6;border:1.5px solid rgba(245,196,48,0.35);border-radius:14px;padding:14px;margin-top:16px;font-size:13px;color:#8a6a1a">'
+      + '💡 <b>' + (ta ? 'குறிப்பு:' : 'Tip:') + '</b> ' + tip + '</div>'
+    : '';
+
+  var prepTimeHtml = guide && guide.prep_time_minutes
+    ? '<div style="display:inline-block;background:#f5eeff;color:#6e0977;font-size:12px;font-weight:700;padding:5px 14px;border-radius:20px;margin-bottom:16px">⏱ ' + guide.prep_time_minutes + ' min</div>'
+    : '';
+
+  var preparedTag = item.prepared_by
+    ? '<div style="text-align:center;margin-bottom:14px"><span style="font-size:11px;font-weight:700;color:#15803d;background:rgba(34,197,94,0.12);padding:5px 12px;border-radius:20px">✅ '
+      + (ta ? 'தயார் செய்தவர்: ' : 'Prepared by: ') + item.prepared_by + '</span></div>'
+    : '';
+
+  var staffOptions = '<option value="">' + (ta ? 'பணியாளர் பெயரைத் தேர்ந்தெடுக்கவும்...' : 'Select staff name...') + '</option>'
+    + (_krStaffListCache || []).map(function (n) { return '<option value="' + n + '"' + (n === item.prepared_by ? ' selected' : '') + '>' + n + '</option>'; }).join('');
+
+  var card = document.getElementById('kr-card');
+  card.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">'
+    + '<div style="font-family:Fraunces,Georgia,serif;font-size:24px;font-weight:900;color:#1a0820;flex:1">' + item.name + '</div>'
+    + '<div onclick="krToggleLanguage()" style="background:#f5eeff;border-radius:20px;padding:6px 12px;font-size:11px;'
+    + 'font-weight:700;color:#6e0977;cursor:pointer;flex-shrink:0;margin-left:10px">' + (ta ? 'தமிழ் / EN' : 'EN / தமிழ்') + '</div>'
+    + '</div>'
+    + prepTimeHtml
+    + preparedTag
+    + '<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:#c2607a;margin:16px 0 10px">' + (ta ? 'பொருட்கள்' : 'INGREDIENTS') + '</div>' + ingHtml
+    + '<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:#c2607a;margin:16px 0 10px">' + (ta ? 'படிகள்' : 'STEPS') + '</div>' + stepsHtml
+    + tipHtml
+    + '<div style="background:#f5eeff;border:1.5px solid rgba(110,9,119,0.2);border-radius:16px;padding:16px;margin-top:18px">'
+    + '<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:#6e0977;margin-bottom:10px">' + (ta ? 'யார் தயார் செய்கிறார்கள்?' : "WHO'S PREPARING THIS?") + '</div>'
+    + '<select id="kr-staff-select" onchange="krOnStaffSelected()" style="width:100%;padding:11px 12px;border-radius:10px;'
+    + 'border:1.5px solid rgba(110,9,119,0.2);background:#fff;font-size:13px;font-family:inherit;margin-bottom:10px">' + staffOptions + '</select>'
+    + '<div id="kr-check-row" onclick="krTogglePrepared()" style="display:flex;align-items:center;gap:10px;cursor:pointer;'
+    + 'opacity:' + (item.prepared_by ? '1' : '.4') + ';pointer-events:' + (item.prepared_by ? 'auto' : 'none') + '">'
+    + '<div id="kr-checkbox" style="width:24px;height:24px;border-radius:7px;border:2px solid rgba(110,9,119,0.35);'
+    + 'background:' + (item.prepared_by ? '#6e0977' : '#fff') + ';display:flex;align-items:center;justify-content:center;'
+    + 'font-size:14px;color:#fff;flex-shrink:0">' + (item.prepared_by ? '✓' : '') + '</div>'
+    + '<div style="font-size:13px;font-weight:700;color:#1a0820">' + (ta ? 'தயார் என குறிக்கவும்' : 'Mark as prepared') + '</div>'
+    + '</div></div>'
+    + '<button onclick="closeItemRecipePopup()" style="width:100%;padding:15px;margin-top:20px;'
+    + 'background:linear-gradient(135deg,#6e0977,#9c0ca1);color:#fff;font-size:15px;font-weight:700;border:none;border-radius:14px;cursor:pointer">'
+    + (ta ? 'மூடு' : 'Close') + '</button>';
+
+  if (item.prepared_by) _krSelectedStaff = item.prepared_by;
+}
+
+function krOnStaffSelected() {
+  _krSelectedStaff = document.getElementById('kr-staff-select').value;
+  var row = document.getElementById('kr-check-row');
+  row.style.opacity = _krSelectedStaff ? '1' : '.4';
+  row.style.pointerEvents = _krSelectedStaff ? 'auto' : 'none';
+}
+
+async function krTogglePrepared() {
+  if (!_krSelectedStaff || _krOrderId === null || _krItemIndex === null) return;
+
+  try {
+    var res = await db.from('store_orders').select('items').eq('id', _krOrderId).single();
+    if (res.error) throw res.error;
+    var items = Array.isArray(res.data.items) ? res.data.items : JSON.parse(res.data.items || '[]');
+    var item = items[_krItemIndex];
+    if (!item) return;
+
+    var nowMarking = !item.prepared_by;
+    item.prepared_by = nowMarking ? _krSelectedStaff : null;
+    item.prepared_at = nowMarking ? new Date().toISOString() : null;
+
+    await db.from('store_orders').update({ items: JSON.stringify(items) }).eq('id', _krOrderId);
+
+    var box = document.getElementById('kr-checkbox');
+    box.style.background = nowMarking ? '#6e0977' : '#fff';
+    box.textContent = nowMarking ? '✓' : '';
+
+    kitchenManualRefresh();
+  } catch (e) {
+    showStoreToast('Error: ' + e.message);
+  }
+}
+
+function closeItemRecipePopup() {
+  var el = document.getElementById('kr-overlay');
+  if (el) el.remove();
+  _krOrderId = null;
+  _krItemIndex = null;
 }

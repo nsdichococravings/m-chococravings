@@ -131,6 +131,12 @@ input,select{font-family:inherit}
     <div id="notif-list" style="padding:8px"></div>
   </div>
 
+  <div id="leave-status-overlay" onclick="if(event.target===this) closeLeaveStatusModal()" style="display:none;position:fixed;
+    inset:0;background:rgba(18,10,30,0.55);backdrop-filter:blur(3px);z-index:150;align-items:center;justify-content:center;padding:20px">
+    <div style="background:#fff;border-radius:24px;width:100%;max-width:360px;padding:26px 24px;
+      box-shadow:0 20px 60px rgba(0,0,0,0.25);animation:slideUp .2s ease" id="leave-status-card"></div>
+  </div>
+
   <div id="leave-overlay" onclick="if(event.target===this) closeLeaveModal()" style="display:none;position:fixed;
     inset:0;background:rgba(18,10,30,0.55);backdrop-filter:blur(3px);z-index:150;align-items:flex-end;justify-content:center">
     <div style="background:#fff;border-radius:26px 26px 0 0;width:100%;max-width:480px;padding:24px 22px 30px;
@@ -649,10 +655,40 @@ async function viewLeaveRequestStatus(dateStr) {
   var res = await db.from('leave_requests').select('*').eq('staff_name', staffName).eq('leave_date', dateStr).maybeSingle();
   var r = res.data;
   if (!r) return;
-  var statusLabel = { pending: '🟡 Pending approval', approved: '🔵 Approved', rejected: '🔴 Rejected' }[r.status] || r.status;
+
+  var statusMeta = {
+    pending:  { label: 'Pending Approval', color: '#b87410', bg: 'rgba(184,116,16,0.1)', icon: '🟡' },
+    approved: { label: 'Approved',         color: '#2563eb', bg: 'rgba(37,99,235,0.1)',  icon: '🔵' },
+    rejected: { label: 'Rejected',         color: '#dc2626', bg: 'rgba(220,38,38,0.1)',  icon: '🔴' }
+  }[r.status] || { label: r.status, color: 'var(--muted)', bg: '#f5f5f5', icon: '⚪' };
+
   var typeLabel = r.leave_type === 'sick' ? '🤒 Sick Leave' : '🌴 Casual Leave';
-  alert('Leave request — ' + dateStr + '\n\nType: ' + typeLabel + (r.is_half_day ? ' (Half Day)' : '')
-    + '\nStatus: ' + statusLabel + (r.reason ? '\nReason: ' + r.reason : ''));
+  var dateDisplay = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+  document.getElementById('leave-status-card').innerHTML =
+      '<div style="text-align:center;margin-bottom:18px">'
+    + '<div style="font-size:36px;margin-bottom:8px">' + statusMeta.icon + '</div>'
+    + '<div style="display:inline-block;padding:6px 16px;border-radius:20px;background:' + statusMeta.bg + ';'
+    + 'color:' + statusMeta.color + ';font-size:12px;font-weight:700;letter-spacing:.5px">' + statusMeta.label + '</div>'
+    + '</div>'
+    + '<div style="background:#f5eeff;border-radius:16px;padding:16px;margin-bottom:8px">'
+    + '<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted);margin-bottom:4px">DATE</div>'
+    + '<div style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:14px">' + dateDisplay + '</div>'
+    + '<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted);margin-bottom:4px">TYPE</div>'
+    + '<div style="font-size:14px;font-weight:700;color:var(--ink)' + (r.is_half_day ? ';margin-bottom:14px' : '') + '">' + typeLabel + '</div>'
+    + (r.is_half_day ? '<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted);margin-bottom:4px">DURATION</div>'
+        + '<div style="font-size:14px;font-weight:700;color:var(--ink)">Half Day</div>' : '')
+    + '</div>'
+    + (r.reason ? '<div style="background:#fdf5e3;border-radius:16px;padding:16px;margin-bottom:8px">'
+        + '<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--muted);margin-bottom:4px">REASON</div>'
+        + '<div style="font-size:13px;color:var(--ink)">' + r.reason + '</div></div>' : '')
+    + '<button class="login-btn" onclick="closeLeaveStatusModal()" style="margin-top:10px">Close</button>';
+
+  document.getElementById('leave-status-overlay').style.display = 'flex';
+}
+
+function closeLeaveStatusModal() {
+  document.getElementById('leave-status-overlay').style.display = 'none';
 }
 
 // ══════════════════════════════════════════════════════════════
