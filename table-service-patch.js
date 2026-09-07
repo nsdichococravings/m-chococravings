@@ -19,7 +19,6 @@ var _tsTableCode    = null;
 var _tsExistingOrder = null;
 var _tsBoardCh      = null;
 
-// ── 1. Inject "Tables" entry into Admin FAB menu ───────────────
 document.addEventListener('DOMContentLoaded', function () {
   var fabMenu = document.getElementById('admin-fab-menu');
   if (!fabMenu) return;
@@ -43,7 +42,6 @@ document.addEventListener('DOMContentLoaded', function () {
   injectKitchenRefreshButton();
 });
 
-// ── 2. Build the board + item-picker sheet DOM ─────────────────
 function buildTablesBoardDOM() {
   var overlay = document.createElement('div');
   overlay.id = 'ts-board-overlay';
@@ -134,7 +132,6 @@ function buildTablesBoardDOM() {
   document.body.appendChild(tSheet);
 }
 
-// ── 3. Board open/close + live status ──────────────────────────
 function openTablesBoard() {
   document.getElementById('ts-board-overlay').style.display = 'block';
   document.getElementById('ts-board-sheet').style.display   = 'block';
@@ -217,7 +214,6 @@ function subscribeTablesBoard() {
     .subscribe();
 }
 
-// ── 4. Per-table order-taking sheet ────────────────────────────
 function openTableOrderSheet(code) {
   _tsTableCode     = code;
   _tsExistingOrder = null;
@@ -468,23 +464,7 @@ async function tsUndoDelivered() {
 
 async function tsBillAndClose() {
   if (!_tsExistingOrder) return;
-  var total = _tsExistingOrder.total;
-  var totalMin = tsElapsedMin(_tsExistingOrder.created_at, null);
-  var staffTxt = _tsExistingOrder.staff_name ? (' · placed by ' + _tsExistingOrder.staff_name) : '';
-  if (!confirm('Close ' + _tsTableCode + ' — bill total ₹' + total + '\nOpen for ' + tsFormatDuration(totalMin) + staffTxt + '?')) return;
-
-  try {
-    var collectedAt = new Date().toISOString();
-    var upd = await db.from('store_orders')
-      .update({ status: 'collected', payment_status: 'paid', collected_at: collectedAt })
-      .eq('id', _tsExistingOrder.id);
-    if (upd.error) throw upd.error;
-    var finalMin = tsElapsedMin(_tsExistingOrder.created_at, collectedAt);
-    showStoreToast('✅ ' + _tsTableCode + ' closed — ₹' + total + ' · ' + tsFormatDuration(finalMin) + staffTxt);
-    closeTableOrderSheet();
-  } catch (e) {
-    showStoreToast('Error: ' + e.message);
-  }
+  openSplitPaymentPicker(_tsExistingOrder.id, _tsExistingOrder.total, { type: 'table', tableCode: _tsTableCode, fromTablesBoard: true });
 }
 
 // ── 5. Kitchen display — show table code instead of token ──────
@@ -519,7 +499,7 @@ function renderKitchen(orders) {
       metaLine = custBits.length ? custBits.join('  ·  ') : '🙋 Walk-in (no details)';
     }
 
-    var pmMap = { upi: 'UPI', upi_qr: 'UPI (QR)', cash: 'Cash', razorpay: 'Razorpay', gpay: 'Google Pay', phonepe: 'PhonePe' };
+    var pmMap = { upi: 'UPI', upi_qr: 'UPI (QR)', cash: 'Cash', card: 'Card', razorpay: 'Razorpay', gpay: 'Google Pay', phonepe: 'PhonePe', split: 'Split Payment' };
     var pmLabel = pmMap[(o.payment_method || '').toLowerCase()] || (o.payment_method || 'Cash');
     var pay;
     if (o.payment_status === 'paid') {
@@ -535,10 +515,6 @@ function renderKitchen(orders) {
       + 'border-radius:20px;background:' + pay.bg + ';color:' + pay.color + ';border:1px solid ' + pay.border
       + ';margin-left:8px;vertical-align:middle">' + pay.label + '</span>';
 
-    // Items — for table orders, each one is an individually tappable
-    // checkbox (per-item delivery tracking); walk-in/token orders keep
-    // the plain list. Both now also get a 📖 recipe icon and a
-    // "✅ [staff]" tag once someone has marked they prepared it.
     var itemsHtml = o.table_code
       ? (itemsArr || []).map(function (i, idx) {
           var delivered = !!i.delivered;
@@ -593,9 +569,9 @@ function renderKitchen(orders) {
       + '<button class="k-btn k-ready" onclick="kBump(\'' + o.id + '\',\'ready\')">' + readyTxt + '</button>'
       + (o.table_code
           ? '<button class="k-btn k-done" onclick="kMarkDelivered(\'' + o.id + '\')">🍽️ Mark All Delivered</button>'
-            + '<button class="k-btn" onclick="openTableCollectPicker(\'' + o.id + '\',\'' + o.table_code + '\')" '
+            + '<button class="k-btn" onclick="openSplitPaymentPicker(\'' + o.id + '\',' + (o.total || 0) + ',{type:\'table\',tableCode:\'' + o.table_code + '\'})" '
             + 'style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:#15803d">💰 Mark Bill Collected</button>'
-          : '<button class="k-btn k-done" onclick="kCollectOrder(\'' + o.id + '\',\'' + (o.payment_status || 'pending') + '\')">Collected ✓</button>')
+          : '<button class="k-btn k-done" onclick="kCollectOrder(\'' + o.id + '\',\'' + (o.payment_status || 'pending') + '\',' + (o.total || 0) + ')">Collected ✓</button>')
       + '<button class="k-btn" onclick="printStoreInvoice(\'' + o.id + '\')" style="background:rgba(240,201,107,0.1);'
       + 'border:1px solid rgba(240,201,107,0.3);color:#b87410">🖨️ Print</button>'
       + '<button class="k-btn" onclick="kCancelOrder(\'' + o.id + '\')" style="background:rgba(239,68,68,0.1);'
@@ -713,161 +689,18 @@ async function kToggleItemDelivered(orderId, itemIndex) {
   }
 }
 
-function kCollectOrder(id, paymentStatus) {
+function kCollectOrder(id, paymentStatus, total) {
   if (paymentStatus === 'paid' || paymentStatus === 'complimentary') {
     kBump(id, 'collected');
     return;
   }
-  openCollectPaymentPicker(id);
-}
-
-function openCollectPaymentPicker(id) {
-  var existing = document.getElementById('kc-picker-overlay');
-  if (existing) existing.remove();
-
-  var overlay = document.createElement('div');
-  overlay.id = 'kc-picker-overlay';
-  overlay.onclick = function (e) { if (e.target === overlay) closeCollectPaymentPicker(); };
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:4200;'
-    + 'display:flex;align-items:center;justify-content:center;padding:20px';
-
-  var box = document.createElement('div');
-  box.style.cssText = 'background:#fff;border-radius:20px;padding:22px;max-width:340px;width:100%;'
-    + 'font-family:\'DM Sans\',sans-serif';
-  box.innerHTML =
-      '<div style="font-size:15px;font-weight:700;color:#1a0820;margin-bottom:4px">How was this paid?</div>'
-    + '<div style="font-size:12px;color:#9a8aaa;margin-bottom:16px">This order hasn\'t been marked paid yet — pick how the customer just paid.</div>'
-    + '<div style="display:flex;flex-direction:column;gap:8px">'
-    +   '<button onclick="collectWithPayment(\'' + id + '\',\'cash\')" style="padding:14px;border-radius:12px;'
-    +     'background:rgba(184,116,16,0.1);border:1.5px solid rgba(184,116,16,0.3);color:#b87410;'
-    +     'font-size:14px;font-weight:700;cursor:pointer">💵 Cash</button>'
-    +   '<button onclick="collectWithPayment(\'' + id + '\',\'upi\')" style="padding:14px;border-radius:12px;'
-    +     'background:rgba(110,9,119,0.1);border:1.5px solid rgba(110,9,119,0.3);color:#6e0977;'
-    +     'font-size:14px;font-weight:700;cursor:pointer">📱 UPI</button>'
-    +   '<button onclick="collectWithPayment(\'' + id + '\',\'upi_qr\')" style="padding:14px;border-radius:12px;'
-    +     'background:rgba(34,197,94,0.1);border:1.5px solid rgba(34,197,94,0.3);color:#15803d;'
-    +     'font-size:14px;font-weight:700;cursor:pointer">📲 Scan QR</button>'
-    +   '<button onclick="closeCollectPaymentPicker()" style="padding:11px;border-radius:12px;'
-    +     'background:transparent;border:none;color:#9a8aaa;font-size:12px;cursor:pointer;margin-top:4px">Cancel</button>'
-    + '</div>';
-
-  overlay.appendChild(box);
-  document.body.appendChild(overlay);
-}
-
-function closeCollectPaymentPicker() {
-  var el = document.getElementById('kc-picker-overlay');
-  if (el) el.remove();
-}
-
-async function collectWithPayment(id, method) {
-  var labels = { cash: '💵 Cash', upi: '📱 UPI', upi_qr: '📲 Scan QR' };
-  try {
-    await db.from('store_orders').update({
-      status: 'collected',
-      payment_status: 'paid',
-      payment_method: method
-    }).eq('id', id);
-    closeCollectPaymentPicker();
-    showStoreToast('✅ Collected · ' + (labels[method] || method));
-  } catch (e) {
-    showStoreToast('Error: ' + e.message);
-  }
-}
-
-function openTableCollectPicker(id, tableCode) {
-  var existing = document.getElementById('tc-picker-overlay');
-  if (existing) existing.remove();
-
-  var overlay = document.createElement('div');
-  overlay.id = 'tc-picker-overlay';
-  overlay.onclick = function (e) { if (e.target === overlay) closeTableCollectPicker(); };
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:4300;'
-    + 'display:flex;align-items:center;justify-content:center;padding:20px';
-
-  var box = document.createElement('div');
-  box.style.cssText = 'background:#fff;border-radius:20px;padding:22px;max-width:340px;width:100%;'
-    + 'font-family:\'DM Sans\',sans-serif';
-  box.innerHTML =
-      '<div style="font-size:15px;font-weight:700;color:#1a0820;margin-bottom:4px">How was ' + tableCode + '\'s bill paid?</div>'
-    + '<div style="font-size:12px;color:#9a8aaa;margin-bottom:16px">This closes the table and asks for a phone number to send the bill on WhatsApp.</div>'
-    + '<div style="display:flex;flex-direction:column;gap:8px">'
-    +   '<button onclick="collectTableWithPayment(\'' + id + '\',\'' + tableCode + '\',\'cash\')" style="padding:14px;border-radius:12px;'
-    +     'background:rgba(184,116,16,0.1);border:1.5px solid rgba(184,116,16,0.3);color:#b87410;'
-    +     'font-size:14px;font-weight:700;cursor:pointer">💵 Cash</button>'
-    +   '<button onclick="collectTableWithPayment(\'' + id + '\',\'' + tableCode + '\',\'upi\')" style="padding:14px;border-radius:12px;'
-    +     'background:rgba(110,9,119,0.1);border:1.5px solid rgba(110,9,119,0.3);color:#6e0977;'
-    +     'font-size:14px;font-weight:700;cursor:pointer">📱 UPI</button>'
-    +   '<button onclick="collectTableWithPayment(\'' + id + '\',\'' + tableCode + '\',\'upi_qr\')" style="padding:14px;border-radius:12px;'
-    +     'background:rgba(34,197,94,0.1);border:1.5px solid rgba(34,197,94,0.3);color:#15803d;'
-    +     'font-size:14px;font-weight:700;cursor:pointer">📲 Scan QR</button>'
-    +   '<button onclick="closeTableCollectPicker()" style="padding:11px;border-radius:12px;'
-    +     'background:transparent;border:none;color:#9a8aaa;font-size:12px;cursor:pointer;margin-top:4px">Cancel</button>'
-    + '</div>';
-
-  overlay.appendChild(box);
-  document.body.appendChild(overlay);
-}
-
-function closeTableCollectPicker() {
-  var el = document.getElementById('tc-picker-overlay');
-  if (el) el.remove();
-}
-
-async function collectTableWithPayment(id, tableCode, method) {
-  closeTableCollectPicker();
-  var labels = { cash: 'Cash', upi: 'UPI', upi_qr: 'Scan QR' };
-
-  try {
-    var res = await db.from('store_orders').select('items, total, customer_phone').eq('id', id).single();
-    if (res.error) throw res.error;
-    var items = Array.isArray(res.data.items) ? res.data.items : JSON.parse(res.data.items || '[]');
-    var total = res.data.total || 0;
-
-    var phone = prompt(
-      'Customer phone number for WhatsApp bill (leave blank to skip):',
-      res.data.customer_phone || ''
-    );
-
-    await db.from('store_orders').update({
-      status: 'collected',
-      payment_status: 'paid',
-      payment_method: method
-    }).eq('id', id);
-
-    showStoreToast('✅ ' + tableCode + ' bill collected · ' + labels[method]);
-    kitchenManualRefresh();
-
-    if (phone) {
-      var digits = phone.replace(/\D/g, '').slice(-10);
-      if (digits.length === 10) {
-        var lines = items.map(function (i) { return i.name + ' ×' + i.qty + ' — ₹' + (i.price * i.qty); });
-        var message = '🧾NSDI Choco Cravings Bill\n'
-          + 'Table: ' + tableCode + '\n\n'
-          + lines.join('\n') + '\n\n'
-          + 'Total: ₹' + total + '\n'
-          + 'Paid via: ' + labels[method] + '\n\n'
-          + 'Thank you for visiting! 🍫\n'
-          + 'Order again: https://chococravings.netlify.app/chococravings_n.apk'
-          + '\n Insta Page : https://www.instagram.com/nsdi.chococravings';
-        window.open('https://wa.me/91' + digits + '?text=' + encodeURIComponent(message), '_blank');
-      } else {
-        showStoreToast('Skipped WhatsApp — enter a valid 10-digit number next time');
-      }
-    }
-  } catch (e) {
-    showStoreToast('Error: ' + e.message);
-  }
+  openSplitPaymentPicker(id, total || 0, { type: 'walkin' });
 }
 
 // ══════════════════════════════════════════════════════════════
 // In-Kitchen Recipe Popup — fast, one-tap, no separate login
 // ══════════════════════════════════════════════════════════════
-// Deliberately built for rush-hour use: no page navigation, no PIN
-// re-entry (staff are already viewing an authenticated Kitchen page),
-// big scannable text, and a language toggle since some staff read
-// Tamil more comfortably than English mid-shift.
-var _krLang = 'en'; // 'en' | 'ta'
+var _krLang = 'en';
 var _krOrderId = null;
 var _krItemIndex = null;
 var _krSelectedStaff = '';
@@ -1058,4 +891,179 @@ function closeItemRecipePopup() {
   if (el) el.remove();
   _krOrderId = null;
   _krItemIndex = null;
+}
+
+// ══════════════════════════════════════════════════════════════
+// Split Payment Picker — shared by walk-in "Collected" AND table
+// "Mark Bill Collected". Lets staff enter exact amounts across Cash /
+// UPI / Scan QR / Card when a customer pays partially via multiple
+// methods, instead of forcing a single method for the whole bill.
+// ══════════════════════════════════════════════════════════════
+var _spOrderId = null;
+var _spTotal = 0;
+var _spContext = null;
+
+function openSplitPaymentPicker(orderId, total, context) {
+  _spOrderId = orderId;
+  _spTotal = total || 0;
+  _spContext = context || { type: 'walkin' };
+
+  var existing = document.getElementById('sp-overlay');
+  if (existing) existing.remove();
+
+  var overlay = document.createElement('div');
+  overlay.id = 'sp-overlay';
+  overlay.onclick = function (e) { if (e.target === overlay) closeSplitPaymentPicker(); };
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:4400;'
+    + 'display:flex;align-items:center;justify-content:center;padding:16px;font-family:\'DM Sans\',sans-serif';
+
+  var titleTxt = _spContext.type === 'table' ? 'How was ' + _spContext.tableCode + '\'s bill paid?' : 'How was this order paid?';
+
+  var box = document.createElement('div');
+  box.id = 'sp-card';
+  box.style.cssText = 'background:#fff;border-radius:22px;padding:24px 22px;max-width:380px;width:100%;'
+    + 'max-height:88vh;overflow-y:auto';
+  box.innerHTML =
+      '<div style="font-size:16px;font-weight:700;color:#1a0820;margin-bottom:2px">' + titleTxt + '</div>'
+    + '<div style="font-size:12px;color:#9a8aaa;margin-bottom:16px">Split across methods if the customer paid partially in more than one way.</div>'
+    + '<div style="background:#fff8e6;border:1.5px solid rgba(245,196,48,0.35);border-radius:14px;padding:14px;'
+    + 'text-align:center;margin-bottom:18px">'
+    + '<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:#b87410">BILL TOTAL</div>'
+    + '<div style="font-family:Fraunces,Georgia,serif;font-size:26px;font-weight:900;color:#b87410">₹' + _spTotal + '</div></div>'
+    + splitInputRow('cash', '💵 Cash', '#b87410')
+    + splitInputRow('upi', '📱 UPI', '#6e0977')
+    + splitInputRow('upi_qr', '📲 Scan QR', '#15803d')
+    + splitInputRow('card', '💳 Card', '#2563eb')
+    + '<div id="sp-remaining" style="text-align:center;padding:12px;margin:14px 0;border-radius:12px;'
+    + 'font-size:13px;font-weight:700"></div>'
+    + '<button id="sp-confirm-btn" onclick="confirmSplitPayment()" style="width:100%;padding:15px;'
+    + 'background:linear-gradient(135deg,#6e0977,#9c0ca1);color:#fff;font-size:14px;font-weight:700;'
+    + 'border:none;border-radius:14px;cursor:pointer">✅ Confirm Payment</button>'
+    + '<button onclick="closeSplitPaymentPicker()" style="width:100%;padding:12px;margin-top:8px;'
+    + 'background:transparent;color:#9a8aaa;font-size:12px;font-weight:600;border-radius:12px">Cancel</button>';
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  updateSplitRemaining();
+}
+
+function splitInputRow(key, label, color) {
+  return '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;'
+    + 'border-bottom:1px solid #f5f0f8">'
+    + '<span style="font-size:14px;font-weight:600;color:' + color + '">' + label + '</span>'
+    + '<input id="sp-' + key + '" type="number" inputmode="decimal" placeholder="0" oninput="updateSplitRemaining()" '
+    + 'style="width:110px;padding:9px 10px;border-radius:10px;border:1.5px solid rgba(18,10,30,0.12);'
+    + 'font-size:14px;font-weight:700;text-align:right;outline:none">'
+    + '</div>';
+}
+
+function getSplitValues() {
+  return {
+    cash:   parseFloat(document.getElementById('sp-cash').value) || 0,
+    upi:    parseFloat(document.getElementById('sp-upi').value) || 0,
+    upi_qr: parseFloat(document.getElementById('sp-upi_qr').value) || 0,
+    card:   parseFloat(document.getElementById('sp-card').value) || 0
+  };
+}
+
+function updateSplitRemaining() {
+  var v = getSplitValues();
+  var entered = v.cash + v.upi + v.upi_qr + v.card;
+  var remaining = Math.round((_spTotal - entered) * 100) / 100;
+  var box = document.getElementById('sp-remaining');
+  var btn = document.getElementById('sp-confirm-btn');
+
+  if (remaining === 0 && entered > 0) {
+    box.style.background = 'rgba(34,197,94,0.1)';
+    box.style.color = '#15803d';
+    box.textContent = '✅ Fully accounted for — ready to confirm';
+    btn.style.opacity = '1';
+  } else if (remaining > 0) {
+    box.style.background = 'rgba(245,158,11,0.1)';
+    box.style.color = '#b87410';
+    box.textContent = '₹' + remaining + ' still remaining';
+    btn.style.opacity = '.6';
+  } else {
+    box.style.background = 'rgba(220,38,38,0.1)';
+    box.style.color = '#dc2626';
+    box.textContent = '₹' + Math.abs(remaining) + ' over the bill total';
+    btn.style.opacity = '.6';
+  }
+}
+
+function closeSplitPaymentPicker() {
+  var el = document.getElementById('sp-overlay');
+  if (el) el.remove();
+  _spOrderId = null;
+  _spContext = null;
+}
+
+async function confirmSplitPayment() {
+  var v = getSplitValues();
+  var entered = v.cash + v.upi + v.upi_qr + v.card;
+  var remaining = Math.round((_spTotal - entered) * 100) / 100;
+
+  if (entered === 0) { showStoreToast('Enter at least one amount'); return; }
+  if (remaining !== 0) {
+    var proceed = confirm(remaining > 0
+      ? '₹' + remaining + ' is still unaccounted for. Confirm anyway?'
+      : '₹' + Math.abs(remaining) + ' more than the bill total was entered. Confirm anyway?');
+    if (!proceed) return;
+  }
+
+  var labels = { cash: 'Cash', upi: 'UPI', upi_qr: 'Scan QR', card: 'Card' };
+  var usedMethods = Object.keys(v).filter(function (k) { return v[k] > 0; });
+  var summaryMethod = usedMethods.length === 1 ? usedMethods[0] : (usedMethods.length > 1 ? 'split' : 'cash');
+  var breakdownText = usedMethods.map(function (k) { return labels[k] + ' ₹' + v[k]; }).join(' + ');
+
+  try {
+    await db.from('store_orders').update({
+      status: 'collected',
+      payment_status: 'paid',
+      payment_method: summaryMethod,
+      payment_split: JSON.stringify(v)
+    }).eq('id', _spOrderId);
+
+    var context = _spContext;
+    var orderId = _spOrderId;
+    closeSplitPaymentPicker();
+    showStoreToast('✅ Collected · ' + breakdownText);
+    kitchenManualRefresh();
+
+    // Table orders additionally offer the WhatsApp bill, same as before —
+    // now showing the actual split breakdown instead of a single method.
+    if (context.type === 'table') {
+      await sendTableBillWhatsApp(orderId, context.tableCode, breakdownText);
+    }
+  } catch (e) {
+    showStoreToast('Error: ' + e.message);
+  }
+}
+
+async function sendTableBillWhatsApp(orderId, tableCode, breakdownText) {
+  try {
+    var res = await db.from('store_orders').select('items, total, customer_phone').eq('id', orderId).single();
+    if (res.error) throw res.error;
+    var items = Array.isArray(res.data.items) ? res.data.items : JSON.parse(res.data.items || '[]');
+    var total = res.data.total || 0;
+
+    var phone = prompt('Customer phone number for WhatsApp bill (leave blank to skip):', res.data.customer_phone || '');
+    if (!phone) return;
+
+    var digits = phone.replace(/\D/g, '').slice(-10);
+    if (digits.length !== 10) { showStoreToast('Skipped WhatsApp — enter a valid 10-digit number next time'); return; }
+
+    var lines = items.map(function (i) { return i.name + ' ×' + i.qty + ' — ₹' + (i.price * i.qty); });
+    var message = '🧾NSDI Choco Cravings Bill\n'
+      + 'Table: ' + tableCode + '\n\n'
+      + lines.join('\n') + '\n\n'
+      + 'Total: ₹' + total + '\n'
+      + 'Paid via: ' + breakdownText + '\n\n'
+      + 'Thank you for visiting! 🍫\n'
+      + 'Order again: https://chococravings.netlify.app/chococravings_n.apk'
+      + '\n Insta Page : https://www.instagram.com/nsdi.chococravings';
+    window.open('https://wa.me/91' + digits + '?text=' + encodeURIComponent(message), '_blank');
+  } catch (e) {
+    showStoreToast('Error: ' + e.message);
+  }
 }
