@@ -894,19 +894,31 @@ function closeItemRecipePopup() {
 }
 
 // ══════════════════════════════════════════════════════════════
-// Split Payment Picker — shared by walk-in "Collected" AND table
-// "Mark Bill Collected". Lets staff enter exact amounts across Cash /
-// UPI / Scan QR / Card when a customer pays partially via multiple
-// methods, instead of forcing a single method for the whole bill.
+// Payment Collection Picker — shared by walk-in "Collected" AND table
+// "Mark Bill Collected". Defaults to Full Payment (one tap, done —
+// most transactions are single-method) with a Partial Payment toggle
+// for the minority of customers who split across methods. Cash
+// specifically also tracks amount received + change to return.
 // ══════════════════════════════════════════════════════════════
 var _spOrderId = null;
 var _spTotal = 0;
 var _spContext = null;
+var _spMode = 'full'; // 'full' | 'partial'
+var _spFullMethod = null; // selected method in Full mode, before confirming cash
+
+var SP_METHOD_META = {
+  cash:   { label: 'Cash',     icon: '💵', color: '#b87410', bg: 'rgba(184,116,16,0.1)',  border: 'rgba(184,116,16,0.35)' },
+  upi:    { label: 'UPI',      icon: '📱', color: '#6e0977', bg: 'rgba(110,9,119,0.1)',   border: 'rgba(110,9,119,0.35)' },
+  upi_qr: { label: 'Scan QR',  icon: '📲', color: '#15803d', bg: 'rgba(34,197,94,0.1)',   border: 'rgba(34,197,94,0.35)' },
+  card:   { label: 'Card',     icon: '💳', color: '#2563eb', bg: 'rgba(37,99,235,0.1)',   border: 'rgba(37,99,235,0.35)' }
+};
 
 function openSplitPaymentPicker(orderId, total, context) {
   _spOrderId = orderId;
   _spTotal = total || 0;
   _spContext = context || { type: 'walkin' };
+  _spMode = 'full';
+  _spFullMethod = null;
 
   var existing = document.getElementById('sp-overlay');
   if (existing) existing.remove();
@@ -914,47 +926,157 @@ function openSplitPaymentPicker(orderId, total, context) {
   var overlay = document.createElement('div');
   overlay.id = 'sp-overlay';
   overlay.onclick = function (e) { if (e.target === overlay) closeSplitPaymentPicker(); };
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:4400;'
-    + 'display:flex;align-items:center;justify-content:center;padding:16px;font-family:\'DM Sans\',sans-serif';
-
-  var titleTxt = _spContext.type === 'table' ? 'How was ' + _spContext.tableCode + '\'s bill paid?' : 'How was this order paid?';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(18,10,30,0.65);backdrop-filter:blur(3px);'
+    + 'z-index:4400;display:flex;align-items:center;justify-content:center;padding:16px;font-family:\'DM Sans\',sans-serif';
 
   var box = document.createElement('div');
   box.id = 'sp-card';
-  box.style.cssText = 'background:#fff;border-radius:22px;padding:24px 22px;max-width:380px;width:100%;'
-    + 'max-height:88vh;overflow-y:auto';
+  box.style.cssText = 'background:#fff;border-radius:26px;max-width:400px;width:100%;'
+    + 'max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,0.3)';
+
+  var titleTxt = _spContext.type === 'table' ? _spContext.tableCode + ' — Collect Payment' : 'Collect Payment';
+
   box.innerHTML =
-      '<div style="font-size:16px;font-weight:700;color:#1a0820;margin-bottom:2px">' + titleTxt + '</div>'
-    + '<div style="font-size:12px;color:#9a8aaa;margin-bottom:16px">Split across methods if the customer paid partially in more than one way.</div>'
-    + '<div style="background:#fff8e6;border:1.5px solid rgba(245,196,48,0.35);border-radius:14px;padding:14px;'
-    + 'text-align:center;margin-bottom:18px">'
-    + '<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:#b87410">BILL TOTAL</div>'
-    + '<div style="font-family:Fraunces,Georgia,serif;font-size:26px;font-weight:900;color:#b87410">₹' + _spTotal + '</div></div>'
-    + splitInputRow('cash', '💵 Cash', '#b87410')
-    + splitInputRow('upi', '📱 UPI', '#6e0977')
-    + splitInputRow('upi_qr', '📲 Scan QR', '#15803d')
-    + splitInputRow('card', '💳 Card', '#2563eb')
-    + '<div id="sp-remaining" style="text-align:center;padding:12px;margin:14px 0;border-radius:12px;'
-    + 'font-size:13px;font-weight:700"></div>'
-    + '<button id="sp-confirm-btn" onclick="confirmSplitPayment()" style="width:100%;padding:15px;'
-    + 'background:linear-gradient(135deg,#6e0977,#9c0ca1);color:#fff;font-size:14px;font-weight:700;'
-    + 'border:none;border-radius:14px;cursor:pointer">✅ Confirm Payment</button>'
-    + '<button onclick="closeSplitPaymentPicker()" style="width:100%;padding:12px;margin-top:8px;'
-    + 'background:transparent;color:#9a8aaa;font-size:12px;font-weight:600;border-radius:12px">Cancel</button>';
+      '<div style="background:linear-gradient(135deg,#6e0977,#9c0ca1);padding:24px 22px;border-radius:26px 26px 0 0;text-align:center">'
+    + '<div style="font-size:10px;font-weight:700;letter-spacing:3px;color:rgba(255,255,255,.7)">CHOCOCRAVINGS</div>'
+    + '<div style="font-family:Fraunces,Georgia,serif;font-size:19px;font-weight:900;color:#fff;margin-top:2px">' + titleTxt + '</div>'
+    + '<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:rgba(255,255,255,.65);margin-top:14px">BILL TOTAL</div>'
+    + '<div style="font-family:Fraunces,Georgia,serif;font-size:38px;font-weight:900;color:#f5c430;margin-top:2px">₹' + _spTotal + '</div>'
+    + '</div>'
+    + '<div style="padding:20px 22px 24px">'
+    + '<div style="display:flex;gap:8px;margin-bottom:18px;background:#f5eeff;border-radius:14px;padding:4px">'
+    +   '<div id="sp-mode-full" onclick="spSetMode(\'full\')" style="flex:1;text-align:center;padding:10px;border-radius:11px;'
+    +     'font-size:12px;font-weight:700;cursor:pointer;background:#6e0977;color:#fff">💯 Full Payment</div>'
+    +   '<div id="sp-mode-partial" onclick="spSetMode(\'partial\')" style="flex:1;text-align:center;padding:10px;border-radius:11px;'
+    +     'font-size:12px;font-weight:700;cursor:pointer;color:#9a8aaa">🔀 Partial Payment</div>'
+    + '</div>'
+    + '<div id="sp-body"></div>'
+    + '<button onclick="closeSplitPaymentPicker()" style="width:100%;padding:12px;margin-top:14px;'
+    + 'background:transparent;color:#9a8aaa;font-size:12px;font-weight:600;border-radius:12px;border:none;cursor:pointer">Cancel</button>'
+    + '</div>';
 
   overlay.appendChild(box);
   document.body.appendChild(overlay);
-  updateSplitRemaining();
+  renderSpBody();
 }
 
-function splitInputRow(key, label, color) {
-  return '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;'
-    + 'border-bottom:1px solid #f5f0f8">'
-    + '<span style="font-size:14px;font-weight:600;color:' + color + '">' + label + '</span>'
-    + '<input id="sp-' + key + '" type="number" inputmode="decimal" placeholder="0" oninput="updateSplitRemaining()" '
-    + 'style="width:110px;padding:9px 10px;border-radius:10px;border:1.5px solid rgba(18,10,30,0.12);'
-    + 'font-size:14px;font-weight:700;text-align:right;outline:none">'
-    + '</div>';
+function spSetMode(mode) {
+  _spMode = mode;
+  _spFullMethod = null;
+  document.getElementById('sp-mode-full').style.background = mode === 'full' ? '#6e0977' : 'transparent';
+  document.getElementById('sp-mode-full').style.color = mode === 'full' ? '#fff' : '#9a8aaa';
+  document.getElementById('sp-mode-partial').style.background = mode === 'partial' ? '#6e0977' : 'transparent';
+  document.getElementById('sp-mode-partial').style.color = mode === 'partial' ? '#fff' : '#9a8aaa';
+  renderSpBody();
+}
+
+function renderSpBody() {
+  var body = document.getElementById('sp-body');
+  body.innerHTML = _spMode === 'full' ? spFullModeHtml() : spPartialModeHtml();
+  if (_spMode === 'partial') updateSplitRemaining();
+}
+
+// ── FULL PAYMENT MODE ──
+function spFullModeHtml() {
+  var methodGrid = Object.keys(SP_METHOD_META).map(function (key) {
+    var m = SP_METHOD_META[key];
+    var selected = _spFullMethod === key;
+    return '<div onclick="spSelectFullMethod(\'' + key + '\')" style="padding:16px 10px;border-radius:16px;text-align:center;'
+      + 'cursor:pointer;background:' + (selected ? m.color : m.bg) + ';border:1.5px solid ' + m.border + ';'
+      + 'transition:all .15s' + (selected ? ';box-shadow:0 6px 16px ' + m.border : '') + '">'
+      + '<div style="font-size:26px;margin-bottom:4px">' + m.icon + '</div>'
+      + '<div style="font-size:12px;font-weight:700;color:' + (selected ? '#fff' : m.color) + '">' + m.label + '</div>'
+      + '</div>';
+  }).join('');
+
+  var cashSection = _spFullMethod === 'cash'
+    ? '<div style="background:#fff8e6;border:1.5px solid rgba(245,196,48,0.4);border-radius:16px;padding:16px;margin-top:14px">'
+      + '<div style="font-size:11px;font-weight:700;letter-spacing:1.5px;color:#b87410;margin-bottom:10px">AMOUNT RECEIVED FROM CUSTOMER</div>'
+      + '<input id="sp-cash-received" type="number" inputmode="decimal" placeholder="₹ 0" oninput="spUpdateChange()" '
+      + 'style="width:100%;padding:14px;border-radius:12px;border:1.5px solid rgba(245,196,48,0.5);'
+      + 'font-family:Fraunces,Georgia,serif;font-size:24px;font-weight:900;text-align:center;color:#1a0820;outline:none;box-sizing:border-box">'
+      + '<div id="sp-change-display" style="text-align:center;margin-top:12px;font-size:14px;font-weight:700"></div>'
+      + '<button onclick="spConfirmFullCash()" style="width:100%;padding:14px;margin-top:14px;'
+      + 'background:linear-gradient(135deg,#6e0977,#9c0ca1);color:#fff;font-size:14px;font-weight:700;'
+      + 'border:none;border-radius:12px;cursor:pointer">✅ Confirm Cash Payment</button>'
+      + '</div>'
+    : '';
+
+  return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' + methodGrid + '</div>' + cashSection;
+}
+
+function spSelectFullMethod(key) {
+  if (key !== 'cash') {
+    spConfirmFullNonCash(key);
+    return;
+  }
+  _spFullMethod = 'cash';
+  renderSpBody();
+  setTimeout(function () {
+    var el = document.getElementById('sp-cash-received');
+    if (el) el.focus();
+  }, 50);
+}
+
+function spUpdateChange() {
+  var received = parseFloat(document.getElementById('sp-cash-received').value) || 0;
+  var change = Math.round((received - _spTotal) * 100) / 100;
+  var display = document.getElementById('sp-change-display');
+  if (received === 0) {
+    display.textContent = '';
+  } else if (change > 0) {
+    display.style.color = '#15803d';
+    display.innerHTML = '💰 Change to return: <span style="font-family:Fraunces,Georgia,serif;font-size:18px">₹' + change + '</span>';
+  } else if (change < 0) {
+    display.style.color = '#dc2626';
+    display.innerHTML = '⚠️ ₹' + Math.abs(change) + ' short of the bill';
+  } else {
+    display.style.color = '#15803d';
+    display.textContent = '✅ Exact amount — no change needed';
+  }
+}
+
+async function spConfirmFullCash() {
+  var received = parseFloat(document.getElementById('sp-cash-received').value) || 0;
+  if (received < _spTotal) {
+    var proceed = confirm('Amount received (₹' + received + ') is less than the bill (₹' + _spTotal + '). Confirm anyway?');
+    if (!proceed) return;
+  }
+  var change = Math.max(0, Math.round((received - _spTotal) * 100) / 100);
+  await spFinalizePayment({ cash: _spTotal }, 'cash', 'Cash ₹' + _spTotal, received, change);
+}
+
+async function spConfirmFullNonCash(method) {
+  var v = {}; v[method] = _spTotal;
+  var m = SP_METHOD_META[method];
+  await spFinalizePayment(v, method, m.label + ' ₹' + _spTotal, null, null);
+}
+
+// ── PARTIAL PAYMENT MODE ──
+function spPartialModeHtml() {
+  var rows = Object.keys(SP_METHOD_META).map(function (key) {
+    var m = SP_METHOD_META[key];
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f5f0f8">'
+      + '<span style="font-size:14px;font-weight:600;color:' + m.color + '">' + m.icon + ' ' + m.label + '</span>'
+      + '<input id="sp-' + key + '" type="number" inputmode="decimal" placeholder="0" oninput="updateSplitRemaining()" '
+      + 'style="width:110px;padding:9px 10px;border-radius:10px;border:1.5px solid ' + m.border + ';'
+      + 'font-size:14px;font-weight:700;text-align:right;outline:none">'
+      + '</div>';
+  }).join('');
+
+  return rows
+    + '<div id="sp-cash-change-row" style="display:none;background:#fff8e6;border:1.5px solid rgba(245,196,48,0.4);'
+    + 'border-radius:14px;padding:12px 14px;margin-top:12px">'
+    + '<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:#b87410;margin-bottom:6px">CASH RECEIVED (FOR CHANGE)</div>'
+    + '<input id="sp-partial-cash-received" type="number" inputmode="decimal" placeholder="₹ 0" oninput="spUpdatePartialChange()" '
+    + 'style="width:100%;padding:10px;border-radius:10px;border:1.5px solid rgba(245,196,48,0.5);font-size:15px;'
+    + 'font-weight:700;text-align:center;outline:none;box-sizing:border-box">'
+    + '<div id="sp-partial-change-display" style="text-align:center;margin-top:8px;font-size:13px;font-weight:700"></div>'
+    + '</div>'
+    + '<div id="sp-remaining" style="text-align:center;padding:12px;margin:14px 0;border-radius:12px;font-size:13px;font-weight:700"></div>'
+    + '<button id="sp-confirm-btn" onclick="confirmSplitPayment()" style="width:100%;padding:15px;'
+    + 'background:linear-gradient(135deg,#6e0977,#9c0ca1);color:#fff;font-size:14px;font-weight:700;'
+    + 'border:none;border-radius:14px;cursor:pointer">✅ Confirm Payment</button>';
 }
 
 function getSplitValues() {
@@ -972,6 +1094,14 @@ function updateSplitRemaining() {
   var remaining = Math.round((_spTotal - entered) * 100) / 100;
   var box = document.getElementById('sp-remaining');
   var btn = document.getElementById('sp-confirm-btn');
+  var cashRow = document.getElementById('sp-cash-change-row');
+
+  // Only show the cash-received/change sub-field once a cash amount is
+  // actually entered — the physical change calculation only matters for
+  // whatever portion of the bill is being paid in cash.
+  if (cashRow) cashRow.style.display = v.cash > 0 ? 'block' : 'none';
+
+  if (!box || !btn) return;
 
   if (remaining === 0 && entered > 0) {
     box.style.background = 'rgba(34,197,94,0.1)';
@@ -988,6 +1118,25 @@ function updateSplitRemaining() {
     box.style.color = '#dc2626';
     box.textContent = '₹' + Math.abs(remaining) + ' over the bill total';
     btn.style.opacity = '.6';
+  }
+}
+
+function spUpdatePartialChange() {
+  var v = getSplitValues();
+  var received = parseFloat(document.getElementById('sp-partial-cash-received').value) || 0;
+  var change = Math.round((received - v.cash) * 100) / 100;
+  var display = document.getElementById('sp-partial-change-display');
+  if (received === 0) {
+    display.textContent = '';
+  } else if (change > 0) {
+    display.style.color = '#15803d';
+    display.innerHTML = '💰 Change to return: ₹' + change;
+  } else if (change < 0) {
+    display.style.color = '#dc2626';
+    display.textContent = '⚠️ ₹' + Math.abs(change) + ' short for the cash portion';
+  } else {
+    display.style.color = '#15803d';
+    display.textContent = '✅ Exact — no change needed';
   }
 }
 
@@ -1011,27 +1160,35 @@ async function confirmSplitPayment() {
     if (!proceed) return;
   }
 
+  var received = v.cash > 0 ? (parseFloat(document.getElementById('sp-partial-cash-received').value) || 0) : null;
+  var change = received !== null ? Math.max(0, Math.round((received - v.cash) * 100) / 100) : null;
+
   var labels = { cash: 'Cash', upi: 'UPI', upi_qr: 'Scan QR', card: 'Card' };
   var usedMethods = Object.keys(v).filter(function (k) { return v[k] > 0; });
   var summaryMethod = usedMethods.length === 1 ? usedMethods[0] : (usedMethods.length > 1 ? 'split' : 'cash');
   var breakdownText = usedMethods.map(function (k) { return labels[k] + ' ₹' + v[k]; }).join(' + ');
 
+  await spFinalizePayment(v, summaryMethod, breakdownText, received, change);
+}
+
+// ── Shared finalize step for both Full and Partial modes ──
+async function spFinalizePayment(splitObj, summaryMethod, breakdownText, cashReceived, changeGiven) {
   try {
     await db.from('store_orders').update({
       status: 'collected',
       payment_status: 'paid',
       payment_method: summaryMethod,
-      payment_split: JSON.stringify(v)
+      payment_split: JSON.stringify(splitObj)
     }).eq('id', _spOrderId);
 
     var context = _spContext;
     var orderId = _spOrderId;
     closeSplitPaymentPicker();
-    showStoreToast('✅ Collected · ' + breakdownText);
+
+    var changeNote = (changeGiven && changeGiven > 0) ? (' · Change given: ₹' + changeGiven) : '';
+    showStoreToast('✅ Collected · ' + breakdownText + changeNote);
     kitchenManualRefresh();
 
-    // Table orders additionally offer the WhatsApp bill, same as before —
-    // now showing the actual split breakdown instead of a single method.
     if (context.type === 'table') {
       await sendTableBillWhatsApp(orderId, context.tableCode, breakdownText);
     }
