@@ -239,7 +239,7 @@ function openTableOrderSheet(code) {
         _tsExistingOrder = res.data;
         var rawItems = res.data.items;
         _tsItems = (Array.isArray(rawItems) ? rawItems : JSON.parse(rawItems || '[]')).map(function (i) {
-          return { name: i.name, price: i.price, qty: i.qty, delivered: !!i.delivered, prepared_by: i.prepared_by || null, prepared_at: i.prepared_at || null, _origQty: i.qty };
+          return { name: i.name, price: i.price, qty: i.qty, delivered: !!i.delivered, prepared_by: i.prepared_by || null, prepared_at: i.prepared_at || null, complimentary: !!i.complimentary, _origQty: i.qty };
         });
         sendBtn.textContent = '➕ Add Items';
         billBtn.style.display = 'block';
@@ -350,13 +350,20 @@ function tsRenderItems() {
     return;
   }
   list.innerHTML = _tsItems.map(function (item, i) {
+    var isFree = !!item.complimentary;
     return '<div style="display:flex;align-items:center;justify-content:space-between;'
-      + 'background:#f5eeff;border:1px solid #e0c8f0;border-radius:10px;padding:10px 12px">'
+      + 'background:' + (isFree ? '#fff8e6' : '#f5eeff') + ';border:1px solid ' + (isFree ? 'rgba(245,196,48,0.4)' : '#e0c8f0') + ';'
+      + 'border-radius:10px;padding:10px 12px">'
       + '<div style="flex:1">'
-      + '<div style="font-size:13px;font-weight:600;color:#1a0820">' + item.name + '</div>'
-      + '<div style="font-size:11px;color:#9c0ca1">₹' + item.price + ' × ' + item.qty + '</div>'
+      + '<div style="font-size:13px;font-weight:600;color:#1a0820">' + item.name
+      + (isFree ? ' <span style="font-size:9px;font-weight:700;color:#b87410;background:rgba(245,196,48,0.2);padding:2px 7px;border-radius:10px;margin-left:4px">🎁 FREE</span>' : '') + '</div>'
+      + '<div style="font-size:11px;color:#9c0ca1;' + (isFree ? 'text-decoration:line-through' : '') + '">₹' + item.price + ' × ' + item.qty + '</div>'
       + '</div>'
-      + '<div style="font-size:13px;font-weight:700;color:#6e0977;margin-right:8px">₹' + (item.price * item.qty) + '</div>'
+      + '<div style="font-size:13px;font-weight:700;color:' + (isFree ? '#b87410' : '#6e0977') + ';margin-right:8px">'
+      + (isFree ? 'FREE' : ('₹' + (item.price * item.qty))) + '</div>'
+      + '<div onclick="tsToggleComplimentary(' + i + ')" title="Mark complimentary" style="width:26px;height:26px;border-radius:50%;'
+      + 'background:' + (isFree ? '#b87410' : '#fff') + ';border:1px solid ' + (isFree ? '#b87410' : '#e0c8f0') + ';display:flex;'
+      + 'align-items:center;justify-content:center;cursor:pointer;font-size:12px;margin-right:6px">🎁</div>'
       + '<div onclick="tsQuickAdd(\'' + item.name.replace(/'/g, "\\'") + '\',' + item.price + ')" '
       + 'style="width:26px;height:26px;border-radius:50%;background:#6e0977;color:#fff;display:flex;'
       + 'align-items:center;justify-content:center;cursor:pointer;font-size:14px;font-weight:700;margin-right:6px">+</div>'
@@ -368,10 +375,16 @@ function tsRenderItems() {
 }
 
 function tsCalcTotal() {
-  var total = _tsItems.reduce(function (s, i) { return s + (i.price * i.qty); }, 0);
+  var total = _tsItems.reduce(function (s, i) { return s + (i.complimentary ? 0 : i.price * i.qty); }, 0);
   var el = document.getElementById('ts-total');
   if (el) el.textContent = '₹' + total;
   return total;
+}
+
+function tsToggleComplimentary(idx) {
+  _tsItems[idx].complimentary = !_tsItems[idx].complimentary;
+  tsRenderItems();
+  tsCalcTotal();
 }
 
 async function tsSubmit() {
@@ -392,7 +405,8 @@ async function tsSubmit() {
       qty: item.qty,
       delivered: resetPrep ? false : !!item.delivered,
       prepared_by: resetPrep ? null : (item.prepared_by || null),
-      prepared_at: resetPrep ? null : (item.prepared_at || null)
+      prepared_at: resetPrep ? null : (item.prepared_at || null),
+      complimentary: !!item.complimentary
     };
   });
 
@@ -522,6 +536,10 @@ function renderKitchen(orders) {
             ? '<span style="font-size:9px;font-weight:700;color:#4ade80;background:rgba(74,222,128,0.12);'
               + 'padding:2px 7px;border-radius:10px;margin-left:6px;flex-shrink:0">✅ ' + i.prepared_by + '</span>'
             : '';
+          var compTag = i.complimentary
+            ? '<span style="font-size:9px;font-weight:700;color:#b87410;background:rgba(245,196,48,0.15);'
+              + 'padding:2px 7px;border-radius:10px;margin-left:6px;flex-shrink:0">🎁 FREE</span>'
+            : '';
           return '<div style="display:flex;align-items:center;gap:9px;padding:5px 0">'
             + '<span onclick="kToggleItemDelivered(\'' + o.id + '\',' + idx + ')" style="width:18px;height:18px;border-radius:5px;flex-shrink:0;display:flex;'
             + 'align-items:center;justify-content:center;font-size:11px;color:#0c0810;cursor:pointer;'
@@ -531,6 +549,7 @@ function renderKitchen(orders) {
             + 'color:' + (delivered ? 'rgba(245,234,220,.4)' : '#f5eadc') + ';'
             + 'text-decoration:' + (delivered ? 'line-through' : 'none') + '">' + i.name + '</span>'
             + preparedTag
+            + compTag
             + '<span onclick="openItemRecipePopup(\'' + o.id + '\',' + idx + ')" style="width:24px;height:24px;border-radius:7px;'
             + 'background:rgba(245,196,48,0.15);border:1px solid rgba(245,196,48,0.3);display:flex;align-items:center;'
             + 'justify-content:center;font-size:12px;cursor:pointer;flex-shrink:0">📖</span>'
@@ -542,9 +561,14 @@ function renderKitchen(orders) {
             ? '<span style="font-size:9px;font-weight:700;color:#4ade80;background:rgba(74,222,128,0.12);'
               + 'padding:2px 7px;border-radius:10px;margin-left:6px;flex-shrink:0">✅ ' + i.prepared_by + '</span>'
             : '';
+          var compTag = i.complimentary
+            ? '<span style="font-size:9px;font-weight:700;color:#b87410;background:rgba(245,196,48,0.15);'
+              + 'padding:2px 7px;border-radius:10px;margin-left:6px;flex-shrink:0">🎁 FREE</span>'
+            : '';
           return '<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0">'
             + '<span style="font-size:13px;color:#f5eadc;font-weight:500;flex:1">' + i.name + '</span>'
             + preparedTag
+            + compTag
             + '<span onclick="openItemRecipePopup(\'' + o.id + '\',' + idx + ')" style="width:24px;height:24px;border-radius:7px;'
             + 'background:rgba(245,196,48,0.15);border:1px solid rgba(245,196,48,0.3);display:flex;align-items:center;'
             + 'justify-content:center;font-size:12px;cursor:pointer;flex-shrink:0;margin-left:8px">📖</span>'
