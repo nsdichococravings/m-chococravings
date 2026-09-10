@@ -168,12 +168,12 @@ async function loadDashboard() {
   var storeRes = await db.from('store_orders').select('total, created_at')
     .gte('created_at', range.start.toISOString())
     .not('status', 'eq', 'cancelled')
-    .limit(50000); // Supabase caps at 1000 rows by default — this override prevents silently undercounting revenue
+    .limit(100000); // Supabase caps at 1000 rows by default — this override prevents silently undercounting revenue
   var storePrevRes = await db.from('store_orders').select('total')
     .gte('created_at', range.prevStart.toISOString())
     .lt('created_at', range.prevEnd.toISOString())
     .not('status', 'eq', 'cancelled')
-    .limit(50000);
+    .limit(100000);
 
   var bookingsRes = await db.from('custom_bookings').select('total_amount, booking_date')
     .gte('booking_date', range.start.toISOString().slice(0, 10))
