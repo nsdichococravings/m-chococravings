@@ -124,6 +124,10 @@ function buildTablesBoardDOM() {
     +     'background:rgba(34,197,94,0.1);color:#15803d;font-size:13px;font-weight:700;'
     +     'border:1.5px solid rgba(34,197,94,0.35);border-radius:14px;cursor:pointer;letter-spacing:1px;'
     +     'font-family:\'DM Sans\',sans-serif">💰 Bill &amp; Close Table</button>'
+    +   '<button id="ts-move-btn" onclick="openMoveTablePicker()" style="display:none;width:100%;padding:13px;margin-top:8px;'
+    +     'background:rgba(37,99,235,0.08);color:#2563eb;font-size:12px;font-weight:700;'
+    +     'border:1.5px solid rgba(37,99,235,0.25);border-radius:14px;cursor:pointer;letter-spacing:.5px;'
+    +     'font-family:\'DM Sans\',sans-serif">🔄 Move to Another Table</button>'
     +   '<button id="ts-undo-btn" onclick="tsUndoDelivered()" style="display:none;width:100%;padding:13px;'
     +     'background:rgba(220,38,38,0.08);color:#dc2626;font-size:12px;font-weight:700;'
     +     'border:1.5px solid rgba(220,38,38,0.25);border-radius:14px;cursor:pointer;letter-spacing:.5px;'
@@ -225,6 +229,7 @@ function openTableOrderSheet(code) {
   var sendBtn = document.getElementById('ts-send-btn');
   var billBtn = document.getElementById('ts-bill-btn');
   var undoBtn = document.getElementById('ts-undo-btn');
+  var moveBtn = document.getElementById('ts-move-btn');
 
   db.from('store_orders')
     .select('id, items, total, status, created_at, staff_name, customer_phone')
@@ -244,11 +249,13 @@ function openTableOrderSheet(code) {
         sendBtn.textContent = '➕ Add Items';
         billBtn.style.display = 'block';
         undoBtn.style.display = res.data.status === 'delivered' ? 'block' : 'none';
+        moveBtn.style.display = 'block';
         phoneInput.value = (res.data.customer_phone || '').replace(/^\+?91/, '');
       } else {
         sendBtn.textContent = '➕ Send to Kitchen';
         billBtn.style.display = 'none';
         undoBtn.style.display = 'none';
+        moveBtn.style.display = 'none';
         phoneInput.value = '';
       }
       tsRenderItems();
@@ -1244,6 +1251,342 @@ async function sendTableBillWhatsApp(orderId, tableCode, breakdownText) {
       + 'Order again: https://chococravings.netlify.app/chococravings_n.apk'
       + '\n Insta Page : https://www.instagram.com/nsdi.chococravings';
     window.open('https://wa.me/91' + digits + '?text=' + encodeURIComponent(message), '_blank');
+  } catch (e) {
+    showStoreToast('Error: ' + e.message);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// Kitchen Order History — modern slide-in drawer from the left,
+// showing today's completed/cancelled orders. Each entry expands to
+// show full item details on tap.
+// ══════════════════════════════════════════════════════════════
+var _khOpen = false;
+var _khExpandedId = null;
+
+document.addEventListener('DOMContentLoaded', function () {
+  buildKitchenHistoryDrawer();
+  injectKitchenHistoryButton();
+});
+
+function buildKitchenHistoryDrawer() {
+  var backdrop = document.createElement('div');
+  backdrop.id = 'kh-backdrop';
+  backdrop.onclick = closeKitchenHistory;
+  backdrop.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);'
+    + 'z-index:2900;backdrop-filter:blur(2px)';
+  document.body.appendChild(backdrop);
+
+  var drawer = document.createElement('div');
+  drawer.id = 'kh-drawer';
+  drawer.style.cssText = 'position:fixed;top:0;left:0;bottom:0;width:320px;max-width:86vw;'
+    + 'background:#0e0716;border-right:1px solid rgba(255,255,255,.08);z-index:2901;'
+    + 'transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);'
+    + 'font-family:\'DM Sans\',sans-serif;overflow-y:auto;box-shadow:8px 0 30px rgba(0,0,0,0.3)';
+  drawer.innerHTML =
+      '<div style="position:sticky;top:0;background:#0e0716;padding:18px 18px 14px;'
+    + 'border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between;z-index:1">'
+    +   '<div>'
+    +     '<div style="font-size:9px;letter-spacing:2.5px;color:#c084fc;font-weight:700">TODAY</div>'
+    +     '<div style="font-family:Fraunces,Georgia,serif;font-size:19px;font-weight:900;color:#fff">Order History</div>'
+    +   '</div>'
+    +   '<div onclick="closeKitchenHistory()" style="width:32px;height:32px;border-radius:50%;'
+    +     'background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;'
+    +     'cursor:pointer;color:#fff;font-size:14px">✕</div>'
+    + '</div>'
+    + '<div id="kh-list" style="padding:14px"></div>';
+  document.body.appendChild(drawer);
+}
+
+function injectKitchenHistoryButton() {
+  var attempts = 0;
+  var poll = setInterval(function () {
+    attempts++;
+    var kHdr = document.querySelector('#pg-kitchen .k-hdr');
+    if (kHdr) {
+      clearInterval(poll);
+      if (document.getElementById('kitchen-history-btn')) return;
+
+      var btn = document.createElement('div');
+      btn.id = 'kitchen-history-btn';
+      btn.onclick = toggleKitchenHistory;
+      btn.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:8px 14px;'
+        + 'border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);'
+        + 'color:rgba(245,234,220,.75);font-size:11px;font-weight:700;cursor:pointer;margin-left:8px;'
+        + 'font-family:\'DM Sans\',sans-serif;transition:background .15s';
+      btn.onmouseenter = function () { btn.style.background = 'rgba(255,255,255,.12)'; };
+      btn.onmouseleave = function () { btn.style.background = 'rgba(255,255,255,.06)'; };
+      btn.innerHTML = '📋 History';
+      kHdr.insertBefore(btn, kHdr.firstChild);
+    } else if (attempts >= 20) {
+      clearInterval(poll);
+    }
+  }, 300);
+}
+
+function toggleKitchenHistory() {
+  if (_khOpen) closeKitchenHistory();
+  else openKitchenHistory();
+}
+
+function openKitchenHistory() {
+  _khOpen = true;
+  document.getElementById('kh-backdrop').style.display = 'block';
+  document.getElementById('kh-drawer').style.transform = 'translateX(0)';
+  loadKitchenHistory();
+}
+
+function closeKitchenHistory() {
+  _khOpen = false;
+  document.getElementById('kh-backdrop').style.display = 'none';
+  document.getElementById('kh-drawer').style.transform = 'translateX(-100%)';
+  _khExpandedId = null;
+}
+
+var _khCachedOrders = [];
+
+async function loadKitchenHistory() {
+  var list = document.getElementById('kh-list');
+  list.innerHTML = '<div style="text-align:center;padding:30px;color:rgba(255,255,255,.35);font-size:12px">Loading…</div>';
+
+  var today = new Date().toISOString().slice(0, 10);
+  var res = await db.from('store_orders')
+    .select('*')
+    .gte('created_at', today + 'T00:00:00.000Z')
+    .in('status', ['collected', 'cancelled'])
+    .order('created_at', { ascending: false });
+
+  _khCachedOrders = res.data || [];
+  renderKitchenHistory(_khCachedOrders);
+}
+
+function renderKitchenHistory(orders) {
+  var list = document.getElementById('kh-list');
+  if (!orders.length) {
+    list.innerHTML = '<div style="text-align:center;padding:30px;color:rgba(255,255,255,.35);font-size:13px;'
+      + 'font-family:Fraunces,Georgia,serif">No completed orders yet today</div>';
+    return;
+  }
+
+  list.innerHTML = orders.map(function (o) {
+    var rawItems = o.items;
+    var items = Array.isArray(rawItems) ? rawItems : (typeof rawItems === 'string' ? JSON.parse(rawItems || '[]') : []);
+    var headline = o.table_code ? '🍽️ ' + o.table_code : '#' + o.token;
+    var time = new Date(o.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    var isCancelled = o.status === 'cancelled';
+    var expanded = _khExpandedId === o.id;
+
+    var pmMap = { upi: 'UPI', upi_qr: 'Scan QR', cash: 'Cash', card: 'Card', split: 'Split', razorpay: 'Razorpay' };
+    var pmLabel = pmMap[(o.payment_method || '').toLowerCase()] || (o.payment_method || '—');
+
+    var statusBadge = isCancelled
+      ? '<span style="font-size:9px;font-weight:700;color:#f87171;background:rgba(239,68,68,0.12);padding:3px 9px;border-radius:20px">CANCELLED</span>'
+      : '<span style="font-size:9px;font-weight:700;color:#4ade80;background:rgba(74,222,128,0.12);padding:3px 9px;border-radius:20px">✅ ' + pmLabel + '</span>';
+
+    var itemsDetail = expanded
+      ? '<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08)">'
+        + items.map(function (i) {
+            var freeTag = i.complimentary ? ' <span style="color:#f5c430">🎁 FREE</span>' : '';
+            return '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;color:rgba(245,234,220,.7)">'
+              + '<span>' + i.name + ' ×' + i.qty + freeTag + '</span></div>';
+          }).join('')
+        + '</div>'
+      : '';
+
+    return '<div onclick="toggleHistoryEntry(\'' + o.id + '\')" style="background:rgba(255,255,255,.03);'
+      + 'border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:13px;margin-bottom:9px;cursor:pointer;'
+      + 'transition:background .15s' + (isCancelled ? ';opacity:.6' : '') + '">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+      + '<span style="font-family:Fraunces,Georgia,serif;font-size:16px;font-weight:900;color:#fff">' + headline + '</span>'
+      + '<span style="font-size:10px;color:rgba(255,255,255,.35)">' + time + '</span>'
+      + '</div>'
+      + '<div style="display:flex;align-items:center;justify-content:space-between">'
+      + statusBadge
+      + '<span style="font-family:Fraunces,Georgia,serif;font-size:15px;font-weight:900;color:#f5c430">₹' + (o.total || 0) + '</span>'
+      + '</div>'
+      + '<div style="text-align:center;margin-top:6px;font-size:10px;color:rgba(255,255,255,.3)">' + (expanded ? '▲ tap to collapse' : '▼ tap to expand · ' + items.length + ' items') + '</div>'
+      + itemsDetail
+      + '</div>';
+  }).join('');
+}
+
+function toggleHistoryEntry(orderId) {
+  _khExpandedId = _khExpandedId === orderId ? null : orderId;
+  renderKitchenHistory(_khCachedOrders); // re-render from cache, no need to re-fetch just to toggle
+}
+
+// ══════════════════════════════════════════════════════════════
+// New Order Sound Alert — Admin gets a loud, distinctive chime +
+// toast the moment ANY new order lands (table, walk-in, or customer
+// self-checkout), even if they're on a different tab of the app.
+// Uses a generated tone (Web Audio API) instead of an audio file —
+// no external file to host, loads instantly, works offline.
+// ══════════════════════════════════════════════════════════════
+var _noaCh = null;
+
+document.addEventListener('DOMContentLoaded', function () {
+  waitForAdminThenSubscribeOrderAlerts();
+});
+
+function waitForAdminThenSubscribeOrderAlerts() {
+  var attempts = 0;
+  var poll = setInterval(function () {
+    attempts++;
+    if (typeof isAdmin !== 'undefined' && isAdmin) {
+      clearInterval(poll);
+      subscribeNewOrderAlerts();
+    } else if (attempts >= 20) {
+      clearInterval(poll);
+    }
+  }, 300);
+}
+
+// Single dedicated subscription just for this alert — deliberately
+// separate from the Kitchen/Tables subscriptions elsewhere in this app,
+// so this never risks disrupting those (see the churn issue notes
+// throughout this file for why that separation matters).
+function subscribeNewOrderAlerts() {
+  if (_noaCh) return;
+  _noaCh = db.channel('new-order-alert')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'store_orders' }, function (payload) {
+      var o = payload.new;
+      if (!o) return;
+      playNewOrderChime();
+      showNewOrderToast(o);
+    })
+    .subscribe();
+}
+
+function showNewOrderToast(o) {
+  var headline = o.table_code ? '🍽️ Table ' + o.table_code : '🙋 New order #' + o.token;
+  if (typeof showStoreToast === 'function') {
+    showStoreToast('🔔 ' + headline + ' — ₹' + (o.total || 0));
+  }
+}
+
+// Generates a distinctive 3-tone ascending chime, played twice, loud
+// enough to actually get noticed in a busy kitchen — no audio file
+// needed. Autoplay is safe here since it only fires after the admin has
+// already interacted with the page at least once (normal browser rule).
+function playNewOrderChime() {
+  try {
+    var AudioCtx = window.AudioContext || window.webkitAudioContext;
+    var ctx = new AudioCtx();
+    var now = ctx.currentTime;
+
+    function tone(freq, startOffset, duration, gainPeak) {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + startOffset);
+      gain.gain.setValueAtTime(0, now + startOffset);
+      gain.gain.linearRampToValueAtTime(gainPeak, now + startOffset + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + startOffset + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + startOffset);
+      osc.stop(now + startOffset + duration);
+    }
+
+    // First chime: ascending ding-ding-ding
+    tone(880, 0.00, 0.18, 0.5);   // A5
+    tone(1108, 0.15, 0.18, 0.5);  // C#6
+    tone(1318, 0.30, 0.30, 0.55); // E6
+
+    // Second chime, slightly delayed — repeats the pattern to make sure
+    // it actually gets noticed over kitchen noise.
+    tone(880, 0.65, 0.18, 0.5);
+    tone(1108, 0.80, 0.18, 0.5);
+    tone(1318, 0.95, 0.30, 0.55);
+  } catch (e) {
+    // Autoplay blocked or unsupported browser — fails silently, toast still shows.
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// Move Table — transfers an active order to a different table when a
+// customer physically relocates. Preserves everything about the order
+// (items, delivery status, prepared-by tags, payment info, arrival
+// rank) — only table_code changes. Only free tables are offered, so
+// staff can never accidentally overwrite another table's active order.
+// ══════════════════════════════════════════════════════════════
+async function openMoveTablePicker() {
+  if (!_tsExistingOrder) return;
+
+  var existing = document.getElementById('mt-overlay');
+  if (existing) existing.remove();
+
+  var overlay = document.createElement('div');
+  overlay.id = 'mt-overlay';
+  overlay.onclick = function (e) { if (e.target === overlay) closeMoveTablePicker(); };
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:3200;'
+    + 'display:flex;align-items:center;justify-content:center;padding:20px;font-family:\'DM Sans\',sans-serif';
+
+  var box = document.createElement('div');
+  box.id = 'mt-card';
+  box.style.cssText = 'background:#fff;border-radius:22px;padding:22px;max-width:380px;width:100%;'
+    + 'max-height:80vh;overflow-y:auto';
+  box.innerHTML = '<div style="text-align:center;padding:20px;color:#9a8aaa;font-size:12px">Checking free tables…</div>';
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  // Fetch fresh occupancy — never rely on stale data for this, since
+  // picking an already-occupied table would silently merge two orders.
+  var today = new Date().toISOString().slice(0, 10);
+  var res = await db.from('store_orders')
+    .select('table_code')
+    .not('table_code', 'is', null)
+    .not('status', 'in', '("collected","cancelled")')
+    .gte('created_at', today + 'T00:00:00.000Z');
+
+  var occupied = {};
+  (res.data || []).forEach(function (o) { occupied[o.table_code] = true; });
+  var freeTables = TABLE_CODES.filter(function (c) { return c !== _tsTableCode && !occupied[c]; });
+
+  renderMoveTablePicker(freeTables);
+}
+
+function renderMoveTablePicker(freeTables) {
+  var box = document.getElementById('mt-card');
+  if (!box) return;
+
+  var gridHtml = freeTables.length
+    ? '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">' + freeTables.map(function (code) {
+        return '<div onclick="confirmMoveTable(\'' + code + '\')" style="background:rgba(34,197,94,0.08);'
+          + 'border:1.5px solid rgba(34,197,94,0.3);border-radius:14px;padding:16px 8px;text-align:center;cursor:pointer">'
+          + '<div style="font-family:Fraunces,Georgia,serif;font-size:20px;font-weight:900;color:#15803d">' + code + '</div>'
+          + '</div>';
+      }).join('') + '</div>'
+    : '<div style="text-align:center;padding:20px;color:#9a8aaa;font-size:13px">No free tables right now.</div>';
+
+  box.innerHTML =
+      '<div style="font-size:16px;font-weight:700;color:#1a0820;margin-bottom:2px">Move ' + _tsTableCode + ' to…</div>'
+    + '<div style="font-size:12px;color:#9a8aaa;margin-bottom:18px">Only currently free tables are shown, so nothing gets overwritten.</div>'
+    + gridHtml
+    + '<button onclick="closeMoveTablePicker()" style="width:100%;padding:12px;margin-top:18px;'
+    + 'background:transparent;color:#9a8aaa;font-size:12px;font-weight:600;border-radius:12px;border:none;cursor:pointer">Cancel</button>';
+}
+
+function closeMoveTablePicker() {
+  var el = document.getElementById('mt-overlay');
+  if (el) el.remove();
+}
+
+async function confirmMoveTable(newCode) {
+  if (!_tsExistingOrder) return;
+  var oldCode = _tsTableCode;
+  if (!confirm('Move ' + oldCode + '\'s order to ' + newCode + '?')) return;
+
+  try {
+    var upd = await db.from('store_orders')
+      .update({ table_code: newCode })
+      .eq('id', _tsExistingOrder.id);
+    if (upd.error) throw upd.error;
+
+    closeMoveTablePicker();
+    showStoreToast('🔄 Moved ' + oldCode + ' → ' + newCode);
+    closeTableOrderSheet(); // returns to the Tables board, which will now show newCode as occupied and oldCode as free
   } catch (e) {
     showStoreToast('Error: ' + e.message);
   }
