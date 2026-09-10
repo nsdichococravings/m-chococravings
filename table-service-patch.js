@@ -124,6 +124,10 @@ function buildTablesBoardDOM() {
     +     'background:rgba(34,197,94,0.1);color:#15803d;font-size:13px;font-weight:700;'
     +     'border:1.5px solid rgba(34,197,94,0.35);border-radius:14px;cursor:pointer;letter-spacing:1px;'
     +     'font-family:\'DM Sans\',sans-serif">💰 Bill &amp; Close Table</button>'
+    +   '<button id="ts-move-btn" onclick="openMoveTablePicker()" style="display:none;width:100%;padding:13px;margin-top:8px;'
+    +     'background:rgba(37,99,235,0.08);color:#2563eb;font-size:12px;font-weight:700;'
+    +     'border:1.5px solid rgba(37,99,235,0.25);border-radius:14px;cursor:pointer;letter-spacing:.5px;'
+    +     'font-family:\'DM Sans\',sans-serif">🔄 Move to Another Table</button>'
     +   '<button id="ts-undo-btn" onclick="tsUndoDelivered()" style="display:none;width:100%;padding:13px;'
     +     'background:rgba(220,38,38,0.08);color:#dc2626;font-size:12px;font-weight:700;'
     +     'border:1.5px solid rgba(220,38,38,0.25);border-radius:14px;cursor:pointer;letter-spacing:.5px;'
@@ -225,6 +229,7 @@ function openTableOrderSheet(code) {
   var sendBtn = document.getElementById('ts-send-btn');
   var billBtn = document.getElementById('ts-bill-btn');
   var undoBtn = document.getElementById('ts-undo-btn');
+  var moveBtn = document.getElementById('ts-move-btn');
 
   db.from('store_orders')
     .select('id, items, total, status, created_at, staff_name, customer_phone')
@@ -244,11 +249,13 @@ function openTableOrderSheet(code) {
         sendBtn.textContent = '➕ Add Items';
         billBtn.style.display = 'block';
         undoBtn.style.display = res.data.status === 'delivered' ? 'block' : 'none';
+        moveBtn.style.display = 'block';
         phoneInput.value = (res.data.customer_phone || '').replace(/^\+?91/, '');
       } else {
         sendBtn.textContent = '➕ Send to Kitchen';
         billBtn.style.display = 'none';
         undoBtn.style.display = 'none';
+        moveBtn.style.display = 'none';
         phoneInput.value = '';
       }
       tsRenderItems();
@@ -1406,4 +1413,181 @@ function renderKitchenHistory(orders) {
 function toggleHistoryEntry(orderId) {
   _khExpandedId = _khExpandedId === orderId ? null : orderId;
   renderKitchenHistory(_khCachedOrders); // re-render from cache, no need to re-fetch just to toggle
+}
+
+// ══════════════════════════════════════════════════════════════
+// New Order Sound Alert — Admin gets a loud, distinctive chime +
+// toast the moment ANY new order lands (table, walk-in, or customer
+// self-checkout), even if they're on a different tab of the app.
+// Uses a generated tone (Web Audio API) instead of an audio file —
+// no external file to host, loads instantly, works offline.
+// ══════════════════════════════════════════════════════════════
+var _noaCh = null;
+
+document.addEventListener('DOMContentLoaded', function () {
+  waitForAdminThenSubscribeOrderAlerts();
+});
+
+function waitForAdminThenSubscribeOrderAlerts() {
+  var attempts = 0;
+  var poll = setInterval(function () {
+    attempts++;
+    if (typeof isAdmin !== 'undefined' && isAdmin) {
+      clearInterval(poll);
+      subscribeNewOrderAlerts();
+    } else if (attempts >= 20) {
+      clearInterval(poll);
+    }
+  }, 300);
+}
+
+// Single dedicated subscription just for this alert — deliberately
+// separate from the Kitchen/Tables subscriptions elsewhere in this app,
+// so this never risks disrupting those (see the churn issue notes
+// throughout this file for why that separation matters).
+function subscribeNewOrderAlerts() {
+  if (_noaCh) return;
+  _noaCh = db.channel('new-order-alert')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'store_orders' }, function (payload) {
+      var o = payload.new;
+      if (!o) return;
+      playNewOrderChime();
+      showNewOrderToast(o);
+    })
+    .subscribe();
+}
+
+function showNewOrderToast(o) {
+  var headline = o.table_code ? '🍽️ Table ' + o.table_code : '🙋 New order #' + o.token;
+  if (typeof showStoreToast === 'function') {
+    showStoreToast('🔔 ' + headline + ' — ₹' + (o.total || 0));
+  }
+}
+
+// Generates a distinctive 3-tone ascending chime, played twice, loud
+// enough to actually get noticed in a busy kitchen — no audio file
+// needed. Autoplay is safe here since it only fires after the admin has
+// already interacted with the page at least once (normal browser rule).
+function playNewOrderChime() {
+  try {
+    var AudioCtx = window.AudioContext || window.webkitAudioContext;
+    var ctx = new AudioCtx();
+    var now = ctx.currentTime;
+
+    function tone(freq, startOffset, duration, gainPeak) {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + startOffset);
+      gain.gain.setValueAtTime(0, now + startOffset);
+      gain.gain.linearRampToValueAtTime(gainPeak, now + startOffset + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + startOffset + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + startOffset);
+      osc.stop(now + startOffset + duration);
+    }
+
+    // First chime: ascending ding-ding-ding
+    tone(880, 0.00, 0.18, 0.5);   // A5
+    tone(1108, 0.15, 0.18, 0.5);  // C#6
+    tone(1318, 0.30, 0.30, 0.55); // E6
+
+    // Second chime, slightly delayed — repeats the pattern to make sure
+    // it actually gets noticed over kitchen noise.
+    tone(880, 0.65, 0.18, 0.5);
+    tone(1108, 0.80, 0.18, 0.5);
+    tone(1318, 0.95, 0.30, 0.55);
+  } catch (e) {
+    // Autoplay blocked or unsupported browser — fails silently, toast still shows.
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// Move Table — transfers an active order to a different table when a
+// customer physically relocates. Preserves everything about the order
+// (items, delivery status, prepared-by tags, payment info, arrival
+// rank) — only table_code changes. Only free tables are offered, so
+// staff can never accidentally overwrite another table's active order.
+// ══════════════════════════════════════════════════════════════
+async function openMoveTablePicker() {
+  if (!_tsExistingOrder) return;
+
+  var existing = document.getElementById('mt-overlay');
+  if (existing) existing.remove();
+
+  var overlay = document.createElement('div');
+  overlay.id = 'mt-overlay';
+  overlay.onclick = function (e) { if (e.target === overlay) closeMoveTablePicker(); };
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:3200;'
+    + 'display:flex;align-items:center;justify-content:center;padding:20px;font-family:\'DM Sans\',sans-serif';
+
+  var box = document.createElement('div');
+  box.id = 'mt-card';
+  box.style.cssText = 'background:#fff;border-radius:22px;padding:22px;max-width:380px;width:100%;'
+    + 'max-height:80vh;overflow-y:auto';
+  box.innerHTML = '<div style="text-align:center;padding:20px;color:#9a8aaa;font-size:12px">Checking free tables…</div>';
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  // Fetch fresh occupancy — never rely on stale data for this, since
+  // picking an already-occupied table would silently merge two orders.
+  var today = new Date().toISOString().slice(0, 10);
+  var res = await db.from('store_orders')
+    .select('table_code')
+    .not('table_code', 'is', null)
+    .not('status', 'in', '("collected","cancelled")')
+    .gte('created_at', today + 'T00:00:00.000Z');
+
+  var occupied = {};
+  (res.data || []).forEach(function (o) { occupied[o.table_code] = true; });
+  var freeTables = TABLE_CODES.filter(function (c) { return c !== _tsTableCode && !occupied[c]; });
+
+  renderMoveTablePicker(freeTables);
+}
+
+function renderMoveTablePicker(freeTables) {
+  var box = document.getElementById('mt-card');
+  if (!box) return;
+
+  var gridHtml = freeTables.length
+    ? '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">' + freeTables.map(function (code) {
+        return '<div onclick="confirmMoveTable(\'' + code + '\')" style="background:rgba(34,197,94,0.08);'
+          + 'border:1.5px solid rgba(34,197,94,0.3);border-radius:14px;padding:16px 8px;text-align:center;cursor:pointer">'
+          + '<div style="font-family:Fraunces,Georgia,serif;font-size:20px;font-weight:900;color:#15803d">' + code + '</div>'
+          + '</div>';
+      }).join('') + '</div>'
+    : '<div style="text-align:center;padding:20px;color:#9a8aaa;font-size:13px">No free tables right now.</div>';
+
+  box.innerHTML =
+      '<div style="font-size:16px;font-weight:700;color:#1a0820;margin-bottom:2px">Move ' + _tsTableCode + ' to…</div>'
+    + '<div style="font-size:12px;color:#9a8aaa;margin-bottom:18px">Only currently free tables are shown, so nothing gets overwritten.</div>'
+    + gridHtml
+    + '<button onclick="closeMoveTablePicker()" style="width:100%;padding:12px;margin-top:18px;'
+    + 'background:transparent;color:#9a8aaa;font-size:12px;font-weight:600;border-radius:12px;border:none;cursor:pointer">Cancel</button>';
+}
+
+function closeMoveTablePicker() {
+  var el = document.getElementById('mt-overlay');
+  if (el) el.remove();
+}
+
+async function confirmMoveTable(newCode) {
+  if (!_tsExistingOrder) return;
+  var oldCode = _tsTableCode;
+  if (!confirm('Move ' + oldCode + '\'s order to ' + newCode + '?')) return;
+
+  try {
+    var upd = await db.from('store_orders')
+      .update({ table_code: newCode })
+      .eq('id', _tsExistingOrder.id);
+    if (upd.error) throw upd.error;
+
+    closeMoveTablePicker();
+    showStoreToast('🔄 Moved ' + oldCode + ' → ' + newCode);
+    closeTableOrderSheet(); // returns to the Tables board, which will now show newCode as occupied and oldCode as free
+  } catch (e) {
+    showStoreToast('Error: ' + e.message);
+  }
 }
