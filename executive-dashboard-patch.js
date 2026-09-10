@@ -19,6 +19,11 @@
  * (isAdmin confirmed first, then customers.is_super_user).
  */
 
+// Set this once to your actual launch date. Deliberately NOT
+// auto-detected from "earliest order in the table" — that approach
+// broke the moment a leftover test/dev order predated the real launch.
+var LAUNCH_DATE = new Date('2026-07-05T00:00:00');
+
 var _edSuperUser = false;
 var _edPeriod = 'today'; // 'today' | 'week' | 'month'
 
@@ -162,28 +167,34 @@ async function loadDashboard() {
   // stall_orders (pop-up event sales) as separate channels entirely.
   var storeRes = await db.from('store_orders').select('total, created_at')
     .gte('created_at', range.start.toISOString())
-    .not('status', 'eq', 'cancelled');
+    .not('status', 'eq', 'cancelled')
+    .limit(50000); // Supabase caps at 1000 rows by default — this override prevents silently undercounting revenue
   var storePrevRes = await db.from('store_orders').select('total')
     .gte('created_at', range.prevStart.toISOString())
     .lt('created_at', range.prevEnd.toISOString())
-    .not('status', 'eq', 'cancelled');
+    .not('status', 'eq', 'cancelled')
+    .limit(50000);
 
   var bookingsRes = await db.from('custom_bookings').select('total_amount, booking_date')
     .gte('booking_date', range.start.toISOString().slice(0, 10))
     .lte('booking_date', range.end.toISOString().slice(0, 10))
-    .not('status', 'eq', 'cancelled');
+    .not('status', 'eq', 'cancelled')
+    .limit(50000);
 
   var stallRes = await db.from('stall_orders').select('total, created_at')
     .gte('created_at', range.start.toISOString())
     .not('status', 'eq', 'cancelled')
+    .limit(50000)
     .then(function (r) { return r; }).catch(function () { return { data: [] }; }); // table may not exist for every deployment
 
   var expensesRes = await db.from('daily_expenses').select('amount')
     .gte('expense_date', range.start.toISOString().slice(0, 10))
     .lte('expense_date', range.end.toISOString().slice(0, 10))
+    .limit(50000)
     .then(function (r) { return r; }).catch(function () { return { data: [] }; });
 
   var cashRes = await db.from('cash_counter_entries').select('amount')
+    .limit(50000)
     .then(function (r) { return r; }).catch(function () { return { data: [] }; });
 
   var storeOrders = storeRes.data || [];
@@ -275,9 +286,13 @@ renderHeroKpis = function (content, d) {
 
 // ── All-Time Sales + Growth Roadmap ──
 async function loadAllTimeAndRoadmap() {
-  var storeRes = await db.from('store_orders').select('total, created_at').not('status', 'eq', 'cancelled').order('created_at', { ascending: true });
-  var bookingsRes = await db.from('custom_bookings').select('total_amount').not('status', 'eq', 'cancelled');
+  var storeRes = await db.from('store_orders').select('total, created_at')
+    .gte('created_at', LAUNCH_DATE.toISOString())
+    .not('status', 'eq', 'cancelled').order('created_at', { ascending: true })
+    .limit(50000);
+  var bookingsRes = await db.from('custom_bookings').select('total_amount').not('status', 'eq', 'cancelled').limit(50000);
   var stallRes = await db.from('stall_orders').select('total').not('status', 'eq', 'cancelled')
+    .limit(50000)
     .then(function (r) { return r; }).catch(function () { return { data: [] }; });
 
   var storeOrders = storeRes.data || [];
@@ -288,7 +303,10 @@ async function loadAllTimeAndRoadmap() {
     + bookings.reduce(function (s, b) { return s + (b.total_amount || 0); }, 0)
     + stallOrders.reduce(function (s, o) { return s + (o.total || 0); }, 0);
 
-  var launchDate = storeOrders.length ? new Date(storeOrders[0].created_at) : new Date();
+  // Fixed launch date instead of "earliest order in the table" — that
+  // approach is fragile, since even one leftover test/dev order before
+  // the real launch throws the whole calculation off (as happened here).
+  var launchDate = LAUNCH_DATE;
   var daysSinceLaunch = Math.max(1, Math.round((new Date() - launchDate) / 86400000));
   var monthsSinceLaunch = Math.max(1, daysSinceLaunch / 30);
 
@@ -330,6 +348,7 @@ async function loadAllTimeAndRoadmap() {
 
 function renderAllTimeAndRoadmap(d) {
   var content = document.getElementById('ed-content');
+  if (!content) return;
   var existing = document.getElementById('ed-alltime-section');
   if (existing) existing.remove();
 
@@ -373,6 +392,7 @@ function edRoadmapCard(label, value) {
 // ── Expense Breakdown (Daily/Weekly/Monthly) + Smart Cost Insights ──
 async function loadExpenseBreakdown() {
   var content = document.getElementById('ed-content');
+  if (!content) return;
   var existing = document.getElementById('ed-expense-section');
   if (existing) existing.remove();
 
@@ -428,8 +448,8 @@ async function renderExpenseBreakdown() {
   var prevStartStr = range.prevStart.toISOString().slice(0, 10);
   var prevEndStr = range.prevEnd.toISOString().slice(0, 10);
 
-  var curRes = await db.from('daily_expenses').select('category, amount').gte('expense_date', startStr).lte('expense_date', endStr);
-  var prevRes = await db.from('daily_expenses').select('category, amount').gte('expense_date', prevStartStr).lt('expense_date', prevEndStr);
+  var curRes = await db.from('daily_expenses').select('category, amount').gte('expense_date', startStr).lte('expense_date', endStr).limit(50000);
+  var prevRes = await db.from('daily_expenses').select('category, amount').gte('expense_date', prevStartStr).lt('expense_date', prevEndStr).limit(50000);
 
   var current = curRes.data || [];
   var previous = prevRes.data || [];
@@ -450,6 +470,7 @@ async function renderExpenseBreakdown() {
   var categories = Object.keys(byCategory).sort(function (a, b) { return byCategory[b].total - byCategory[a].total; });
 
   var body = document.getElementById('ed-exp-body');
+  if (!body) return; // dashboard was closed/reloaded before this async call finished — nothing to render into anymore
   if (!categories.length) {
     body.innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,.4);font-size:12px">No expenses logged in this period.</div>';
   } else {
@@ -473,6 +494,7 @@ async function renderExpenseBreakdown() {
 // ── Smart Cost-Reduction Insights (rule-based, no external AI call) ──
 function renderSmartInsights(byCategory, prevByCategory, totalExpenses) {
   var insightsSection = document.getElementById('ed-insights-section');
+  if (!insightsSection) return;
   var insights = [];
 
   Object.keys(byCategory).forEach(function (cat) {
