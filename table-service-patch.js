@@ -1248,3 +1248,162 @@ async function sendTableBillWhatsApp(orderId, tableCode, breakdownText) {
     showStoreToast('Error: ' + e.message);
   }
 }
+
+// ══════════════════════════════════════════════════════════════
+// Kitchen Order History — modern slide-in drawer from the left,
+// showing today's completed/cancelled orders. Each entry expands to
+// show full item details on tap.
+// ══════════════════════════════════════════════════════════════
+var _khOpen = false;
+var _khExpandedId = null;
+
+document.addEventListener('DOMContentLoaded', function () {
+  buildKitchenHistoryDrawer();
+  injectKitchenHistoryButton();
+});
+
+function buildKitchenHistoryDrawer() {
+  var backdrop = document.createElement('div');
+  backdrop.id = 'kh-backdrop';
+  backdrop.onclick = closeKitchenHistory;
+  backdrop.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);'
+    + 'z-index:2900;backdrop-filter:blur(2px)';
+  document.body.appendChild(backdrop);
+
+  var drawer = document.createElement('div');
+  drawer.id = 'kh-drawer';
+  drawer.style.cssText = 'position:fixed;top:0;left:0;bottom:0;width:320px;max-width:86vw;'
+    + 'background:#0e0716;border-right:1px solid rgba(255,255,255,.08);z-index:2901;'
+    + 'transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);'
+    + 'font-family:\'DM Sans\',sans-serif;overflow-y:auto;box-shadow:8px 0 30px rgba(0,0,0,0.3)';
+  drawer.innerHTML =
+      '<div style="position:sticky;top:0;background:#0e0716;padding:18px 18px 14px;'
+    + 'border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between;z-index:1">'
+    +   '<div>'
+    +     '<div style="font-size:9px;letter-spacing:2.5px;color:#c084fc;font-weight:700">TODAY</div>'
+    +     '<div style="font-family:Fraunces,Georgia,serif;font-size:19px;font-weight:900;color:#fff">Order History</div>'
+    +   '</div>'
+    +   '<div onclick="closeKitchenHistory()" style="width:32px;height:32px;border-radius:50%;'
+    +     'background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;'
+    +     'cursor:pointer;color:#fff;font-size:14px">✕</div>'
+    + '</div>'
+    + '<div id="kh-list" style="padding:14px"></div>';
+  document.body.appendChild(drawer);
+}
+
+function injectKitchenHistoryButton() {
+  var attempts = 0;
+  var poll = setInterval(function () {
+    attempts++;
+    var kHdr = document.querySelector('#pg-kitchen .k-hdr');
+    if (kHdr) {
+      clearInterval(poll);
+      if (document.getElementById('kitchen-history-btn')) return;
+
+      var btn = document.createElement('div');
+      btn.id = 'kitchen-history-btn';
+      btn.onclick = toggleKitchenHistory;
+      btn.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:8px 14px;'
+        + 'border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);'
+        + 'color:rgba(245,234,220,.75);font-size:11px;font-weight:700;cursor:pointer;margin-left:8px;'
+        + 'font-family:\'DM Sans\',sans-serif;transition:background .15s';
+      btn.onmouseenter = function () { btn.style.background = 'rgba(255,255,255,.12)'; };
+      btn.onmouseleave = function () { btn.style.background = 'rgba(255,255,255,.06)'; };
+      btn.innerHTML = '📋 History';
+      kHdr.insertBefore(btn, kHdr.firstChild);
+    } else if (attempts >= 20) {
+      clearInterval(poll);
+    }
+  }, 300);
+}
+
+function toggleKitchenHistory() {
+  if (_khOpen) closeKitchenHistory();
+  else openKitchenHistory();
+}
+
+function openKitchenHistory() {
+  _khOpen = true;
+  document.getElementById('kh-backdrop').style.display = 'block';
+  document.getElementById('kh-drawer').style.transform = 'translateX(0)';
+  loadKitchenHistory();
+}
+
+function closeKitchenHistory() {
+  _khOpen = false;
+  document.getElementById('kh-backdrop').style.display = 'none';
+  document.getElementById('kh-drawer').style.transform = 'translateX(-100%)';
+  _khExpandedId = null;
+}
+
+var _khCachedOrders = [];
+
+async function loadKitchenHistory() {
+  var list = document.getElementById('kh-list');
+  list.innerHTML = '<div style="text-align:center;padding:30px;color:rgba(255,255,255,.35);font-size:12px">Loading…</div>';
+
+  var today = new Date().toISOString().slice(0, 10);
+  var res = await db.from('store_orders')
+    .select('*')
+    .gte('created_at', today + 'T00:00:00.000Z')
+    .in('status', ['collected', 'cancelled'])
+    .order('created_at', { ascending: false });
+
+  _khCachedOrders = res.data || [];
+  renderKitchenHistory(_khCachedOrders);
+}
+
+function renderKitchenHistory(orders) {
+  var list = document.getElementById('kh-list');
+  if (!orders.length) {
+    list.innerHTML = '<div style="text-align:center;padding:30px;color:rgba(255,255,255,.35);font-size:13px;'
+      + 'font-family:Fraunces,Georgia,serif">No completed orders yet today</div>';
+    return;
+  }
+
+  list.innerHTML = orders.map(function (o) {
+    var rawItems = o.items;
+    var items = Array.isArray(rawItems) ? rawItems : (typeof rawItems === 'string' ? JSON.parse(rawItems || '[]') : []);
+    var headline = o.table_code ? '🍽️ ' + o.table_code : '#' + o.token;
+    var time = new Date(o.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    var isCancelled = o.status === 'cancelled';
+    var expanded = _khExpandedId === o.id;
+
+    var pmMap = { upi: 'UPI', upi_qr: 'Scan QR', cash: 'Cash', card: 'Card', split: 'Split', razorpay: 'Razorpay' };
+    var pmLabel = pmMap[(o.payment_method || '').toLowerCase()] || (o.payment_method || '—');
+
+    var statusBadge = isCancelled
+      ? '<span style="font-size:9px;font-weight:700;color:#f87171;background:rgba(239,68,68,0.12);padding:3px 9px;border-radius:20px">CANCELLED</span>'
+      : '<span style="font-size:9px;font-weight:700;color:#4ade80;background:rgba(74,222,128,0.12);padding:3px 9px;border-radius:20px">✅ ' + pmLabel + '</span>';
+
+    var itemsDetail = expanded
+      ? '<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08)">'
+        + items.map(function (i) {
+            var freeTag = i.complimentary ? ' <span style="color:#f5c430">🎁 FREE</span>' : '';
+            return '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;color:rgba(245,234,220,.7)">'
+              + '<span>' + i.name + ' ×' + i.qty + freeTag + '</span></div>';
+          }).join('')
+        + '</div>'
+      : '';
+
+    return '<div onclick="toggleHistoryEntry(\'' + o.id + '\')" style="background:rgba(255,255,255,.03);'
+      + 'border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:13px;margin-bottom:9px;cursor:pointer;'
+      + 'transition:background .15s' + (isCancelled ? ';opacity:.6' : '') + '">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'
+      + '<span style="font-family:Fraunces,Georgia,serif;font-size:16px;font-weight:900;color:#fff">' + headline + '</span>'
+      + '<span style="font-size:10px;color:rgba(255,255,255,.35)">' + time + '</span>'
+      + '</div>'
+      + '<div style="display:flex;align-items:center;justify-content:space-between">'
+      + statusBadge
+      + '<span style="font-family:Fraunces,Georgia,serif;font-size:15px;font-weight:900;color:#f5c430">₹' + (o.total || 0) + '</span>'
+      + '</div>'
+      + '<div style="text-align:center;margin-top:6px;font-size:10px;color:rgba(255,255,255,.3)">' + (expanded ? '▲ tap to collapse' : '▼ tap to expand · ' + items.length + ' items') + '</div>'
+      + itemsDetail
+      + '</div>';
+  }).join('');
+}
+
+function toggleHistoryEntry(orderId) {
+  _khExpandedId = _khExpandedId === orderId ? null : orderId;
+  renderKitchenHistory(_khCachedOrders); // re-render from cache, no need to re-fetch just to toggle
+}

@@ -587,7 +587,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;color:var(--white);
 // ─────────────────────────────────────────
 const SUPABASE_URL = 'https://yjbfditboewwpgyqzryd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqYmZkaXRib2V3d3BneXF6cnlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNTgwNjcsImV4cCI6MjA4ODczNDA2N30.08Tvq71w2DBeWZrZb-IaiKfoI-2P_1MPJygzSPiRq24';
-const NSDI_PHONE = '8973141898';
+const NSDI_PHONE = '8015989522';
 
 const { createClient } = supabase;
 let db = createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -1674,7 +1674,7 @@ function sendWAUpdate(id) {
     `Hi ${order.customer_name}! 🍫\n\n` +
     `*Order ${order.order_number} Update:*\n\n` +
     statusMsg + '\n\n' +
-    `📞 Queries: +91 8973141898\n📸 @nsdi.chococravings\n\n_NSDI ChocoCravings — Happy to serve fresh!!_`
+    `📞 Queries: +91 8015989522\n📸 @nsdi.chococravings\n\n_NSDI ChocoCravings — Happy to serve fresh!!_`
   );
   const phone = order.customer_phone.replace(/[^0-9]/g,'');
   window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
