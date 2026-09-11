@@ -13,6 +13,18 @@
  * Requires: `db`, `showStoreToast()` — already global.
  */
 
+// Timezone-safe date string builder. new Date(...).toISOString() converts
+// to UTC first, which silently shifts the date backward for any timezone
+// ahead of UTC (like India, UTC+5:30) — this was causing bookings to show
+// up under the wrong calendar day. Building the string from LOCAL date
+// components directly avoids that conversion entirely.
+function localDateStr(date) {
+  var y = date.getFullYear();
+  var m = String(date.getMonth() + 1).padStart(2, '0');
+  var d = String(date.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + d;
+}
+
 var _cbMonthOffset = 0;
 var _cbSelectedDate = null;
 var _cbCachedBookings = [];
@@ -76,7 +88,7 @@ function injectKitchenBookingsButton() {
 // FAB menu badge (which shows the 2-day-ahead reminder count) with a
 // different, equally useful number for right-now context.
 async function refreshKitchenBookingsBadge() {
-  var today = new Date().toISOString().slice(0, 10);
+  var today = new localDateStr(Date());
   var res = await db.from('custom_bookings').select('id')
     .eq('booking_date', today)
     .not('status', 'eq', 'cancelled');
@@ -114,7 +126,7 @@ function injectCustomBookingsMenuEntry() {
 async function refreshReminderBadge() {
   var target = new Date();
   target.setDate(target.getDate() + 2);
-  var targetStr = target.toISOString().slice(0, 10);
+  var targetStr = localDateStr(target);
 
   var res = await db.from('custom_bookings').select('id')
     .eq('booking_date', targetStr)
@@ -213,8 +225,8 @@ async function loadBookingsCalendar() {
   var range = getCbMonthRange(_cbMonthOffset);
   document.getElementById('cb-month-label').textContent = range.label;
 
-  var startStr = range.start.toISOString().slice(0, 10);
-  var endStr = range.end.toISOString().slice(0, 10);
+  var startStr = localDateStr(range.start);
+  var endStr = localDateStr(range.end);
 
   var res = await db.from('custom_bookings').select('*')
     .gte('booking_date', startStr)
@@ -231,7 +243,7 @@ async function loadBookingsCalendar() {
 function renderReminderBanner() {
   var target = new Date();
   target.setDate(target.getDate() + 2);
-  var targetStr = target.toISOString().slice(0, 10);
+  var targetStr = localDateStr(target);
   var upcoming = _cbCachedBookings.filter(function (b) { return b.booking_date === targetStr; });
 
   var banner = document.getElementById('cb-reminder-banner');
@@ -256,7 +268,7 @@ function renderCalendarGrid(range) {
     byDate[b.booking_date].push(b);
   });
 
-  var today = new Date().toISOString().slice(0, 10);
+  var today = new localDateStr(Date());
   var firstDay = range.start.getDay();
   var daysInMonth = range.end.getDate();
   var dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -270,7 +282,7 @@ function renderCalendarGrid(range) {
 
   for (var d = 1; d <= daysInMonth; d++) {
     var cellDate = new Date(range.start.getFullYear(), range.start.getMonth(), d);
-    var dateStr = cellDate.toISOString().slice(0, 10);
+    var dateStr = localDateStr(cellDate);
     var bookingsToday = byDate[dateStr] || [];
     var isToday = dateStr === today;
     var isSelected = dateStr === _cbSelectedDate;
@@ -333,7 +345,7 @@ function buildBookingFormModal() {
 
 function openBookingForm() {
   var card = document.getElementById('cbf-card');
-  var today = new Date().toISOString().slice(0, 10);
+  var today = new localDateStr(Date());
   card.innerHTML =
       '<div style="width:40px;height:4px;border-radius:2px;background:#e8d8f0;margin:0 auto 16px"></div>'
     + '<div style="font-family:Fraunces,Georgia,serif;font-size:20px;font-weight:900;color:#1a0820;margin-bottom:16px">🎂 New Booking</div>'
@@ -598,8 +610,8 @@ async function loadBookingReport() {
   view.innerHTML = '<div style="text-align:center;padding:30px;color:#9a8aaa;font-size:12px">Loading…</div>';
 
   var range = cbGetReportRange(_cbReportPeriod);
-  var startStr = range.start.toISOString().slice(0, 10);
-  var endStr = range.end.toISOString().slice(0, 10);
+  var startStr = localDateStr(range.start);
+  var endStr = localDateStr(range.end);
 
   var res = await db.from('custom_bookings').select('*')
     .gte('booking_date', startStr)
