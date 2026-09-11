@@ -286,22 +286,19 @@ renderHeroKpis = function (content, d) {
 
 // ── All-Time Sales + Growth Roadmap ──
 async function loadAllTimeAndRoadmap() {
-  var storeRes = await db.from('store_orders').select('total, created_at')
-    .gte('created_at', LAUNCH_DATE.toISOString())
-    .not('status', 'eq', 'cancelled').order('created_at', { ascending: true })
-    .limit(50000);
-  var bookingsRes = await db.from('custom_bookings').select('total_amount').not('status', 'eq', 'cancelled').limit(50000);
-  var stallRes = await db.from('stall_orders').select('total').not('status', 'eq', 'cancelled')
-    .limit(50000)
-    .then(function (r) { return r; }).catch(function () { return { data: [] }; });
+  // Server-side aggregation — Postgres does the SUM directly, so no
+  // row-limit, no fetching thousands of rows into the browser, and no
+  // client-side summation bugs. This replaces the old approach that
+  // kept silently undercounting revenue.
+  var summaryRes = await db.rpc('get_alltime_sales_summary', { p_launch_date: LAUNCH_DATE.toISOString() });
+  var rows = summaryRes.data || [];
 
-  var storeOrders = storeRes.data || [];
-  var bookings = bookingsRes.data || [];
-  var stallOrders = (stallRes && stallRes.data) || [];
+  var byChannel = {};
+  rows.forEach(function (r) { byChannel[r.channel] = r; });
 
-  var allTimeRevenue = storeOrders.reduce(function (s, o) { return s + (o.total || 0); }, 0)
-    + bookings.reduce(function (s, b) { return s + (b.total_amount || 0); }, 0)
-    + stallOrders.reduce(function (s, o) { return s + (o.total || 0); }, 0);
+  var allTimeRevenue = (byChannel.store ? Number(byChannel.store.total_revenue) : 0)
+    + (byChannel.bookings ? Number(byChannel.bookings.total_revenue) : 0)
+    + (byChannel.stall ? Number(byChannel.stall.total_revenue) : 0);
 
   // Fixed launch date instead of "earliest order in the table" — that
   // approach is fragile, since even one leftover test/dev order before
@@ -310,17 +307,17 @@ async function loadAllTimeAndRoadmap() {
   var daysSinceLaunch = Math.max(1, Math.round((new Date() - launchDate) / 86400000));
   var monthsSinceLaunch = Math.max(1, daysSinceLaunch / 30);
 
-  // Growth rate: compare the last 30 days to the 30 days before that.
-  // With limited history this is a rough signal, not a precise model —
-  // the roadmap below is clearly labeled as a trend-based estimate.
+  // Growth rate: compare the last 30 days to the 30 days before that —
+  // now also a single aggregate call each, not a row fetch + filter.
   var now = new Date();
   var last30Start = new Date(now.getTime() - 30 * 86400000);
   var prev30Start = new Date(now.getTime() - 60 * 86400000);
 
-  var last30Revenue = storeOrders.filter(function (o) { return new Date(o.created_at) >= last30Start; })
-    .reduce(function (s, o) { return s + (o.total || 0); }, 0);
-  var prev30Revenue = storeOrders.filter(function (o) { return new Date(o.created_at) >= prev30Start && new Date(o.created_at) < last30Start; })
-    .reduce(function (s, o) { return s + (o.total || 0); }, 0);
+  var last30Res = await db.rpc('get_revenue_for_range', { p_start: last30Start.toISOString(), p_end: now.toISOString() });
+  var prev30Res = await db.rpc('get_revenue_for_range', { p_start: prev30Start.toISOString(), p_end: last30Start.toISOString() });
+
+  var last30Revenue = Number(last30Res.data) || 0;
+  var prev30Revenue = Number(prev30Res.data) || 0;
 
   var monthlyGrowthRate = prev30Revenue > 0 ? (last30Revenue - prev30Revenue) / prev30Revenue : 0.05; // default 5%/mo assumption if no prior data
   monthlyGrowthRate = Math.max(-0.3, Math.min(0.5, monthlyGrowthRate)); // clamp to a sane range so one wild month doesn't produce an absurd projection
@@ -342,7 +339,7 @@ async function loadAllTimeAndRoadmap() {
     allTimeRevenue: allTimeRevenue, launchDate: launchDate, daysSinceLaunch: daysSinceLaunch,
     monthlyGrowthRate: monthlyGrowthRate,
     year1: projectYear(1), year2: projectYear(2), year3: projectYear(3),
-    hasEnoughData: storeOrders.length >= 20 && daysSinceLaunch >= 14
+    hasEnoughData: (byChannel.store ? Number(byChannel.store.order_count) : 0) >= 20 && daysSinceLaunch >= 14
   });
 }
 
