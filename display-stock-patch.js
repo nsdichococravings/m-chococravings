@@ -27,12 +27,13 @@ var _dsItems = {};          // item_name -> display_stock row
 var _dsPendingRequests = {}; // item_name -> true if a pending request already exists
 var _dsCh = null;
 
-document.addEventListener('DOMContentLoaded', function () {
+function _dsInit() {
   injectDisplayStockMenuEntry();
   buildDisplayStockUI();
   injectProductionRequestsIntoKitchen();
   waitForAdminThenInit();
-});
+}
+if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', _dsInit); } else { _dsInit(); }
 
 // Only admins ever use Display Stock — so only admins should pay the cost
 // of its badge query and its two permanent realtime subscriptions. Every

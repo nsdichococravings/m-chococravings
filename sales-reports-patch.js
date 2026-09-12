@@ -35,9 +35,10 @@ var _srPeriod = 'daily';
 var _srCharts = {};
 var _srCurrentLabel = 'Daily';
 
-document.addEventListener('DOMContentLoaded', function () {
+function _srInit() {
   buildReportsUI();
-});
+}
+if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', _srInit); } else { _srInit(); }
 
 function loadScriptOnce(src) {
   return new Promise(function (resolve, reject) {

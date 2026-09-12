@@ -19,13 +19,14 @@
 var STAFF_SESSION_KEY = 'cc_staff_session';
 var _staffSession = null;
 
-document.addEventListener('DOMContentLoaded', function () {
+function _soInit() {
   buildStaffLoginUI();
   buildManageStaffUI();
   injectManageStaffMenuEntry();
   restoreStaffSession();
   refreshStaffButtonVisibility();
-});
+}
+if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', _soInit); } else { _soInit(); }
 
 // The Staff Login button is only shown to customers whose own account
 // (customers.is_employee) has been flagged by an admin. A regular

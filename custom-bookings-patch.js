@@ -29,10 +29,11 @@ var _cbMonthOffset = 0;
 var _cbSelectedDate = null;
 var _cbCachedBookings = [];
 
-document.addEventListener('DOMContentLoaded', function () {
+function _cbInit() {
   buildCustomBookingsUI();
   waitForAdminThenInjectBookings();
-});
+}
+if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', _cbInit); } else { _cbInit(); }
 
 function waitForAdminThenInjectBookings() {
   var attempts = 0;

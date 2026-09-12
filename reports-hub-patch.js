@@ -24,10 +24,11 @@
 var _rhIsSuperUser = false;
 var _rhSuperUserCheckPromise = null;
 
-document.addEventListener('DOMContentLoaded', function () {
+function _rhInit() {
   buildReportsHubUI();
   waitForAdminThenInject();
-});
+}
+if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', _rhInit); } else { _rhInit(); }
 
 var _rhInitStarted = false;
 function waitForAdminThenInject() {

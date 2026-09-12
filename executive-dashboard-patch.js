@@ -27,10 +27,11 @@ var LAUNCH_DATE = new Date('2026-07-05T00:00:00');
 var _edSuperUser = false;
 var _edPeriod = 'today'; // 'today' | 'week' | 'month'
 
-document.addEventListener('DOMContentLoaded', function () {
+function _edInit() {
   buildExecutiveDashboardUI();
   waitForSuperAdminThenInjectDashboard();
-});
+}
+if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', _edInit); } else { _edInit(); }
 
 function waitForSuperAdminThenInjectDashboard() {
   var attempts = 0;

@@ -19,7 +19,7 @@ var _tsTableCode    = null;
 var _tsExistingOrder = null;
 var _tsBoardCh      = null;
 
-document.addEventListener('DOMContentLoaded', function () {
+function _tsInit() {
   var fabMenu = document.getElementById('admin-fab-menu');
   if (!fabMenu) return;
 
@@ -40,7 +40,8 @@ document.addEventListener('DOMContentLoaded', function () {
   fabMenu.insertBefore(entry, fabMenu.children[1] || null);
   buildTablesBoardDOM();
   injectKitchenRefreshButton();
-});
+}
+if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', _tsInit); } else { _tsInit(); }
 
 function buildTablesBoardDOM() {
   var overlay = document.createElement('div');

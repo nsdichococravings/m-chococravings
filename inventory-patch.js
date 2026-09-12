@@ -18,11 +18,12 @@
 var _invLowStockCount = 0;
 var _invItems = [];
 
-document.addEventListener('DOMContentLoaded', function () {
+function _invInit() {
   injectInventoryMenuEntry();
   buildInventoryUI();
   waitForAdminThenRefreshBadge();
-});
+}
+if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', _invInit); } else { _invInit(); }
 
 // Only admins use Inventory — gate the badge query behind a real admin
 // check so every regular customer isn't triggering an inventory_items

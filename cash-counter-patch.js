@@ -14,10 +14,11 @@
  * Gated the same way as Daily Expenses/Day Close — any confirmed Admin.
  */
 
-document.addEventListener('DOMContentLoaded', function () {
+function _ccInit() {
   buildCashCounterUI();
   waitForAdminThenInjectCashCounter();
-});
+}
+if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', _ccInit); } else { _ccInit(); }
 
 function waitForAdminThenInjectCashCounter() {
   var attempts = 0;
