@@ -27,10 +27,11 @@ var LAUNCH_DATE = new Date('2026-07-05T00:00:00');
 var _edSuperUser = false;
 var _edPeriod = 'today'; // 'today' | 'week' | 'month'
 
-document.addEventListener('DOMContentLoaded', function () {
+function _edInit() {
   buildExecutiveDashboardUI();
   waitForSuperAdminThenInjectDashboard();
-});
+}
+if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', _edInit); } else { _edInit(); }
 
 function waitForSuperAdminThenInjectDashboard() {
   var attempts = 0;
@@ -61,25 +62,11 @@ async function checkSuperUserForDashboard() {
 }
 
 function injectDashboardMenuEntry() {
-  if (document.getElementById('ed-menu-entry')) return;
-  var fabMenu = document.getElementById('admin-fab-menu');
-  if (!fabMenu) return;
-
-  var entry = document.createElement('div');
-  entry.id = 'ed-menu-entry';
-  entry.onclick = function () { openExecutiveDashboard(); closeAdminMenu(); };
-  entry.style.cssText = 'display:flex;align-items:center;gap:10px;padding:13px 16px;'
-    + 'cursor:pointer;transition:background .15s;border-bottom:1px solid #f5f0f8';
-  entry.onmouseover = function () { entry.style.background = '#f5eeff'; };
-  entry.onmouseout  = function () { entry.style.background = 'transparent'; };
-  entry.innerHTML =
-      '<div style="width:32px;height:32px;border-radius:8px;background:rgba(245,196,48,0.15);'
-    + 'display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">📊</div>'
-    + '<div><div style="font-size:13px;font-weight:600;color:#1a0820">Executive Dashboard</div>'
-    + '<div style="font-size:11px;color:#9c0ca1;margin-top:1px">Full business overview — Super Admin</div></div>';
-
-  // Insert near the top, right after the first item, so it's prominent.
-  fabMenu.insertBefore(entry, fabMenu.children[1] || null);
+  registerAdminTool('Growth & Insights', {
+    icon: '📊', iconBg: 'rgba(245,196,48,0.2)',
+    title: 'Executive Dashboard', subtitle: 'Full business view',
+    onClick: openExecutiveDashboard
+  });
 }
 
 // ══════════════════════════════════════════════════════════════

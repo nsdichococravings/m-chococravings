@@ -24,12 +24,13 @@ var EXPENSE_CATEGORIES = ['Milk & Dairy', 'Vegetables', 'Fruits', 'Bread & Baker
 var RECURRING_FREQUENCIES = ['daily', 'weekly', 'monthly'];
 var _deTodayList = [];
 
-document.addEventListener('DOMContentLoaded', function () {
+function _deInit() {
   buildExpensesUI(); // DOM setup only, no query — safe to always run
   // No FAB entry injected here anymore — reports-hub-patch.js owns the
   // single "📈 Reports" entry and calls openExpenses() directly when its
   // "Daily Expenses" card is tapped.
-});
+}
+if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', _deInit); } else { _deInit(); }
 
 function deLogName() {
   if (typeof _staffSession !== 'undefined' && _staffSession && _staffSession.name) return _staffSession.name;
@@ -79,9 +80,6 @@ async function getRecurringExpensesProrated(startDate, endDate) {
   }
 }
 
-// ══════════════════════════════════════════════════════════════
-// Admin FAB entry
-// ══════════════════════════════════════════════════════════════
 // ══════════════════════════════════════════════════════════════
 // Main sheet — tabs: Today / History / Recurring
 // ══════════════════════════════════════════════════════════════

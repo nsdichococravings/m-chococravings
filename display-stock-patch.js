@@ -27,12 +27,13 @@ var _dsItems = {};          // item_name -> display_stock row
 var _dsPendingRequests = {}; // item_name -> true if a pending request already exists
 var _dsCh = null;
 
-document.addEventListener('DOMContentLoaded', function () {
+function _dsInit() {
   injectDisplayStockMenuEntry();
   buildDisplayStockUI();
   injectProductionRequestsIntoKitchen();
   waitForAdminThenInit();
-});
+}
+if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', _dsInit); } else { _dsInit(); }
 
 // Only admins ever use Display Stock — so only admins should pay the cost
 // of its badge query and its two permanent realtime subscriptions. Every
@@ -102,26 +103,12 @@ function waitForMenuThenBadge() {
 // Admin FAB entry + badge
 // ══════════════════════════════════════════════════════════════
 function injectDisplayStockMenuEntry() {
-  var fabMenu = document.getElementById('admin-fab-menu');
-  if (!fabMenu) return;
-
-  var entry = document.createElement('div');
-  entry.onclick = function () { openDisplayStock(); closeAdminMenu(); };
-  entry.style.cssText = 'display:flex;align-items:center;gap:10px;padding:13px 16px;'
-    + 'cursor:pointer;transition:background .15s;border-bottom:1px solid #f5f0f8';
-  entry.onmouseover = function () { entry.style.background = '#f5eeff'; };
-  entry.onmouseout  = function () { entry.style.background = 'transparent'; };
-  entry.innerHTML =
-      '<div style="width:32px;height:32px;border-radius:8px;background:rgba(110,9,119,0.1);'
-    + 'display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🖥️</div>'
-    + '<div style="flex:1">'
-    +   '<div style="font-size:13px;font-weight:600;color:#1a0820">Display Stock</div>'
-    +   '<div style="font-size:11px;color:#9c0ca1;margin-top:1px">Counter stock & requests</div>'
-    + '</div>'
-    + '<div id="ds-menu-badge" style="display:none;background:#dc2626;color:#fff;font-size:10px;'
-    + 'font-weight:700;padding:2px 7px;border-radius:20px">0</div>';
-
-  fabMenu.appendChild(entry);
+  registerAdminTool('Daily Operations', {
+    icon: '🖥️', iconBg: 'rgba(184,116,16,0.12)',
+    title: 'Display Stock', subtitle: 'Counter stock & requests',
+    badgeId: 'ds-menu-badge',
+    onClick: openDisplayStock
+  });
 }
 
 async function refreshDsBadge() {
@@ -129,11 +116,7 @@ async function refreshDsBadge() {
     var res = await db.from('display_stock').select('current_stock, low_stock_threshold');
     var rows = res.data || [];
     var count = rows.filter(function (r) { return r.low_stock_threshold > 0 && r.current_stock <= r.low_stock_threshold; }).length;
-    var badge = document.getElementById('ds-menu-badge');
-    if (badge) {
-      badge.textContent = count;
-      badge.style.display = count > 0 ? 'inline-block' : 'none';
-    }
+    if (typeof ccUpdateBadge === 'function') ccUpdateBadge('ds-menu-badge', count);
   } catch (e) {}
 }
 

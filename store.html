@@ -468,16 +468,20 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 <!-- ═══ PAGE: KITCHEN ═════════════════════════════════════════ -->
 <div class="page" id="pg-kitchen">
   <div class="k-hdr">
-    <div>
-      <div class="k-title">Kitchen</div>
-      <div class="k-sub">ORDER QUEUE</div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div class="back-btn" onclick="goTo('pg-menu')" style="border-color:rgba(255,255,255,0.15);color:#f5eadc;background:rgba(255,255,255,0.06)">‹</div>
+      <div>
+        <div class="k-title">Kitchen</div>
+        <div class="k-sub">ORDER QUEUE</div>
+      </div>
     </div>
-    <div class="back-btn" onclick="goTo('pg-menu')" style="border-color:rgba(255,255,255,0.15);color:#f5eadc;background:rgba(255,255,255,0.06)">‹</div>
-    <div class="live-badge">
-      <div class="live-dot"></div>
-      <div class="live-txt">LIVE</div>
+    <div id="k-hdr-actions" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-left:auto">
+      <div class="live-badge">
+        <div class="live-dot"></div>
+        <div class="live-txt">LIVE</div>
+      </div>
+      <div onclick="openManage()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.13);border-radius:20px;padding:6px 13px;font-size:11px;font-weight:700;color:rgba(245,234,220,0.7);cursor:pointer;letter-spacing:1px;white-space:nowrap">MENU ✏️</div>
     </div>
-    <div onclick="openManage()" style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.13);border-radius:20px;padding:6px 13px;font-size:11px;font-weight:700;color:rgba(245,234,220,0.7);cursor:pointer;letter-spacing:1px;white-space:nowrap">MENU ✏️</div>
   </div>
   <div class="k-list" id="k-list">
     <div class="k-empty">No pending orders</div>
@@ -2889,19 +2893,10 @@ async function toggleStoreOpenStatus() {
   </div>
 </div>
 <!-- END QUICK ADD MENU ITEM SHEET -->
- <script src="store-patch.js"></script>
- <script src="table-service-patch.js"></script>
- <script src="staff-order-patch.js"></script>
- <script src="menu-search-patch.js"></script>
- <script src="remember-phone-patch.js"></script>
- <script src="inventory-patch.js"></script>
- <script src="display-stock-patch.js"></script>
- <script src="daily-expenses-patch.js"></script>
- <script src="day-close-patch.js"></script>
- <script src="sales-reports-patch.js"></script>
- <script src="reports-hub-patch.js"></script>
- <script src="cash-counter-patch.js"></script>
- <script src="custom-bookings-patch.js"></script>
- <script src="executive-dashboard-patch.js"></script>
+<script src="admin-command-center.js"></script>
+<script src="store-patch.js"></script>
+<script src="menu-search-patch.js"></script>
+<script src="remember-phone-patch.js"></script>
+<script src="checkadminbadge-override.js"></script>
 </body>
 </html>

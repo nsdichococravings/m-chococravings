@@ -17,13 +17,14 @@
 
 var _dcRecord = null; // existing close record for today, if any
 
-document.addEventListener('DOMContentLoaded', function () {
+function _dcInit() {
   buildDayCloseUI(); // DOM setup only, no query — safe to always run
   // No FAB entry injected here anymore — reports-hub-patch.js owns the
   // single "📈 Reports" entry and calls openDayClose() directly when its
   // "Daily Close Reports" card is tapped, gated by the super-user check
   // there instead of the plain isAdmin check this file used before.
-});
+}
+if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', _dcInit); } else { _dcInit(); }
 
 function dcLogName() {
   if (typeof _staffSession !== 'undefined' && _staffSession && _staffSession.name) return _staffSession.name;

@@ -24,10 +24,11 @@
 var _rhIsSuperUser = false;
 var _rhSuperUserCheckPromise = null;
 
-document.addEventListener('DOMContentLoaded', function () {
+function _rhInit() {
   buildReportsHubUI();
   waitForAdminThenInject();
-});
+}
+if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', _rhInit); } else { _rhInit(); }
 
 var _rhInitStarted = false;
 function waitForAdminThenInject() {
@@ -62,24 +63,11 @@ async function checkSuperUserAccess() {
 }
 
 function injectReportsHubMenuEntry() {
-  if (document.getElementById('reports-hub-menu-entry')) return; // already injected — never duplicate
-  var fabMenu = document.getElementById('admin-fab-menu');
-  if (!fabMenu) return;
-
-  var entry = document.createElement('div');
-  entry.id = 'reports-hub-menu-entry';
-  entry.onclick = function () { openReportsHub(); closeAdminMenu(); };
-  entry.style.cssText = 'display:flex;align-items:center;gap:10px;padding:13px 16px;'
-    + 'cursor:pointer;transition:background .15s;border-bottom:1px solid #f5f0f8';
-  entry.onmouseover = function () { entry.style.background = '#f5eeff'; };
-  entry.onmouseout  = function () { entry.style.background = 'transparent'; };
-  entry.innerHTML =
-      '<div style="width:32px;height:32px;border-radius:8px;background:rgba(110,9,119,0.1);'
-    + 'display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">📈</div>'
-    + '<div><div style="font-size:13px;font-weight:600;color:#1a0820">Reports</div>'
-    + '<div style="font-size:11px;color:#9c0ca1;margin-top:1px">Business reports & dashboards</div></div>';
-
-  fabMenu.appendChild(entry);
+  registerAdminTool('Financial', {
+    icon: '📈', iconBg: 'rgba(245,196,48,0.18)',
+    title: 'Reports', subtitle: 'Business reports & dashboards',
+    onClick: openReportsHub
+  });
 }
 
 function buildReportsHubUI() {
