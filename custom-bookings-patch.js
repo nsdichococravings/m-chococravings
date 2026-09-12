@@ -88,7 +88,7 @@ function injectKitchenBookingsButton() {
 // FAB menu badge (which shows the 2-day-ahead reminder count) with a
 // different, equally useful number for right-now context.
 async function refreshKitchenBookingsBadge() {
-  var today = new localDateStr(Date());
+  var today = localDateStr(new Date());
   var res = await db.from('custom_bookings').select('id')
     .eq('booking_date', today)
     .not('status', 'eq', 'cancelled');
@@ -268,7 +268,7 @@ function renderCalendarGrid(range) {
     byDate[b.booking_date].push(b);
   });
 
-  var today = new localDateStr(Date());
+  var today = localDateStr(new Date());
   var firstDay = range.start.getDay();
   var daysInMonth = range.end.getDate();
   var dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -345,7 +345,7 @@ function buildBookingFormModal() {
 
 function openBookingForm() {
   var card = document.getElementById('cbf-card');
-  var today = new localDateStr(Date());
+  var today = localDateStr(new Date());
   card.innerHTML =
       '<div style="width:40px;height:4px;border-radius:2px;background:#e8d8f0;margin:0 auto 16px"></div>'
     + '<div style="font-family:Fraunces,Georgia,serif;font-size:20px;font-weight:900;color:#1a0820;margin-bottom:16px">🎂 New Booking</div>'
