@@ -20,26 +20,14 @@ var _tsExistingOrder = null;
 var _tsBoardCh      = null;
 
 function _tsInit() {
-  var fabMenu = document.getElementById('admin-fab-menu');
-  if (!fabMenu) return;
-
-  var entry = document.createElement('div');
-  entry.onclick = function () { openTablesBoard(); closeAdminMenu(); };
-  entry.style.cssText = 'display:flex;align-items:center;gap:10px;padding:13px 16px;'
-    + 'cursor:pointer;transition:background .15s;border-bottom:1px solid #f5f0f8';
-  entry.onmouseover = function () { entry.style.background = '#f5eeff'; };
-  entry.onmouseout  = function () { entry.style.background = 'transparent'; };
-  entry.innerHTML =
-      '<div style="width:32px;height:32px;border-radius:8px;background:rgba(110,9,119,0.1);'
-    + 'display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🍽️</div>'
-    + '<div>'
-    +   '<div style="font-size:13px;font-weight:600;color:#1a0820">Tables</div>'
-    +   '<div style="font-size:11px;color:#9c0ca1;margin-top:1px">Dine-in table service</div>'
-    + '</div>';
-
-  fabMenu.insertBefore(entry, fabMenu.children[1] || null);
+  registerAdminTool('Daily Operations', {
+    icon: '🍽️', iconBg: 'rgba(184,116,16,0.12)',
+    title: 'Tables', subtitle: 'Dine-in table service',
+    onClick: openTablesBoard
+  });
   buildTablesBoardDOM();
   injectKitchenRefreshButton();
+
 }
 if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', _tsInit); } else { _tsInit(); }
 
@@ -497,8 +485,6 @@ function renderKitchen(orders) {
     var rawItems = o.items;
     var itemsArr = Array.isArray(rawItems) ? rawItems : (typeof rawItems === 'string' ? JSON.parse(rawItems) : []);
     var age = ageStr(o.created_at);
-    var startTxt = o.status === 'preparing' ? '⏳ Making…' : '▶ Start';
-    var readyTxt = o.status === 'ready' ? '✓ Ready!' : '✓ Mark Ready';
     var headline = o.table_code
       ? '🍽️ ' + o.table_code
       : ('#' + o.token);
@@ -584,6 +570,8 @@ function renderKitchen(orders) {
             + '</div>';
         }).join('');
 
+    var primaryAction = kPrimaryActionFor(o);
+
     return '<div class="k-ticket" id="kt-' + o.id + '" data-s="' + o.status + '">'
       + '<div class="k-top"><div class="k-tok">' + headline + '</div>'
       + '<div class="k-badge">' + o.status.toUpperCase() + '</div>'
@@ -596,20 +584,96 @@ function renderKitchen(orders) {
       + '<span style="font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(245,196,48,0.85)">TOTAL</span>'
       + '<span style="font-family:Fraunces,Georgia,serif;font-size:26px;font-weight:900;color:#f5c430">₹' + (o.total || 0) + '</span>'
       + '</div>'
-      + '<div class="k-actions">'
-      + '<button class="k-btn k-start" onclick="kBump(\'' + o.id + '\',\'preparing\')">' + startTxt + '</button>'
-      + '<button class="k-btn k-ready" onclick="kBump(\'' + o.id + '\',\'ready\')">' + readyTxt + '</button>'
-      + (o.table_code
-          ? '<button class="k-btn k-done" onclick="kMarkDelivered(\'' + o.id + '\')">🍽️ Mark All Delivered</button>'
-            + '<button class="k-btn" onclick="openSplitPaymentPicker(\'' + o.id + '\',' + (o.total || 0) + ',{type:\'table\',tableCode:\'' + o.table_code + '\'})" '
-            + 'style="background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);color:#15803d">💰 Mark Bill Collected</button>'
-          : '<button class="k-btn k-done" onclick="kCollectOrder(\'' + o.id + '\',\'' + (o.payment_status || 'pending') + '\',' + (o.total || 0) + ')">Collected ✓</button>')
-      + '<button class="k-btn" onclick="printStoreInvoice(\'' + o.id + '\')" style="background:rgba(240,201,107,0.1);'
-      + 'border:1px solid rgba(240,201,107,0.3);color:#b87410">🖨️ Print</button>'
-      + '<button class="k-btn" onclick="kCancelOrder(\'' + o.id + '\')" style="background:rgba(239,68,68,0.1);'
-      + 'border:1px solid rgba(239,68,68,0.3);color:#f87171">❌ Cancel</button>'
+      + '<div style="display:flex;gap:8px">'
+      + '<button class="k-btn" onclick="' + primaryAction.onclick + '" style="flex:1;padding:12px;'
+      + 'background:' + primaryAction.bg + ';border:1.5px solid ' + primaryAction.border + ';'
+      + 'color:' + primaryAction.color + ';font-size:12.5px;font-weight:700;border-radius:10px;cursor:pointer">'
+      + primaryAction.label + '</button>'
+      + '<button onclick="kOpenOverflowMenu(this,\'' + o.id + '\',\'' + o.status + '\',' + (o.table_code ? "'" + o.table_code + "'" : 'null') + ','
+      + (o.total || 0) + ',\'' + (o.payment_status || 'pending') + '\')" style="width:42px;flex-shrink:0;border-radius:10px;'
+      + 'background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:rgba(245,234,220,.6);'
+      + 'font-size:16px;cursor:pointer">⋯</button>'
       + '</div></div>';
   }).join('');
+}
+
+// Picks the single most relevant next action for an order's current
+// stage — replaces the old row of 5-6 equally-weighted buttons. Every
+// other action (Print, Cancel, and any alternate path) lives behind the
+// ⋯ overflow menu instead, so one thing is always obviously "next."
+function kPrimaryActionFor(o) {
+  if (o.status === 'pending') {
+    return { label: '▶ Start Preparing', onclick: "kBump('" + o.id + "','preparing')",
+      bg: 'rgba(255,255,255,.05)', border: 'rgba(255,255,255,.09)', color: 'rgba(255,255,255,.4)' };
+  }
+  if (o.status === 'preparing') {
+    return { label: '✓ Mark Ready', onclick: "kBump('" + o.id + "','ready')",
+      bg: 'rgba(192,132,252,.14)', border: 'rgba(192,132,252,.3)', color: '#c084fc' };
+  }
+  if (o.status === 'ready' && o.table_code) {
+    return { label: '🍽️ Mark All Delivered', onclick: "kMarkDelivered('" + o.id + "')",
+      bg: 'rgba(74,222,128,.1)', border: 'rgba(74,222,128,.3)', color: '#4ade80' };
+  }
+  if (o.status === 'ready' && !o.table_code) {
+    return { label: '✓ Collected', onclick: "kCollectOrder('" + o.id + "','" + (o.payment_status || 'pending') + "'," + (o.total || 0) + ")",
+      bg: 'rgba(74,222,128,.1)', border: 'rgba(74,222,128,.3)', color: '#4ade80' };
+  }
+  if (o.status === 'delivered' && o.table_code) {
+    return { label: '💰 Mark Bill Collected', onclick: "openSplitPaymentPicker('" + o.id + "'," + (o.total || 0) + ",{type:'table',tableCode:'" + o.table_code + "'})",
+      bg: 'rgba(34,197,94,.12)', border: 'rgba(34,197,94,.35)', color: '#15803d' };
+  }
+  // fallback — shouldn't normally hit this, but keeps a safe default
+  return { label: 'Mark Ready', onclick: "kBump('" + o.id + "','ready')",
+    bg: 'rgba(255,255,255,.05)', border: 'rgba(255,255,255,.09)', color: 'rgba(255,255,255,.4)' };
+}
+
+// ── Overflow menu (⋯) — Print, Cancel, and any secondary action not
+// already shown as the primary button ──
+function kOpenOverflowMenu(btnEl, orderId, status, tableCode, total, paymentStatus) {
+  var existing = document.getElementById('k-overflow-menu');
+  if (existing) existing.remove();
+
+  var rect = btnEl.getBoundingClientRect();
+  var menu = document.createElement('div');
+  menu.id = 'k-overflow-menu';
+  menu.style.cssText = 'position:fixed;z-index:4600;background:#1a1220;border:1px solid rgba(255,255,255,.12);'
+    + 'border-radius:12px;padding:6px;min-width:190px;box-shadow:0 8px 28px rgba(0,0,0,.5);'
+    + 'top:' + (rect.bottom + 6) + 'px;right:' + (window.innerWidth - rect.right) + 'px;font-family:\'DM Sans\',sans-serif';
+
+  var items = [];
+  // Table orders: offer Mark Bill Collected here too if it isn't already
+  // the primary action (lets staff bill directly without first stepping
+  // through "mark delivered," same flexibility the old buttons had).
+  if (tableCode && status !== 'delivered') {
+    items.push({ icon: '💰', label: 'Mark Bill Collected', color: '#4ade80',
+      onclick: "openSplitPaymentPicker('" + orderId + "'," + total + ",{type:'table',tableCode:'" + tableCode + "'})" });
+  }
+  items.push({ icon: '🖨️', label: 'Print Invoice', color: '#f0c96b', onclick: "printStoreInvoice('" + orderId + "')" });
+  items.push({ icon: '❌', label: 'Cancel Order', color: '#f87171', onclick: "kCancelOrder('" + orderId + "')" });
+
+  menu.innerHTML = items.map(function (i) {
+    return '<div onclick="' + i.onclick + ';kCloseOverflowMenu()" style="display:flex;align-items:center;gap:10px;'
+      + 'padding:10px 12px;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;color:' + i.color + '"'
+      + ' onmouseover="this.style.background=\'rgba(255,255,255,.06)\'" onmouseout="this.style.background=\'transparent\'">'
+      + '<span style="font-size:14px">' + i.icon + '</span>' + i.label + '</div>';
+  }).join('');
+
+  document.body.appendChild(menu);
+
+  setTimeout(function () {
+    document.addEventListener('click', kOverflowOutsideClick);
+  }, 10);
+}
+
+function kOverflowOutsideClick(e) {
+  var menu = document.getElementById('k-overflow-menu');
+  if (menu && !menu.contains(e.target)) kCloseOverflowMenu();
+}
+
+function kCloseOverflowMenu() {
+  var menu = document.getElementById('k-overflow-menu');
+  if (menu) menu.remove();
+  document.removeEventListener('click', kOverflowOutsideClick);
 }
 
 function tsElapsedMin(fromIso, toIso) {
@@ -645,25 +709,35 @@ function kCancelOrder(id) {
 }
 
 function injectKitchenRefreshButton() {
-  var kHdr = document.querySelector('#pg-kitchen .k-hdr');
-  if (!kHdr) return;
+  var actionsGroup = kHdrActionsGroup();
+  if (!actionsGroup) return;
 
   var btn = document.createElement('div');
   btn.id = 'kitchen-refresh-btn';
   btn.onclick = kitchenManualRefresh;
   btn.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:8px 14px;'
     + 'border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);'
-    + 'color:rgba(245,234,220,.75);font-size:11px;font-weight:700;cursor:pointer;margin-left:8px;'
+    + 'color:rgba(245,234,220,.75);font-size:11px;font-weight:700;cursor:pointer;'
     + 'font-family:\'DM Sans\',sans-serif;transition:background .15s';
   btn.onmouseenter = function () { btn.style.background = 'rgba(255,255,255,.12)'; };
   btn.onmouseleave = function () { btn.style.background = 'rgba(255,255,255,.06)'; };
   btn.innerHTML = '<span id="kitchen-refresh-icon" style="display:inline-block">🔄</span> Refresh';
 
-  kHdr.appendChild(btn);
+  actionsGroup.appendChild(btn);
 
   var style = document.createElement('style');
   style.textContent = '@keyframes kitchenRefreshSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
   document.head.appendChild(style);
+}
+
+// Shared right-side header action group — History, Refresh, and Bookings
+// all join this SAME container instead of each inserting into the header
+// directly, which was producing the uneven, scattered spacing (and in
+// History's case, actually inserting itself before the title entirely).
+function kHdrActionsGroup() {
+  var kHdr = document.querySelector('#pg-kitchen .k-hdr');
+  if (!kHdr) return null;
+  return document.getElementById('k-hdr-actions'); // now defined directly in store.html's header markup
 }
 
 async function kitchenManualRefresh() {
@@ -1221,6 +1295,29 @@ async function spFinalizePayment(splitObj, summaryMethod, breakdownText, cashRec
     showStoreToast('✅ Collected · ' + breakdownText + changeNote);
     kitchenManualRefresh();
 
+    // Auto-add the cash portion to the Cash Counter's running balance —
+    // no separate manual re-entry needed. Wrapped in its own try/catch so
+    // this never blocks the actual payment collection if it fails for
+    // any reason (e.g. cash_counter_entries table not set up yet).
+    if (splitObj.cash > 0) {
+      try {
+        var label = context.type === 'table' ? ('Table ' + context.tableCode) : ('Order ' + orderId.slice(0, 8));
+        var staffName = (typeof _staffSession !== 'undefined' && _staffSession && _staffSession.name)
+          ? _staffSession.name : ((typeof isAdmin !== 'undefined' && isAdmin) ? 'Admin' : null);
+        await db.from('cash_counter_entries').insert([{
+          entry_type: 'order_payment',
+          amount: splitObj.cash,
+          note: 'Cash payment — ' + label,
+          staff_name: staffName
+        }]);
+        // If the Cash Counter sheet happens to already be open, refresh it live.
+        var ccSheet = document.getElementById('cc-sheet');
+        if (ccSheet && ccSheet.style.display === 'block' && typeof loadCashCounter === 'function') loadCashCounter();
+      } catch (ccErr) {
+        // Cash Counter table may not exist yet — payment itself still succeeded, so stay quiet here.
+      }
+    }
+
     if (context.type === 'table') {
       await sendTableBillWhatsApp(orderId, context.tableCode, breakdownText);
     }
@@ -1303,8 +1400,8 @@ function injectKitchenHistoryButton() {
   var attempts = 0;
   var poll = setInterval(function () {
     attempts++;
-    var kHdr = document.querySelector('#pg-kitchen .k-hdr');
-    if (kHdr) {
+    var actionsGroup = kHdrActionsGroup();
+    if (actionsGroup) {
       clearInterval(poll);
       if (document.getElementById('kitchen-history-btn')) return;
 
@@ -1313,12 +1410,12 @@ function injectKitchenHistoryButton() {
       btn.onclick = toggleKitchenHistory;
       btn.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:8px 14px;'
         + 'border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);'
-        + 'color:rgba(245,234,220,.75);font-size:11px;font-weight:700;cursor:pointer;margin-left:8px;'
+        + 'color:rgba(245,234,220,.75);font-size:11px;font-weight:700;cursor:pointer;'
         + 'font-family:\'DM Sans\',sans-serif;transition:background .15s';
       btn.onmouseenter = function () { btn.style.background = 'rgba(255,255,255,.12)'; };
       btn.onmouseleave = function () { btn.style.background = 'rgba(255,255,255,.06)'; };
       btn.innerHTML = '📋 History';
-      kHdr.insertBefore(btn, kHdr.firstChild);
+      actionsGroup.appendChild(btn); // was inserting before the title entirely — now joins the same right-side group
     } else if (attempts >= 20) {
       clearInterval(poll);
     }

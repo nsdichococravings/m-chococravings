@@ -60,8 +60,8 @@ function injectKitchenBookingsButton() {
   var attempts = 0;
   var poll = setInterval(function () {
     attempts++;
-    var kHdr = document.querySelector('#pg-kitchen .k-hdr');
-    if (kHdr) {
+    var actionsGroup = document.getElementById('k-hdr-actions'); // shared right-side group, defined in store.html's header markup
+    if (actionsGroup) {
       clearInterval(poll);
       if (document.getElementById('kitchen-bookings-btn')) return;
 
@@ -70,14 +70,14 @@ function injectKitchenBookingsButton() {
       btn.onclick = function () { openCustomBookings(); };
       btn.style.cssText = 'display:inline-flex;align-items:center;gap:6px;padding:8px 14px;position:relative;'
         + 'border-radius:20px;background:rgba(214,51,108,0.12);border:1px solid rgba(214,51,108,0.25);'
-        + 'color:#f5a8c0;font-size:11px;font-weight:700;cursor:pointer;margin-left:8px;'
+        + 'color:#f5a8c0;font-size:11px;font-weight:700;cursor:pointer;'
         + 'font-family:\'DM Sans\',sans-serif;transition:background .15s';
       btn.onmouseenter = function () { btn.style.background = 'rgba(214,51,108,0.2)'; };
       btn.onmouseleave = function () { btn.style.background = 'rgba(214,51,108,0.12)'; };
       btn.innerHTML = '🎂 Bookings <span id="kitchen-bookings-badge" style="display:none;background:#dc2626;'
         + 'color:#fff;font-size:9px;font-weight:700;border-radius:20px;padding:1px 6px;margin-left:2px">0</span>';
 
-      kHdr.appendChild(btn);
+      actionsGroup.appendChild(btn);
       refreshKitchenBookingsBadge();
     } else if (attempts >= 20) {
       clearInterval(poll);
@@ -102,26 +102,12 @@ async function refreshKitchenBookingsBadge() {
 }
 
 function injectCustomBookingsMenuEntry() {
-  if (document.getElementById('cb-menu-entry')) return;
-  var fabMenu = document.getElementById('admin-fab-menu');
-  if (!fabMenu) return;
-
-  var entry = document.createElement('div');
-  entry.id = 'cb-menu-entry';
-  entry.onclick = function () { openCustomBookings(); closeAdminMenu(); };
-  entry.style.cssText = 'display:flex;align-items:center;gap:10px;padding:13px 16px;position:relative;'
-    + 'cursor:pointer;transition:background .15s;border-bottom:1px solid #f5f0f8';
-  entry.onmouseover = function () { entry.style.background = '#f5eeff'; };
-  entry.onmouseout  = function () { entry.style.background = 'transparent'; };
-  entry.innerHTML =
-      '<div style="width:32px;height:32px;border-radius:8px;background:rgba(214,51,108,0.12);'
-    + 'display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🎂</div>'
-    + '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#1a0820">Custom Bookings</div>'
-    + '<div style="font-size:11px;color:#9c0ca1;margin-top:1px">Cake & party order calendar</div></div>'
-    + '<span id="cb-reminder-badge" style="display:none;background:#dc2626;color:#fff;font-size:10px;'
-    + 'font-weight:700;border-radius:20px;padding:2px 8px;flex-shrink:0">0</span>';
-
-  fabMenu.appendChild(entry);
+  registerAdminTool('Daily Operations', {
+    icon: '🎂', iconBg: 'rgba(214,51,108,0.12)',
+    title: 'Custom Bookings', subtitle: 'Cake & party order calendar',
+    badgeId: 'cb-reminder-badge',
+    onClick: openCustomBookings
+  });
 }
 
 async function refreshReminderBadge() {
@@ -133,11 +119,8 @@ async function refreshReminderBadge() {
     .eq('booking_date', targetStr)
     .not('status', 'eq', 'cancelled');
 
-  var badge = document.getElementById('cb-reminder-badge');
-  if (!badge) return;
   var count = (res.data || []).length;
-  badge.textContent = count;
-  badge.style.display = count > 0 ? 'inline-block' : 'none';
+  if (typeof ccUpdateBadge === 'function') ccUpdateBadge('cb-reminder-badge', count);
 }
 
 // ══════════════════════════════════════════════════════════════

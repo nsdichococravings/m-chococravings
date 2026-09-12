@@ -34,24 +34,11 @@ function waitForAdminThenInjectCashCounter() {
 }
 
 function injectCashCounterMenuEntry() {
-  if (document.getElementById('cash-counter-menu-entry')) return;
-  var fabMenu = document.getElementById('admin-fab-menu');
-  if (!fabMenu) return;
-
-  var entry = document.createElement('div');
-  entry.id = 'cash-counter-menu-entry';
-  entry.onclick = function () { openCashCounter(); closeAdminMenu(); };
-  entry.style.cssText = 'display:flex;align-items:center;gap:10px;padding:13px 16px;'
-    + 'cursor:pointer;transition:background .15s;border-bottom:1px solid #f5f0f8';
-  entry.onmouseover = function () { entry.style.background = '#f5eeff'; };
-  entry.onmouseout  = function () { entry.style.background = 'transparent'; };
-  entry.innerHTML =
-      '<div style="width:32px;height:32px;border-radius:8px;background:rgba(184,116,16,0.12);'
-    + 'display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">💵</div>'
-    + '<div><div style="font-size:13px;font-weight:600;color:#1a0820">Cash Counter</div>'
-    + '<div style="font-size:11px;color:#9c0ca1;margin-top:1px">Running cash drawer balance</div></div>';
-
-  fabMenu.appendChild(entry);
+  registerAdminTool('Financial', {
+    icon: '💵', iconBg: 'rgba(34,197,94,0.12)',
+    title: 'Cash Counter', subtitle: 'Running cash drawer balance',
+    onClick: openCashCounter
+  });
 }
 
 function buildCashCounterUI() {

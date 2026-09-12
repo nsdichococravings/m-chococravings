@@ -4,11 +4,15 @@
  * store.html) with a version that also lazy-loads the 11 admin/staff
  * patch files — only after confirming who's actually looking at the
  * page, instead of shipping them to every visitor unconditionally.
+ * Also registers the three tools that used to be hardcoded static HTML
+ * (Place Order, Add Menu Item, Store Open/Closed toggle) through the
+ * new Command Center instead.
  *
  * Must load AFTER the main inline <script> block in store.html (so
- * `isAdmin`, `db` etc. already exist), and BEFORE the window 'load'
- * event fires (any static <script> tag satisfies this automatically).
- * Load it as one of the remaining static tags near </body>:
+ * `isAdmin`, `db` etc. already exist) and AFTER admin-command-center.js
+ * (for `registerAdminTool`), and BEFORE the window 'load' event fires
+ * (any static <script> tag satisfies this automatically). Load order:
+ *   <script src="admin-command-center.js"></script>
  *   <script src="store-patch.js"></script>
  *   <script src="menu-search-patch.js"></script>
  *   <script src="remember-phone-patch.js"></script>
@@ -39,6 +43,30 @@ async function checkAdminBadge(){
 
       var pb = document.getElementById('print-invoice-btn');
       if (pb) pb.style.display = 'block';
+
+      // These three were previously hardcoded static HTML inside the old
+      // #admin-fab-menu dropdown — now registered through the Command
+      // Center like every other tool, instead of living as separate markup.
+      if (typeof registerAdminTool === 'function') {
+        registerAdminTool('Daily Operations', {
+          icon: '👤', iconBg: 'rgba(110,9,119,0.1)',
+          title: 'Place Order', subtitle: 'On behalf of customer',
+          onClick: function () { if (typeof openAdminOrder === 'function') openAdminOrder(); }
+        });
+        registerAdminTool('Daily Operations', {
+          icon: '➕', iconBg: 'rgba(110,9,119,0.1)',
+          title: 'Add Menu Item', subtitle: 'Instant menu update',
+          onClick: function () { if (typeof openQaItem === 'function') openQaItem(); }
+        });
+        registerAdminTool('Daily Operations', {
+          icon: function () { return _storeIsOpen ? '🟢' : '🔴'; },
+          iconBg: function () { return _storeIsOpen ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)'; },
+          title: function () { return _storeIsOpen ? 'Store is Open' : 'Store is Closed'; },
+          subtitle: function () { return _storeIsOpen ? 'Tap to close store' : 'Tap to open store'; },
+          keepOpen: true,
+          onClick: function () { if (typeof toggleStoreOpenStatus === 'function') toggleStoreOpenStatus(); }
+        });
+      }
     }
 
     // Lazy-load admin/staff-only scripts — regular customers browsing the

@@ -51,27 +51,12 @@ function currentLogName() {
 // Admin FAB entry with low-stock badge
 // ══════════════════════════════════════════════════════════════
 function injectInventoryMenuEntry() {
-  var fabMenu = document.getElementById('admin-fab-menu');
-  if (!fabMenu) return;
-
-  var entry = document.createElement('div');
-  entry.id = 'invtry-menu-entry';
-  entry.onclick = function () { openInventory(); closeAdminMenu(); };
-  entry.style.cssText = 'display:flex;align-items:center;gap:10px;padding:13px 16px;'
-    + 'cursor:pointer;transition:background .15s;border-bottom:1px solid #f5f0f8';
-  entry.onmouseover = function () { entry.style.background = '#f5eeff'; };
-  entry.onmouseout  = function () { entry.style.background = 'transparent'; };
-  entry.innerHTML =
-      '<div style="width:32px;height:32px;border-radius:8px;background:rgba(110,9,119,0.1);'
-    + 'display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">📦</div>'
-    + '<div style="flex:1">'
-    +   '<div style="font-size:13px;font-weight:600;color:#1a0820">Inventory</div>'
-    +   '<div style="font-size:11px;color:#9c0ca1;margin-top:1px">Ingredient stock</div>'
-    + '</div>'
-    + '<div id="invtry-menu-badge" style="display:none;background:#dc2626;color:#fff;font-size:10px;'
-    + 'font-weight:700;padding:2px 7px;border-radius:20px">0</div>';
-
-  fabMenu.appendChild(entry);
+  registerAdminTool('Daily Operations', {
+    icon: '📦', iconBg: 'rgba(37,99,235,0.12)',
+    title: 'Inventory', subtitle: 'Ingredient stock',
+    badgeId: 'invtry-menu-badge',
+    onClick: openInventory
+  });
 }
 
 async function refreshLowStockBadge() {
@@ -79,11 +64,7 @@ async function refreshLowStockBadge() {
     var res = await db.from('inventory_items').select('id, current_stock, low_stock_threshold');
     var items = res.data || [];
     _invLowStockCount = items.filter(function (i) { return i.current_stock <= i.low_stock_threshold; }).length;
-    var badge = document.getElementById('invtry-menu-badge');
-    if (badge) {
-      badge.textContent = _invLowStockCount;
-      badge.style.display = _invLowStockCount > 0 ? 'inline-block' : 'none';
-    }
+    if (typeof ccUpdateBadge === 'function') ccUpdateBadge('invtry-menu-badge', _invLowStockCount);
   } catch (e) { /* db may not be ready yet on first call — safe to ignore */ }
 }
 

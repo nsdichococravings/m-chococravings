@@ -277,24 +277,11 @@ function showStaffLoggedInUI() {
 // ══════════════════════════════════════════════════════════════
 
 function injectManageStaffMenuEntry() {
-  var fabMenu = document.getElementById('admin-fab-menu');
-  if (!fabMenu) return;
-
-  var entry = document.createElement('div');
-  entry.onclick = function () { openManageStaff(); closeAdminMenu(); };
-  entry.style.cssText = 'display:flex;align-items:center;gap:10px;padding:13px 16px;'
-    + 'cursor:pointer;transition:background .15s;border-bottom:1px solid #f5f0f8';
-  entry.onmouseover = function () { entry.style.background = '#f5eeff'; };
-  entry.onmouseout  = function () { entry.style.background = 'transparent'; };
-  entry.innerHTML =
-      '<div style="width:32px;height:32px;border-radius:8px;background:rgba(110,9,119,0.1);'
-    + 'display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🧑‍🍳</div>'
-    + '<div>'
-    +   '<div style="font-size:13px;font-weight:600;color:#1a0820">Manage Staff</div>'
-    +   '<div style="font-size:11px;color:#9c0ca1;margin-top:1px">Add or remove servers</div>'
-    + '</div>';
-
-  fabMenu.insertBefore(entry, fabMenu.children[2] || null);
+  registerAdminTool('Staff & HR', {
+    icon: '🧑‍🍳', iconBg: 'rgba(21,128,61,0.12)',
+    title: 'Manage Staff', subtitle: 'Add or remove servers',
+    onClick: openManageStaff
+  });
 }
 
 function buildManageStaffUI() {
