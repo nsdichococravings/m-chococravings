@@ -1493,17 +1493,15 @@ function subscribeKitchen(){
   if(kitchenCh){try{db.removeChannel(kitchenCh)}catch(e){}}
   kitchenCh=db.channel('kitchen-live')
     .on('postgres_changes',{event:'*',schema:'public',table:'store_orders'},function(p){
-      var card=document.getElementById('kt-'+p.new.id);
-      if(!card){kitchenLoad();return;}
-      if(p.new.status==='collected'){card.remove();return;}
-      card.dataset.s=p.new.status;
-      card.querySelector('.k-badge').textContent=p.new.status.toUpperCase();
-      var btns=card.querySelectorAll('.k-start,.k-ready');
-      if(btns[0]) btns[0].textContent=p.new.status==='preparing'?'⏳ Making…':'▶ Start';
-      if(btns[1]) btns[1].textContent=p.new.status==='ready'?'✓ Ready!':'✓ Mark Ready';
+      // Full re-render on any change instead of trying to patch individual
+      // DOM pieces by hand — that incremental approach silently breaks
+      // every time the ticket's own render logic changes (exactly what
+      // happened with the new dynamic primary button). Uses the silent
+      // variant so this doesn't pop a "Refreshed" toast on every single
+      // live update — that's reserved for the manual Refresh button tap.
+      if (typeof kitchenSilentRefresh === 'function') kitchenSilentRefresh();
     }).subscribe();
 }
-
 function ageStr(iso){
   var d=Math.floor((Date.now()-new Date(iso).getTime())/1000);
   if(d<60) return 'just now';

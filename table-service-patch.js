@@ -741,8 +741,19 @@ function kHdrActionsGroup() {
 }
 
 async function kitchenManualRefresh() {
+  await kitchenRefresh(true); // manual tap — show the icon spin + toast
+}
+
+// Silent counterpart used by the realtime subscription — same actual
+// refresh logic, but no toast on every single live update (which would
+// get spammy fast with multiple staff active on Kitchen at once).
+async function kitchenSilentRefresh() {
+  await kitchenRefresh(false);
+}
+
+async function kitchenRefresh(showFeedback) {
   var icon = document.getElementById('kitchen-refresh-icon');
-  if (icon) icon.style.animation = 'kitchenRefreshSpin .6s linear';
+  if (showFeedback && icon) icon.style.animation = 'kitchenRefreshSpin .6s linear';
 
   try {
     var today = new Date().toISOString().slice(0, 10);
@@ -755,11 +766,11 @@ async function kitchenManualRefresh() {
     if (res.error) throw res.error;
     renderKitchen(res.data || []);
     if (typeof loadProductionRequests === 'function') loadProductionRequests();
-    showStoreToast('🔄 Refreshed');
+    if (showFeedback) showStoreToast('🔄 Refreshed');
   } catch (e) {
-    showStoreToast('Refresh error: ' + e.message);
+    if (showFeedback) showStoreToast('Refresh error: ' + e.message);
   } finally {
-    if (icon) setTimeout(function () { icon.style.animation = ''; }, 600);
+    if (showFeedback && icon) setTimeout(function () { icon.style.animation = ''; }, 600);
   }
 }
 

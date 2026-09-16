@@ -45,14 +45,14 @@ function replaceFabMenuBehavior() {
       // Override the existing toggle functions so the pill now opens
       // the Command Center instead of the old flat dropdown.
       window.openAdminMenu = function () {
-        document.getElementById('cc-sheet-overlay').style.display = 'block';
-        document.getElementById('cc-sheet').style.display = 'block';
+        document.getElementById('acc-overlay').style.display = 'block';
+        document.getElementById('acc-sheet').style.display = 'block';
         _ccOpen = true;
         renderCommandCenter();
       };
       window.closeAdminMenu = function () {
-        document.getElementById('cc-sheet-overlay').style.display = 'none';
-        document.getElementById('cc-sheet').style.display = 'none';
+        document.getElementById('acc-overlay').style.display = 'none';
+        document.getElementById('acc-sheet').style.display = 'none';
         _ccOpen = false;
       };
     } else if (attempts >= 20) {
@@ -63,14 +63,14 @@ function replaceFabMenuBehavior() {
 
 function buildCommandCenterUI() {
   var overlay = document.createElement('div');
-  overlay.id = 'cc-sheet-overlay';
+  overlay.id = 'acc-overlay';
   overlay.onclick = function () { if (typeof closeAdminMenu === 'function') closeAdminMenu(); };
   overlay.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);'
     + 'z-index:498;backdrop-filter:blur(3px)';
   document.body.appendChild(overlay);
 
   var sheet = document.createElement('div');
-  sheet.id = 'cc-sheet';
+  sheet.id = 'acc-sheet';
   sheet.style.cssText = 'display:none;position:fixed;bottom:0;left:0;right:0;background:#fdf5e3;'
     + 'border-radius:24px 24px 0 0;z-index:499;padding:0 0 28px;'
     + 'font-family:\'Instrument Sans\',sans-serif;max-height:82vh;overflow-y:auto;'
@@ -86,12 +86,12 @@ function buildCommandCenterUI() {
     +     'background:#fff;border:1px solid #e0c8f0;display:flex;align-items:center;'
     +     'justify-content:center;cursor:pointer;font-size:14px;color:#6e0977">✕</div>'
     + '</div>'
-    + '<div id="cc-body" style="padding:6px 20px 0"></div>';
+    + '<div id="acc-body" style="padding:6px 20px 0"></div>';
   document.body.appendChild(sheet);
 }
 
 function renderCommandCenter() {
-  var body = document.getElementById('cc-body');
+  var body = document.getElementById('acc-body');
   if (!body) return;
 
   _ccCallbacks = []; // reset — each render rebuilds indices fresh, otherwise this grows forever and refs go stale
