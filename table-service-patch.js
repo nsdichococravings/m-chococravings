@@ -28,6 +28,7 @@ function _tsInit() {
   });
   buildTablesBoardDOM();
   injectKitchenRefreshButton();
+  injectKitchenOrderCountBadge();
 
 }
 if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', _tsInit); } else { _tsInit(); }
@@ -86,14 +87,14 @@ function buildTablesBoardDOM() {
     +       'background:#f5eeff;border:1px solid #e0c8f0;display:flex;align-items:center;'
     +       'justify-content:center;cursor:pointer;font-size:14px;color:#6e0977">✕</div>'
     +   '</div>'
+    +   '<input id="ts-cust-phone" type="tel" inputmode="numeric" maxlength="10" placeholder="📱 Customer phone (optional)" '
+    +     'style="width:100%;padding:12px 14px;border:1.5px solid #e0c8f0;border-radius:12px;font-size:14px;'
+    +     'font-family:\'DM Sans\',sans-serif;outline:none;box-sizing:border-box;margin-top:12px">'
     + '</div>'
     + '<div style="padding:18px 20px;display:flex;flex-direction:column;gap:14px">'
     +   '<div id="ts-items-list" style="display:flex;flex-direction:column;gap:8px">'
     +     '<div style="font-size:12px;color:#b090c0;text-align:center;padding:10px">No items yet</div>'
     +   '</div>'
-    +   '<input id="ts-cust-phone" type="tel" inputmode="numeric" maxlength="10" placeholder="📱 Customer phone (optional)" '
-    +     'style="width:100%;padding:12px 14px;border:1.5px solid #e0c8f0;border-radius:12px;font-size:14px;'
-    +     'font-family:\'DM Sans\',sans-serif;outline:none;box-sizing:border-box">'
     +   '<input id="ts-search" type="text" placeholder="🔍 Search items..." oninput="tsFilterItems()" '
     +     'style="width:100%;padding:12px 14px;border:1.5px solid #e0c8f0;border-radius:12px;font-size:14px;'
     +     'font-family:\'DM Sans\',sans-serif;outline:none;box-sizing:border-box">'
@@ -391,6 +392,18 @@ function tsRemoveItem(idx) {
   tsCalcTotal();
 }
 
+function tsDecrementItem(idx) {
+  var item = _tsItems[idx];
+  if (!item) return;
+  if (item.qty > 1) {
+    item.qty--;
+  } else {
+    _tsItems.splice(idx, 1); // decrementing from 1 removes the line entirely, same as tapping ✕
+  }
+  tsRenderItems();
+  tsCalcTotal();
+}
+
 function tsRenderItems() {
   var list = document.getElementById('ts-items-list');
   if (!list) return;
@@ -403,16 +416,23 @@ function tsRenderItems() {
     return '<div style="display:flex;align-items:center;justify-content:space-between;'
       + 'background:' + (isFree ? '#fff8e6' : '#f5eeff') + ';border:1px solid ' + (isFree ? 'rgba(245,196,48,0.4)' : '#e0c8f0') + ';'
       + 'border-radius:10px;padding:10px 12px">'
-      + '<div style="flex:1">'
-      + '<div style="font-size:13px;font-weight:600;color:#1a0820">' + item.name
-      + (isFree ? ' <span style="font-size:9px;font-weight:700;color:#b87410;background:rgba(245,196,48,0.2);padding:2px 7px;border-radius:10px;margin-left:4px">🎁 FREE</span>' : '') + '</div>'
-      + '<div style="font-size:11px;color:#9c0ca1;' + (isFree ? 'text-decoration:line-through' : '') + '">₹' + item.price + ' × ' + item.qty + '</div>'
+      + '<div style="flex:1;min-width:0">'
+      + '<div style="font-size:13px;font-weight:600;color:#1a0820;display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+      + '<span>' + item.name + '</span>'
+      + '<span style="font-family:Fraunces,Georgia,serif;font-size:13px;font-weight:900;color:#fff;'
+      + 'background:' + (isFree ? '#b87410' : '#6e0977') + ';padding:2px 9px;border-radius:20px;flex-shrink:0">×' + item.qty + '</span>'
+      + (isFree ? '<span style="font-size:9px;font-weight:700;color:#b87410;background:rgba(245,196,48,0.2);padding:2px 7px;border-radius:10px">🎁 FREE</span>' : '')
       + '</div>'
-      + '<div style="font-size:13px;font-weight:700;color:' + (isFree ? '#b87410' : '#6e0977') + ';margin-right:8px">'
+      + '<div style="font-size:11px;color:#9c0ca1;margin-top:2px;' + (isFree ? 'text-decoration:line-through' : '') + '">₹' + item.price + ' each</div>'
+      + '</div>'
+      + '<div style="font-size:13px;font-weight:700;color:' + (isFree ? '#b87410' : '#6e0977') + ';margin-right:8px;flex-shrink:0">'
       + (isFree ? 'FREE' : ('₹' + (item.price * item.qty))) + '</div>'
       + '<div onclick="tsToggleComplimentary(' + i + ')" title="Mark complimentary" style="width:26px;height:26px;border-radius:50%;'
       + 'background:' + (isFree ? '#b87410' : '#fff') + ';border:1px solid ' + (isFree ? '#b87410' : '#e0c8f0') + ';display:flex;'
       + 'align-items:center;justify-content:center;cursor:pointer;font-size:12px;margin-right:6px">🎁</div>'
+      + '<div onclick="tsDecrementItem(' + i + ')" style="width:26px;height:26px;border-radius:50%;'
+      + 'background:#fff;border:1px solid #e0c8f0;display:flex;align-items:center;'
+      + 'justify-content:center;cursor:pointer;font-size:16px;font-weight:700;color:#6e0977;margin-right:6px">−</div>'
       + '<div onclick="tsQuickAdd(\'' + item.name.replace(/'/g, "\\'") + '\',' + item.price + ')" '
       + 'style="width:26px;height:26px;border-radius:50%;background:#6e0977;color:#fff;display:flex;'
       + 'align-items:center;justify-content:center;cursor:pointer;font-size:14px;font-weight:700;margin-right:6px">+</div>'
@@ -533,6 +553,7 @@ async function tsBillAndClose() {
 
 // ── 5. Kitchen display — show table code instead of token ──────
 function renderKitchen(orders) {
+  updateKitchenOrderCountBadge(orders.length);
   var list = document.getElementById('k-list');
   if (!orders.length) { list.innerHTML = '<div class="k-empty">No pending orders</div>'; return; }
   list.innerHTML = orders.map(function (o) {
@@ -754,6 +775,37 @@ async function kBump(id, status) {
 function kCancelOrder(id) {
   if (!confirm('Cancel this order? This cannot be undone.')) return;
   kBump(id, 'cancelled');
+}
+
+// Small live count badge sitting right next to the "ORDER QUEUE"
+// subtitle — updated every time renderKitchen() runs (load, manual
+// refresh, realtime updates, and the 15s polling fallback all funnel
+// through there, so this always reflects what's actually on screen).
+function injectKitchenOrderCountBadge() {
+  var attempts = 0;
+  var poll = setInterval(function () {
+    attempts++;
+    var sub = document.querySelector('#pg-kitchen .k-sub');
+    if (sub && sub.parentElement) {
+      clearInterval(poll);
+      if (document.getElementById('k-order-count')) return;
+
+      var badge = document.createElement('span');
+      badge.id = 'k-order-count';
+      badge.style.cssText = 'display:inline-block;margin-left:8px;background:rgba(245,196,48,0.15);'
+        + 'border:1px solid rgba(245,196,48,0.3);color:#f5c430;font-size:9px;font-weight:700;'
+        + 'letter-spacing:1px;padding:2px 8px;border-radius:20px;vertical-align:middle';
+      badge.textContent = '0';
+      sub.parentElement.appendChild(badge);
+    } else if (attempts >= 20) {
+      clearInterval(poll);
+    }
+  }, 300);
+}
+
+function updateKitchenOrderCountBadge(count) {
+  var badge = document.getElementById('k-order-count');
+  if (badge) badge.textContent = count + (count === 1 ? ' order' : ' orders');
 }
 
 function injectKitchenRefreshButton() {
