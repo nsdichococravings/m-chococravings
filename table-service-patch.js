@@ -622,6 +622,8 @@ function renderKitchen(orders) {
             + '<span onclick="openItemRecipePopup(\'' + o.id + '\',' + idx + ')" style="width:24px;height:24px;border-radius:7px;'
             + 'background:rgba(245,196,48,0.15);border:1px solid rgba(245,196,48,0.3);display:flex;align-items:center;'
             + 'justify-content:center;font-size:12px;cursor:pointer;flex-shrink:0">📖</span>'
+            + '<span style="font-size:12px;color:#c084fc;font-weight:700;background:rgba(192,132,252,0.12);'
+            + 'border-radius:8px;padding:2px 7px;flex-shrink:0">₹' + (i.price || 0) + '</span>'
             + '<span style="font-size:12px;color:#f5c430;font-weight:700;flex-shrink:0">×' + i.qty + '</span>'
             + '</div>';
         }).join('')
@@ -641,7 +643,9 @@ function renderKitchen(orders) {
             + '<span onclick="openItemRecipePopup(\'' + o.id + '\',' + idx + ')" style="width:24px;height:24px;border-radius:7px;'
             + 'background:rgba(245,196,48,0.15);border:1px solid rgba(245,196,48,0.3);display:flex;align-items:center;'
             + 'justify-content:center;font-size:12px;cursor:pointer;flex-shrink:0;margin-left:8px">📖</span>'
-            + '<span style="font-size:12px;color:#f5c430;font-weight:700;flex-shrink:0;margin-left:8px">×' + i.qty + '</span>'
+            + '<span style="font-size:12px;color:#c084fc;font-weight:700;background:rgba(192,132,252,0.12);'
+            + 'border-radius:8px;padding:2px 7px;flex-shrink:0;margin-left:8px">₹' + (i.price || 0) + '</span>'
+            + '<span style="font-size:12px;color:#f5c430;font-weight:700;flex-shrink:0;margin-left:6px">×' + i.qty + '</span>'
             + '</div>';
         }).join('');
 
@@ -786,16 +790,28 @@ function injectKitchenOrderCountBadge() {
   var poll = setInterval(function () {
     attempts++;
     var sub = document.querySelector('#pg-kitchen .k-sub');
+    var titleEl = document.querySelector('#pg-kitchen .k-title');
     if (sub && sub.parentElement) {
       clearInterval(poll);
+
+      // Give the "Kitchen" title itself a richer, more premium treatment —
+      // subtle glow behind the serif type instead of flat white text.
+      if (titleEl) {
+        titleEl.style.textShadow = '0 0 24px rgba(245,196,48,0.35), 0 0 2px rgba(255,255,255,0.4)';
+        titleEl.style.letterSpacing = '.5px';
+      }
+
       if (document.getElementById('k-order-count')) return;
 
-      var badge = document.createElement('span');
+      var badge = document.createElement('div');
       badge.id = 'k-order-count';
-      badge.style.cssText = 'display:inline-block;margin-left:8px;background:rgba(245,196,48,0.15);'
-        + 'border:1px solid rgba(245,196,48,0.3);color:#f5c430;font-size:9px;font-weight:700;'
-        + 'letter-spacing:1px;padding:2px 8px;border-radius:20px;vertical-align:middle';
-      badge.textContent = '0';
+      badge.style.cssText = 'display:inline-flex;align-items:center;gap:5px;margin-top:8px;'
+        + 'background:linear-gradient(135deg,rgba(245,196,48,0.22),rgba(245,196,48,0.08));'
+        + 'border:1px solid rgba(245,196,48,0.4);color:#f5c430;font-size:13px;font-weight:800;'
+        + 'letter-spacing:.5px;padding:6px 14px;border-radius:20px;'
+        + 'box-shadow:0 0 18px rgba(245,196,48,0.25),inset 0 1px 0 rgba(255,255,255,0.08);'
+        + 'font-family:Fraunces,Georgia,serif';
+      badge.innerHTML = '🔥 <span id="k-order-count-num">0</span>';
       sub.parentElement.appendChild(badge);
     } else if (attempts >= 20) {
       clearInterval(poll);
@@ -804,8 +820,8 @@ function injectKitchenOrderCountBadge() {
 }
 
 function updateKitchenOrderCountBadge(count) {
-  var badge = document.getElementById('k-order-count');
-  if (badge) badge.textContent = count + (count === 1 ? ' order' : ' orders');
+  var num = document.getElementById('k-order-count-num');
+  if (num) num.textContent = count + (count === 1 ? ' order' : ' orders');
 }
 
 function injectKitchenRefreshButton() {
