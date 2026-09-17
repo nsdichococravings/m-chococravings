@@ -617,6 +617,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     <div style="font-family:'Fraunces',Georgia,serif;font-size:24px;font-weight:900;color:#120a1e;margin-bottom:18px" id="mg-sheet-title">Add Item</div>
 
     <div style="font-size:10px;letter-spacing:3px;color:#9a8aaa;font-weight:700;margin-bottom:8px">CATEGORY</div>
+    <div id="mf-cat-grid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px"></div>
     <div style="display:flex;gap:8px;margin-bottom:16px">
       <div class="tab on-coffee" id="mf-cat-coffee"   onclick="mgSelCat('Coffee')"  style="flex:1">☕ Coffee</div>
       <div class="tab"           id="mf-cat-tea"      onclick="mgSelCat('Tea')"     style="flex:1">🫖 Tea</div>
@@ -1628,10 +1629,26 @@ function openEditItem(id){
 
 function mgSelCat(cat){
   mgSelCatVal = cat;
-  ['Coffee','Tea','Desserts'].forEach(function(c){
-    var el = document.getElementById('mf-cat-'+c.toLowerCase());
-    if(el) el.className = 'tab' + (c===cat ? ' on-'+MENU[c].cls : '');
-  });
+  renderMfCatGrid();
+}
+
+// Builds the category picker directly from MENU's own keys instead of a
+// hardcoded 3-item list — covers every category that actually exists,
+// and never needs a manual update again if more get added later.
+function renderMfCatGrid(){
+  var grid = document.getElementById('mf-cat-grid');
+  if(!grid) return;
+  var iconMap = {
+    Coffee:'☕', Tea:'🫖', Desserts:'🍫', Brownies:'🟫', Cakes:'🎂', Cookies:'🍪',
+    IceCream:'🍦', Others:'🧃', Milkshake:'🥤', Chocolate:'🍫', Spicy:'🌶️',
+    Combo:'🎁', Blondie:'🟨', Cupcake:'🧁'
+  };
+  grid.innerHTML = Object.keys(MENU).map(function(cat){
+    var on = cat === mgSelCatVal;
+    var icon = iconMap[cat] || '•';
+    return '<div onclick="mgSelCat(\'' + cat + '\')" class="tab' + (on ? ' on-' + MENU[cat].cls : '') + '" '
+      + 'style="flex:0 0 auto;padding:8px 14px">' + icon + ' ' + cat + '</div>';
+  }).join('');
 }
 
 function closeMgSheet(){
