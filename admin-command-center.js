@@ -118,8 +118,7 @@ function buildCommandCenterUI() {
     + 'border-radius:0 16px 16px 0;z-index:500;cursor:pointer;'
     + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;'
     + 'box-shadow:4px 0 16px rgba(110,9,119,0.4);transition:left .32s cubic-bezier(.4,0,.2,1)';
-  tab.innerHTML = '<span style="font-size:16px">⚙️</span>'
-    + '<span style="writing-mode:vertical-rl;font-size:9px;font-weight:700;letter-spacing:1px;color:#fff">ADMIN</span>';
+  tab.innerHTML = '<span style="font-size:16px">⚙️</span>';
   document.body.appendChild(tab);
 }
 

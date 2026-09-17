@@ -18,6 +18,7 @@ var _tsItems        = [];
 var _tsTableCode    = null;
 var _tsExistingOrder = null;
 var _tsBoardCh      = null;
+var _tsOpenedFromKitchen = false; // true when opened via kOpenOrderEditFromKitchen(), not the Tables board
 
 function _tsInit() {
   registerAdminTool('Daily Operations', {
@@ -211,6 +212,7 @@ function openTableOrderSheet(code) {
   _tsTableCode     = code;
   _tsExistingOrder = null;
   _tsItems         = [];
+  _tsOpenedFromKitchen = false;
 
   document.getElementById('ts-order-title').textContent = code;
   tsPopulateDropdown();
@@ -257,10 +259,61 @@ function openTableOrderSheet(code) {
   document.getElementById('ts-order-sheet').style.display   = 'block';
 }
 
+// Opens the same order-editing sheet directly from a Kitchen ticket —
+// works for BOTH table and walk-in orders, since it fetches by order id
+// rather than by table_code. Reuses tsSubmit()'s existing "update an
+// existing order" branch as-is; only the opener and close behavior
+// differ from the normal Tables board flow.
+async function kOpenOrderEditFromKitchen(orderId) {
+  _tsOpenedFromKitchen = true;
+  _tsExistingOrder = null;
+  _tsItems = [];
+
+  var res = await db.from('store_orders')
+    .select('id, items, total, status, created_at, staff_name, customer_phone, table_code, token')
+    .eq('id', orderId)
+    .maybeSingle();
+  if (!res.data) { showStoreToast('Could not load this order'); return; }
+
+  var o = res.data;
+  _tsExistingOrder = o;
+  _tsTableCode = o.table_code || null;
+
+  var rawItems = o.items;
+  _tsItems = (Array.isArray(rawItems) ? rawItems : JSON.parse(rawItems || '[]')).map(function (i) {
+    return { name: i.name, price: i.price, qty: i.qty, delivered: !!i.delivered, prepared_by: i.prepared_by || null, prepared_at: i.prepared_at || null, complimentary: !!i.complimentary, _origQty: i.qty };
+  });
+
+  document.getElementById('ts-order-title').textContent = o.table_code ? o.table_code : ('#' + o.token);
+  tsPopulateDropdown();
+
+  document.getElementById('ts-send-btn').textContent = '➕ Add Items';
+  document.getElementById('ts-cust-phone').value = (o.customer_phone || '').replace(/^\+?91/, '');
+
+  // Quick-edit from Kitchen is purely for adding/modifying items — the
+  // billing/undo/move actions already live on the ticket itself, so
+  // hide them here to keep this sheet focused on just the one job.
+  document.getElementById('ts-bill-btn').style.display = 'none';
+  document.getElementById('ts-undo-btn').style.display = 'none';
+  var moveBtn = document.getElementById('ts-move-btn');
+  if (moveBtn) moveBtn.style.display = 'none';
+
+  tsRenderItems();
+  tsCalcTotal();
+
+  document.getElementById('ts-order-overlay').style.display = 'block';
+  document.getElementById('ts-order-sheet').style.display   = 'block';
+}
+
 function closeTableOrderSheet() {
   document.getElementById('ts-order-overlay').style.display = 'none';
   document.getElementById('ts-order-sheet').style.display   = 'none';
-  openTablesBoard();
+  if (_tsOpenedFromKitchen) {
+    _tsOpenedFromKitchen = false;
+    if (typeof kitchenManualRefresh === 'function') kitchenManualRefresh();
+  } else {
+    openTablesBoard();
+  }
 }
 
 var _tsActiveCat = null;
@@ -418,9 +471,10 @@ async function tsSubmit() {
         .update(updatePayload)
         .eq('id', _tsExistingOrder.id);
       if (upd.error) throw upd.error;
+      var orderLabel = _tsTableCode || ('#' + (_tsExistingOrder.token || ''));
       showStoreToast(wasReady
-        ? '✅ Items added to ' + _tsTableCode + ' — back to Preparing'
-        : '✅ Items added to ' + _tsTableCode);
+        ? '✅ Items added to ' + orderLabel + ' — back to Preparing'
+        : '✅ Items added to ' + orderLabel);
     } else {
       btn.disabled = true; btn.textContent = 'Sending…';
       var token = await getToken();
@@ -641,6 +695,7 @@ function kOpenOverflowMenu(btnEl, orderId, status, tableCode, total, paymentStat
     + 'top:' + (rect.bottom + 6) + 'px;right:' + (window.innerWidth - rect.right) + 'px;font-family:\'DM Sans\',sans-serif';
 
   var items = [];
+  items.push({ icon: '✏️', label: 'Add / Edit Items', color: '#c084fc', onclick: "kOpenOrderEditFromKitchen('" + orderId + "')" });
   // Table orders: offer Mark Bill Collected here too if it isn't already
   // the primary action (lets staff bill directly without first stepping
   // through "mark delivered," same flexibility the old buttons had).
@@ -1373,10 +1428,11 @@ async function sendTableBillWhatsApp(orderId, tableCode, breakdownText) {
 var _khOpen = false;
 var _khExpandedId = null;
 
-document.addEventListener('DOMContentLoaded', function () {
+function _khInit() {
   buildKitchenHistoryDrawer();
   injectKitchenHistoryButton();
-});
+}
+if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', _khInit); } else { _khInit(); }
 
 function buildKitchenHistoryDrawer() {
   var backdrop = document.createElement('div');
@@ -1533,9 +1589,10 @@ function toggleHistoryEntry(orderId) {
 // ══════════════════════════════════════════════════════════════
 var _noaCh = null;
 
-document.addEventListener('DOMContentLoaded', function () {
+function _noaInit() {
   waitForAdminThenSubscribeOrderAlerts();
-});
+}
+if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', _noaInit); } else { _noaInit(); }
 
 function waitForAdminThenSubscribeOrderAlerts() {
   var attempts = 0;
