@@ -643,18 +643,20 @@ function renderKitchen(orders) {
       + 'background:' + primaryAction.bg + ';border:1.5px solid ' + primaryAction.border + ';'
       + 'color:' + primaryAction.color + ';font-size:12.5px;font-weight:700;border-radius:10px;cursor:pointer">'
       + primaryAction.label + '</button>'
-      + '<button onclick="kOpenOverflowMenu(this,\'' + o.id + '\',\'' + o.status + '\',' + (o.table_code ? "'" + o.table_code + "'" : 'null') + ','
-      + (o.total || 0) + ',\'' + (o.payment_status || 'pending') + '\')" style="width:42px;flex-shrink:0;border-radius:10px;'
+      + '<button onclick="kToggleMoreActions(\'' + o.id + '\')" style="width:42px;flex-shrink:0;border-radius:10px;'
       + 'background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:rgba(245,234,220,.6);'
       + 'font-size:16px;cursor:pointer">⋯</button>'
-      + '</div></div>';
+      + '</div>'
+      + kMoreActionsRow(o)
+      + '</div>';
   }).join('');
 }
 
 // Picks the single most relevant next action for an order's current
 // stage — replaces the old row of 5-6 equally-weighted buttons. Every
-// other action (Print, Cancel, and any alternate path) lives behind the
-// ⋯ overflow menu instead, so one thing is always obviously "next."
+// other action (Print, Cancel, and any alternate path) lives in the
+// inline "more actions" row below instead, so one thing is always
+// obviously "next."
 function kPrimaryActionFor(o) {
   if (o.status === 'pending') {
     return { label: '▶ Start Preparing', onclick: "kBump('" + o.id + "','preparing')",
@@ -681,54 +683,45 @@ function kPrimaryActionFor(o) {
     bg: 'rgba(255,255,255,.05)', border: 'rgba(255,255,255,.09)', color: 'rgba(255,255,255,.4)' };
 }
 
-// ── Overflow menu (⋯) — Print, Cancel, and any secondary action not
-// already shown as the primary button ──
-function kOpenOverflowMenu(btnEl, orderId, status, tableCode, total, paymentStatus) {
-  var existing = document.getElementById('k-overflow-menu');
-  if (existing) existing.remove();
+// ── "More actions" — an inline row built directly into the ticket
+// card, hidden by default and toggled by the ⋯ button. No floating or
+// fixed-position element at all, so it can never get lost behind other
+// tickets or misplaced by scrolling, no matter how many orders are in
+// the queue at once — it's just normal, contained document flow.
+var _kExpandedOrderId = null;
 
-  var rect = btnEl.getBoundingClientRect();
-  var menu = document.createElement('div');
-  menu.id = 'k-overflow-menu';
-  menu.style.cssText = 'position:fixed;z-index:4600;background:#1a1220;border:1px solid rgba(255,255,255,.12);'
-    + 'border-radius:12px;padding:6px;min-width:190px;box-shadow:0 8px 28px rgba(0,0,0,.5);'
-    + 'top:' + (rect.bottom + 6) + 'px;right:' + (window.innerWidth - rect.right) + 'px;font-family:\'DM Sans\',sans-serif';
-
+function kMoreActionsRow(o) {
+  var isOpen = _kExpandedOrderId === o.id;
   var items = [];
-  items.push({ icon: '✏️', label: 'Add / Edit Items', color: '#c084fc', onclick: "kOpenOrderEditFromKitchen('" + orderId + "')" });
-  // Table orders: offer Mark Bill Collected here too if it isn't already
-  // the primary action (lets staff bill directly without first stepping
-  // through "mark delivered," same flexibility the old buttons had).
-  if (tableCode && status !== 'delivered') {
-    items.push({ icon: '💰', label: 'Mark Bill Collected', color: '#4ade80',
-      onclick: "openSplitPaymentPicker('" + orderId + "'," + total + ",{type:'table',tableCode:'" + tableCode + "'})" });
+  items.push({ icon: '✏️', label: 'Add / Edit', color: '#c084fc', onclick: "kOpenOrderEditFromKitchen('" + o.id + "')" });
+  if (o.table_code && o.status !== 'delivered') {
+    items.push({ icon: '💰', label: 'Bill Collected', color: '#4ade80',
+      onclick: "openSplitPaymentPicker('" + o.id + "'," + (o.total || 0) + ",{type:'table',tableCode:'" + o.table_code + "'})" });
   }
-  items.push({ icon: '🖨️', label: 'Print Invoice', color: '#f0c96b', onclick: "printStoreInvoice('" + orderId + "')" });
-  items.push({ icon: '❌', label: 'Cancel Order', color: '#f87171', onclick: "kCancelOrder('" + orderId + "')" });
+  items.push({ icon: '🖨️', label: 'Print', color: '#f0c96b', onclick: "printStoreInvoice('" + o.id + "')" });
+  items.push({ icon: '❌', label: 'Cancel', color: '#f87171', onclick: "kCancelOrder('" + o.id + "')" });
 
-  menu.innerHTML = items.map(function (i) {
-    return '<div onclick="' + i.onclick + ';kCloseOverflowMenu()" style="display:flex;align-items:center;gap:10px;'
-      + 'padding:10px 12px;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;color:' + i.color + '"'
-      + ' onmouseover="this.style.background=\'rgba(255,255,255,.06)\'" onmouseout="this.style.background=\'transparent\'">'
-      + '<span style="font-size:14px">' + i.icon + '</span>' + i.label + '</div>';
+  var buttonsHtml = items.map(function (i) {
+    return '<div onclick="' + i.onclick + '" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;'
+      + 'padding:10px 4px;border-radius:9px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);'
+      + 'cursor:pointer;font-size:10.5px;font-weight:700;color:' + i.color + '">'
+      + '<span style="font-size:15px">' + i.icon + '</span>' + i.label + '</div>';
   }).join('');
 
-  document.body.appendChild(menu);
-
-  setTimeout(function () {
-    document.addEventListener('click', kOverflowOutsideClick);
-  }, 10);
+  return '<div id="k-more-' + o.id + '" style="display:' + (isOpen ? 'flex' : 'none') + ';gap:6px;margin-top:8px">' + buttonsHtml + '</div>';
 }
 
-function kOverflowOutsideClick(e) {
-  var menu = document.getElementById('k-overflow-menu');
-  if (menu && !menu.contains(e.target)) kCloseOverflowMenu();
-}
-
-function kCloseOverflowMenu() {
-  var menu = document.getElementById('k-overflow-menu');
-  if (menu) menu.remove();
-  document.removeEventListener('click', kOverflowOutsideClick);
+function kToggleMoreActions(orderId) {
+  _kExpandedOrderId = _kExpandedOrderId === orderId ? null : orderId;
+  var row = document.getElementById('k-more-' + orderId);
+  // Toggle just this one row directly rather than re-rendering the whole
+  // list — avoids losing scroll position or interrupting anything else
+  // mid-update on a busy Kitchen screen.
+  if (row) row.style.display = (_kExpandedOrderId === orderId) ? 'flex' : 'none';
+  // Collapse any other order's row that might have been left open.
+  document.querySelectorAll('[id^="k-more-"]').forEach(function (el) {
+    if (el.id !== 'k-more-' + orderId) el.style.display = 'none';
+  });
 }
 
 function tsElapsedMin(fromIso, toIso) {
@@ -828,6 +821,47 @@ async function kitchenRefresh(showFeedback) {
     if (showFeedback && icon) setTimeout(function () { icon.style.animation = ''; }, 600);
   }
 }
+
+// ── Polling safety net ──
+// Realtime SHOULD keep Kitchen in sync instantly on its own, but if a
+// subscription silently misses events (a network hiccup, a connection
+// drop that doesn't visibly error, or a Supabase realtime hiccup) new
+// orders and status changes stop showing up until something else forces
+// a fetch — exactly the "only updates after I manually refresh" symptom.
+// Polling every 15s while Kitchen is actually the visible page makes
+// that failure mode structurally impossible: even if realtime never
+// fires again, the view can never be more than 15 seconds stale.
+var _kPollTimer = null;
+
+function kStartPolling() {
+  if (_kPollTimer) return; // already running — never stack multiple intervals
+  _kPollTimer = setInterval(function () {
+    var kitchenPage = document.getElementById('pg-kitchen');
+    if (kitchenPage && kitchenPage.classList.contains('active')) {
+      kitchenSilentRefresh();
+    }
+  }, 15000);
+}
+
+function kStopPolling() {
+  if (_kPollTimer) { clearInterval(_kPollTimer); _kPollTimer = null; }
+}
+
+// Starts once, early, and just stays running in the background — the
+// interval callback itself checks whether Kitchen is the active page
+// each time, so there's no need to start/stop it on every navigation.
+(function () {
+  var attempts = 0;
+  var poll = setInterval(function () {
+    attempts++;
+    if (typeof isAdmin !== 'undefined' && isAdmin) {
+      clearInterval(poll);
+      kStartPolling();
+    } else if (attempts >= 20) {
+      clearInterval(poll);
+    }
+  }, 300);
+})();
 
 async function kMarkDelivered(id) {
   try {
