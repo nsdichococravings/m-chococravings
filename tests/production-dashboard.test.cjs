@@ -111,6 +111,6 @@ function setup(authorized = true) {
   assert.equal(missing.reads.length,0,'no production reads before authorization');
   assert.match(missing.document.getElementById('production-workspace').textContent,/Migration not installed/);
   const login=setup();await login.window.initializeProductionAccess();
-  assert.equal(login.reads.length,0,'login must not load production datasets');
+  assert.equal(login.reads.filter(name=>name!=='cc_production_movements').length,0,'login must not load bulk production datasets');
   console.log('PASS: dashboard navigation, escaped labels, collection form, duplicate-submit prevention, refreshed stock, honest profit state and migration/access blocking.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

@@ -83,11 +83,11 @@ const { PGlite } = require('../.production-test-runtime/node_modules/@electric-s
   assert.equal(Number(await scalar('select total_cost from cc_production_batches')),1692);
   assert.equal(Number(await scalar('select count(*) from display_stock')),0,'completion must not add outlet stock');
   await actor(sales);
-  const collectKey=randomUUID(); await command('collect',{id:batch,quantity:60},collectKey); await command('collect',{id:batch,quantity:60},collectKey);
+  const collectKey=randomUUID(); await command('collect',{id:batch,quantity:60,collected_by:'Sales Manager'},collectKey); await command('collect',{id:batch,quantity:60,collected_by:'Sales Manager'},collectKey);
   assert.equal(Number(await scalar("select current_stock from display_stock where item_name='Brownie'")),60);
   assert.equal(Number(await scalar('select collected_qty from cc_production_batches')),60);
-  await rejects(()=>command('collect',{id:batch,quantity:33}),/exceeds available/);
-  await command('collect',{id:batch,quantity:32});
+  await rejects(()=>command('collect',{id:batch,quantity:33,collected_by:'Sales Manager'}),/exceeds available/);
+  await command('collect',{id:batch,quantity:32,collected_by:'Sales Manager'});
   assert.equal(await scalar('select status from cc_production_requests'), 'partial','short yield must not mark original request fulfilled');
   assert.equal(Number(await scalar("select sum(quantity) from cc_production_movements where kind in ('collection_in','collection_out')")),0,'transfer quantities balance');
   await db.exec("insert into store_orders(item_name,quantity,status) values('Brownie',5,'pending')");

@@ -51,6 +51,16 @@ revoke all on function public.cc_production_add_material(jsonb,uuid) from public
 grant execute on function public.cc_production_add_material(jsonb,uuid) to authenticated;
 
 -- Stock refresh notifications only: no additional order deduction trigger.
+-- Extend the original receipt command to accept existing material unit aliases.
+do $$
+declare definition text;
+begin
+  definition:=pg_get_functiondef('public.cc_production_command(text,jsonb,uuid)'::regprocedure);
+  definition:=replace(definition, 'v_unit not in (''kg'',''g'',''l'',''ml'',''pcs'')',
+    'v_unit not in (''kg'',''g'',''l'',''ml'',''pcs'',''dozen'',''dozens'',''liter'',''litre'',''liters'',''litres'',''piece'',''pieces'',''gram'',''grams'',''kgs'')');
+  execute definition;
+end $$;
+
 do $$
 begin
   if exists(select 1 from pg_publication where pubname='supabase_realtime') and
