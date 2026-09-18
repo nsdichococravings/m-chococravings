@@ -360,6 +360,7 @@ async function loadLiveStock() {
 }
 
 async function requestProduction(itemName, suggestedThreshold) {
+  if (window.ccProductionCanUse && await window.ccProductionCanUse()) return window.openProductionDashboard('Production');
   var suggested = (suggestedThreshold || 5) + 5;
   var qtyStr = prompt('How many "' + itemName + '" should production make?', suggested);
   if (qtyStr === null) return;
@@ -417,6 +418,11 @@ function injectProductionRequestsIntoKitchen() {
 }
 
 async function loadProductionRequests() {
+  if (window.ccProductionCanUse && await window.ccProductionCanUse()) {
+    var oldContainer = document.getElementById('prod-requests-container');
+    if (oldContainer) oldContainer.style.display = 'none';
+    return;
+  }
   var list = document.getElementById('prod-requests-list');
   if (!list || typeof db === 'undefined' || !db) return;
   var res = await db.from('production_requests').select('*').eq('status', 'pending').order('requested_at', { ascending: false });
@@ -451,6 +457,7 @@ function renderProductionRequests(rows) {
 }
 
 async function fulfillProductionRequest(id, itemName, qty) {
+  if (window.ccProductionCanUse && await window.ccProductionCanUse()) return window.openProductionDashboard('Production');
   try {
     await db.from('production_requests').update({
       status: 'fulfilled', fulfilled_at: new Date().toISOString(), fulfilled_by: currentLogName()

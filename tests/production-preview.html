@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Production workspace — local visual test</title><link rel="stylesheet" href="/production-dashboard.css"></head><body>
+<div id="pg-kitchen"></div>
+<script>
+const fixtures = {
+  inventory_items: [{id:'1',name:'Dark chocolate',unit:'kg',current_stock:18,cost_per_unit:500,low_stock_threshold:5},{id:'2',name:'Butter',unit:'kg',current_stock:1.5,cost_per_unit:500,low_stock_threshold:2}],
+  packaging_materials:[{id:'1',name:'Brownie sleeve',category:'Sleeves',unit:'pcs',current_stock:200,cost_per_unit:1}],material_purchases:[],
+  store_menu:[{id:'1',name:'Chocolate brownie',category:'Brownies'}],display_stock:[{id:'1',item_name:'Chocolate brownie',current_stock:30,low_stock_threshold:10}],
+  cc_production_requests:[{id:'request-1',product_name:'Chocolate brownie',outlet_name:'Main outlet',quantity:100,status:'approved'}],
+  cc_production_recipes:[{id:'recipe-1',product_name:'Chocolate brownie',yield_qty:20,yield_kg:1,ingredients:[{name:'Dark chocolate',quantity:.4,unit:'kg'}],packaging:[{name:'Brownie sleeve',quantity:20,unit:'pcs'}],created_at:'2026-09-18T08:00:00Z'}],
+  cc_production_batches:[{id:'batch-1',product_name:'Chocolate brownie',outlet_name:'Main outlet',status:'completed',planned_qty:100,planned_kg:5,actual_qty:100,actual_kg:5,collected_qty:80,material_cost:1500,packaging_cost:100,labor_cost:200,overhead_cost:200,total_cost:2000,unit_cost:20,completed_at:'2026-09-18T08:00:00Z'}],
+  store_orders:[{id:'order-1',status:'collected',payment_status:'paid',items:[{name:'Chocolate brownie',qty:50,price:40}]}]
+};
+window.db={auth:{getUser:async()=>({data:{user:{id:'visual-test'}}})},from(name){return{select(){return this},order(){return this},gte(){return this},eq(){return this},limit(){return this},async range(a,b){return{data:(fixtures[name]||[]).slice(a,b+1)}}}},rpc:async(name)=>name==='cc_production_access'?{data:true}:{error:{message:'Visual-test fixture: writes are disabled.'}},channel(){return{on(){return this},subscribe(){return this}}}};
+</script>
+<script src="/production-dashboard.js"></script>
+<script>window.addEventListener('load',()=>window.openProductionDashboard());</script>
+</body></html>

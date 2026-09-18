@@ -85,7 +85,8 @@ function buildProductionPurchasesUI() {
   document.body.appendChild(sheet);
 }
 
-function openProductionPurchases() {
+async function openProductionPurchases() {
+  if (window.ccProductionCanUse && await window.ccProductionCanUse()) return window.openProductionDashboard('Materials');
   document.getElementById('pp-overlay').style.display = 'block';
   document.getElementById('pp-sheet').style.display   = 'block';
   ppSetTab('raw');

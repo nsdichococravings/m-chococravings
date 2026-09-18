@@ -1,0 +1,107 @@
+/* Run: node tests/production-database.test.cjs (see PRODUCTION-INTEGRATION.md). */
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { randomUUID } = require('node:crypto');
+const { PGlite } = require('../.production-test-runtime/node_modules/@electric-sql/pglite');
+
+(async () => {
+  const db = new PGlite();
+  const admin = randomUUID(), sales = randomUUID(), production = randomUUID(), stranger = randomUUID();
+  await db.exec(`
+    create role anon; create role authenticated;
+    create schema auth;
+    create table auth.users(id uuid primary key,email text,email_confirmed_at timestamptz);
+    create function auth.uid() returns uuid language sql as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+    create table public.customers(id uuid primary key default gen_random_uuid(),email text,is_admin boolean);
+    create table public.store_menu(id uuid primary key default gen_random_uuid(),name text unique,category text,price numeric);
+    create table public.store_orders(id uuid primary key default gen_random_uuid(),item_name text,quantity integer,status text);
+    create function public.existing_order_stock() returns trigger language plpgsql security definer as $$
+    begin
+      if TG_OP='INSERT' then update public.display_stock set current_stock=current_stock-new.quantity where item_name=new.item_name;
+      elsif new.status='cancelled' and old.status<>'cancelled' then update public.display_stock set current_stock=current_stock+old.quantity where item_name=old.item_name;
+      end if;
+      return new;
+    end $$;
+    create trigger legacy_order_stock after insert or update on public.store_orders for each row execute function public.existing_order_stock();
+    insert into auth.users values ('${admin}','owner@example.test',now()),('${sales}','sales@example.test',now()),('${production}','baker@example.test',now()),('${stranger}','visitor@example.test',now());
+    insert into customers(email,is_admin) values('owner@example.test',true);
+    insert into store_menu(name,category,price) values('Brownie','Brownies',40);
+  `);
+  await db.exec(fs.readFileSync(path.join(__dirname, '../migrations/20260918_production_workspace.sql'), 'utf8'));
+  await db.query('insert into cc_production_members(user_id,role) values($1,$2),($3,$4)', [sales,'sales',production,'production']);
+  async function actor(id) { await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id]); }
+  async function command(action, payload, key = randomUUID()) {
+    return (await db.query('select cc_production_command($1,$2::jsonb,$3) result',[action,JSON.stringify(payload),key])).rows[0].result;
+  }
+  async function scalar(sql) { return Object.values((await db.query(sql)).rows[0])[0]; }
+  async function rejects(fn, pattern) { await assert.rejects(fn,pattern); }
+  await actor(stranger);
+  assert.equal(await scalar('select cc_production_access()'),false);
+  await rejects(()=>command('purchase',{}),/access denied/);
+  await actor(admin);
+  assert.equal(await scalar('select cc_production_access()'),true);
+  const receipt = {kind:'raw',name:'Chocolate',unit:'kg',category:'Baking',quantity:10,total_cost:5000,purchase_date:'2026-01-01'};
+  const receiptKey = randomUUID();
+  await command('purchase',receipt,receiptKey);
+  await command('purchase',receipt,receiptKey);
+  assert.equal(Number(await scalar("select current_stock from inventory_items where name='Chocolate'")),10,'receipt retry must not duplicate stock');
+  await rejects(()=>command('purchase',{...receipt,quantity:20},receiptKey),/different input/);
+  await command('purchase',{...receipt,quantity:10,total_cost:7000});
+  assert.equal(Number(await scalar("select cost_per_unit from inventory_items where name='Chocolate'")),600,'weighted receipt cost');
+  await rejects(()=>command('purchase',{...receipt,unit:'g'}),/existing material unit/);
+  await command('purchase',{kind:'packaging',name:'Sleeve',unit:'pcs',category:'Brownies',quantity:100,total_cost:100,purchase_date:'2026-01-01'});
+  const recipe = (await command('recipe',{product_name:'Brownie',yield_qty:20,yield_kg:1,ingredients:[{name:'Chocolate',unit:'kg',quantity:0.4}],packaging:[{name:'Sleeve',unit:'pcs',quantity:20}]})).id;
+  await rejects(()=>command('recipe',{product_name:'Brownie',yield_qty:20,yield_kg:1,ingredients:[],packaging:[]}),/At least one ingredient/);
+  const req = (await command('request',{product_name:'Brownie',quantity:100,due_date:'2026-09-18'})).id;
+  await rejects(()=>command('start',{id:req,recipe_id:recipe,planned_qty:100,planned_kg:5}),/must be approved/);
+  await actor(production);
+  await rejects(()=>command('approve',{id:req}),/sales-authorized/);
+  await actor(sales); await command('approve',{id:req});
+  await rejects(()=>command('start',{id:req,recipe_id:recipe,planned_qty:100,planned_kg:5}),/production-authorized/);
+  await actor(production);
+  await rejects(()=>command('start',{id:req,recipe_id:recipe,planned_qty:100,planned_kg:4}),/recipe-scaled/);
+  const startPayload={id:req,recipe_id:recipe,planned_qty:100,planned_kg:5}, startKey=randomUUID();
+  const batch = (await command('start',startPayload,startKey)).id;
+  assert.equal((await command('start',startPayload,startKey)).id,batch);
+  assert.equal(Number(await scalar("select current_stock from inventory_items where name='Chocolate'")),18);
+  assert.equal(Number(await scalar('select count(*) from display_stock')),0,'baking must not add outlet stock');
+  await rejects(()=>command('start',startPayload),/must be approved/);
+  const complete={id:batch,actual_qty:92,actual_kg:4.6,labor_cost:200,overhead_cost:200};
+  const completeKey=randomUUID(); await command('complete',complete,completeKey); await command('complete',complete,completeKey);
+  assert.equal(Number(await scalar("select current_stock from packaging_materials where name='Sleeve'")),8);
+  assert.equal(Number(await scalar('select total_cost from cc_production_batches')),1692);
+  assert.equal(Number(await scalar('select count(*) from display_stock')),0,'completion must not add outlet stock');
+  await actor(sales);
+  const collectKey=randomUUID(); await command('collect',{id:batch,quantity:60},collectKey); await command('collect',{id:batch,quantity:60},collectKey);
+  assert.equal(Number(await scalar("select current_stock from display_stock where item_name='Brownie'")),60);
+  assert.equal(Number(await scalar('select collected_qty from cc_production_batches')),60);
+  await rejects(()=>command('collect',{id:batch,quantity:33}),/exceeds available/);
+  await command('collect',{id:batch,quantity:32});
+  assert.equal(await scalar('select status from cc_production_requests'), 'partial','short yield must not mark original request fulfilled');
+  assert.equal(Number(await scalar("select sum(quantity) from cc_production_movements where kind in ('collection_in','collection_out')")),0,'transfer quantities balance');
+  await db.exec("insert into store_orders(item_name,quantity,status) values('Brownie',5,'pending')");
+  assert.equal(Number(await scalar("select current_stock from display_stock where item_name='Brownie'")),87,'existing order trigger remains the only deduction');
+  await db.exec("update store_orders set status='cancelled'");
+  assert.equal(Number(await scalar("select current_stock from display_stock where item_name='Brownie'")),92,'existing cancellation restore is preserved');
+  await actor(admin); await command('purchase',{...receipt,quantity:10,total_cost:9000});
+  assert.equal(Number(await scalar('select total_cost from cc_production_batches')),1692,'later prices cannot rewrite batch cost');
+
+  // A later material failing must roll back earlier deductions within the same batch.
+  await command('purchase',{...receipt,name:'Flour',quantity:1,total_cost:50});
+  const badRecipe=(await command('recipe',{product_name:'Brownie',yield_qty:10,yield_kg:1,ingredients:[{name:'Chocolate',unit:'kg',quantity:1},{name:'Flour',unit:'kg',quantity:2}],packaging:[]})).id;
+  const req2=(await command('request',{product_name:'Brownie',quantity:10,due_date:'2026-09-18'})).id; await command('approve',{id:req2});
+  const before=Number(await scalar("select current_stock from inventory_items where name='Chocolate'"));
+  await rejects(()=>command('start',{id:req2,recipe_id:badRecipe,planned_qty:10,planned_kg:1}),/Insufficient/);
+  assert.equal(Number(await scalar("select current_stock from inventory_items where name='Chocolate'")),before,'failed batch rolls back every material issue');
+  assert.equal(await scalar(`select status from cc_production_requests where id='${req2}'`),'approved');
+  await db.exec('grant usage on schema auth to authenticated; grant execute on function auth.uid() to authenticated; set role authenticated;');
+  await rejects(()=>db.exec("update inventory_items set current_stock=999"),/permission denied/);
+  await actor(stranger);
+  assert.equal(Number(await scalar('select count(*) from cc_production_batches')),0,'RLS hides production records from other customers');
+  await actor(admin);
+  assert.equal(Number(await scalar('select count(*) from cc_production_batches')),1);
+  await db.exec('reset role');
+  await db.close();
+  console.log('PASS: migration, roles/RLS, purchase retries, costing, recipe validation, batch rollback, completion, partial collection, over-collection and historical cost preservation.');
+})().catch(error=>{console.error(error);process.exitCode=1;});
