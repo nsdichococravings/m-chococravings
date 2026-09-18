@@ -23,7 +23,7 @@ async function checkAdminBadge(){
   try {
     if(!db) return;
 
-    var s = await db.auth.getUser(); var user = s.data.user;
+    var s = await getStoreVerifiedUser(); var user = s.data.user;
     if(!user) return;
 
     // Both flags in one query — avoids a second DB round-trip.

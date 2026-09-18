@@ -824,6 +824,26 @@ function showSkeleton(){
   document.getElementById('cart-empty').style.display = 'none';
 }
 var storeMenuLoading = false;
+var storeMenuClient = null;
+var storeVerifiedUserPending = null;
+function getStoreMenuClient() {
+  if (!storeMenuClient) {
+    if (typeof supabase === 'undefined') throw new Error('Connection library unavailable');
+    // Public catalog only. Never use this client for orders, staff data or stock writes.
+    // No stored session means no wait for the signed-in client's Auth refresh lock.
+    storeMenuClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'cc-public-menu' }
+    });
+  }
+  return storeMenuClient;
+}
+function getStoreVerifiedUser() {
+  if (!db) return Promise.resolve({ data: { user: null } });
+  if (!storeVerifiedUserPending) {
+    storeVerifiedUserPending = db.auth.getUser().finally(function() { storeVerifiedUserPending = null; });
+  }
+  return storeVerifiedUserPending;
+}
 function hideStoreLoader() {
   var overlay = document.getElementById('store-loading-overlay');
   if (overlay) { overlay.style.display = 'none'; overlay.style.opacity = '1'; }
@@ -838,11 +858,7 @@ async function loadMenu(){
   var timeoutTimer;
   var controller = new AbortController();
   try {
-    if (!db) {
-      if (typeof supabase === 'undefined') throw new Error('Connection library unavailable');
-      db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    }
-    var request = db.from('store_menu')
+    var request = getStoreMenuClient().from('store_menu')
       .select('id,name,price,tag,category')
       .eq('available', true)
       .order('sort_order', {ascending:true})
@@ -1717,7 +1733,7 @@ async function loadMyOrders(){
   if(!db) return;
   try {
     var user = null;
-    try { var s = await db.auth.getUser(); user = s.data.user; } catch(e){}
+    try { var s = await getStoreVerifiedUser(); user = s.data.user; } catch(e){}
     if(!user) return;
 
     var today = new Date().toISOString().slice(0,10);
@@ -2778,7 +2794,7 @@ async function toggleStoreOpenStatus() {
 <script src="store-patch.js"></script>
 <script src="menu-search-patch.js"></script>
 <script src="remember-phone-patch.js"></script>
-<script src="checkadminbadge-override.js"></script>
+<script src="checkadminbadge-override.js?v=20260919-auth-dedupe"></script>
 <script src="production-purchases-patch.js"></script>
 <link rel="stylesheet" href="production-dashboard.css?v=20260919-collection-layout">
 <script src="production-dashboard.js?v=20260919-loading-1"></script>
