@@ -21,10 +21,12 @@
   const state = { tab: 'Dashboard', data: {}, errors: [], ready: false, loading: false, busy: false, refreshed: null };
   let root, channel, refreshTimer, previousFocus, loadId = 0, previousOverflow = '', authListener, stockTimer, stockLoading = false, pendingRequest = null;
   let approverNames = {}, stockUpdated = null;
+  let collectionHistory = [], historyLoading = false;
   const esc = value => String(value == null ? '' : value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const num = value => Number.isFinite(Number(value)) ? Number(value) : 0;
   const cash = value => value == null ? 'Cost unavailable' : '₹' + num(value).toLocaleString('en-IN', { maximumFractionDigits: 2 });
   const rows = name => state.data[name] || [];
+  const recipeLineLabel = i => esc(i.name) + ': ' + esc(i.display_quantity == null ? i.quantity : i.display_quantity) + ' ' + esc(i.display_unit || i.unit);
   const date = value => value ? new Date(value).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }) : '—';
   const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
   const empty = text => '<div class="pd-empty">' + esc(text) + '</div>';
@@ -63,6 +65,17 @@
     stockTimer = setInterval(refreshStock, 60000);
     if (stockTimer && stockTimer.unref) stockTimer.unref();
   }
+  async function loadCollectionHistory() {
+    if (historyLoading) return;
+    historyLoading = true;
+    try {
+      const result = await dbClient().from('cc_production_movements')
+        .select('item_name,quantity,collected_by,created_at').eq('kind', 'collection_in')
+        .order('created_at', { ascending: false }).limit(5);
+      if (!result.error) collectionHistory = result.data || [];
+    } catch (_) { /* keep showing the last known history */ }
+    finally { historyLoading = false; renderKitchen(); }
+  }
   async function readAll(tableName) {
     const result = [];
     for (let from = 0; ; from += 500) {
@@ -99,7 +112,7 @@
     await loadApprovers();
     if (generation !== loadId) return;
     if (Object.prototype.hasOwnProperty.call(state.data,'outlet')) stockUpdated = new Date();
-    state.loading = false; state.refreshed = new Date(); render(); renderKitchen();
+    state.loading = false; state.refreshed = new Date(); render(); renderKitchen(); loadCollectionHistory();
   }
   function readyPanel() {
     const batches = rows('batches').filter(b => b.status === 'completed' && num(b.actual_qty) > num(b.collected_qty));
@@ -122,7 +135,7 @@
     if (state.tab === 'Dashboard') html += cards([['Raw material value', cash(totalValue), 'Current recorded unit costs'], ['Ready at kitchen', readyQty + ' pcs', 'Awaiting collection'], ['Outlet stock', rows('outlet').reduce((s, r) => s + num(r.current_stock), 0) + ' pcs', 'Current display stock'], ['Active requests', rows('requests').filter(r => !['fulfilled', 'cancelled'].includes(r.status)).length, 'Sales demand']]) + '<div class="pd-grid"><div class="pd-stack"><section class="pd-card"><div class="pd-row"><h3>Production requests</h3>' + button('request', 'New sales request', null, !state.ready) + '</div>' + productionTable() + '</section><section class="pd-card"><h3>Low stock</h3>' + table(['Material', 'Available', 'Reorder level'], raw.filter(r => num(r.current_stock) <= num(r.low_stock_threshold)).map(r => [esc(r.name), esc(r.current_stock) + ' ' + esc(r.unit), esc(r.low_stock_threshold)])) + '</section></div>' + readyPanel() + '</div>';
     if (state.tab === 'Production') html += '<div class="pd-grid"><div class="pd-stack"><section class="pd-card"><div class="pd-row"><h3>Sales requests</h3>' + button('request', 'New sales request', null, !state.ready) + '</div>' + productionTable() + '</section><section class="pd-card"><h3>Batches</h3>' + table(['Product', 'Planned', 'Actual', 'Cost', 'Status / action'], rows('batches').map(b => [esc(b.product_name), esc(b.planned_qty) + ' pcs / ' + esc(b.planned_kg) + ' kg', b.actual_qty == null ? '—' : esc(b.actual_qty) + ' pcs', cash(b.total_cost), badge(b.status) + ' ' + (b.status === 'baking' ? button('complete', 'Submit baked batch', b.id, !state.ready) : '')])) + '</section></div>' + readyPanel() + '</div>';
     if (state.tab === 'Materials') html += '<div class="pd-stack"><section class="pd-card"><div class="pd-row"><h3>Raw materials</h3>' + button('purchase', 'Record stock-in', null, !state.ready) + '</div>' + table(['Material', 'Available', 'Unit cost', 'Stock value'], raw.map(r => [esc(r.name), esc(r.current_stock) + ' ' + esc(r.unit), cash(r.cost_per_unit), r.cost_per_unit == null ? 'Cost unavailable' : cash(num(r.current_stock) * num(r.cost_per_unit))])) + '</section><section class="pd-card"><h3>Packaging by category</h3>' + table(['Packaging', 'Category', 'Available', 'Unit cost'], rows('packaging').map(r => [esc(r.name), esc(r.category || 'Uncategorized'), esc(r.current_stock) + ' ' + esc(r.unit), cash(r.cost_per_unit)])) + '</section><section class="pd-card"><h3>Stock-in history</h3>' + table(['Date', 'Material', 'Quantity', 'Total cost'], rows('purchases').slice().sort((a,b) => String(b.purchase_date).localeCompare(String(a.purchase_date))).slice(0,100).map(r => [date(r.purchase_date), esc(r.item_name), esc(r.quantity) + ' ' + esc(r.unit), cash(r.cost_total)])) + '</section></div>';
-    if (state.tab === 'Recipes') html += '<section class="pd-card"><div class="pd-row"><h3>Production recipes</h3>' + button('recipe', 'Add recipe version', null, !state.ready) + '</div>' + table(['Product / revision', 'Base yield', 'Ingredients', 'Packaging'], rows('recipes').map(r => [esc(r.product_name) + '<br><span class="pd-muted">' + date(r.created_at) + ' · ' + esc(r.id.slice(0,8)) + '</span>', esc(r.yield_qty) + ' pcs / ' + esc(r.yield_kg) + ' kg', (r.ingredients || []).map(i => esc(i.name) + ': ' + esc(i.quantity) + ' ' + esc(i.unit)).join('<br>'), (r.packaging || []).map(i => esc(i.name) + ': ' + esc(i.quantity) + ' ' + esc(i.unit)).join('<br>') || 'None'])) + '</section>';
+    if (state.tab === 'Recipes') html += '<section class="pd-card"><div class="pd-row"><h3>Production recipes</h3>' + button('recipe', 'Add recipe version', null, !state.ready) + '</div>' + table(['Product / revision', 'Base yield', 'Ingredients', 'Packaging'], rows('recipes').map(r => [esc(r.product_name) + '<br><span class="pd-muted">' + date(r.created_at) + ' · ' + esc(r.id.slice(0,8)) + '</span>', esc(r.yield_qty) + ' pcs / ' + esc(r.yield_kg) + ' kg', (r.ingredients || []).map(recipeLineLabel).join('<br>'), (r.packaging || []).map(recipeLineLabel).join('<br>') || 'None'])) + '</section>';
     if (state.tab === 'Outlet') html += '<div class="pd-grid"><section class="pd-card"><h3>Main outlet stock</h3>' + table(['Product', 'Available', 'Reorder level'], rows('outlet').map(r => [esc(r.item_name), esc(r.current_stock) + ' pcs', esc(r.low_stock_threshold)])) + '<p class="pd-muted">Sales continue through the existing order screen. Its database stock deduction remains the only sales stock writer.</p></section>' + readyPanel() + '</div>';
     if (state.tab === 'Profit report') {
       const sales = new Map();
@@ -138,8 +151,35 @@
     announce(stockVisible() && stockUpdated ? 'Outlet stock checked ' + stockUpdated.toLocaleTimeString('en-IN') + ' · Auto-check every 60 seconds while visible' : state.refreshed ? 'Updated ' + state.refreshed.toLocaleTimeString('en-IN') : '');
   }
   function materialOptions(kind) { return options(rows(kind).map(r => ({ value: r.name, label: r.name + ' (' + r.unit + ')' })), 'value', 'label'); }
+  const unitInfo = {
+    g:['mass',1], gram:['mass',1], grams:['mass',1], kg:['mass',1000], kgs:['mass',1000],
+    ml:['volume',1], l:['volume',1000], liter:['volume',1000], litre:['volume',1000], liters:['volume',1000], litres:['volume',1000],
+    pcs:['count',1], piece:['count',1], pieces:['count',1], dozen:['count',12], dozens:['count',12]
+  };
+  function allowedUnits(stockUnit) {
+    const info = unitInfo[String(stockUnit).toLowerCase()];
+    return !info ? [stockUnit] : info[0] === 'mass' ? ['g','kg'] : info[0] === 'volume' ? ['ml','l'] : ['pcs','dozen'];
+  }
+  function convertQuantity(quantity, from, to) {
+    if (from === to) return quantity;
+    const a = unitInfo[String(from).toLowerCase()], b = unitInfo[String(to).toLowerCase()];
+    if (!a || !b || a[0] !== b[0]) throw new Error('Incompatible ingredient units.');
+    return Number((quantity*a[1]/b[1]).toPrecision(12));
+  }
+  function updateIngredientUnits(line) {
+    const item = rows(line.dataset.kind).find(r => r.name === line.querySelector('[name=ingredient_name]').value);
+    line.querySelector('[name=ingredient_unit]').innerHTML = item ? allowedUnits(item.unit).map(u => '<option value="'+esc(u)+'">'+esc(u)+'</option>').join('') : '<option value="">Select material first</option>';
+  }
+  function ingredientValues(line) {
+    const name = line.querySelector('[name=ingredient_name]').value;
+    const item = rows(line.dataset.kind).find(r => r.name === name);
+    if (!item) throw new Error('Select or add a material for every recipe line.');
+    const quantity = Number(line.querySelector('[name=ingredient_quantity]').value), unit = line.querySelector('[name=ingredient_unit]').value;
+    if (!Number.isFinite(quantity) || quantity<=0) throw new Error('Ingredient quantities must be positive.');
+    return { name, unit: item.unit, quantity: convertQuantity(quantity,unit,item.unit), display_quantity: quantity, display_unit: unit };
+  }
   function ingredientRow(kind) {
-    return '<div class="pd-ingredient" data-kind="' + kind + '">' + select('ingredient_name', kind === 'materials' ? 'Ingredient' : 'Packaging', materialOptions(kind)) + field('ingredient_quantity', 'Quantity per base yield', 'number', '', 'min="0.000001" step="any"') + '<button type="button" data-action="remove-line">Remove</button></div>';
+    return '<div class="pd-ingredient" data-kind="' + kind + '">' + select('ingredient_name', kind === 'materials' ? 'Ingredient' : 'Packaging', materialOptions(kind)) + field('ingredient_quantity', 'Quantity per base yield', 'number', '', 'min="0.000001" step="any"') + select('ingredient_unit','Quantity unit','') + '<button type="button" data-action="remove-line">Remove</button></div>';
   }
   async function showForm(action, id) {
     if (!state.ready || state.busy) return;
@@ -161,9 +201,9 @@
     if (action === 'request') { title = 'Sales production request'; html = select('product_name', 'Product', options(rows('menu'), 'name', 'name')) + '<div class="pd-fields">' + field('quantity', 'Required pieces', 'number', '', 'min="1" step="1"') + field('due_date', 'Required date', 'date', today()) + '</div><p class="pd-muted">Destination: Main outlet. A sales-authorized account must approve this request before baking.</p>'; }
     if (action === 'start') { title = 'Plan & start: ' + request.product_name; html = '<label>Approved recipe version<select name="recipe_id" required>' + matchingRecipes.map((r,index) => '<option value="' + esc(r.id) + '"' + (index === 0 ? ' selected' : '') + '>Version ' + (matchingRecipes.length-index) + ' · ' + esc(date(r.created_at)) + ' · ' + esc(r.yield_qty) + ' pcs / ' + esc(r.yield_kg) + ' kg · ' + esc(r.id.slice(0,8)) + '</option>').join('') + '</select></label><div class="pd-fields">' + field('planned_qty', 'Planned pieces', 'number', request.quantity, 'min="1" step="1" readonly') + field('planned_kg', 'Planned kg (from recipe)', 'number', Number((num(request.quantity)*num(matchingRecipes[0].yield_kg)/num(matchingRecipes[0].yield_qty)).toFixed(6)), 'min="0.000001" step="any" readonly') + '</div><p class="pd-muted">Recipe ingredients are scaled by pieces and deducted atomically when you start baking.</p>'; }
     if (action === 'complete') { title = 'Submit baked batch'; html = '<div class="pd-fields">' + field('actual_qty', 'Actual good pieces', 'number', batch.planned_qty, 'min="1" step="1"') + field('actual_kg', 'Actual output kg', 'number', batch.planned_kg, 'min="0.001" step="any"') + field('labor_cost', 'Direct labor ₹', 'number', 0, 'min="0" step="0.01"') + field('overhead_cost', 'Production overhead ₹', 'number', 0, 'min="0" step="0.01"') + '</div><p class="pd-muted">Packaging scales to actual output. Ingredient usage is the frozen recipe quantity issued at start. Record exceptional usage through a reviewed stock correction before closing this batch.</p>'; }
-    if (action === 'collect') { title = 'Confirm outlet collection'; html = '<p>' + esc(batch.product_name) + ' · ' + (num(batch.actual_qty) - num(batch.collected_qty)) + ' pieces available</p>' + field('quantity', 'Pieces received by Main outlet', 'number', num(batch.actual_qty) - num(batch.collected_qty), 'min="1" step="1" max="' + (num(batch.actual_qty) - num(batch.collected_qty)) + '"') + '<p class="pd-muted">Only confirm quantities physically received. This adds them to outlet stock once.</p>'; }
+    if (action === 'collect') { title = 'Confirm outlet collection'; html = '<p>' + esc(batch.product_name) + ' · ' + (num(batch.actual_qty) - num(batch.collected_qty)) + ' pieces available</p>' + field('quantity', 'Pieces received by Main outlet', 'number', num(batch.actual_qty) - num(batch.collected_qty), 'min="1" step="1" max="' + (num(batch.actual_qty) - num(batch.collected_qty)) + '"') + field('collected_by', 'Collected by', 'text', '', 'maxlength="120"') + '<p class="pd-muted">Only confirm quantities physically received. This adds them to outlet stock once.</p>'; }
     if (action === 'purchase') { title = 'Record material or packaging stock-in'; html = '<div class="pd-fields">' + select('kind', 'Type', '<option value="raw">Raw material</option><option value="packaging">Packaging</option>') + field('name', 'Material name') + select('unit', 'Stock unit', ['kg','g','l','ml','pcs'].map(u => '<option>' + u + '</option>').join('')) + field('category', 'Category', 'text', 'General') + field('quantity', 'Received quantity', 'number', '', 'min="0.000001" step="any"') + field('total_cost', 'Total purchase cost ₹', 'number', '', 'min="0.01" step="0.01"') + field('purchase_date', 'Stock-in date', 'date', today()) + '</div><p class="pd-muted">Use an existing material’s exact name and unit to replenish it.</p>'; }
-    if (action === 'recipe') { title = 'Add approved recipe version'; html = select('product_name', 'Product', options(rows('menu'), 'name', 'name')) + '<div class="pd-fields">' + field('yield_qty', 'Base yield in pieces', 'number', '', 'min="1" step="1"') + field('yield_kg', 'Base output kg', 'number', '', 'min="0.001" step="any"') + '</div><div id="pd-recipe-lines">' + ingredientRow('materials') + '</div><div class="pd-row">' + button('ingredient', 'Add ingredient') + button('packaging-line', 'Add packaging') + '</div>'; }
+    if (action === 'recipe') { title = 'Add approved recipe version'; html = select('product_name', 'Product', options(rows('menu'), 'name', 'name')) + '<div class="pd-fields">' + field('yield_qty', 'Base yield in pieces', 'number', '', 'min="1" step="1"') + field('yield_kg', 'Base output kg', 'number', '', 'min="0.001" step="any"') + '</div><div id="pd-recipe-lines">' + ingredientRow('materials') + '</div><div class="pd-row">' + button('ingredient', 'Add ingredient line') + button('packaging-line', 'Add packaging line') + button('new-material', 'Add new ingredient / packaging') + '</div><div id="pd-new-material"></div><p class="pd-muted">Choose grams/kg, ml/litres or pieces/dozens for each quantity. Stock is deducted in the material’s stored unit.</p>'; }
     const dialog = root.querySelector('dialog');
     dialog.innerHTML = '<form><h3 id="pd-form-title">' + esc(title) + '</h3><div class="pd-error" role="alert"></div>' + html + '<div class="pd-line pd-row"><button type="button" data-action="cancel">Cancel</button><button type="submit" class="pd-primary">' + (action === 'start' ? 'Start baking' : 'Save') + '</button></div></form>';
     dialog.setAttribute('aria-labelledby', 'pd-form-title'); dialog.showModal();
@@ -180,13 +220,16 @@
     dialog.querySelector('form').addEventListener('submit', async event => {
       event.preventDefault(); if (state.busy) return;
       const values = Object.fromEntries(new FormData(event.target));
+      try { if (action === 'purchase') {
+        const existing = rows(values.kind==='raw' ? 'materials' : 'packaging').find(r=>r.name===values.name.trim());
+        if(existing) { values.quantity=convertQuantity(Number(values.quantity),values.unit,existing.unit); values.unit=existing.unit; }
+      }
       if (action === 'recipe') {
         values.ingredients = []; values.packaging = [];
         dialog.querySelectorAll('.pd-ingredient').forEach(line => {
-          const name = line.querySelector('select').value, item = rows(line.dataset.kind).find(r => r.name === name);
-          if (item) values[line.dataset.kind === 'materials' ? 'ingredients' : 'packaging'].push({ name, unit: item.unit, quantity: Number(line.querySelector('input').value) });
+          values[line.dataset.kind === 'materials' ? 'ingredients' : 'packaging'].push(ingredientValues(line));
         });
-      }
+      } } catch (error) { dialog.querySelector('[role=alert]').textContent = error.message; return; }
       state.busy = true; dialog.querySelector('[type=submit]').disabled = true;
       try {
         await command(action, { ...values, id }, key); dialog.close(); await refresh();
@@ -197,6 +240,27 @@
       } catch (error) { dialog.querySelector('[role=alert]').textContent = error.message || 'Unable to save. Retry to check the same operation.'; }
       finally { state.busy = false; dialog.querySelector('[type=submit]').disabled = false; }
     });
+  }
+  async function addNewMaterial(target) {
+    const panel = root.querySelector('#pd-new-material');
+    const payload = { name: panel.querySelector('[name=new_name]').value.trim(), unit: panel.querySelector('[name=new_unit]').value, kind: panel.querySelector('[name=new_kind]').value };
+    if (!payload.name) { panel.querySelector('[role=alert]').textContent = 'Enter a material name.'; return; }
+    target.disabled = true;
+    try {
+      const result = await dbClient().rpc('cc_production_add_material', { p_payload: payload, p_key: target.dataset.key || (target.dataset.key=crypto.randomUUID()) });
+      if (result.error) throw result.error;
+      const kind = payload.kind==='raw' ? 'materials' : 'packaging';
+      state.data[kind] = await readAll(sources[kind]);
+      root.querySelectorAll('.pd-ingredient').forEach(line => {
+        if (line.dataset.kind!==kind) return;
+        const selectEl=line.querySelector('[name=ingredient_name]'), old=selectEl.value;
+        selectEl.innerHTML='<option value="">Select…</option>'+materialOptions(kind);
+        const chosen=[...selectEl.options].find(o=>o.value===(old || payload.name));
+        if(chosen) chosen.selected=true;
+        if(!old) updateIngredientUnits(line);
+      });
+      panel.innerHTML='<p class="pd-muted">'+esc(payload.name)+' added with zero stock. Record its purchase in Materials before baking.</p>';
+    } catch(error) { panel.querySelector('[role=alert]').textContent=error.message; target.disabled=false; }
   }
   async function command(action, payload, key) {
     if (!navigator.onLine) throw new Error('Connect to the internet before posting stock changes.');
@@ -210,12 +274,68 @@
     const url = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
     const a = document.createElement('a'); a.href = url; a.download = 'production-costs-' + today() + '.csv'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
+  function histTime(value) { return new Date(value).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); }
   function renderKitchen() {
     const kitchen = document.getElementById('pg-kitchen'); if (!kitchen || !state.ready) return;
+    const header = kitchen.querySelector('.k-hdr');
+    const ready = rows('batches').filter(b => b.status === 'completed' && num(b.actual_qty) > num(b.collected_qty));
     let panel = kitchen.querySelector('.pd-kitchen-ready');
-    if (!panel) { panel = document.createElement('aside'); panel.className = 'pd-kitchen-ready'; kitchen.appendChild(panel); panel.addEventListener('click', () => open('Production')); }
-    const count = rows('batches').filter(b => b.status === 'completed').reduce((s,b) => s + num(b.actual_qty) - num(b.collected_qty), 0);
-    panel.innerHTML = '<strong>Ready for collection</strong><p>' + count + ' pieces awaiting outlet receipt</p><button type="button">Open production & collect</button>';
+    if (!ready.length) { if (panel) { panel.remove(); panel = null; } }
+    else {
+      if (!panel) {
+        panel = document.createElement('aside'); panel.className = 'pd-kitchen-ready';
+        if (header) header.insertAdjacentElement('afterend', panel); else kitchen.appendChild(panel);
+      }
+      const total = ready.reduce((s, b) => s + num(b.actual_qty) - num(b.collected_qty), 0);
+      panel.innerHTML = '<div class="pdk-top"><div class="pdk-eyebrow">🔔 Ready for collection</div><button type="button" class="pdk-link" data-action="open-dashboard">Full dashboard ›</button></div>'
+        + '<div class="pdk-count">' + total + '<span>pcs total</span></div>'
+        + ready.map(b => '<div class="pdk-item"><div class="pdk-item-row"><div class="pdk-item-name">' + esc(b.product_name) + '</div><div class="pdk-item-qty">' + (num(b.actual_qty) - num(b.collected_qty)) + ' pcs</div></div>'
+          + '<div class="pdk-item-form"><input type="text" class="pdk-collector" placeholder="Collector name" maxlength="120"><button type="button" class="pdk-mark-btn" data-action="mark-collected" data-id="' + esc(b.id) + '">Mark collected</button></div></div>').join('');
+    }
+    let history = kitchen.querySelector('.pd-kitchen-history');
+    if (!history) { history = document.createElement('aside'); history.className = 'pd-kitchen-history'; }
+    const anchor = panel || header;
+    if (anchor) { if (history.previousElementSibling !== anchor) anchor.insertAdjacentElement('afterend', history); }
+    else kitchen.appendChild(history);
+    history.innerHTML = '<div class="pdk-eyebrow">Recent collections</div>' + (collectionHistory.length
+      ? collectionHistory.map(h => '<div class="pdk-hist-row"><div class="pdk-hist-name">' + esc(h.item_name) + '<span>' + num(h.quantity) + ' pcs</span></div><div class="pdk-hist-meta">' + esc(h.collected_by || 'Unrecorded') + ' · ' + histTime(h.created_at) + '</div></div>').join('')
+      : '<div class="pdk-hist-empty">No collections recorded yet.</div>');
+  }
+  async function markCollected(batchId, button, input) {
+    const batch = rows('batches').find(b => b.id === batchId);
+    const name = input.value.trim();
+    if (!name) { input.focus(); if (window.showStoreToast) window.showStoreToast('Enter who is collecting this.'); return; }
+    if (!batch) return;
+    const remaining = num(batch.actual_qty) - num(batch.collected_qty);
+    if (remaining <= 0) return;
+    button.disabled = true; input.disabled = true;
+    const key = button.dataset.key || (button.dataset.key = crypto.randomUUID());
+    try {
+      await command('collect', { id: batch.id, quantity: remaining, collected_by: name }, key);
+      await refresh();
+      await loadCollectionHistory();
+      if (window.showStoreToast) window.showStoreToast('✅ Marked collected');
+    } catch (error) {
+      button.disabled = false; input.disabled = false;
+      if (window.showStoreToast) window.showStoreToast('Error: ' + (error.message || 'Could not mark collected'));
+    }
+  }
+  function initKitchenPanel() {
+    const kitchen = document.getElementById('pg-kitchen'); if (!kitchen || kitchen.dataset.pdkBound) return;
+    kitchen.dataset.pdkBound = '1';
+    kitchen.addEventListener('click', event => {
+      if (event.target.closest('[data-action="open-dashboard"]')) { open('Production').catch(() => {}); return; }
+      const btn = event.target.closest('[data-action="mark-collected"]');
+      if (!btn || btn.disabled) return;
+      const item = btn.closest('.pdk-item'); const input = item && item.querySelector('.pdk-collector');
+      if (input) markCollected(btn.dataset.id, btn, input);
+    });
+    kitchen.addEventListener('keydown', event => {
+      if (event.key !== 'Enter' || !event.target.classList.contains('pdk-collector')) return;
+      event.preventDefault();
+      const item = event.target.closest('.pdk-item'); const btn = item && item.querySelector('.pdk-mark-btn');
+      if (btn) btn.click();
+    });
   }
   async function open(tab) {
     if (!root) init();
@@ -233,7 +353,7 @@
   function subscribe() {
     if (!channel && state.ready) {
       channel = dbClient().channel('cc-production-workspace');
-      ['cc_production_requests','cc_production_batches','cc_production_recipes','inventory_items','packaging_materials','display_stock','store_orders'].forEach(name => channel.on('postgres_changes', { event: '*', schema: 'public', table: name }, scheduleRefresh));
+      ['cc_production_requests','cc_production_batches','cc_production_recipes','cc_production_movements','inventory_items','packaging_materials','display_stock','store_orders'].forEach(name => channel.on('postgres_changes', { event: '*', schema: 'public', table: name }, scheduleRefresh));
       channel.subscribe();
     }
   }
@@ -243,8 +363,10 @@
     if (root.hidden && !(kitchen && kitchen.classList.contains('active'))) return;
     const activeTables = (root.hidden ? ['batches'] : screenSources[state.tab]).map(key => sources[key]);
     const stockEvent = event && ['store_orders','display_stock'].includes(event.table) && stockVisible();
-    if (event && event.table && !activeTables.includes(event.table) && !stockEvent) return;
+    const historyEvent = event && event.table === 'cc_production_movements' && kitchen && kitchen.classList.contains('active');
+    if (event && event.table && !activeTables.includes(event.table) && !stockEvent && !historyEvent) return;
     if (!root.hidden && state.tab === 'Profit report') { announce('Data may have changed. Select Refresh to update this report.'); return; }
+    if (historyEvent && !stockEvent) { loadCollectionHistory(); return; }
     if (refreshTimer || root.querySelector('dialog').open || state.busy) return;
     const delay = Math.max(2000, 15000 - (Date.now() - (state.refreshed ? state.refreshed.getTime() : 0)));
     refreshTimer = setTimeout(() => {
@@ -269,6 +391,10 @@
         else if (action === 'refresh') await refresh();
         else if (action === 'cancel') { if (!state.busy) root.querySelector('dialog').close(); }
         else if (action === 'create-missing-recipe') { root.querySelector('dialog').close(); await showForm('recipe'); }
+        else if (action === 'new-material') {
+          root.querySelector('#pd-new-material').innerHTML='<fieldset class="pd-line"><legend>New material</legend><div class="pd-error" role="alert"></div><label>Name<input name="new_name"></label><label>Type<select name="new_kind"><option value="raw">Ingredient</option><option value="packaging">Packaging</option></select></label><label>Stock unit<select name="new_unit">'+['g','kg','ml','l','pcs','dozen'].map(u=>'<option>'+u+'</option>').join('')+'</select></label>'+button('save-material','Save new material')+'</fieldset>';
+        }
+        else if (action === 'save-material') await addNewMaterial(target);
         else if (action === 'remove-line') target.closest('.pd-ingredient').remove();
         else if (action === 'ingredient' || action === 'packaging-line') root.querySelector('#pd-recipe-lines').insertAdjacentHTML('beforeend', ingredientRow(action === 'ingredient' ? 'materials' : 'packaging'));
         else if (action === 'export') exportCosts();
@@ -277,6 +403,7 @@
       } catch (error) { announce(error.message || 'Operation failed.'); }
     });
     root.querySelector('dialog').addEventListener('cancel', event => { if (state.busy) event.preventDefault(); });
+    root.addEventListener('change', event => { if (event.target.name==='ingredient_name') updateIngredientUnits(event.target.closest('.pd-ingredient')); });
     root.addEventListener('keydown', event => {
       if (root.querySelector('dialog').open) return;
       if (event.key === 'Escape') close();
@@ -288,8 +415,9 @@
       }
     });
     if (window.registerAdminTool) window.registerAdminTool('Daily Operations', { icon: '🏭', title: 'Production Dashboard', subtitle: 'Stock, baking, collection & costs', onClick: () => open().catch(error => window.showStoreToast && window.showStoreToast(error.message)) });
-    const kitchen = document.getElementById('kitchen-fab');
-    if (kitchen) kitchen.addEventListener('click', () => { if (window.isAdmin && window.db) refresh().catch(() => {}); });
+    const kitchenFab = document.getElementById('kitchen-fab');
+    if (kitchenFab) kitchenFab.addEventListener('click', () => { if (window.isAdmin && window.db) refresh().catch(() => {}); });
+    initKitchenPanel();
     window.addEventListener('online', scheduleRefresh);
     document.addEventListener('visibilitychange', () => { if (!document.hidden) scheduleRefresh(); });
   }
@@ -306,13 +434,14 @@
       entry.addEventListener('click', () => open().catch(error => window.showStoreToast && window.showStoreToast(error.message))); document.body.appendChild(entry);
     }
     // Login discovers access only; bulk reads wait until a production screen opens.
-    state.ready = true; subscribe();
+    state.ready = true; subscribe(); loadCollectionHistory();
     if (!authListener && dbClient().auth.onAuthStateChange) authListener = dbClient().auth.onAuthStateChange(event => {
       if (event !== 'SIGNED_OUT') return;
-      ++loadId; state.data = {}; state.ready = false; close();
+      ++loadId; state.data = {}; state.ready = false; collectionHistory = []; close();
       root.querySelector('dialog').close();
       document.getElementById('pd-staff-entry')?.remove();
       document.querySelector('.pd-kitchen-ready')?.remove();
+      document.querySelector('.pd-kitchen-history')?.remove();
       if (channel) { dbClient().removeChannel(channel); channel = null; }
     });
   };

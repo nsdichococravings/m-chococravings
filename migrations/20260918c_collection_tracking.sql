@@ -1,155 +1,15 @@
--- ChocoCravings production workspace, additive first release.
--- Run the complete file in Supabase SQL Editor as the project database owner.
--- Does NOT replace order stock triggers or reconstruct historical sales costs.
+-- Adds collector-name tracking to outlet collections, plus a recent-
+-- collections history feed for the Kitchen page's "Ready for collection"
+-- panel. Folded into migrations/20260918_production_workspace.sql for
+-- fresh installs; run this file once against an already-installed
+-- database (as the project database owner) to bring it up to date
+-- without re-running the whole original migration.
 begin;
 
--- Legacy-compatible material tables, created only if not already present.
-create table if not exists public.inventory_items (
-  id uuid primary key default gen_random_uuid(), name text not null unique,
-  unit text not null, current_stock numeric not null default 0,
-  cost_per_unit numeric, low_stock_threshold numeric not null default 0,
-  updated_at timestamptz not null default now()
-);
-create table if not exists public.packaging_materials (
-  id uuid primary key default gen_random_uuid(), name text not null unique,
-  category text, unit text not null, current_stock numeric not null default 0,
-  cost_per_unit numeric, low_stock_threshold numeric not null default 0,
-  updated_at timestamptz not null default now()
-);
-create table if not exists public.material_purchases (
-  id uuid primary key default gen_random_uuid(), material_type text not null,
-  item_name text not null, quantity numeric not null, unit text not null,
-  cost_total numeric not null, purchase_date date not null,
-  bought_by text, notes text, created_at timestamptz not null default now()
-);
-create table if not exists public.display_stock (
-  id uuid primary key default gen_random_uuid(), item_name text not null unique,
-  category text, current_stock numeric not null default 0,
-  low_stock_threshold numeric not null default 5, updated_at timestamptz not null default now()
-);
-alter table public.inventory_items add column if not exists cost_per_unit numeric;
-alter table public.store_menu add column if not exists track_display_stock boolean not null default false;
+alter table public.cc_production_movements add column if not exists collected_by text;
+create index if not exists cc_production_movements_kind_created_idx on public.cc_production_movements(kind,created_at desc);
 
--- Fail and roll back instead of guessing mappings in an incompatible live schema.
-do $$
-declare spec text; parts text[];
-begin
-  foreach spec in array array[
-    'inventory_items.id','inventory_items.name','inventory_items.unit','inventory_items.current_stock','inventory_items.cost_per_unit','inventory_items.low_stock_threshold','inventory_items.updated_at',
-    'packaging_materials.id','packaging_materials.name','packaging_materials.unit','packaging_materials.category','packaging_materials.current_stock','packaging_materials.cost_per_unit','packaging_materials.low_stock_threshold','packaging_materials.updated_at',
-    'material_purchases.id','material_purchases.material_type','material_purchases.item_name','material_purchases.quantity','material_purchases.unit','material_purchases.cost_total','material_purchases.purchase_date','material_purchases.bought_by','material_purchases.notes',
-    'display_stock.id','display_stock.item_name','display_stock.current_stock','display_stock.category','display_stock.updated_at',
-    'store_menu.name','store_menu.category','customers.email','customers.is_admin'
-  ] loop
-    parts := string_to_array(spec,'.');
-    if not exists(select 1 from information_schema.columns where table_schema='public' and table_name=parts[1] and column_name=parts[2]) then
-      raise exception 'Required column % missing. Stop and reconcile the live schema before installing.', spec;
-    end if;
-  end loop;
-end $$;
--- Duplicate legacy names must be resolved before stock can be changed safely.
-create unique index if not exists cc_inventory_name_unique on public.inventory_items(name);
-create unique index if not exists cc_packaging_name_unique on public.packaging_materials(name);
-create unique index if not exists cc_display_name_unique on public.display_stock(item_name);
-
-create table public.cc_production_members (
-  user_id uuid primary key references auth.users(id),
-  role text not null check(role in ('admin','production','sales')),
-  created_at timestamptz not null default now()
-);
-create table public.cc_production_requests (
-  id uuid primary key default gen_random_uuid(), product_name text not null,
-  outlet_name text not null default 'Main outlet' check(outlet_name='Main outlet'),
-  quantity integer not null check(quantity>0), due_date date not null,
-  status text not null default 'pending' check(status in ('pending','approved','baking','ready','partial','fulfilled','cancelled')),
-  requested_by uuid not null references auth.users(id), approved_by uuid references auth.users(id),
-  created_at timestamptz not null default now(), approved_at timestamptz
-);
-create table public.cc_production_recipes (
-  id uuid primary key default gen_random_uuid(), product_name text not null,
-  yield_qty integer not null check(yield_qty>0), yield_kg numeric not null check(yield_kg>0 and yield_kg<'Infinity'::numeric),
-  ingredients jsonb not null check(jsonb_typeof(ingredients)='array' and jsonb_array_length(ingredients)>0),
-  packaging jsonb not null default '[]' check(jsonb_typeof(packaging)='array'),
-  approved_by uuid not null references auth.users(id), created_at timestamptz not null default now()
-);
-create table public.cc_production_batches (
-  id uuid primary key default gen_random_uuid(), request_id uuid not null unique references public.cc_production_requests(id),
-  recipe_id uuid not null references public.cc_production_recipes(id), product_name text not null,
-  outlet_name text not null default 'Main outlet',
-  status text not null default 'baking' check(status in ('baking','completed')),
-  planned_qty integer not null check(planned_qty>0), planned_kg numeric not null check(planned_kg>0 and planned_kg<'Infinity'::numeric),
-  actual_qty integer check(actual_qty>0), actual_kg numeric check(actual_kg>0 and actual_kg<'Infinity'::numeric),
-  collected_qty integer not null default 0 check(collected_qty>=0 and collected_qty<=coalesce(actual_qty,0)),
-  material_snapshot jsonb not null, packaging_snapshot jsonb not null default '[]',
-  material_cost numeric not null, packaging_cost numeric, labor_cost numeric, overhead_cost numeric,
-  total_cost numeric, unit_cost numeric, started_by uuid not null references auth.users(id),
-  completed_by uuid references auth.users(id), created_at timestamptz not null default now(), completed_at timestamptz
-);
-create table public.cc_production_movements (
-  id uuid primary key default gen_random_uuid(), batch_id uuid references public.cc_production_batches(id),
-  kind text not null, item_name text not null, location text not null,
-  quantity numeric not null, unit text not null, unit_cost numeric,
-  actor uuid not null references auth.users(id), command_key uuid not null,
-  collected_by text, created_at timestamptz not null default now()
-);
-create table public.cc_production_commands (
-  id uuid primary key default gen_random_uuid(), actor uuid not null references auth.users(id),
-  command_key uuid not null, action text not null, payload jsonb not null, result jsonb,
-  created_at timestamptz not null default now(), unique(actor,command_key)
-);
-create index on public.cc_production_batches(status,created_at);
-create index on public.cc_production_requests(status,due_date);
-create index on public.cc_production_movements(batch_id,created_at);
-create index on public.cc_production_movements(kind,created_at desc);
-
--- Existing admin identity is resolved using the verified Supabase Auth account,
--- never a name, PIN session variable or a browser-supplied role.
-create function public.cc_production_role() returns text
-language sql stable security definer set search_path=pg_catalog,public as $$
-  select coalesce(
-    (select role from public.cc_production_members where user_id=auth.uid()),
-    (select 'admin' from auth.users u join public.customers c on lower(c.email)=lower(u.email)
-      where u.id=auth.uid() and u.email_confirmed_at is not null and c.is_admin=true limit 1)
-  )
-$$;
-create function public.cc_production_access() returns boolean
-language sql stable security definer set search_path=pg_catalog,public as $$
-  select auth.uid() is not null and public.cc_production_role() is not null
-$$;
-
--- Read access to production data; writes are only allowed through commands.
-do $$
-declare tab text;
-begin
-  foreach tab in array array['cc_production_members','cc_production_requests','cc_production_recipes','cc_production_batches','cc_production_movements','cc_production_commands'] loop
-    execute format('alter table public.%I enable row level security',tab);
-    execute format('revoke all on public.%I from anon, authenticated',tab);
-    execute format('grant select on public.%I to authenticated',tab);
-    execute format('create policy cc_prod_read on public.%I for select to authenticated using (public.cc_production_access())',tab);
-  end loop;
-  foreach tab in array array['inventory_items','packaging_materials','material_purchases'] loop
-    execute format('alter table public.%I enable row level security',tab);
-    execute format('grant select on public.%I to authenticated',tab);
-    execute format('create policy cc_prod_read on public.%I for select to authenticated using (public.cc_production_access())',tab);
-  end loop;
-end $$;
-
--- display_stock is not locked to the command RPC like the tables above: the
--- existing Display Stock feature (display-stock-patch.js) writes to it
--- directly for Morning Count saves, the tracking toggle sync, and marking a
--- production request fulfilled. It needs INSERT/UPDATE/DELETE policies too,
--- not just SELECT, or RLS denies those writes for every role by default.
-alter table public.display_stock enable row level security;
-grant select, insert, update, delete on public.display_stock to authenticated;
-create policy cc_prod_read on public.display_stock for select to authenticated using (public.cc_production_access());
-create policy cc_prod_display_stock_write on public.display_stock for all to authenticated
-  using (public.cc_production_access()) with check (public.cc_production_access());
-
--- Prevent cached legacy purchase/inventory forms from overwriting stock balances.
--- The security-definer command above is the only new material stock writer.
-revoke insert,update,delete on public.inventory_items,public.packaging_materials,public.material_purchases from public,anon,authenticated;
-
-create function public.cc_production_command(p_action text,p_payload jsonb,p_key uuid)
+create or replace function public.cc_production_command(p_action text,p_payload jsonb,p_key uuid)
 returns jsonb language plpgsql security definer set search_path=pg_catalog,public as $$
 declare
   v_actor uuid:=auth.uid(); v_role text:=public.cc_production_role();
@@ -314,24 +174,15 @@ begin
   return v_result;
 end $$;
 
-revoke all on function public.cc_production_role() from public,anon;
-revoke all on function public.cc_production_access() from public,anon;
-revoke all on function public.cc_production_command(text,jsonb,uuid) from public,anon;
-grant execute on function public.cc_production_role() to authenticated;
-grant execute on function public.cc_production_access() to authenticated;
-grant execute on function public.cc_production_command(text,jsonb,uuid) to authenticated;
-
--- Existing sales triggers stay unchanged. No extra sales deduction is installed.
--- Enable Realtime only where the publication is available.
+-- Enable Realtime for movements too, if not already, so the kitchen page's
+-- collection history refreshes without needing the production dashboard open.
 do $$
-declare tab text;
 begin
   if exists(select 1 from pg_publication where pubname='supabase_realtime') then
-    foreach tab in array array['cc_production_requests','cc_production_batches','cc_production_recipes','cc_production_movements'] loop
-      if not exists(select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename=tab) then
-        execute format('alter publication supabase_realtime add table public.%I',tab);
-      end if;
-    end loop;
+    if not exists(select 1 from pg_publication_tables where pubname='supabase_realtime' and schemaname='public' and tablename='cc_production_movements') then
+      alter publication supabase_realtime add table public.cc_production_movements;
+    end if;
   end if;
 end $$;
+
 commit;
