@@ -41,8 +41,21 @@
 #production-workspace dialog{border:1px solid #dfd1e5;border-radius:14px;width:min(640px,94vw);max-height:90vh;padding:24px;color:#291b32;background:#fff}
 #production-workspace dialog::backdrop{background:#18082099}
 #production-workspace dialog .pd-error:empty{display:none}
-.pd-kitchen-ready{margin:14px;padding:18px;background:#fff;border-radius:14px;color:#291b32;font:14px/1.5 system-ui,sans-serif}
-.pd-kitchen-ready button{padding:10px 14px;background:#790c88;color:white;border:0;border-radius:8px;cursor:pointer}
-@media(min-width:1100px){#pg-kitchen:has(.pd-kitchen-ready){padding-right:330px}.pd-kitchen-ready{position:absolute;right:0;top:80px;width:300px}}
+.pd-kitchen-ready{position:relative;overflow:hidden;margin:14px 14px 4px;padding:20px 20px 18px;border-radius:18px;cursor:pointer;
+  font-family:'Instrument Sans',system-ui,sans-serif;color:#f5eadc;
+  background:linear-gradient(165deg,rgba(110,9,119,.28),rgba(12,8,16,.92) 60%);
+  border:1px solid rgba(245,196,48,.25);box-shadow:0 18px 40px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.05);
+  animation:fadeUpItem .4s ease both;transition:transform .12s}
+.pd-kitchen-ready:active{transform:scale(.985)}
+.pd-kitchen-ready::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 88% -15%,rgba(245,196,48,.22),transparent 55%);pointer-events:none}
+.pd-kitchen-ready .pdk-eyebrow{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;letter-spacing:2.5px;color:#f5c430;text-transform:uppercase}
+.pd-kitchen-ready .pdk-count{font-family:'Fraunces',Georgia,serif;font-size:40px;font-weight:900;line-height:1;margin:10px 0 3px;letter-spacing:-.5px}
+.pd-kitchen-ready .pdk-count span{font-size:13px;font-weight:600;color:rgba(245,234,220,.4);margin-left:5px}
+.pd-kitchen-ready .pdk-sub{font-size:12px;color:rgba(245,234,220,.5);margin-bottom:16px}
+.pd-kitchen-ready button{position:relative;width:100%;padding:13px;border:0;border-radius:12px;cursor:pointer;
+  font-size:12px;font-weight:700;letter-spacing:.4px;color:#fff;
+  background:linear-gradient(135deg,#6e0977,#9c0ca1);box-shadow:0 8px 22px rgba(110,9,119,.45);transition:filter .15s}
+.pd-kitchen-ready button:hover{filter:brightness(1.1)}
+@media(min-width:1100px){#pg-kitchen:has(.pd-kitchen-ready){padding-right:326px}.pd-kitchen-ready{position:absolute;right:18px;top:84px;width:288px;margin:0}}
 @media(max-width:760px){#production-workspace .pd-grid{grid-template-columns:1fr}#production-workspace .pd-stats{grid-template-columns:repeat(2,minmax(0,1fr))}#production-workspace main{padding:16px}#production-workspace .pd-header,#production-workspace nav{padding:14px 16px}}
 @media(max-width:430px){#production-workspace .pd-fields{grid-template-columns:1fr}#production-workspace .pd-ingredient{grid-template-columns:1fr}#production-workspace .pd-card{padding:14px}}

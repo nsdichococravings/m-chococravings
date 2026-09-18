@@ -212,10 +212,16 @@
   }
   function renderKitchen() {
     const kitchen = document.getElementById('pg-kitchen'); if (!kitchen || !state.ready) return;
-    let panel = kitchen.querySelector('.pd-kitchen-ready');
-    if (!panel) { panel = document.createElement('aside'); panel.className = 'pd-kitchen-ready'; kitchen.appendChild(panel); panel.addEventListener('click', () => open('Production')); }
     const count = rows('batches').filter(b => b.status === 'completed').reduce((s,b) => s + num(b.actual_qty) - num(b.collected_qty), 0);
-    panel.innerHTML = '<strong>Ready for collection</strong><p>' + count + ' pieces awaiting outlet receipt</p><button type="button">Open production & collect</button>';
+    let panel = kitchen.querySelector('.pd-kitchen-ready');
+    if (!count) { if (panel) panel.remove(); return; }
+    if (!panel) {
+      panel = document.createElement('aside'); panel.className = 'pd-kitchen-ready';
+      panel.addEventListener('click', () => open('Production'));
+      const header = kitchen.querySelector('.k-hdr');
+      if (header) header.insertAdjacentElement('afterend', panel); else kitchen.appendChild(panel);
+    }
+    panel.innerHTML = '<div class="pdk-eyebrow">🔔 Ready for collection</div><div class="pdk-count">' + count + '<span>pcs</span></div><div class="pdk-sub">Awaiting outlet receipt</div><button type="button">Open production &amp; collect</button>';
   }
   async function open(tab) {
     if (!root) init();
