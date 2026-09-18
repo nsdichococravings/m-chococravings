@@ -315,14 +315,20 @@
   function renderKitchen() {
     const kitchen = document.getElementById('pg-kitchen'); if (!kitchen || !state.ready) return;
     const header = kitchen.querySelector('.k-hdr');
+    let sidebar = kitchen.querySelector('.pd-kitchen-sidebar');
+    if (!sidebar) {
+      sidebar = document.createElement('div'); sidebar.className = 'pd-kitchen-sidebar';
+      if (header) header.insertAdjacentElement('afterend', sidebar); else kitchen.appendChild(sidebar);
+    }
     const ready = rows('batches').filter(b => b.status === 'completed' && num(b.actual_qty) > num(b.collected_qty));
     let panel = kitchen.querySelector('.pd-kitchen-ready');
     if (!ready.length) { if (panel) { panel.remove(); panel = null; } }
     else {
       if (!panel) {
         panel = document.createElement('aside'); panel.className = 'pd-kitchen-ready';
-        if (header) header.insertAdjacentElement('afterend', panel); else kitchen.appendChild(panel);
+        sidebar.prepend(panel);
       }
+      if (panel.parentElement !== sidebar) sidebar.prepend(panel);
       const total = ready.reduce((s, b) => s + num(b.actual_qty) - num(b.collected_qty), 0);
       panel.innerHTML = '<div class="pdk-top"><div class="pdk-eyebrow">🔔 Ready for collection</div><button type="button" class="pdk-link" data-action="open-dashboard">Full dashboard ›</button></div>'
         + '<div class="pdk-count">' + total + '<span>pcs total</span></div>'
@@ -331,9 +337,7 @@
     }
     let history = kitchen.querySelector('.pd-kitchen-history');
     if (!history) { history = document.createElement('aside'); history.className = 'pd-kitchen-history'; }
-    const anchor = panel || header;
-    if (anchor) { if (history.previousElementSibling !== anchor) anchor.insertAdjacentElement('afterend', history); }
-    else kitchen.appendChild(history);
+    sidebar.appendChild(history);
     history.innerHTML = '<div class="pdk-eyebrow">Recent collections</div>' + (collectionHistory.length
       ? collectionHistory.map(h => '<div class="pdk-hist-row"><div class="pdk-hist-name">' + esc(h.item_name) + '<span>' + num(h.quantity) + ' pcs</span></div><div class="pdk-hist-meta">' + esc(h.collected_by || 'Unrecorded') + ' · ' + histTime(h.created_at) + '</div></div>').join('')
       : '<div class="pdk-hist-empty">No collections recorded yet.</div>');
@@ -480,6 +484,7 @@
       document.getElementById('pd-staff-entry')?.remove();
       document.querySelector('.pd-kitchen-ready')?.remove();
       document.querySelector('.pd-kitchen-history')?.remove();
+      document.querySelector('.pd-kitchen-sidebar')?.remove();
       if (channel) { dbClient().removeChannel(channel); channel = null; }
     });
   };
