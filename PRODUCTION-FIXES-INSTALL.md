@@ -2,6 +2,8 @@
 
 For an existing installation:
 
+**Store startup recovery:** replace `store.html` and `sw.js`, then hard-refresh online. A slow menu request no longer traps the entire app behind the splash screen: the overlay releases after 2.5 seconds, and a 12-second request timeout aborts the pending query and displays a Retry button. No sample menu or fake prices are substituted. This prevents indefinite loading; an unavailable or IO-constrained database still needs recovery before the menu can load successfully. No SQL changes are needed.
+
 1. In Supabase SQL Editor run the complete `migrations/20260918_production_fixes.sql`. This patch is safe to rerun. It adds the missing approval-name function, a protected new-material action, receipt unit aliases and outlet stock Realtime publication. It does not change quantities or add an order deduction trigger.
 2. Replace `production-dashboard.js` and `production-dashboard.css` beside your live `store.html`.
 3. Hard-refresh the browser / reopen the PWA online.
