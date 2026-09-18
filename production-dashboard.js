@@ -4,7 +4,7 @@
   const tabs = ['Dashboard', 'Production', 'Materials', 'Recipes', 'Outlet', 'Profit report'];
   const sources = { materials: 'inventory_items', packaging: 'packaging_materials', purchases: 'material_purchases', menu: 'store_menu', outlet: 'display_stock', requests: 'cc_production_requests', recipes: 'cc_production_recipes', batches: 'cc_production_batches', orders: 'store_orders' };
   const screenSources = {
-    Dashboard: ['materials','outlet','requests','batches'], Production: ['requests','recipes','batches'],
+    Dashboard: ['materials','outlet','requests','batches'], Production: ['requests','batches'],
     Materials: ['materials','packaging','purchases'], Recipes: ['recipes','menu','materials','packaging'],
     Outlet: ['outlet','batches'], 'Profit report': ['orders','batches']
   };
@@ -22,6 +22,19 @@
   let root, channel, refreshTimer, previousFocus, loadId = 0, previousOverflow = '', authListener, stockTimer, stockLoading = false, pendingRequest = null;
   let approverNames = {}, stockUpdated = null;
   let collectionHistory = [], historyLoading = false;
+  const readCache = new Map(), pendingReads = new Map();
+  let cacheEpoch = 0, accessCheckedAt = 0, accessPending = null, historyCheckedAt = 0;
+  async function checkAccess() {
+    if (state.ready && Date.now()-accessCheckedAt<30000) return {data:true};
+    if (accessPending) return accessPending;
+    const epoch=cacheEpoch;
+    accessPending=dbClient().rpc('cc_production_access').then(result=>{
+      if(epoch===cacheEpoch) { accessCheckedAt=Date.now(); state.ready=!result.error && result.data===true; }
+      return result;
+    }).finally(()=>{ if(epoch===cacheEpoch) accessPending=null; });
+    return accessPending;
+  }
+  function invalidateReads() { cacheEpoch++; readCache.clear(); pendingReads.clear(); accessPending=null; historyCheckedAt=0; }
   const esc = value => String(value == null ? '' : value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const num = value => Number.isFinite(Number(value)) ? Number(value) : 0;
   const cash = value => value == null ? 'Cost unavailable' : '₹' + num(value).toLocaleString('en-IN', { maximumFractionDigits: 2 });
@@ -41,9 +54,11 @@
   function dbClient() { if (!window.db) throw new Error('Store connection is not ready. Please try again.'); return window.db; }
   function approvedBy(row) { return row.approved_by ? esc(approverNames[row.approved_by] || 'Name unavailable') + (row.approved_at ? '<br><span class="pd-muted">' + esc(date(row.approved_at)) + '</span>' : '') : 'Not approved'; }
   async function loadApprovers() {
-    const ids = [...new Set([...rows('requests'), ...rows('recipes')].map(r => r.approved_by).filter(Boolean))];
+    const epoch=cacheEpoch;
+    const ids = [...new Set([...rows('requests'), ...rows('recipes')].map(r => r.approved_by).filter(id => id && !approverNames[id]))];
     if (!ids.length) return;
     const result = await dbClient().rpc('cc_production_approver_names', { p_ids: ids });
+    if(epoch!==cacheEpoch) return;
     if (result.error) { state.errors.push('Approval names: install the production fixes SQL patch. ' + result.error.message); return; }
     (result.data || []).forEach(r => { approverNames[r.user_id] = r.display_name; });
   }
@@ -65,18 +80,30 @@
     stockTimer = setInterval(refreshStock, 60000);
     if (stockTimer && stockTimer.unref) stockTimer.unref();
   }
-  async function loadCollectionHistory() {
-    if (historyLoading) return;
+  async function loadCollectionHistory(force = false) {
+    const kitchen=document.getElementById('pg-kitchen');
+    if (historyLoading || !kitchen || !kitchen.classList.contains('active') || (!force && Date.now()-historyCheckedAt<15000)) return;
     historyLoading = true;
     try {
       const result = await dbClient().from('cc_production_movements')
         .select('item_name,quantity,collected_by,created_at').eq('kind', 'collection_in')
         .order('created_at', { ascending: false }).limit(5);
-      if (!result.error) collectionHistory = result.data || [];
+      if (!result.error) { collectionHistory = result.data || []; historyCheckedAt=Date.now(); }
     } catch (_) { /* keep showing the last known history */ }
     finally { historyLoading = false; renderKitchen(); }
   }
-  async function readAll(tableName) {
+  function readAll(tableName, useCache = false) {
+    const cached=readCache.get(tableName);
+    if(useCache && cached && Date.now()-cached.at<15000) return Promise.resolve(cached.rows);
+    if(pendingReads.has(tableName)) return pendingReads.get(tableName);
+    const epoch=cacheEpoch;
+    const promise=fetchRows(tableName).then(data=>{
+      if(epoch===cacheEpoch) readCache.set(tableName,{rows:data,at:Date.now()});
+      return data;
+    }).finally(()=>{if(epoch===cacheEpoch) pendingReads.delete(tableName);});
+    pendingReads.set(tableName,promise); return promise;
+  }
+  async function fetchRows(tableName) {
     const result = [];
     for (let from = 0; ; from += 500) {
       let query = dbClient().from(tableName).select(columns[tableName]);
@@ -89,10 +116,14 @@
       if (tableName === 'material_purchases' || !response.data || response.data.length < 500) return result;
     }
   }
-  async function refresh() {
+  async function refresh(useCache = false) {
     const generation = ++loadId;
-    state.loading = true; render();
-    const capability = await dbClient().rpc('cc_production_access');
+    const keys = root.hidden ? ['batches'] : screenSources[state.tab];
+    state.loading = !keys.every(key=>Object.prototype.hasOwnProperty.call(state.data,key)); render();
+    announce('Updating…');
+    let capability;
+    try { capability = await checkAccess(); }
+    catch(error) { if(generation===loadId) {state.loading=false;state.errors=[error.message || 'Connection failed'];render();} return; }
     if (generation !== loadId) return;
     state.ready = !capability.error && capability.data === true;
     if (!state.ready) {
@@ -100,19 +131,20 @@
       state.errors = [capability.error ? capability.error.message : 'This account has not been granted production access.'];
       render(); return;
     }
-    const keys = root.hidden ? ['batches'] : screenSources[state.tab];
     const entries = keys.map(key => [key, sources[key]]);
-    const results = await Promise.allSettled(entries.map(([, name]) => readAll(name)));
+    const results = await Promise.allSettled(entries.map(([, name]) => readAll(name,useCache)));
     if (generation !== loadId) return;
-    state.errors = []; state.data = {};
+    state.errors = [];
     results.forEach((result, i) => {
       if (result.status === 'fulfilled') state.data[entries[i][0]] = result.value;
-      else state.errors.push(entries[i][1] + ': ' + (result.reason.message || 'Could not load'));
+      else { delete state.data[entries[i][0]]; state.errors.push(entries[i][1] + ': ' + (result.reason.message || 'Could not load')); }
     });
-    await loadApprovers();
-    if (generation !== loadId) return;
-    if (Object.prototype.hasOwnProperty.call(state.data,'outlet')) stockUpdated = new Date();
+    if (keys.includes('outlet') && readCache.has('display_stock')) stockUpdated = new Date(readCache.get('display_stock').at);
     state.loading = false; state.refreshed = new Date(); render(); renderKitchen(); loadCollectionHistory();
+    // Names must not block stock and request rendering. Never replace an open form.
+    loadApprovers().then(()=>{
+      if(generation===loadId && !root.querySelector('dialog').open) render();
+    }).catch(error=>{ if(generation===loadId) announce('Approval names could not load: '+error.message); });
   }
   function readyPanel() {
     const batches = rows('batches').filter(b => b.status === 'completed' && num(b.actual_qty) > num(b.collected_qty));
@@ -286,6 +318,7 @@
     try {
       const result = await dbClient().rpc('cc_production_add_material', { p_payload: payload, p_key: target.dataset.key || (target.dataset.key=crypto.randomUUID()) });
       if (result.error) throw result.error;
+      invalidateReads();
       const kind = payload.kind==='raw' ? 'materials' : 'packaging';
       state.data[kind] = await readAll(sources[kind]);
       root.querySelectorAll('.pd-ingredient').forEach(line => {
@@ -303,6 +336,7 @@
     if (!navigator.onLine) throw new Error('Connect to the internet before posting stock changes.');
     const result = await dbClient().rpc('cc_production_command', { p_action: action, p_payload: payload, p_key: key });
     if (result.error) throw result.error;
+    invalidateReads();
     return result.data;
   }
   function exportCosts() {
@@ -381,13 +415,11 @@
   async function open(tab) {
     if (!root) init();
     if (!window.db) { if (window.showStoreToast) window.showStoreToast('Store connection is not ready yet.'); return; }
-    const session = await dbClient().auth.getUser();
-    if (!session.data.user) { if (window.showStoreToast) window.showStoreToast('Sign in with an authorized account to open production.'); return; }
     previousFocus = document.activeElement;
     if (root.hidden) previousOverflow = document.body.style.overflow;
     state.tab = tabs.includes(tab) ? tab : 'Dashboard'; root.hidden = false; document.body.style.overflow = 'hidden'; root.querySelector('[data-action=close]').focus();
     if (window.closeAdminMenu) window.closeAdminMenu();
-    await refresh();
+    await refresh(true);
     subscribe();
     startStockFallback();
   }
@@ -399,6 +431,7 @@
     }
   }
   function scheduleRefresh(event) {
+    if(event && event.table) readCache.delete(event.table);
     if (document.hidden) return;
     const kitchen = document.getElementById('pg-kitchen');
     if (root.hidden && !(kitchen && kitchen.classList.contains('active'))) return;
@@ -407,7 +440,7 @@
     const historyEvent = event && event.table === 'cc_production_movements' && kitchen && kitchen.classList.contains('active');
     if (event && event.table && !activeTables.includes(event.table) && !stockEvent && !historyEvent) return;
     if (!root.hidden && state.tab === 'Profit report') { announce('Data may have changed. Select Refresh to update this report.'); return; }
-    if (historyEvent && !stockEvent) { loadCollectionHistory(); return; }
+    if (historyEvent && !stockEvent) { loadCollectionHistory(true); return; }
     if (refreshTimer || root.querySelector('dialog').open || state.busy) return;
     const delay = Math.max(2000, 15000 - (Date.now() - (state.refreshed ? state.refreshed.getTime() : 0)));
     refreshTimer = setTimeout(() => {
@@ -427,7 +460,7 @@
       const target = event.target.closest('button'); if (!target || target.disabled) return;
       const action = target.dataset.action;
       try {
-        if (target.dataset.tab) { state.tab = target.dataset.tab; clearTimeout(refreshTimer); refreshTimer = null; await refresh(); return; }
+        if (target.dataset.tab) { state.tab = target.dataset.tab; clearTimeout(refreshTimer); refreshTimer = null; await refresh(true); return; }
         if (action === 'close') close();
         else if (action === 'refresh') await refresh();
         else if (action === 'cancel') { if (!state.busy) root.querySelector('dialog').close(); }
@@ -465,7 +498,7 @@
   }
   window.openProductionDashboard = open;
   window.ccProductionCanUse = async function () {
-    try { const response = await dbClient().rpc('cc_production_access'); return !response.error && response.data === true; }
+    try { const response = await checkAccess(); return !response.error && response.data === true; }
     catch (_) { return false; }
   };
   window.initializeProductionAccess = async function () {
@@ -479,7 +512,7 @@
     state.ready = true; subscribe(); loadCollectionHistory();
     if (!authListener && dbClient().auth.onAuthStateChange) authListener = dbClient().auth.onAuthStateChange(event => {
       if (event !== 'SIGNED_OUT') return;
-      ++loadId; state.data = {}; state.ready = false; collectionHistory = []; close();
+      ++loadId; invalidateReads(); accessCheckedAt=0; approverNames={}; state.data = {}; state.ready = false; collectionHistory = []; close();
       root.querySelector('dialog').close();
       document.getElementById('pd-staff-entry')?.remove();
       document.querySelector('.pd-kitchen-ready')?.remove();

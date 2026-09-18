@@ -823,14 +823,37 @@ function showSkeleton(){
   overlay.style.display = 'flex';
   document.getElementById('cart-empty').style.display = 'none';
 }
+var storeMenuLoading = false;
+function hideStoreLoader() {
+  var overlay = document.getElementById('store-loading-overlay');
+  if (overlay) { overlay.style.display = 'none'; overlay.style.opacity = '1'; }
+  document.getElementById('cart-empty').style.display = 'block';
+}
 async function loadMenu(){
-  if(!db) return;
+  if (storeMenuLoading) return;
+  storeMenuLoading = true;
   showSkeleton();
+  document.getElementById('items-list').innerHTML = '<div role="status" style="padding:32px;text-align:center;color:#6e0977">Connecting to the menu…</div>';
+  var revealTimer = setTimeout(hideStoreLoader, 2500);
+  var timeoutTimer;
+  var controller = new AbortController();
   try {
-    var res = await db.from('store_menu')
-      .select('*')
+    if (!db) {
+      if (typeof supabase === 'undefined') throw new Error('Connection library unavailable');
+      db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    }
+    var request = db.from('store_menu')
+      .select('id,name,price,tag,category')
       .eq('available', true)
-      .order('sort_order', {ascending:true});
+      .order('sort_order', {ascending:true})
+      .abortSignal(controller.signal);
+    var timeout = new Promise(function(_, reject) {
+      timeoutTimer = setTimeout(function() {
+        reject(new Error('Menu connection timed out'));
+        controller.abort();
+      }, 12000);
+    });
+    var res = await Promise.race([request, timeout]);
     if(res.error) throw res.error;
     Object.keys(MENU).forEach(function(k){ MENU[k].items = []; });
     (res.data||[]).forEach(function(row){
@@ -848,16 +871,10 @@ async function loadMenu(){
     });
   } catch(e){
     console.error('loadMenu', e);
-    document.getElementById('items-list').innerHTML = '<div style="text-align:center;padding:40px 20px;font-family:Fraunces,serif;font-size:15px;color:#9a8aaa">Could not load menu.<br>Check connection.</div>';
+    document.getElementById('items-list').innerHTML = '<div role="alert" style="text-align:center;padding:40px 20px;color:#6e0977">The menu connection is taking too long or is unavailable.<br><button type="button" onclick="loadMenu()" style="margin-top:16px;padding:12px 20px;border:0;border-radius:10px;background:#6e0977;color:white;cursor:pointer">Retry loading menu</button><p style="margin-top:12px;font-size:13px">Check your connection and try again.</p></div>';
   } finally {
-    // Hide overlay whether success or error
-    var overlay = document.getElementById('store-loading-overlay');
-    if (overlay) {
-      overlay.style.transition = 'opacity 0.4s ease';
-      overlay.style.opacity = '0';
-      setTimeout(function() { overlay.style.display = 'none'; overlay.style.opacity = '1'; }, 400);
-    }
-    document.getElementById('cart-empty').style.display = 'block';
+    clearTimeout(revealTimer); clearTimeout(timeoutTimer);
+    hideStoreLoader(); storeMenuLoading = false;
   }
 }
 
@@ -2764,6 +2781,6 @@ async function toggleStoreOpenStatus() {
 <script src="checkadminbadge-override.js"></script>
 <script src="production-purchases-patch.js"></script>
 <link rel="stylesheet" href="production-dashboard.css?v=20260919-collection-layout">
-<script src="production-dashboard.js?v=20260919-collection-layout"></script>
+<script src="production-dashboard.js?v=20260919-loading-1"></script>
 </body>
 </html>
