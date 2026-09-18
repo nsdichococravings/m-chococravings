@@ -114,7 +114,8 @@ function buildInventoryUI() {
   buildHistoryUI();
 }
 
-function openInventory() {
+async function openInventory() {
+  if (window.ccProductionCanUse && await window.ccProductionCanUse()) return window.openProductionDashboard('Materials');
   document.getElementById('invtry-overlay').style.display = 'block';
   document.getElementById('invtry-sheet').style.display   = 'block';
   loadInventoryItems();

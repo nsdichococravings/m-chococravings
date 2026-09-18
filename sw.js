@@ -1,5 +1,5 @@
 // NSDI ChocoCravings — Service Worker
-const CACHE_NAME = 'chococravings-v2';
+const CACHE_NAME = 'chococravings-v3-production';
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache immediately on install

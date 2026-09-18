@@ -84,6 +84,9 @@ async function checkAdminBadge(){
         'cash-counter-patch.js', 'custom-bookings-patch.js', 'executive-dashboard-patch.js'
       ]);
     }
+    if (typeof initializeProductionAccess === 'function') {
+      initializeProductionAccess().catch(function (error) { console.warn('Production access:', error.message); });
+    }
   } catch(e){ console.warn('checkAdminBadge error:', e.message); }
 }
 
