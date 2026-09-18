@@ -126,12 +126,23 @@ begin
     execute format('grant select on public.%I to authenticated',tab);
     execute format('create policy cc_prod_read on public.%I for select to authenticated using (public.cc_production_access())',tab);
   end loop;
-  foreach tab in array array['inventory_items','packaging_materials','material_purchases','display_stock'] loop
+  foreach tab in array array['inventory_items','packaging_materials','material_purchases'] loop
     execute format('alter table public.%I enable row level security',tab);
     execute format('grant select on public.%I to authenticated',tab);
     execute format('create policy cc_prod_read on public.%I for select to authenticated using (public.cc_production_access())',tab);
   end loop;
 end $$;
+
+-- display_stock is not locked to the command RPC like the tables above: the
+-- existing Display Stock feature (display-stock-patch.js) writes to it
+-- directly for Morning Count saves, the tracking toggle sync, and marking a
+-- production request fulfilled. It needs INSERT/UPDATE/DELETE policies too,
+-- not just SELECT, or RLS denies those writes for every role by default.
+alter table public.display_stock enable row level security;
+grant select, insert, update, delete on public.display_stock to authenticated;
+create policy cc_prod_read on public.display_stock for select to authenticated using (public.cc_production_access());
+create policy cc_prod_display_stock_write on public.display_stock for all to authenticated
+  using (public.cc_production_access()) with check (public.cc_production_access());
 
 -- Prevent cached legacy purchase/inventory forms from overwriting stock balances.
 -- The security-definer command above is the only new material stock writer.
