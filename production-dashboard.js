@@ -26,6 +26,7 @@
   const num = value => Number.isFinite(Number(value)) ? Number(value) : 0;
   const cash = value => value == null ? 'Cost unavailable' : '₹' + num(value).toLocaleString('en-IN', { maximumFractionDigits: 2 });
   const rows = name => state.data[name] || [];
+  const recipeLineLabel = i => esc(i.name) + ': ' + esc(i.display_quantity == null ? i.quantity : i.display_quantity) + ' ' + esc(i.display_unit || i.unit);
   const date = value => value ? new Date(value).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }) : '—';
   const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
   const empty = text => '<div class="pd-empty">' + esc(text) + '</div>';
@@ -219,7 +220,11 @@
     dialog.querySelector('form').addEventListener('submit', async event => {
       event.preventDefault(); if (state.busy) return;
       const values = Object.fromEntries(new FormData(event.target));
-      try { if (action === 'recipe') {
+      try { if (action === 'purchase') {
+        const existing = rows(values.kind==='raw' ? 'materials' : 'packaging').find(r=>r.name===values.name.trim());
+        if(existing) { values.quantity=convertQuantity(Number(values.quantity),values.unit,existing.unit); values.unit=existing.unit; }
+      }
+      if (action === 'recipe') {
         values.ingredients = []; values.packaging = [];
         dialog.querySelectorAll('.pd-ingredient').forEach(line => {
           values[line.dataset.kind === 'materials' ? 'ingredients' : 'packaging'].push(ingredientValues(line));

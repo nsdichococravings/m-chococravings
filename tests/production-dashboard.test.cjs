@@ -101,6 +101,8 @@ function setup(authorized = true) {
   assert.match(root.querySelector('dialog').textContent,/Add approved recipe/);
   await click('[data-action="new-material"]');
   root.querySelector('[name=new_name]').value='New flour';
+  root.querySelector('[name=new_kind] option[value="raw"]').selected=true;
+  root.querySelector('[name=new_unit] option').selected=true;
   await click('[data-action="save-material"]');
   assert.match(root.querySelector('[name=ingredient_name]').textContent,/New flour/);
   await click('[data-action="cancel"]');
