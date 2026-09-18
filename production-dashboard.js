@@ -135,7 +135,7 @@
     if (state.tab === 'Dashboard') html += cards([['Raw material value', cash(totalValue), 'Current recorded unit costs'], ['Ready at kitchen', readyQty + ' pcs', 'Awaiting collection'], ['Outlet stock', rows('outlet').reduce((s, r) => s + num(r.current_stock), 0) + ' pcs', 'Current display stock'], ['Active requests', rows('requests').filter(r => !['fulfilled', 'cancelled'].includes(r.status)).length, 'Sales demand']]) + '<div class="pd-grid"><div class="pd-stack"><section class="pd-card"><div class="pd-row"><h3>Production requests</h3>' + button('request', 'New sales request', null, !state.ready) + '</div>' + productionTable() + '</section><section class="pd-card"><h3>Low stock</h3>' + table(['Material', 'Available', 'Reorder level'], raw.filter(r => num(r.current_stock) <= num(r.low_stock_threshold)).map(r => [esc(r.name), esc(r.current_stock) + ' ' + esc(r.unit), esc(r.low_stock_threshold)])) + '</section></div>' + readyPanel() + '</div>';
     if (state.tab === 'Production') html += '<div class="pd-grid"><div class="pd-stack"><section class="pd-card"><div class="pd-row"><h3>Sales requests</h3>' + button('request', 'New sales request', null, !state.ready) + '</div>' + productionTable() + '</section><section class="pd-card"><h3>Batches</h3>' + table(['Product', 'Planned', 'Actual', 'Cost', 'Status / action'], rows('batches').map(b => [esc(b.product_name), esc(b.planned_qty) + ' pcs / ' + esc(b.planned_kg) + ' kg', b.actual_qty == null ? '—' : esc(b.actual_qty) + ' pcs', cash(b.total_cost), badge(b.status) + ' ' + (b.status === 'baking' ? button('complete', 'Submit baked batch', b.id, !state.ready) : '')])) + '</section></div>' + readyPanel() + '</div>';
     if (state.tab === 'Materials') html += '<div class="pd-stack"><section class="pd-card"><div class="pd-row"><h3>Raw materials</h3>' + button('purchase', 'Record stock-in', null, !state.ready) + '</div>' + table(['Material', 'Available', 'Unit cost', 'Stock value'], raw.map(r => [esc(r.name), esc(r.current_stock) + ' ' + esc(r.unit), cash(r.cost_per_unit), r.cost_per_unit == null ? 'Cost unavailable' : cash(num(r.current_stock) * num(r.cost_per_unit))])) + '</section><section class="pd-card"><h3>Packaging by category</h3>' + table(['Packaging', 'Category', 'Available', 'Unit cost'], rows('packaging').map(r => [esc(r.name), esc(r.category || 'Uncategorized'), esc(r.current_stock) + ' ' + esc(r.unit), cash(r.cost_per_unit)])) + '</section><section class="pd-card"><h3>Stock-in history</h3>' + table(['Date', 'Material', 'Quantity', 'Total cost'], rows('purchases').slice().sort((a,b) => String(b.purchase_date).localeCompare(String(a.purchase_date))).slice(0,100).map(r => [date(r.purchase_date), esc(r.item_name), esc(r.quantity) + ' ' + esc(r.unit), cash(r.cost_total)])) + '</section></div>';
-    if (state.tab === 'Recipes') html += '<section class="pd-card"><div class="pd-row"><h3>Production recipes</h3>' + button('recipe', 'Add recipe version', null, !state.ready) + '</div>' + table(['Product / revision', 'Base yield', 'Ingredients', 'Packaging'], rows('recipes').map(r => [esc(r.product_name) + '<br><span class="pd-muted">' + date(r.created_at) + ' · ' + esc(r.id.slice(0,8)) + '</span>', esc(r.yield_qty) + ' pcs / ' + esc(r.yield_kg) + ' kg', (r.ingredients || []).map(recipeLineLabel).join('<br>'), (r.packaging || []).map(recipeLineLabel).join('<br>') || 'None'])) + '</section>';
+    if (state.tab === 'Recipes') html += '<section class="pd-card"><div class="pd-row"><h3>Production recipes</h3>' + button('recipe', 'Add recipe version', null, !state.ready) + '</div>' + table(['Product / revision', 'Base yield', 'Ingredients', 'Packaging'], rows('recipes').map(r => [esc(r.product_name) + '<br><span class="pd-muted">' + date(r.created_at) + ' · ' + esc(r.id.slice(0,8)) + '</span><div style="margin-top:10px">' + button('edit-recipe','Edit recipe',r.id,!state.ready) + '</div>', esc(r.yield_qty) + ' pcs / ' + esc(r.yield_kg) + ' kg', (r.ingredients || []).map(recipeLineLabel).join('<br>'), (r.packaging || []).map(recipeLineLabel).join('<br>') || 'None'])) + '</section>';
     if (state.tab === 'Outlet') html += '<div class="pd-grid"><section class="pd-card"><h3>Main outlet stock</h3>' + table(['Product', 'Available', 'Reorder level'], rows('outlet').map(r => [esc(r.item_name), esc(r.current_stock) + ' pcs', esc(r.low_stock_threshold)])) + '<p class="pd-muted">Sales continue through the existing order screen. Its database stock deduction remains the only sales stock writer.</p></section>' + readyPanel() + '</div>';
     if (state.tab === 'Profit report') {
       const sales = new Map();
@@ -183,6 +183,8 @@
   }
   async function showForm(action, id) {
     if (!state.ready || state.busy) return;
+    const editedRecipe = action === 'recipe' && id ? rows('recipes').find(r => r.id === id) : null;
+    if (action === 'recipe' && id && !editedRecipe) throw new Error('Recipe is no longer loaded. Refresh and try again.');
     if (action === 'start') state.data.recipes = await readAll('cc_production_recipes');
     // Load form-only reference data on demand, rather than on every stock refresh.
     const required = action === 'request' ? ['menu'] : action === 'recipe' ? ['menu','materials','packaging'] : action === 'start' ? ['recipes'] : [];
@@ -207,6 +209,40 @@
     const dialog = root.querySelector('dialog');
     dialog.innerHTML = '<form><h3 id="pd-form-title">' + esc(title) + '</h3><div class="pd-error" role="alert"></div>' + html + '<div class="pd-line pd-row"><button type="button" data-action="cancel">Cancel</button><button type="submit" class="pd-primary">' + (action === 'start' ? 'Start baking' : 'Save') + '</button></div></form>';
     dialog.setAttribute('aria-labelledby', 'pd-form-title'); dialog.showModal();
+    if (editedRecipe) {
+      dialog.querySelector('h3').textContent = 'Edit recipe: ' + editedRecipe.product_name;
+      dialog.querySelector('[type=submit]').textContent = 'Save new version';
+      const product = dialog.querySelector('[name=product_name]');
+      let chosen = [...product.options].find(o => o.value === editedRecipe.product_name);
+      if (!chosen) {
+        product.insertAdjacentHTML('beforeend','<option value="'+esc(editedRecipe.product_name)+'">'+esc(editedRecipe.product_name)+'</option>');
+        chosen = product.lastElementChild;
+      }
+      chosen.selected = true; product.disabled = true;
+      dialog.querySelector('[name=yield_qty]').value = editedRecipe.yield_qty;
+      dialog.querySelector('[name=yield_kg]').value = editedRecipe.yield_kg;
+      const lines = dialog.querySelector('#pd-recipe-lines'); lines.innerHTML = '';
+      [['materials',editedRecipe.ingredients || []],['packaging',editedRecipe.packaging || []]].forEach(([kind,items]) => items.forEach(item => {
+        lines.insertAdjacentHTML('beforeend',ingredientRow(kind));
+        const line = lines.lastElementChild, material = line.querySelector('[name=ingredient_name]');
+        let option = [...material.options].find(o => o.value === item.name);
+        if (!option) {
+          material.insertAdjacentHTML('beforeend','<option value="'+esc(item.name)+'">Unavailable: '+esc(item.name)+'</option>'); option = material.lastElementChild;
+        }
+        option.selected = true; updateIngredientUnits(line);
+        const unit = line.querySelector('[name=ingredient_unit]');
+        const desired = item.display_unit || item.unit;
+        let unitOption = [...unit.options].find(o => o.value === desired);
+        if (!unitOption) {
+          const info = unitInfo[String(desired).toLowerCase()];
+          unitOption = [...unit.options].find(o => info && unitInfo[o.value] && unitInfo[o.value][0]===info[0] && unitInfo[o.value][1]===info[1]);
+        }
+        if (!unitOption) { unit.insertAdjacentHTML('beforeend','<option value="'+esc(desired)+'">'+esc(desired)+'</option>'); unitOption=unit.lastElementChild; }
+        unitOption.selected=true;
+        line.querySelector('[name=ingredient_quantity]').value = item.display_quantity == null ? item.quantity : item.display_quantity;
+      }));
+      dialog.querySelector('form').insertAdjacentHTML('afterbegin','<p class="pd-notice">Saving creates a new recipe version. Existing batches retain their original recipe and costs.</p>');
+    }
     if (action === 'start') dialog.querySelector('[name=recipe_id]').addEventListener('change', event => {
       const recipe = matchingRecipes.find(r => r.id === event.target.value);
       dialog.querySelector('[name=planned_kg]').value = Number((num(request.quantity)*num(recipe.yield_kg)/num(recipe.yield_qty)).toFixed(6));
@@ -220,6 +256,7 @@
     dialog.querySelector('form').addEventListener('submit', async event => {
       event.preventDefault(); if (state.busy) return;
       const values = Object.fromEntries(new FormData(event.target));
+      if (editedRecipe) values.product_name = editedRecipe.product_name;
       try { if (action === 'purchase') {
         const existing = rows(values.kind==='raw' ? 'materials' : 'packaging').find(r=>r.name===values.name.trim());
         if(existing) { values.quantity=convertQuantity(Number(values.quantity),values.unit,existing.unit); values.unit=existing.unit; }
@@ -391,6 +428,7 @@
         else if (action === 'refresh') await refresh();
         else if (action === 'cancel') { if (!state.busy) root.querySelector('dialog').close(); }
         else if (action === 'create-missing-recipe') { root.querySelector('dialog').close(); await showForm('recipe'); }
+        else if (action === 'edit-recipe') { pendingRequest = null; await showForm('recipe',target.dataset.id); }
         else if (action === 'new-material') {
           root.querySelector('#pd-new-material').innerHTML='<fieldset class="pd-line"><legend>New material</legend><div class="pd-error" role="alert"></div><label>Name<input name="new_name"></label><label>Type<select name="new_kind"><option value="raw">Ingredient</option><option value="packaging">Packaging</option></select></label><label>Stock unit<select name="new_unit">'+['g','kg','ml','l','pcs','dozen'].map(u=>'<option>'+u+'</option>').join('')+'</select></label>'+button('save-material','Save new material')+'</fieldset>';
         }
