@@ -13,13 +13,14 @@
     packaging_materials: 'id,name,unit,category,current_stock,cost_per_unit',
     material_purchases: 'id,item_name,quantity,unit,cost_total,purchase_date',
     store_menu: 'id,name', display_stock: 'id,item_name,current_stock,low_stock_threshold',
-    cc_production_requests: 'id,product_name,outlet_name,quantity,status',
-    cc_production_recipes: 'id,product_name,yield_qty,yield_kg,ingredients,packaging,created_at',
+    cc_production_requests: 'id,product_name,outlet_name,quantity,status,requested_by,approved_by,approved_at',
+    cc_production_recipes: 'id,product_name,yield_qty,yield_kg,ingredients,packaging,created_at,approved_by',
     cc_production_batches: 'id,product_name,outlet_name,status,planned_qty,planned_kg,actual_qty,collected_qty,material_cost,packaging_cost,labor_cost,overhead_cost,total_cost,unit_cost,completed_at',
     store_orders: 'id,items,status,payment_status,created_at'
   };
   const state = { tab: 'Dashboard', data: {}, errors: [], ready: false, loading: false, busy: false, refreshed: null };
-  let root, channel, refreshTimer, previousFocus, loadId = 0, previousOverflow = '', authListener;
+  let root, channel, refreshTimer, previousFocus, loadId = 0, previousOverflow = '', authListener, stockTimer, stockLoading = false, pendingRequest = null;
+  let approverNames = {}, stockUpdated = null;
   const esc = value => String(value == null ? '' : value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const num = value => Number.isFinite(Number(value)) ? Number(value) : 0;
   const cash = value => value == null ? 'Cost unavailable' : '₹' + num(value).toLocaleString('en-IN', { maximumFractionDigits: 2 });
@@ -36,6 +37,32 @@
   const select = (name, label, values) => '<label>' + esc(label) + '<select name="' + name + '" required><option value="">Select…</option>' + values + '</select></label>';
   function announce(text) { root.querySelector('[role="status"]').textContent = text; }
   function dbClient() { if (!window.db) throw new Error('Store connection is not ready. Please try again.'); return window.db; }
+  function approvedBy(row) { return row.approved_by ? esc(approverNames[row.approved_by] || 'Name unavailable') + (row.approved_at ? '<br><span class="pd-muted">' + esc(date(row.approved_at)) + '</span>' : '') : 'Not approved'; }
+  async function loadApprovers() {
+    const ids = [...new Set([...rows('requests'), ...rows('recipes')].map(r => r.approved_by).filter(Boolean))];
+    if (!ids.length) return;
+    const result = await dbClient().rpc('cc_production_approver_names', { p_ids: ids });
+    if (result.error) { state.errors.push('Approval names: install the production fixes SQL patch. ' + result.error.message); return; }
+    (result.data || []).forEach(r => { approverNames[r.user_id] = r.display_name; });
+  }
+  function stockVisible() { return root && !root.hidden && !document.hidden && ['Dashboard','Outlet'].includes(state.tab); }
+  async function refreshStock() {
+    if (!stockVisible() || !state.ready || state.loading || state.busy || stockLoading || root.querySelector('dialog').open) return;
+    stockLoading = true;
+    const generation = loadId;
+    try {
+      const data = await readAll('display_stock');
+      if (generation !== loadId || !stockVisible()) return;
+      state.data.outlet = data; stockUpdated = new Date(); render();
+    } catch (error) { announce('Outlet stock could not refresh: ' + error.message); }
+    finally { stockLoading = false; }
+  }
+  function startStockFallback() {
+    clearInterval(stockTimer);
+    // Narrow fallback for projects where Realtime publication is not configured.
+    stockTimer = setInterval(refreshStock, 60000);
+    if (stockTimer && stockTimer.unref) stockTimer.unref();
+  }
   async function readAll(tableName) {
     const result = [];
     for (let from = 0; ; from += 500) {
@@ -69,6 +96,9 @@
       if (result.status === 'fulfilled') state.data[entries[i][0]] = result.value;
       else state.errors.push(entries[i][1] + ': ' + (result.reason.message || 'Could not load'));
     });
+    await loadApprovers();
+    if (generation !== loadId) return;
+    if (Object.prototype.hasOwnProperty.call(state.data,'outlet')) stockUpdated = new Date();
     state.loading = false; state.refreshed = new Date(); render(); renderKitchen();
   }
   function readyPanel() {
@@ -76,7 +106,7 @@
     return '<section class="pd-card"><h3>Ready for collection</h3>' + (batches.length ? batches.map(b => '<div class="pd-line"><strong>' + esc(b.product_name) + '</strong><p class="pd-muted">' + esc(b.outlet_name) + ' · ' + date(b.completed_at) + '</p><div class="pd-value">' + (num(b.actual_qty) - num(b.collected_qty)) + ' <span class="pd-muted">pcs</span></div>' + button('collect', 'Confirm collection', b.id, !state.ready) + '</div>').join('') : empty('Completed batches will appear here.')) + '</section>';
   }
   function productionTable() {
-    return table(['Product / outlet', 'Requested', 'Status', 'Action'], rows('requests').map(r => [esc(r.product_name) + '<br><span class="pd-muted">' + esc(r.outlet_name) + '</span>', esc(r.quantity) + ' pcs', badge(r.status), r.status === 'pending' ? button('approve', 'Approve sales request', r.id, !state.ready) : r.status === 'approved' ? button('start', 'Plan & start baking', r.id, !state.ready) : '—']));
+    return table(['Product / outlet', 'Requested', 'Status', 'Approved by', 'Action'], rows('requests').map(r => [esc(r.product_name) + '<br><span class="pd-muted">' + esc(r.outlet_name) + '</span>', esc(r.quantity) + ' pcs', badge(r.status), approvedBy(r), r.status === 'pending' ? button('approve', 'Approve sales request', r.id, !state.ready) : r.status === 'approved' ? button('start', 'Plan & start baking', r.id, !state.ready) : '—']));
   }
   function render() {
     if (!root) return;
@@ -105,7 +135,7 @@
       html += '<div class="pd-stack"><section class="pd-card"><h3>Paid, collected item sales · Last 30 days</h3>' + table(['Item', 'Pieces sold', 'Item gross sales', 'Actual profit'], [...sales].map(([name, r]) => [esc(name), esc(r.quantity), cash(r.gross), 'Cost allocation unavailable'])) + '<p class="pd-muted">Line prices before order-level discounts and refunds. Only paid orders marked collected are included.</p></section><section class="pd-card"><div class="pd-row"><h3>Production cost by batch</h3>' + button('export', 'Export batch costs') + '</div>' + table(['Product', 'Baked', 'Collected', 'Ingredients', 'Packaging', 'Labor / overhead', 'Cost / piece'], rows('batches').filter(b => b.status === 'completed').map(b => [esc(b.product_name), esc(b.actual_qty), esc(b.collected_qty), cash(b.material_cost), cash(b.packaging_cost), cash(num(b.labor_cost) + num(b.overhead_cost)), cash(b.unit_cost)])) + '<div class="pd-notice pd-line">Item sales profit requires historical order-to-batch cost allocation. Existing orders do not provide that link, so this screen does not present estimated costs as actual profit.</div></section></div>';
     }
     content.innerHTML = html;
-    announce(state.refreshed ? 'Updated ' + state.refreshed.toLocaleTimeString('en-IN') : '');
+    announce(stockVisible() && stockUpdated ? 'Outlet stock checked ' + stockUpdated.toLocaleTimeString('en-IN') + ' · Auto-check every 60 seconds while visible' : state.refreshed ? 'Updated ' + state.refreshed.toLocaleTimeString('en-IN') : '');
   }
   function materialOptions(kind) { return options(rows(kind).map(r => ({ value: r.name, label: r.name + ' (' + r.unit + ')' })), 'value', 'label'); }
   function ingredientRow(kind) {
@@ -113,6 +143,7 @@
   }
   async function showForm(action, id) {
     if (!state.ready || state.busy) return;
+    if (action === 'start') state.data.recipes = await readAll('cc_production_recipes');
     // Load form-only reference data on demand, rather than on every stock refresh.
     const required = action === 'request' ? ['menu'] : action === 'recipe' ? ['menu','materials','packaging'] : action === 'start' ? ['recipes'] : [];
     const missing = required.filter(key => !Object.prototype.hasOwnProperty.call(state.data,key));
@@ -120,8 +151,15 @@
     missing.forEach((key,index) => { state.data[key] = loaded[index]; });
     const request = rows('requests').find(r => r.id === id), batch = rows('batches').find(b => b.id === id);
     let title, html;
+    const matchingRecipes = request ? rows('recipes').filter(r => r.product_name === request.product_name).sort((a,b) => String(b.created_at).localeCompare(String(a.created_at)) || String(b.id).localeCompare(String(a.id))) : [];
+    if (action === 'start' && !matchingRecipes.length) {
+      pendingRequest = request;
+      const dialog = root.querySelector('dialog');
+      dialog.innerHTML = '<h3>No production recipe for ' + esc(request.product_name) + '</h3><p>Add and approve a recipe with its ingredients, base piece yield and weight before baking. Recipes in the older recipe guide are not automatically production recipes.</p><div class="pd-line pd-row">' + button('cancel','Cancel') + button('create-missing-recipe','Create recipe for this product') + '</div>';
+      dialog.showModal(); return;
+    }
     if (action === 'request') { title = 'Sales production request'; html = select('product_name', 'Product', options(rows('menu'), 'name', 'name')) + '<div class="pd-fields">' + field('quantity', 'Required pieces', 'number', '', 'min="1" step="1"') + field('due_date', 'Required date', 'date', today()) + '</div><p class="pd-muted">Destination: Main outlet. A sales-authorized account must approve this request before baking.</p>'; }
-    if (action === 'start') { title = 'Plan & start: ' + request.product_name; html = select('recipe_id', 'Approved recipe version', rows('recipes').filter(r => r.product_name === request.product_name).map(r => '<option value="' + esc(r.id) + '">' + esc(date(r.created_at)) + ' · ' + esc(r.yield_qty) + ' pcs / ' + esc(r.yield_kg) + ' kg</option>').join('')) + '<div class="pd-fields">' + field('planned_qty', 'Planned pieces', 'number', request.quantity, 'min="1" step="1"') + field('planned_kg', 'Planned kg', 'number', '', 'min="0.001" step="any"') + '</div><p class="pd-muted">Recipe ingredients are scaled by pieces and deducted atomically when you start baking.</p>'; }
+    if (action === 'start') { title = 'Plan & start: ' + request.product_name; html = '<label>Approved recipe version<select name="recipe_id" required>' + matchingRecipes.map((r,index) => '<option value="' + esc(r.id) + '"' + (index === 0 ? ' selected' : '') + '>Version ' + (matchingRecipes.length-index) + ' · ' + esc(date(r.created_at)) + ' · ' + esc(r.yield_qty) + ' pcs / ' + esc(r.yield_kg) + ' kg · ' + esc(r.id.slice(0,8)) + '</option>').join('') + '</select></label><div class="pd-fields">' + field('planned_qty', 'Planned pieces', 'number', request.quantity, 'min="1" step="1" readonly') + field('planned_kg', 'Planned kg (from recipe)', 'number', Number((num(request.quantity)*num(matchingRecipes[0].yield_kg)/num(matchingRecipes[0].yield_qty)).toFixed(6)), 'min="0.000001" step="any" readonly') + '</div><p class="pd-muted">Recipe ingredients are scaled by pieces and deducted atomically when you start baking.</p>'; }
     if (action === 'complete') { title = 'Submit baked batch'; html = '<div class="pd-fields">' + field('actual_qty', 'Actual good pieces', 'number', batch.planned_qty, 'min="1" step="1"') + field('actual_kg', 'Actual output kg', 'number', batch.planned_kg, 'min="0.001" step="any"') + field('labor_cost', 'Direct labor ₹', 'number', 0, 'min="0" step="0.01"') + field('overhead_cost', 'Production overhead ₹', 'number', 0, 'min="0" step="0.01"') + '</div><p class="pd-muted">Packaging scales to actual output. Ingredient usage is the frozen recipe quantity issued at start. Record exceptional usage through a reviewed stock correction before closing this batch.</p>'; }
     if (action === 'collect') { title = 'Confirm outlet collection'; html = '<p>' + esc(batch.product_name) + ' · ' + (num(batch.actual_qty) - num(batch.collected_qty)) + ' pieces available</p>' + field('quantity', 'Pieces received by Main outlet', 'number', num(batch.actual_qty) - num(batch.collected_qty), 'min="1" step="1" max="' + (num(batch.actual_qty) - num(batch.collected_qty)) + '"') + '<p class="pd-muted">Only confirm quantities physically received. This adds them to outlet stock once.</p>'; }
     if (action === 'purchase') { title = 'Record material or packaging stock-in'; html = '<div class="pd-fields">' + select('kind', 'Type', '<option value="raw">Raw material</option><option value="packaging">Packaging</option>') + field('name', 'Material name') + select('unit', 'Stock unit', ['kg','g','l','ml','pcs'].map(u => '<option>' + u + '</option>').join('')) + field('category', 'Category', 'text', 'General') + field('quantity', 'Received quantity', 'number', '', 'min="0.000001" step="any"') + field('total_cost', 'Total purchase cost ₹', 'number', '', 'min="0.01" step="0.01"') + field('purchase_date', 'Stock-in date', 'date', today()) + '</div><p class="pd-muted">Use an existing material’s exact name and unit to replenish it.</p>'; }
@@ -129,6 +167,14 @@
     const dialog = root.querySelector('dialog');
     dialog.innerHTML = '<form><h3 id="pd-form-title">' + esc(title) + '</h3><div class="pd-error" role="alert"></div>' + html + '<div class="pd-line pd-row"><button type="button" data-action="cancel">Cancel</button><button type="submit" class="pd-primary">' + (action === 'start' ? 'Start baking' : 'Save') + '</button></div></form>';
     dialog.setAttribute('aria-labelledby', 'pd-form-title'); dialog.showModal();
+    if (action === 'start') dialog.querySelector('[name=recipe_id]').addEventListener('change', event => {
+      const recipe = matchingRecipes.find(r => r.id === event.target.value);
+      dialog.querySelector('[name=planned_kg]').value = Number((num(request.quantity)*num(recipe.yield_kg)/num(recipe.yield_qty)).toFixed(6));
+    });
+    if (action === 'recipe' && pendingRequest) {
+      const chosen = [...dialog.querySelector('[name=product_name]').options].find(o => o.value === pendingRequest.product_name);
+      if (chosen) chosen.selected = true;
+    }
     // The same key is retained after transport errors so a retry cannot repost stock.
     const key = crypto.randomUUID();
     dialog.querySelector('form').addEventListener('submit', async event => {
@@ -144,6 +190,10 @@
       state.busy = true; dialog.querySelector('[type=submit]').disabled = true;
       try {
         await command(action, { ...values, id }, key); dialog.close(); await refresh();
+        if (action === 'recipe' && pendingRequest) {
+          const requestId = pendingRequest.id; pendingRequest = null;
+          state.busy = false; await showForm('start', requestId);
+        }
       } catch (error) { dialog.querySelector('[role=alert]').textContent = error.message || 'Unable to save. Retry to check the same operation.'; }
       finally { state.busy = false; dialog.querySelector('[type=submit]').disabled = false; }
     });
@@ -178,6 +228,7 @@
     if (window.closeAdminMenu) window.closeAdminMenu();
     await refresh();
     subscribe();
+    startStockFallback();
   }
   function subscribe() {
     if (!channel && state.ready) {
@@ -191,17 +242,18 @@
     const kitchen = document.getElementById('pg-kitchen');
     if (root.hidden && !(kitchen && kitchen.classList.contains('active'))) return;
     const activeTables = (root.hidden ? ['batches'] : screenSources[state.tab]).map(key => sources[key]);
-    if (event && event.table && !activeTables.includes(event.table)) return;
+    const stockEvent = event && ['store_orders','display_stock'].includes(event.table) && stockVisible();
+    if (event && event.table && !activeTables.includes(event.table) && !stockEvent) return;
     if (!root.hidden && state.tab === 'Profit report') { announce('Data may have changed. Select Refresh to update this report.'); return; }
     if (refreshTimer || root.querySelector('dialog').open || state.busy) return;
     const delay = Math.max(2000, 15000 - (Date.now() - (state.refreshed ? state.refreshed.getTime() : 0)));
     refreshTimer = setTimeout(() => {
       refreshTimer = null;
       if (document.hidden || state.loading || state.busy || root.querySelector('dialog').open || (root.hidden && !(kitchen && kitchen.classList.contains('active')))) return;
-      refresh().catch(error => announce(error.message));
+      if (stockEvent) refreshStock(); else refresh().catch(error => announce(error.message));
     }, delay);
   }
-  function close() { clearTimeout(refreshTimer); refreshTimer = null; root.hidden = true; document.body.style.overflow = previousOverflow; if (previousFocus) previousFocus.focus(); }
+  function close() { clearTimeout(refreshTimer); clearInterval(stockTimer); refreshTimer = null; root.hidden = true; document.body.style.overflow = previousOverflow; if (previousFocus) previousFocus.focus(); }
   function init() {
     if (root) return;
     root = document.createElement('section'); root.id = 'production-workspace'; root.hidden = true;
@@ -216,11 +268,12 @@
         if (action === 'close') close();
         else if (action === 'refresh') await refresh();
         else if (action === 'cancel') { if (!state.busy) root.querySelector('dialog').close(); }
+        else if (action === 'create-missing-recipe') { root.querySelector('dialog').close(); await showForm('recipe'); }
         else if (action === 'remove-line') target.closest('.pd-ingredient').remove();
         else if (action === 'ingredient' || action === 'packaging-line') root.querySelector('#pd-recipe-lines').insertAdjacentHTML('beforeend', ingredientRow(action === 'ingredient' ? 'materials' : 'packaging'));
         else if (action === 'export') exportCosts();
         else if (action === 'approve') { if (!state.busy) { state.busy = true; target.disabled = true; try { await command('approve', { id: target.dataset.id }, target.dataset.key || (target.dataset.key = crypto.randomUUID())); await refresh(); } finally { state.busy = false; target.disabled = false; } } }
-        else if (['request','recipe','purchase','start','complete','collect'].includes(action)) await showForm(action, target.dataset.id);
+        else if (['request','recipe','purchase','start','complete','collect'].includes(action)) { pendingRequest = null; await showForm(action, target.dataset.id); }
       } catch (error) { announce(error.message || 'Operation failed.'); }
     });
     root.querySelector('dialog').addEventListener('cancel', event => { if (state.busy) event.preventDefault(); });
