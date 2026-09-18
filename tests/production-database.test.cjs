@@ -29,6 +29,9 @@ const { PGlite } = require('../.production-test-runtime/node_modules/@electric-s
     insert into store_menu(name,category,price) values('Brownie','Brownies',40);
   `);
   await db.exec(fs.readFileSync(path.join(__dirname, '../migrations/20260918_production_workspace.sql'), 'utf8'));
+  await db.exec("alter table auth.users add column raw_user_meta_data jsonb default '{}';");
+  await db.exec(fs.readFileSync(path.join(__dirname, '../migrations/20260918_production_fixes.sql'), 'utf8'));
+  await db.exec(fs.readFileSync(path.join(__dirname, '../migrations/20260918_production_fixes.sql'), 'utf8'));
   await db.query('insert into cc_production_members(user_id,role) values($1,$2),($3,$4)', [sales,'sales',production,'production']);
   async function actor(id) { await db.query("select set_config('request.jwt.claim.sub',$1,false)",[id]); }
   async function command(action, payload, key = randomUUID()) {
@@ -41,6 +44,11 @@ const { PGlite } = require('../.production-test-runtime/node_modules/@electric-s
   await rejects(()=>command('purchase',{}),/access denied/);
   await actor(admin);
   assert.equal(await scalar('select cc_production_access()'),true);
+  const materialKey=randomUUID();
+  await db.query('select cc_production_add_material($1::jsonb,$2)',[JSON.stringify({name:'New flour',unit:'g',kind:'raw'}),materialKey]);
+  await db.query('select cc_production_add_material($1::jsonb,$2)',[JSON.stringify({name:'New flour',unit:'g',kind:'raw'}),materialKey]);
+  assert.equal(Number(await scalar("select count(*) from inventory_items where name='New flour'")),1);
+  assert.equal(Number(await scalar("select current_stock from inventory_items where name='New flour'")),0);
   const receipt = {kind:'raw',name:'Chocolate',unit:'kg',category:'Baking',quantity:10,total_cost:5000,purchase_date:'2026-01-01'};
   const receiptKey = randomUUID();
   await command('purchase',receipt,receiptKey);
@@ -58,6 +66,8 @@ const { PGlite } = require('../.production-test-runtime/node_modules/@electric-s
   await actor(production);
   await rejects(()=>command('approve',{id:req}),/sales-authorized/);
   await actor(sales); await command('approve',{id:req});
+  await db.query("update auth.users set raw_user_meta_data=$1::jsonb where id=$2",[JSON.stringify({full_name:'Sales Manager'}),sales]);
+  assert.equal((await db.query('select * from cc_production_approver_names($1::uuid[])',[[sales]])).rows[0].display_name,'Sales Manager');
   await rejects(()=>command('start',{id:req,recipe_id:recipe,planned_qty:100,planned_kg:5}),/production-authorized/);
   await actor(production);
   await rejects(()=>command('start',{id:req,recipe_id:recipe,planned_qty:100,planned_kg:4}),/recipe-scaled/);

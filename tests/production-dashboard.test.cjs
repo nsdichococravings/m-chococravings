@@ -18,7 +18,7 @@ function setup(authorized = true) {
     packaging_materials: [{id:'p',name:'Sleeve',unit:'pcs',current_stock:20,cost_per_unit:1,category:'Brownie'}],
     material_purchases: [], store_menu: [{ id:'m',name:'Brownie',category:'Brownie' }],
     display_stock: [{id:'d',item_name:'Brownie',current_stock:10,low_stock_threshold:5}],
-    cc_production_requests: [{id:'r',product_name:'Brownie',quantity:20,status:'approved',outlet_name:'Main outlet'}],
+    cc_production_requests: [{id:'r',product_name:'Brownie',quantity:20,status:'approved',outlet_name:'Main outlet',approved_by:'admin',approved_at:'2026-09-18'}],
     cc_production_recipes: [{id:'recipe',product_name:'Brownie',yield_qty:20,yield_kg:1,created_at:'2026-09-18',ingredients:[],packaging:[]}],
     cc_production_batches: [{id:'b',product_name:'Brownie',outlet_name:'Main outlet',status:'completed',planned_qty:20,planned_kg:1,actual_qty:20,collected_qty:0,total_cost:400,material_cost:300,packaging_cost:20,labor_cost:40,overhead_cost:40,unit_cost:20,completed_at:'2026-09-18'}],
     store_orders: [{id:'o',status:'collected',payment_status:'paid',items:[{name:'Brownie',qty:5,price:40}]}]
@@ -28,6 +28,8 @@ function setup(authorized = true) {
     from(name) { reads.push(name); return { select(){return this;}, order(){return this;}, gte(){return this;}, eq(){return this;}, limit(){return this;}, async range(a,b){return {data:(data[name]||[]).slice(a,b+1),error:null};} }; },
     async rpc(name,args) {
       if(name==='cc_production_access') return authorized ? {data:true,error:null} : {data:null,error:{message:'Migration not installed'}};
+      if(name==='cc_production_approver_names') return {data:[{user_id:'admin',display_name:'Sales Manager'}]};
+      if(name==='cc_production_add_material') {data.inventory_items.push({id:'new',name:args.p_payload.name,unit:args.p_payload.unit,current_stock:0});return {data:args.p_payload};}
       calls.push({name,args});
       if(args.p_action==='collect') {data.cc_production_batches[0].collected_qty+=Number(args.p_payload.quantity);data.display_stock[0].current_stock+=Number(args.p_payload.quantity);}
       return {data:{id:'saved'},error:null};
@@ -35,7 +37,7 @@ function setup(authorized = true) {
     channel(){return {on(){return this;},subscribe(){return this;}}}
   };
   window.registerAdminTool = (category, tool) => tools.push(tool);
-  const context = {window,document:window.document,navigator:{onLine:true},crypto:{randomUUID},console,setTimeout,clearTimeout,URL,Blob,Intl,Date,Map,
+  const context = {window,document:window.document,navigator:{onLine:true},crypto:{randomUUID},console,setTimeout,clearTimeout,setInterval,clearInterval,URL,Blob,Intl,Date,Map,
     FormData: class {constructor(form){this.pairs=[...form.querySelectorAll('input,select')].map(e=>[e.name,e.value]);} [Symbol.iterator](){return this.pairs[Symbol.iterator]();}}
   };
   vm.runInNewContext(source,context);
@@ -56,6 +58,11 @@ function setup(authorized = true) {
   await click('[data-tab="Materials"]');
   assert.match(root.textContent,/Raw materials/); assert.match(root.textContent,/Sleeve/);
   await click('[data-tab="Production"]');
+  assert.match(root.textContent,/Sales Manager/);
+  await click('[data-action="start"]');
+  assert.equal(Number(root.querySelector('[name=planned_kg]').value),1,'recipe auto-scales planned kg');
+  assert.match(root.querySelector('[name=recipe_id]').textContent,/Version 1/);
+  await click('[data-action="cancel"]');
   await click('[data-action="collect"]');
   const dialog=root.querySelector('dialog');
   assert.equal(dialog.open,true);
@@ -74,6 +81,29 @@ function setup(authorized = true) {
   assert.match(root.textContent,/₹200/);
   assert.match(root.textContent,/Cost allocation unavailable/);
   assert.match(root.textContent,/₹20/);
+  await click('[data-tab="Recipes"]');
+  await click('[data-action="recipe"]');
+  const line=root.querySelector('.pd-ingredient');
+  line.querySelector('[name=ingredient_name]').querySelector('option[value]').nextElementSibling.selected=true;
+  line.querySelector('[name=ingredient_name]').dispatchEvent(new env.window.Event('change',{bubbles:true}));
+  line.querySelector('[name=ingredient_unit]').querySelector('option[value="g"]').selected=true;
+  line.querySelector('[name=ingredient_quantity]').value='170';
+  root.querySelector('dialog form').dispatchEvent(new env.window.Event('submit',{bubbles:true,cancelable:true}));
+  await tick();await tick();
+  const recipeCall=env.calls.find(c=>c.args.p_action==='recipe');
+  assert.equal(recipeCall.args.p_payload.ingredients[0].quantity,0.17,'170g must store as 0.17kg');
+  assert.equal(recipeCall.args.p_payload.ingredients[0].display_unit,'g');
+  env.data.cc_production_recipes=[];
+  await click('[data-tab="Production"]');await click('[data-action="start"]');
+  assert.match(root.querySelector('dialog').textContent,/No production recipe/);
+  assert.equal(root.querySelector('dialog [type=submit]'),null,'no baking action without recipe');
+  await click('[data-action="create-missing-recipe"]');
+  assert.match(root.querySelector('dialog').textContent,/Add approved recipe/);
+  await click('[data-action="new-material"]');
+  root.querySelector('[name=new_name]').value='New flour';
+  await click('[data-action="save-material"]');
+  assert.match(root.querySelector('[name=ingredient_name]').textContent,/New flour/);
+  await click('[data-action="cancel"]');
   await click('[data-action="close"]');assert.equal(root.hidden,true);
   const missing=setup(false);await missing.window.openProductionDashboard();
   assert.equal(missing.reads.length,0,'no production reads before authorization');

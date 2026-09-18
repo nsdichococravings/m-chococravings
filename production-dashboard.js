@@ -138,8 +138,35 @@
     announce(stockVisible() && stockUpdated ? 'Outlet stock checked ' + stockUpdated.toLocaleTimeString('en-IN') + ' · Auto-check every 60 seconds while visible' : state.refreshed ? 'Updated ' + state.refreshed.toLocaleTimeString('en-IN') : '');
   }
   function materialOptions(kind) { return options(rows(kind).map(r => ({ value: r.name, label: r.name + ' (' + r.unit + ')' })), 'value', 'label'); }
+  const unitInfo = {
+    g:['mass',1], gram:['mass',1], grams:['mass',1], kg:['mass',1000], kgs:['mass',1000],
+    ml:['volume',1], l:['volume',1000], liter:['volume',1000], litre:['volume',1000], liters:['volume',1000], litres:['volume',1000],
+    pcs:['count',1], piece:['count',1], pieces:['count',1], dozen:['count',12], dozens:['count',12]
+  };
+  function allowedUnits(stockUnit) {
+    const info = unitInfo[String(stockUnit).toLowerCase()];
+    return !info ? [stockUnit] : info[0] === 'mass' ? ['g','kg'] : info[0] === 'volume' ? ['ml','l'] : ['pcs','dozen'];
+  }
+  function convertQuantity(quantity, from, to) {
+    if (from === to) return quantity;
+    const a = unitInfo[String(from).toLowerCase()], b = unitInfo[String(to).toLowerCase()];
+    if (!a || !b || a[0] !== b[0]) throw new Error('Incompatible ingredient units.');
+    return Number((quantity*a[1]/b[1]).toPrecision(12));
+  }
+  function updateIngredientUnits(line) {
+    const item = rows(line.dataset.kind).find(r => r.name === line.querySelector('[name=ingredient_name]').value);
+    line.querySelector('[name=ingredient_unit]').innerHTML = item ? allowedUnits(item.unit).map(u => '<option value="'+esc(u)+'">'+esc(u)+'</option>').join('') : '<option value="">Select material first</option>';
+  }
+  function ingredientValues(line) {
+    const name = line.querySelector('[name=ingredient_name]').value;
+    const item = rows(line.dataset.kind).find(r => r.name === name);
+    if (!item) throw new Error('Select or add a material for every recipe line.');
+    const quantity = Number(line.querySelector('[name=ingredient_quantity]').value), unit = line.querySelector('[name=ingredient_unit]').value;
+    if (!Number.isFinite(quantity) || quantity<=0) throw new Error('Ingredient quantities must be positive.');
+    return { name, unit: item.unit, quantity: convertQuantity(quantity,unit,item.unit), display_quantity: quantity, display_unit: unit };
+  }
   function ingredientRow(kind) {
-    return '<div class="pd-ingredient" data-kind="' + kind + '">' + select('ingredient_name', kind === 'materials' ? 'Ingredient' : 'Packaging', materialOptions(kind)) + field('ingredient_quantity', 'Quantity per base yield', 'number', '', 'min="0.000001" step="any"') + '<button type="button" data-action="remove-line">Remove</button></div>';
+    return '<div class="pd-ingredient" data-kind="' + kind + '">' + select('ingredient_name', kind === 'materials' ? 'Ingredient' : 'Packaging', materialOptions(kind)) + field('ingredient_quantity', 'Quantity per base yield', 'number', '', 'min="0.000001" step="any"') + select('ingredient_unit','Quantity unit','') + '<button type="button" data-action="remove-line">Remove</button></div>';
   }
   async function showForm(action, id) {
     if (!state.ready || state.busy) return;
@@ -163,7 +190,7 @@
     if (action === 'complete') { title = 'Submit baked batch'; html = '<div class="pd-fields">' + field('actual_qty', 'Actual good pieces', 'number', batch.planned_qty, 'min="1" step="1"') + field('actual_kg', 'Actual output kg', 'number', batch.planned_kg, 'min="0.001" step="any"') + field('labor_cost', 'Direct labor ₹', 'number', 0, 'min="0" step="0.01"') + field('overhead_cost', 'Production overhead ₹', 'number', 0, 'min="0" step="0.01"') + '</div><p class="pd-muted">Packaging scales to actual output. Ingredient usage is the frozen recipe quantity issued at start. Record exceptional usage through a reviewed stock correction before closing this batch.</p>'; }
     if (action === 'collect') { title = 'Confirm outlet collection'; html = '<p>' + esc(batch.product_name) + ' · ' + (num(batch.actual_qty) - num(batch.collected_qty)) + ' pieces available</p>' + field('quantity', 'Pieces received by Main outlet', 'number', num(batch.actual_qty) - num(batch.collected_qty), 'min="1" step="1" max="' + (num(batch.actual_qty) - num(batch.collected_qty)) + '"') + '<p class="pd-muted">Only confirm quantities physically received. This adds them to outlet stock once.</p>'; }
     if (action === 'purchase') { title = 'Record material or packaging stock-in'; html = '<div class="pd-fields">' + select('kind', 'Type', '<option value="raw">Raw material</option><option value="packaging">Packaging</option>') + field('name', 'Material name') + select('unit', 'Stock unit', ['kg','g','l','ml','pcs'].map(u => '<option>' + u + '</option>').join('')) + field('category', 'Category', 'text', 'General') + field('quantity', 'Received quantity', 'number', '', 'min="0.000001" step="any"') + field('total_cost', 'Total purchase cost ₹', 'number', '', 'min="0.01" step="0.01"') + field('purchase_date', 'Stock-in date', 'date', today()) + '</div><p class="pd-muted">Use an existing material’s exact name and unit to replenish it.</p>'; }
-    if (action === 'recipe') { title = 'Add approved recipe version'; html = select('product_name', 'Product', options(rows('menu'), 'name', 'name')) + '<div class="pd-fields">' + field('yield_qty', 'Base yield in pieces', 'number', '', 'min="1" step="1"') + field('yield_kg', 'Base output kg', 'number', '', 'min="0.001" step="any"') + '</div><div id="pd-recipe-lines">' + ingredientRow('materials') + '</div><div class="pd-row">' + button('ingredient', 'Add ingredient') + button('packaging-line', 'Add packaging') + '</div>'; }
+    if (action === 'recipe') { title = 'Add approved recipe version'; html = select('product_name', 'Product', options(rows('menu'), 'name', 'name')) + '<div class="pd-fields">' + field('yield_qty', 'Base yield in pieces', 'number', '', 'min="1" step="1"') + field('yield_kg', 'Base output kg', 'number', '', 'min="0.001" step="any"') + '</div><div id="pd-recipe-lines">' + ingredientRow('materials') + '</div><div class="pd-row">' + button('ingredient', 'Add ingredient line') + button('packaging-line', 'Add packaging line') + button('new-material', 'Add new ingredient / packaging') + '</div><div id="pd-new-material"></div><p class="pd-muted">Choose grams/kg, ml/litres or pieces/dozens for each quantity. Stock is deducted in the material’s stored unit.</p>'; }
     const dialog = root.querySelector('dialog');
     dialog.innerHTML = '<form><h3 id="pd-form-title">' + esc(title) + '</h3><div class="pd-error" role="alert"></div>' + html + '<div class="pd-line pd-row"><button type="button" data-action="cancel">Cancel</button><button type="submit" class="pd-primary">' + (action === 'start' ? 'Start baking' : 'Save') + '</button></div></form>';
     dialog.setAttribute('aria-labelledby', 'pd-form-title'); dialog.showModal();
@@ -180,13 +207,12 @@
     dialog.querySelector('form').addEventListener('submit', async event => {
       event.preventDefault(); if (state.busy) return;
       const values = Object.fromEntries(new FormData(event.target));
-      if (action === 'recipe') {
+      try { if (action === 'recipe') {
         values.ingredients = []; values.packaging = [];
         dialog.querySelectorAll('.pd-ingredient').forEach(line => {
-          const name = line.querySelector('select').value, item = rows(line.dataset.kind).find(r => r.name === name);
-          if (item) values[line.dataset.kind === 'materials' ? 'ingredients' : 'packaging'].push({ name, unit: item.unit, quantity: Number(line.querySelector('input').value) });
+          values[line.dataset.kind === 'materials' ? 'ingredients' : 'packaging'].push(ingredientValues(line));
         });
-      }
+      } } catch (error) { dialog.querySelector('[role=alert]').textContent = error.message; return; }
       state.busy = true; dialog.querySelector('[type=submit]').disabled = true;
       try {
         await command(action, { ...values, id }, key); dialog.close(); await refresh();
@@ -197,6 +223,27 @@
       } catch (error) { dialog.querySelector('[role=alert]').textContent = error.message || 'Unable to save. Retry to check the same operation.'; }
       finally { state.busy = false; dialog.querySelector('[type=submit]').disabled = false; }
     });
+  }
+  async function addNewMaterial(target) {
+    const panel = root.querySelector('#pd-new-material');
+    const payload = { name: panel.querySelector('[name=new_name]').value.trim(), unit: panel.querySelector('[name=new_unit]').value, kind: panel.querySelector('[name=new_kind]').value };
+    if (!payload.name) { panel.querySelector('[role=alert]').textContent = 'Enter a material name.'; return; }
+    target.disabled = true;
+    try {
+      const result = await dbClient().rpc('cc_production_add_material', { p_payload: payload, p_key: target.dataset.key || (target.dataset.key=crypto.randomUUID()) });
+      if (result.error) throw result.error;
+      const kind = payload.kind==='raw' ? 'materials' : 'packaging';
+      state.data[kind] = await readAll(sources[kind]);
+      root.querySelectorAll('.pd-ingredient').forEach(line => {
+        if (line.dataset.kind!==kind) return;
+        const selectEl=line.querySelector('[name=ingredient_name]'), old=selectEl.value;
+        selectEl.innerHTML='<option value="">Select…</option>'+materialOptions(kind);
+        const chosen=[...selectEl.options].find(o=>o.value===(old || payload.name));
+        if(chosen) chosen.selected=true;
+        if(!old) updateIngredientUnits(line);
+      });
+      panel.innerHTML='<p class="pd-muted">'+esc(payload.name)+' added with zero stock. Record its purchase in Materials before baking.</p>';
+    } catch(error) { panel.querySelector('[role=alert]').textContent=error.message; target.disabled=false; }
   }
   async function command(action, payload, key) {
     if (!navigator.onLine) throw new Error('Connect to the internet before posting stock changes.');
@@ -269,6 +316,10 @@
         else if (action === 'refresh') await refresh();
         else if (action === 'cancel') { if (!state.busy) root.querySelector('dialog').close(); }
         else if (action === 'create-missing-recipe') { root.querySelector('dialog').close(); await showForm('recipe'); }
+        else if (action === 'new-material') {
+          root.querySelector('#pd-new-material').innerHTML='<fieldset class="pd-line"><legend>New material</legend><div class="pd-error" role="alert"></div><label>Name<input name="new_name"></label><label>Type<select name="new_kind"><option value="raw">Ingredient</option><option value="packaging">Packaging</option></select></label><label>Stock unit<select name="new_unit">'+['g','kg','ml','l','pcs','dozen'].map(u=>'<option>'+u+'</option>').join('')+'</select></label>'+button('save-material','Save new material')+'</fieldset>';
+        }
+        else if (action === 'save-material') await addNewMaterial(target);
         else if (action === 'remove-line') target.closest('.pd-ingredient').remove();
         else if (action === 'ingredient' || action === 'packaging-line') root.querySelector('#pd-recipe-lines').insertAdjacentHTML('beforeend', ingredientRow(action === 'ingredient' ? 'materials' : 'packaging'));
         else if (action === 'export') exportCosts();
@@ -277,6 +328,7 @@
       } catch (error) { announce(error.message || 'Operation failed.'); }
     });
     root.querySelector('dialog').addEventListener('cancel', event => { if (state.busy) event.preventDefault(); });
+    root.addEventListener('change', event => { if (event.target.name==='ingredient_name') updateIngredientUnits(event.target.closest('.pd-ingredient')); });
     root.addEventListener('keydown', event => {
       if (root.querySelector('dialog').open) return;
       if (event.key === 'Escape') close();

@@ -36,7 +36,7 @@
 #production-workspace .pd-error{background:#fff0ed;color:#952e1c;padding:14px;border-radius:9px;margin-bottom:14px}
 #production-workspace .pd-notice{background:#fff7e3;color:#714900;padding:14px;border-radius:9px;margin-bottom:14px}
 #production-workspace .pd-empty{color:#74667d;padding:18px 0}
-#production-workspace .pd-ingredient{display:grid;grid-template-columns:2fr 1fr auto;gap:8px;align-items:end;margin-bottom:10px}
+#production-workspace .pd-ingredient{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;align-items:end;margin-bottom:10px}
 #production-workspace .pd-status{padding:8px 26px;background:#f4e8f7;color:#52265e}
 #production-workspace dialog{border:1px solid #dfd1e5;border-radius:14px;width:min(640px,94vw);max-height:90vh;padding:24px;color:#291b32;background:#fff}
 #production-workspace dialog::backdrop{background:#18082099}
