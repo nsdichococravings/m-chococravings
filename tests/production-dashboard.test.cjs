@@ -55,6 +55,12 @@ function setup(authorized = true) {
   assert.equal(env.reads.includes('material_purchases'),false,'dashboard must not load purchase history');
   assert.equal(root.querySelector('img'),null,'database labels must be escaped');
   const click=async selector=>{root.querySelector(selector).dispatchEvent(new env.window.Event('click',{bubbles:true}));await tick();};
+  const readsBeforeTabs=env.reads.length;
+  await click('[data-tab="Outlet"]');
+  await click('[data-tab="Dashboard"]');
+  assert.equal(env.reads.length,readsBeforeTabs,'recent shared data should not be fetched again when switching tabs');
+  await click('[data-action="refresh"]');
+  assert.ok(env.reads.length>readsBeforeTabs,'manual Refresh must bypass the cache');
   await click('[data-tab="Materials"]');
   assert.match(root.textContent,/Raw materials/); assert.match(root.textContent,/Sleeve/);
   await click('[data-tab="Production"]');
@@ -139,5 +145,13 @@ function setup(authorized = true) {
   assert.match(missing.document.getElementById('production-workspace').textContent,/Migration not installed/);
   const login=setup();await login.window.initializeProductionAccess();
   assert.equal(login.reads.filter(name=>name!=='cc_production_movements').length,0,'login must not load bulk production datasets');
+  const delayed=setup();
+  const realRpc=delayed.window.db.rpc;
+  let resolveNames;
+  delayed.window.db.rpc=(name,args)=>name==='cc_production_approver_names' ? new Promise(resolve=>{resolveNames=resolve;}) : realRpc(name,args);
+  await delayed.window.openProductionDashboard();
+  assert.match(delayed.document.querySelector('#production-workspace main').textContent,/Production requests/,'main data renders without waiting for approval names');
+  resolveNames({data:[{user_id:'admin',display_name:'Sales Manager'}]});await tick();
+  assert.match(delayed.document.querySelector('#production-workspace main').textContent,/Sales Manager/);
   console.log('PASS: dashboard navigation, escaped labels, collection form, duplicate-submit prevention, refreshed stock, honest profit state and migration/access blocking.');
 })().catch(error=>{console.error(error);process.exitCode=1;});
