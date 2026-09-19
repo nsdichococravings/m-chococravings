@@ -90,8 +90,8 @@ function setup(authorized = true) {
   await click('[data-tab="Profit report"]');
   assert.equal(env.reads.includes('store_orders'),true,'sales history loads on report demand');
   assert.match(root.textContent,/₹200/);
-  assert.match(root.textContent,/Estimated gross profit/);
-  assert.match(root.textContent,/Latest batch before sale/);
+  assert.match(root.textContent,/Estimated profit/);
+  assert.match(root.textContent,/Recorded batch costs/);
   assert.match(root.textContent,/₹100/);
   assert.match(root.textContent,/₹20/);
   await click('[data-tab="Recipes"]');

@@ -177,7 +177,7 @@
     if (completed.length) {
       const b=completed[0];
       return {cost:num(b.unit_cost), material:num(b.material_cost)/num(b.actual_qty), packaging:num(b.packaging_cost)/num(b.actual_qty),
-        extra:(num(b.labor_cost)+num(b.overhead_cost))/num(b.actual_qty), basis:'Latest batch before sale'};
+        extra:(num(b.labor_cost)+num(b.overhead_cost))/num(b.actual_qty), complete:[b.material_cost,b.packaging_cost,b.labor_cost,b.overhead_cost].every(v=>v!=null), basis:'Recorded batch costs'};
     }
     const recipes=rows('recipes').filter(r=>r.product_name===name && (!r.deleted_at || new Date(soldAt)<new Date(r.deleted_at))).sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)) || String(b.id).localeCompare(String(a.id)));
     const recipe=recipes.find(r=>new Date(r.created_at)<=new Date(soldAt)) || recipes[0];
@@ -193,7 +193,7 @@
         if(kind==='ingredients') material+=cost; else packaging+=cost;
       }
     }
-    return {cost:material+packaging,material,packaging,extra:0,basis:'Recipe at current material prices; labor/overhead excluded'};
+    return {cost:material+packaging,material,packaging,extra:0,complete:false,basis:'Recipe ingredients and packaging only'};
   }
   function profitRows() {
     const sales=new Map();
@@ -201,17 +201,30 @@
       let items=o.items;
       if(typeof items==='string') { try { items=JSON.parse(items); } catch (_) { items=[]; } }
       (Array.isArray(items)?items:[]).forEach(i=>{
-        const r=sales.get(i.name)||{quantity:0,gross:0,cost:0,material:0,packaging:0,extra:0,bases:new Set(),missing:new Set()};
+        const r=sales.get(i.name)||{quantity:0,gross:0,cost:0,material:0,packaging:0,extra:0,complete:true,bases:new Set(),missing:new Set()};
         const quantity=num(i.qty), estimate=estimateUnitCost(i.name,o.created_at);
+        if(quantity<=0) return;
         r.quantity+=quantity; r.gross+=quantity*num(i.price);
         if(estimate.missing) r.missing.add(estimate.missing);
-        else { for(const key of ['cost','material','packaging','extra']) r[key]+=quantity*estimate[key]; r.bases.add(estimate.basis); }
+        else { for(const key of ['cost','material','packaging','extra']) r[key]+=quantity*estimate[key]; r.complete=r.complete && estimate.complete; r.bases.add(estimate.basis); }
         sales.set(i.name,r);
       });
     });
-    return [...sales].map(([name,r])=>[esc(name),esc(r.quantity),cash(r.gross),
-      ...['material','packaging','extra','cost'].map(k=>r.missing.size?'—':cash(r[k])),
-      r.missing.size?'Needs cost setup':cash(r.gross-r.cost),esc([...r.missing,...r.bases].join('; '))]);
+    return [...sales].map(([name,r])=>{
+      const known=!r.missing.size, full=known && r.complete;
+      const details='<details class="pd-cost-details"><summary>How this is calculated</summary>'+
+        '<p><strong>Sales:</strong> '+esc(r.quantity)+' pieces · '+cash(r.gross)+' total</p>'+
+        (known?'<p><strong>Cost for one piece</strong><br>Ingredients: '+cash(r.material/r.quantity)+'<br>Packaging: '+cash(r.packaging/r.quantity)+
+          '<br>Labor + electricity / other making costs: '+(r.complete?cash(r.extra/r.quantity):'Not fully recorded')+'</p>'+
+          '<p>'+ (full?'Making cost':'Recorded cost only')+': '+cash(r.cost/r.quantity)+' per piece × '+esc(r.quantity)+' pieces = '+cash(r.cost)+'</p>'+
+          (full?'<p>Estimated profit: '+cash(r.gross)+' sales − '+cash(r.cost)+' making cost = <strong>'+cash(r.gross-r.cost)+'</strong></p>':
+          '<p>Complete a production batch with ingredient, packaging, labor and other making costs to calculate full making cost and profit. Recipe costs alone are incomplete.</p>'):
+          '<p>'+esc([...r.missing].join('; '))+'</p>')+
+        '<p class="pd-muted">'+esc([...r.bases].join('; '))+'</p></details>';
+      return [esc(name),esc(r.quantity),cash(r.gross/r.quantity)+'<br><small class="pd-muted">Average sold price</small>',
+        known?cash(r.cost/r.quantity)+'<br><small class="pd-muted">'+(full?'Estimated making cost':'Ingredients + packaging only')+'</small>':'Needs recipe / prices',
+        full?cash(r.gross-r.cost)+'<br><small class="pd-muted">'+cash((r.gross-r.cost)/r.quantity)+' per piece</small>':'Not ready<br><small class="pd-muted">'+(known?'Making costs incomplete':'Cost setup required')+'</small>',details];
+    });
   }
   async function deletionForm(action,id) {
     const dialog=root.querySelector('dialog');
@@ -246,7 +259,7 @@
     if (state.tab === 'Recipes') html += '<section class="pd-card"><div class="pd-row"><h3>Production recipes</h3>' + button('recipe', 'Add recipe version', null, !state.ready) + '</div>' + table(['Product / revision', 'Base yield', 'Ingredients', 'Packaging'], recipeRows()) + '</section>';
     if (state.tab === 'Outlet') html += '<div class="pd-grid"><section class="pd-card"><h3>Main outlet stock</h3>' + table(['Product', 'Available', 'Reorder level'], rows('outlet').map(r => [esc(r.item_name), esc(r.current_stock) + ' pcs', esc(r.low_stock_threshold)])) + '<p class="pd-muted">Sales continue through the existing order screen. Its database stock deduction remains the only sales stock writer.</p></section>' + readyPanel() + '</div>';
     if (state.tab === 'Profit report') {
-      html += '<div class="pd-stack"><section class="pd-card"><h3>Paid, collected item sales · Last 30 days</h3>' + table(['Item', 'Pieces sold', 'Item gross sales', 'Est. ingredients', 'Est. packaging', 'Est. labor / overhead', 'Estimated total cost', 'Estimated gross profit', 'Cost basis'], profitRows()) + '<p class="pd-muted">Line prices before order-level discounts and refunds. Only paid orders marked collected are included.</p></section><section class="pd-card"><div class="pd-row"><h3>Production cost by batch</h3>' + button('export', 'Export batch costs') + '</div>' + table(['Product', 'Baked', 'Collected', 'Ingredients', 'Packaging', 'Labor / overhead', 'Cost / piece'], rows('batches').filter(b => b.status === 'completed').map(b => [esc(b.product_name), esc(b.actual_qty), esc(b.collected_qty), cash(b.material_cost), cash(b.packaging_cost), cash(num(b.labor_cost) + num(b.overhead_cost)), cash(b.unit_cost)])) + '<div class="pd-notice pd-line">Estimates use the latest completed batch before each sale, or a recipe at current material prices. Recipe estimates exclude labor and overhead. These are gross margins before order discounts, refunds, tax and other operating expenses, not audited actual profit. Missing costs require recipe/material setup; they are never assumed to be zero.</div></section></div>';
+      html += '<div class="pd-stack"><section class="pd-card"><h3>Paid, collected item sales · Last 30 days</h3>' + '<p class="pd-notice">Making cost per piece = (ingredients + packaging + labor + other making costs) ÷ good pieces produced. Estimated profit = sales − making cost of the pieces sold.</p>' + table(['Item', 'Pieces sold', 'Selling price / piece', 'Making cost / piece', 'Estimated profit · all sold pieces', 'Cost details'], profitRows()) + '<p class="pd-muted">Line prices before order-level discounts and refunds. Only paid orders marked collected are included.</p></section><section class="pd-card"><div class="pd-row"><h3>Production cost by batch</h3>' + button('export', 'Export batch costs') + '</div>' + table(['Product', 'Baked', 'Collected', 'Ingredients', 'Packaging', 'Labor / overhead', 'Cost / piece'], rows('batches').filter(b => b.status === 'completed').map(b => [esc(b.product_name), esc(b.actual_qty), esc(b.collected_qty), cash(b.material_cost), cash(b.packaging_cost), cash(num(b.labor_cost) + num(b.overhead_cost)), cash(b.unit_cost)])) + '<div class="pd-notice pd-line">Batch estimates use the latest completed batch before the sale. Recipe-only costs use current material prices and do not include all making costs, so profit stays “Not ready.” All profits shown are estimates before discounts, refunds, tax and other business expenses. Recorded zero batch costs are treated as entered; review them if costs were omitted.</div></section></div>';
     }
     content.innerHTML = html;
     announce(stockVisible() && stockUpdated ? 'Outlet stock checked ' + stockUpdated.toLocaleTimeString('en-IN') + ' · Auto-check every 3 hours while visible' : state.refreshed ? 'Updated ' + state.refreshed.toLocaleTimeString('en-IN') : '');
@@ -303,7 +316,7 @@
     }
     if (action === 'request') { title = 'Sales production request'; html = select('product_name', 'Product', options(rows('menu'), 'name', 'name')) + '<div class="pd-fields">' + field('quantity', 'Required pieces', 'number', '', 'min="1" step="1"') + field('due_date', 'Required date', 'date', today()) + '</div><p class="pd-muted">Destination: Main outlet. A sales-authorized account must approve this request before baking.</p>'; }
     if (action === 'start') { title = 'Plan & start: ' + request.product_name; html = '<label>Approved recipe version<select name="recipe_id" required>' + matchingRecipes.map((r,index) => '<option value="' + esc(r.id) + '"' + (index === 0 ? ' selected' : '') + '>Version ' + (matchingRecipes.length-index) + ' · ' + esc(date(r.created_at)) + ' · ' + esc(r.yield_qty) + ' pcs / ' + esc(r.yield_kg) + ' kg · ' + esc(r.id.slice(0,8)) + '</option>').join('') + '</select></label><div class="pd-fields">' + field('planned_qty', 'Planned pieces', 'number', request.quantity, 'min="1" step="1" readonly') + field('planned_kg', 'Planned kg (from recipe)', 'number', Number((num(request.quantity)*num(matchingRecipes[0].yield_kg)/num(matchingRecipes[0].yield_qty)).toFixed(6)), 'min="0.000001" step="any" readonly') + '</div><p class="pd-muted">Recipe ingredients are scaled by pieces and deducted atomically when you start baking.</p>'; }
-    if (action === 'complete') { title = 'Submit baked batch'; html = '<div class="pd-fields">' + field('actual_qty', 'Actual good pieces', 'number', batch.planned_qty, 'min="1" step="1"') + field('actual_kg', 'Actual output kg', 'number', batch.planned_kg, 'min="0.001" step="any"') + field('labor_cost', 'Direct labor ₹', 'number', 0, 'min="0" step="0.01"') + field('overhead_cost', 'Production overhead ₹', 'number', 0, 'min="0" step="0.01"') + '</div><p class="pd-muted">Packaging scales to actual output. Ingredient usage is the frozen recipe quantity issued at start. Record exceptional usage through a reviewed stock correction before closing this batch.</p>'; }
+    if (action === 'complete') { title = 'Submit baked batch'; html = '<div class="pd-fields">' + field('actual_qty', 'Actual good pieces', 'number', batch.planned_qty, 'min="1" step="1"') + field('actual_kg', 'Actual output kg', 'number', batch.planned_kg, 'min="0.001" step="any"') + field('labor_cost', 'Labor for this whole batch ₹', 'number', '', 'min="0" step="0.01"') + field('overhead_cost', 'Electricity / other costs for this batch ₹', 'number', '', 'min="0" step="0.01"') + '</div><p class="pd-muted">Enter the total labor and other making costs for this batch, not per piece. Enter 0 only if there is genuinely no cost. Packaging scales to actual output. Ingredient usage is the frozen recipe quantity issued at start. Record exceptional usage through a reviewed stock correction before closing this batch.</p>'; }
     if (action === 'collect') { title = 'Confirm outlet collection'; html = '<p>' + esc(batch.product_name) + ' · ' + (num(batch.actual_qty) - num(batch.collected_qty)) + ' pieces available</p>' + field('quantity', 'Pieces received by Main outlet', 'number', num(batch.actual_qty) - num(batch.collected_qty), 'min="1" step="1" max="' + (num(batch.actual_qty) - num(batch.collected_qty)) + '"') + field('collected_by', 'Collected by', 'text', '', 'maxlength="120"') + '<p class="pd-muted">Only confirm quantities physically received. This adds them to outlet stock once.</p>'; }
     if (action === 'purchase') { title = 'Record material or packaging stock-in'; html = '<div class="pd-fields">' + select('kind', 'Type', '<option value="raw">Raw material</option><option value="packaging">Packaging</option>') + field('name', 'Material name') + select('unit', 'Stock unit', ['kg','g','l','ml','pcs'].map(u => '<option>' + u + '</option>').join('')) + field('category', 'Category', 'text', 'General') + field('quantity', 'Received quantity', 'number', '', 'min="0.000001" step="any"') + field('total_cost', 'Total purchase cost ₹', 'number', '', 'min="0.01" step="0.01"') + field('purchase_date', 'Stock-in date', 'date', today()) + '</div><p class="pd-muted">Use an existing material’s exact name and unit to replenish it.</p>'; }
     if (action === 'recipe') { title = 'Add approved recipe version'; html = select('product_name', 'Product', options(rows('menu'), 'name', 'name')) + '<div class="pd-fields">' + field('yield_qty', 'Base yield in pieces', 'number', '', 'min="1" step="1"') + field('yield_kg', 'Base output kg', 'number', '', 'min="0.001" step="any"') + '</div><div id="pd-recipe-lines">' + ingredientRow('materials') + '</div><div class="pd-row">' + button('ingredient', 'Add ingredient line') + button('packaging-line', 'Add packaging line') + button('new-material', 'Add new ingredient / packaging') + '</div><div id="pd-new-material"></div><p class="pd-muted">Choose grams/kg, ml/litres or pieces/dozens for each quantity. Stock is deducted in the material’s stored unit.</p>'; }
