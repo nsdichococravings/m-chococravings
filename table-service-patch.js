@@ -143,7 +143,7 @@ function closeTablesBoard() {
 async function loadTablesStatus() {
   var today = new Date().toISOString().slice(0, 10);
   var res = await db.from('store_orders')
-    .select('id, table_code, items, total, status, staff_name, created_at')
+    .select('id, table_code, items, total, collected_amount, status, staff_name, created_at')
     .not('table_code', 'is', null)
     .not('status', 'in', '("collected","cancelled")')
     .gte('created_at', today + 'T00:00:00.000Z');
@@ -171,6 +171,10 @@ function renderTablesGrid(map, rankMap) {
       var count = items.reduce(function (s, i) { return s + (i.qty || 1); }, 0);
       var statusLbl = { pending: 'Pending', preparing: 'Preparing', ready: 'Ready!', delivered: 'Waiting for Bill' }[o.status] || o.status;
       var staffBadge = o.staff_name ? ('<div style="font-size:10px;color:#8a6a3a;margin-top:2px">👤 ' + o.staff_name + '</div>') : '';
+      var collected = o.collected_amount || 0;
+      var billLine = collected > 0
+        ? count + ' items · 💰 ₹' + Math.max(0, Math.round((o.total - collected) * 100) / 100) + ' left'
+        : count + ' items · ₹' + o.total;
 
       var rank = rankMap[code];
       var rankColors = ['#dc2626', '#f97316', '#eab308', '#8b5cf6', '#6b7280'];
@@ -188,7 +192,7 @@ function renderTablesGrid(map, rankMap) {
         + rankBadge
         + '<div style="font-family:Fraunces,Georgia,serif;font-size:22px;font-weight:900;color:#b87410">' + code + '</div>'
         + '<div style="font-size:10px;font-weight:700;color:#b87410;letter-spacing:1px;margin-top:2px">' + statusLbl.toUpperCase() + '</div>'
-        + '<div style="font-size:12px;color:#8a6a3a;margin-top:6px">' + count + ' items · ₹' + o.total + '</div>'
+        + '<div style="font-size:12px;color:#8a6a3a;margin-top:6px">' + billLine + '</div>'
         + staffBadge
         + '</div>';
     }
@@ -224,7 +228,7 @@ function openTableOrderSheet(code) {
   var moveBtn = document.getElementById('ts-move-btn');
 
   db.from('store_orders')
-    .select('id, items, total, status, created_at, staff_name, customer_phone')
+    .select('id, items, total, collected_amount, status, created_at, staff_name, customer_phone')
     .eq('table_code', code)
     .not('status', 'in', '("collected","cancelled")')
     .order('created_at', { ascending: false })
@@ -236,7 +240,7 @@ function openTableOrderSheet(code) {
         _tsExistingOrder = res.data;
         var rawItems = res.data.items;
         _tsItems = (Array.isArray(rawItems) ? rawItems : JSON.parse(rawItems || '[]')).map(function (i) {
-          return { name: i.name, price: i.price, qty: i.qty, delivered: !!i.delivered, prepared_by: i.prepared_by || null, prepared_at: i.prepared_at || null, complimentary: !!i.complimentary, _origQty: i.qty };
+          return { name: i.name, price: i.price, qty: i.qty, delivered: !!i.delivered, prepared_by: i.prepared_by || null, prepared_at: i.prepared_at || null, complimentary: !!i.complimentary, paidQty: i.paidQty || 0, _origQty: i.qty };
         });
         sendBtn.textContent = '➕ Add Items';
         billBtn.style.display = 'block';
@@ -271,7 +275,7 @@ async function kOpenOrderEditFromKitchen(orderId) {
   _tsItems = [];
 
   var res = await db.from('store_orders')
-    .select('id, items, total, status, created_at, staff_name, customer_phone, table_code, token')
+    .select('id, items, total, collected_amount, status, created_at, staff_name, customer_phone, table_code, token')
     .eq('id', orderId)
     .maybeSingle();
   if (!res.data) { showStoreToast('Could not load this order'); return; }
@@ -282,7 +286,7 @@ async function kOpenOrderEditFromKitchen(orderId) {
 
   var rawItems = o.items;
   _tsItems = (Array.isArray(rawItems) ? rawItems : JSON.parse(rawItems || '[]')).map(function (i) {
-    return { name: i.name, price: i.price, qty: i.qty, delivered: !!i.delivered, prepared_by: i.prepared_by || null, prepared_at: i.prepared_at || null, complimentary: !!i.complimentary, _origQty: i.qty };
+    return { name: i.name, price: i.price, qty: i.qty, delivered: !!i.delivered, prepared_by: i.prepared_by || null, prepared_at: i.prepared_at || null, complimentary: !!i.complimentary, paidQty: i.paidQty || 0, _origQty: i.qty };
   });
 
   document.getElementById('ts-order-title').textContent = o.table_code ? o.table_code : ('#' + o.token);
@@ -387,6 +391,8 @@ function tsQuickAdd(name, price) {
 }
 
 function tsRemoveItem(idx) {
+  var item = _tsItems[idx];
+  if (item && item.paidQty > 0) { showStoreToast('Can\'t remove — ₹' + (item.paidQty * item.price) + ' already collected for this item'); return; }
   _tsItems.splice(idx, 1);
   tsRenderItems();
   tsCalcTotal();
@@ -395,6 +401,7 @@ function tsRemoveItem(idx) {
 function tsDecrementItem(idx) {
   var item = _tsItems[idx];
   if (!item) return;
+  if (item.paidQty > 0 && item.qty <= item.paidQty) { showStoreToast('Can\'t reduce below the ' + item.paidQty + ' already paid for'); return; }
   if (item.qty > 1) {
     item.qty--;
   } else {
@@ -422,6 +429,7 @@ function tsRenderItems() {
       + '<span style="font-family:Fraunces,Georgia,serif;font-size:13px;font-weight:900;color:#fff;'
       + 'background:' + (isFree ? '#b87410' : '#6e0977') + ';padding:2px 9px;border-radius:20px;flex-shrink:0">×' + item.qty + '</span>'
       + (isFree ? '<span style="font-size:9px;font-weight:700;color:#b87410;background:rgba(245,196,48,0.2);padding:2px 7px;border-radius:10px">🎁 FREE</span>' : '')
+      + (item.paidQty > 0 ? '<span style="font-size:9px;font-weight:700;color:#15803d;background:rgba(74,222,128,0.15);padding:2px 7px;border-radius:10px">💰 ' + item.paidQty + '/' + item.qty + ' paid</span>' : '')
       + '</div>'
       + '<div style="font-size:11px;color:#9c0ca1;margin-top:2px;' + (isFree ? 'text-decoration:line-through' : '') + '">₹' + item.price + ' each</div>'
       + '</div>'
@@ -475,7 +483,8 @@ async function tsSubmit() {
       delivered: resetPrep ? false : !!item.delivered,
       prepared_by: resetPrep ? null : (item.prepared_by || null),
       prepared_at: resetPrep ? null : (item.prepared_at || null),
-      complimentary: !!item.complimentary
+      complimentary: !!item.complimentary,
+      paidQty: item.paidQty || 0
     };
   });
 
@@ -548,7 +557,8 @@ async function tsUndoDelivered() {
 
 async function tsBillAndClose() {
   if (!_tsExistingOrder) return;
-  openSplitPaymentPicker(_tsExistingOrder.id, _tsExistingOrder.total, { type: 'table', tableCode: _tsTableCode, fromTablesBoard: true });
+  var remaining = Math.max(0, Math.round((_tsExistingOrder.total - (_tsExistingOrder.collected_amount || 0)) * 100) / 100);
+  openSplitPaymentPicker(_tsExistingOrder.id, remaining, { type: 'table', tableCode: _tsTableCode, fromTablesBoard: true });
 }
 
 // ── 5. Kitchen display — show table code instead of token ──────
@@ -601,6 +611,9 @@ function renderKitchen(orders) {
     var itemsHtml = o.table_code
       ? (itemsArr || []).map(function (i, idx) {
           var delivered = !!i.delivered;
+          var paidQty = i.complimentary ? i.qty : (i.paidQty || 0);
+          var fullyPaid = paidQty >= i.qty;
+          var partiallyPaid = paidQty > 0 && !fullyPaid;
           var preparedTag = i.prepared_by
             ? '<span style="font-size:9px;font-weight:700;color:#4ade80;background:rgba(74,222,128,0.12);'
               + 'padding:2px 7px;border-radius:10px;margin-left:6px;flex-shrink:0">✅ ' + i.prepared_by + '</span>'
@@ -609,7 +622,25 @@ function renderKitchen(orders) {
             ? '<span style="font-size:9px;font-weight:700;color:#b87410;background:rgba(245,196,48,0.15);'
               + 'padding:2px 7px;border-radius:10px;margin-left:6px;flex-shrink:0">🎁 FREE</span>'
             : '';
-          return '<div style="display:flex;align-items:center;gap:9px;padding:5px 0">'
+          var paidTag = fullyPaid && !i.complimentary
+            ? '<span style="font-size:9px;font-weight:700;color:#4ade80;background:rgba(74,222,128,0.15);'
+              + 'padding:2px 7px;border-radius:10px;margin-left:6px;flex-shrink:0">💰 PAID</span>'
+            : partiallyPaid
+              ? '<span style="font-size:9px;font-weight:700;color:#f5c430;background:rgba(245,196,48,0.15);'
+                + 'padding:2px 7px;border-radius:10px;margin-left:6px;flex-shrink:0">💰 ' + paidQty + '/' + i.qty + ' paid</span>'
+              : '';
+          var collectBtn = (!i.complimentary && !fullyPaid)
+            ? '<span onclick="openItemCollectPicker(\'' + o.id + '\',' + idx + ')" title="Collect payment for this item" '
+              + 'style="width:24px;height:24px;border-radius:7px;background:rgba(74,222,128,0.15);'
+              + 'border:1px solid rgba(74,222,128,0.35);display:flex;align-items:center;justify-content:center;'
+              + 'font-size:12px;cursor:pointer;flex-shrink:0">💰</span>'
+            : '';
+          var rowBg = fullyPaid && !i.complimentary
+            ? 'background:rgba(74,222,128,0.08);border-radius:8px;padding:5px 6px;margin:2px 0'
+            : partiallyPaid
+              ? 'background:rgba(245,196,48,0.08);border-radius:8px;padding:5px 6px;margin:2px 0'
+              : 'padding:5px 0';
+          return '<div style="display:flex;align-items:center;gap:9px;' + rowBg + '">'
             + '<span onclick="kToggleItemDelivered(\'' + o.id + '\',' + idx + ')" style="width:18px;height:18px;border-radius:5px;flex-shrink:0;display:flex;'
             + 'align-items:center;justify-content:center;font-size:11px;color:#0c0810;cursor:pointer;'
             + 'border:1.5px solid ' + (delivered ? '#4ade80' : 'rgba(255,255,255,.25)') + ';'
@@ -619,9 +650,11 @@ function renderKitchen(orders) {
             + 'text-decoration:' + (delivered ? 'line-through' : 'none') + '">' + i.name + '</span>'
             + preparedTag
             + compTag
+            + paidTag
             + '<span onclick="openItemRecipePopup(\'' + o.id + '\',' + idx + ')" style="width:24px;height:24px;border-radius:7px;'
             + 'background:rgba(245,196,48,0.15);border:1px solid rgba(245,196,48,0.3);display:flex;align-items:center;'
             + 'justify-content:center;font-size:12px;cursor:pointer;flex-shrink:0">📖</span>'
+            + collectBtn
             + '<span style="font-size:12px;color:#c084fc;font-weight:700;background:rgba(192,132,252,0.12);'
             + 'border-radius:8px;padding:2px 7px;flex-shrink:0">₹' + (i.price || 0) + '</span>'
             + '<span style="font-size:12px;color:#f5c430;font-weight:700;flex-shrink:0">×' + i.qty + '</span>'
@@ -651,18 +684,32 @@ function renderKitchen(orders) {
 
     var primaryAction = kPrimaryActionFor(o);
 
+    var collectedSoFar = o.table_code ? (o.collected_amount || 0) : 0;
+    var remainingBill = Math.max(0, Math.round(((o.total || 0) - collectedSoFar) * 100) / 100);
+    var totalBox = collectedSoFar > 0
+      ? '<div style="display:flex;justify-content:space-between;align-items:center;'
+        + 'background:linear-gradient(135deg,rgba(74,222,128,0.14),rgba(245,196,48,0.06));'
+        + 'border:1.5px solid rgba(74,222,128,0.4);border-radius:12px;padding:10px 14px;margin-bottom:10px">'
+        + '<div>'
+        + '<div style="font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(74,222,128,0.9)">REMAINING</div>'
+        + '<div style="font-size:10.5px;color:rgba(245,234,220,.6);margin-top:2px">💰 ₹' + collectedSoFar + ' collected of ₹' + (o.total || 0) + '</div>'
+        + '</div>'
+        + '<span style="font-family:Fraunces,Georgia,serif;font-size:26px;font-weight:900;color:#f5c430">₹' + remainingBill + '</span>'
+        + '</div>'
+      : '<div style="display:flex;justify-content:space-between;align-items:center;'
+        + 'background:linear-gradient(135deg,rgba(245,196,48,0.18),rgba(245,196,48,0.06));'
+        + 'border:1.5px solid rgba(245,196,48,0.4);border-radius:12px;padding:10px 14px;margin-bottom:10px">'
+        + '<span style="font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(245,196,48,0.85)">TOTAL</span>'
+        + '<span style="font-family:Fraunces,Georgia,serif;font-size:26px;font-weight:900;color:#f5c430">₹' + (o.total || 0) + '</span>'
+        + '</div>';
+
     return '<div class="k-ticket" id="kt-' + o.id + '" data-s="' + o.status + '">'
       + '<div class="k-top"><div class="k-tok">' + headline + '</div>'
       + '<div class="k-badge">' + o.status.toUpperCase() + '</div>'
       + '<div class="k-age">' + age + '</div></div>'
       + '<div style="font-size:11.5px;color:rgba(245,234,220,.65);margin-bottom:9px;font-weight:600">' + metaLine + payBadge + '</div>'
       + '<div style="background:rgba(0,0,0,0.22);border-radius:10px;padding:9px 12px;margin-bottom:10px">' + itemsHtml + '</div>'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;'
-      + 'background:linear-gradient(135deg,rgba(245,196,48,0.18),rgba(245,196,48,0.06));'
-      + 'border:1.5px solid rgba(245,196,48,0.4);border-radius:12px;padding:10px 14px;margin-bottom:10px">'
-      + '<span style="font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(245,196,48,0.85)">TOTAL</span>'
-      + '<span style="font-family:Fraunces,Georgia,serif;font-size:26px;font-weight:900;color:#f5c430">₹' + (o.total || 0) + '</span>'
-      + '</div>'
+      + totalBox
       + '<div style="display:flex;gap:8px">'
       + '<button class="k-btn" onclick="' + primaryAction.onclick + '" style="flex:1;padding:12px;'
       + 'background:' + primaryAction.bg + ';border:1.5px solid ' + primaryAction.border + ';'
@@ -700,7 +747,8 @@ function kPrimaryActionFor(o) {
       bg: 'rgba(74,222,128,.1)', border: 'rgba(74,222,128,.3)', color: '#4ade80' };
   }
   if (o.status === 'delivered' && o.table_code) {
-    return { label: '💰 Mark Bill Collected', onclick: "openSplitPaymentPicker('" + o.id + "'," + (o.total || 0) + ",{type:'table',tableCode:'" + o.table_code + "'})",
+    var remainingA = Math.max(0, Math.round(((o.total || 0) - (o.collected_amount || 0)) * 100) / 100);
+    return { label: '💰 Mark Bill Collected', onclick: "openSplitPaymentPicker('" + o.id + "'," + remainingA + ",{type:'table',tableCode:'" + o.table_code + "'})",
       bg: 'rgba(34,197,94,.12)', border: 'rgba(34,197,94,.35)', color: '#15803d' };
   }
   // fallback — shouldn't normally hit this, but keeps a safe default
@@ -720,8 +768,9 @@ function kMoreActionsRow(o) {
   var items = [];
   items.push({ icon: '✏️', label: 'Add / Edit', color: '#c084fc', onclick: "kOpenOrderEditFromKitchen('" + o.id + "')" });
   if (o.table_code && o.status !== 'delivered') {
+    var remainingB = Math.max(0, Math.round(((o.total || 0) - (o.collected_amount || 0)) * 100) / 100);
     items.push({ icon: '💰', label: 'Bill Collected', color: '#4ade80',
-      onclick: "openSplitPaymentPicker('" + o.id + "'," + (o.total || 0) + ",{type:'table',tableCode:'" + o.table_code + "'})" });
+      onclick: "openSplitPaymentPicker('" + o.id + "'," + remainingB + ",{type:'table',tableCode:'" + o.table_code + "'})" });
   }
   items.push({ icon: '🖨️', label: 'Print', color: '#f0c96b', onclick: "printStoreInvoice('" + o.id + "')" });
   items.push({ icon: '❌', label: 'Cancel', color: '#f87171', onclick: "kCancelOrder('" + o.id + "')" });
@@ -1477,13 +1526,44 @@ async function confirmSplitPayment() {
 }
 
 // ── Shared finalize step for both Full and Partial modes ──
+// Settles whatever is LEFT on the bill (openSplitPaymentPicker is always
+// called with the remaining balance, not the raw order total — see
+// tsBillAndClose/kPrimaryActionFor/kMoreActionsRow), so this always fully
+// closes the order. It merges into any prior item-level partial
+// collections (see icFinalize) rather than overwriting them, so per-item
+// "Collect" payments made earlier still show up correctly in the final
+// payment_split/collected_amount and every item is marked fully paid.
 async function spFinalizePayment(splitObj, summaryMethod, breakdownText, cashReceived, changeGiven) {
   try {
+    var existing = await db.from('store_orders').select('items, total, collected_amount, payment_split').eq('id', _spOrderId).single();
+    if (existing.error) throw existing.error;
+
+    var items = Array.isArray(existing.data.items) ? existing.data.items : JSON.parse(existing.data.items || '[]');
+    items.forEach(function (i) { i.paidQty = i.qty; }); // fully settling the order now — every item counts as paid
+
+    var prevSplit = existing.data.payment_split
+      ? (typeof existing.data.payment_split === 'string' ? JSON.parse(existing.data.payment_split) : existing.data.payment_split)
+      : {};
+    var mergedSplit = {};
+    Object.keys(prevSplit).forEach(function (k) { mergedSplit[k] = prevSplit[k]; });
+    Object.keys(splitObj).forEach(function (k) { mergedSplit[k] = Math.round(((mergedSplit[k] || 0) + splitObj[k]) * 100) / 100; });
+
+    var thisAmount = Object.keys(splitObj).reduce(function (s, k) { return s + splitObj[k]; }, 0);
+    var newCollected = Math.round(((existing.data.collected_amount || 0) + thisAmount) * 100) / 100;
+
+    var labels = { cash: 'Cash', upi: 'UPI', upi_qr: 'Scan QR', card: 'Card' };
+    var mergedMethods = Object.keys(mergedSplit).filter(function (k) { return mergedSplit[k] > 0; });
+    var mergedSummaryMethod = mergedMethods.length === 1 ? mergedMethods[0] : (mergedMethods.length > 1 ? 'split' : summaryMethod);
+    var mergedBreakdownText = mergedMethods.map(function (k) { return labels[k] + ' ₹' + mergedSplit[k]; }).join(' + ');
+
     await db.from('store_orders').update({
       status: 'collected',
       payment_status: 'paid',
-      payment_method: summaryMethod,
-      payment_split: JSON.stringify(splitObj)
+      payment_method: mergedSummaryMethod,
+      payment_split: JSON.stringify(mergedSplit),
+      collected_amount: newCollected,
+      items: JSON.stringify(items),
+      collected_at: new Date().toISOString()
     }).eq('id', _spOrderId);
 
     var context = _spContext;
@@ -1518,7 +1598,7 @@ async function spFinalizePayment(splitObj, summaryMethod, breakdownText, cashRec
     }
 
     if (context.type === 'table') {
-      await sendTableBillWhatsApp(orderId, context.tableCode, breakdownText);
+      await sendTableBillWhatsApp(orderId, context.tableCode, mergedBreakdownText);
     }
   } catch (e) {
     showStoreToast('Error: ' + e.message);
@@ -1551,6 +1631,269 @@ async function sendTableBillWhatsApp(orderId, tableCode, breakdownText) {
   } catch (e) {
     showStoreToast('Error: ' + e.message);
   }
+}
+
+// ══════════════════════════════════════════════════════════════
+// Item-Level Partial Bill Collection — for a shared table where each
+// diner pays for their own item(s) instead of one person settling the
+// whole table bill at once. Tap 💰 on any item in the Kitchen ticket,
+// say how many of that item's quantity is being paid for right now, and
+// that amount comes off the table's remaining bill (shown in the
+// ticket's REMAINING box) and gets highlighted paid on the item itself.
+// Once every item's quantity has been paid for, the order finalizes
+// itself exactly like a normal "Bill Collected" — status flips to
+// collected and it drops off the Kitchen queue.
+// ══════════════════════════════════════════════════════════════
+var _icOrderId = null;
+var _icItemIndex = null;
+var _icUnitPrice = 0;
+var _icRemainingQty = 0;
+var _icMethod = null;
+
+async function openItemCollectPicker(orderId, itemIndex) {
+  var res = await db.from('store_orders')
+    .select('id, items, total, collected_amount, payment_split, payment_method, table_code, customer_phone')
+    .eq('id', orderId).single();
+  if (res.error || !res.data) { showStoreToast('Could not load this order'); return; }
+
+  var items = Array.isArray(res.data.items) ? res.data.items : JSON.parse(res.data.items || '[]');
+  var item = items[itemIndex];
+  if (!item) { showStoreToast('Item not found'); return; }
+
+  var paidQty = item.paidQty || 0;
+  var remaining = item.qty - paidQty;
+  if (item.complimentary || remaining <= 0) { showStoreToast('This item is already fully paid'); return; }
+
+  _icOrderId = orderId;
+  _icItemIndex = itemIndex;
+  _icUnitPrice = item.price || 0;
+  _icRemainingQty = remaining;
+  _icMethod = null;
+
+  var existing = document.getElementById('ic-overlay');
+  if (existing) existing.remove();
+
+  var overlay = document.createElement('div');
+  overlay.id = 'ic-overlay';
+  overlay.onclick = function (e) { if (e.target === overlay) closeItemCollectPicker(); };
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(18,10,30,0.65);backdrop-filter:blur(3px);'
+    + 'z-index:4400;display:flex;align-items:center;justify-content:center;padding:16px;font-family:\'DM Sans\',sans-serif';
+
+  var box = document.createElement('div');
+  box.id = 'ic-card';
+  box.style.cssText = 'background:#fff;border-radius:26px;max-width:400px;width:100%;'
+    + 'max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,0.3)';
+
+  box.innerHTML =
+      '<div style="background:linear-gradient(135deg,#6e0977,#9c0ca1);padding:24px 22px;border-radius:26px 26px 0 0;text-align:center">'
+    + '<div style="font-size:10px;font-weight:700;letter-spacing:3px;color:rgba(255,255,255,.7)">COLLECT FOR ITEM</div>'
+    + '<div style="font-family:Fraunces,Georgia,serif;font-size:19px;font-weight:900;color:#fff;margin-top:2px">' + item.name + '</div>'
+    + '<div style="font-size:11px;color:rgba(255,255,255,.65);margin-top:6px">₹' + _icUnitPrice + ' each · ' + remaining + ' of ' + item.qty + ' unpaid</div>'
+    + '</div>'
+    + '<div style="padding:20px 22px 24px">'
+    + '<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:#9c0ca1;margin-bottom:10px;text-align:center">QTY BEING PAID NOW</div>'
+    + '<div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:8px">'
+    +   '<div onclick="icStepQty(-1)" style="width:38px;height:38px;border-radius:50%;background:#f5eeff;'
+    +     'border:1.5px solid #e0c8f0;display:flex;align-items:center;justify-content:center;cursor:pointer;'
+    +     'font-size:18px;font-weight:700;color:#6e0977">−</div>'
+    +   '<div id="ic-qty" style="font-family:Fraunces,Georgia,serif;font-size:32px;font-weight:900;color:#1a0820;min-width:44px;text-align:center">' + remaining + '</div>'
+    +   '<div onclick="icStepQty(1)" style="width:38px;height:38px;border-radius:50%;background:#6e0977;color:#fff;'
+    +     'display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;font-weight:700">+</div>'
+    + '</div>'
+    + '<div style="text-align:center;font-size:13px;color:#9a8aaa;margin-bottom:18px">Amount: <b id="ic-amount" style="color:#6e0977">₹' + (remaining * _icUnitPrice) + '</b></div>'
+    + '<div id="ic-method-body"></div>'
+    + '<button onclick="closeItemCollectPicker()" style="width:100%;padding:12px;margin-top:14px;'
+    + 'background:transparent;color:#9a8aaa;font-size:12px;font-weight:600;border-radius:12px;border:none;cursor:pointer">Cancel</button>'
+    + '</div>';
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  icRenderMethodBody();
+}
+
+function icStepQty(delta) {
+  var el = document.getElementById('ic-qty');
+  var qty = parseInt(el.textContent, 10) + delta;
+  qty = Math.max(1, Math.min(_icRemainingQty, qty));
+  el.textContent = qty;
+  document.getElementById('ic-amount').textContent = '₹' + (qty * _icUnitPrice);
+  _icMethod = null;
+  icRenderMethodBody();
+}
+
+function icRenderMethodBody() {
+  var body = document.getElementById('ic-method-body');
+  if (!body) return;
+  var methodGrid = Object.keys(SP_METHOD_META).map(function (key) {
+    var m = SP_METHOD_META[key];
+    var selected = _icMethod === key;
+    return '<div onclick="icSelectMethod(\'' + key + '\')" style="padding:14px 8px;border-radius:14px;text-align:center;'
+      + 'cursor:pointer;background:' + (selected ? m.color : m.bg) + ';border:1.5px solid ' + m.border + '">'
+      + '<div style="font-size:22px;margin-bottom:3px">' + m.icon + '</div>'
+      + '<div style="font-size:11px;font-weight:700;color:' + (selected ? '#fff' : m.color) + '">' + m.label + '</div>'
+      + '</div>';
+  }).join('');
+
+  var cashSection = _icMethod === 'cash'
+    ? '<div style="background:#fff8e6;border:1.5px solid rgba(245,196,48,0.4);border-radius:16px;padding:14px;margin-top:12px">'
+      + '<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:#b87410;margin-bottom:8px">AMOUNT RECEIVED</div>'
+      + '<input id="ic-cash-received" type="number" inputmode="decimal" placeholder="₹ 0" oninput="icUpdateChange()" '
+      + 'style="width:100%;padding:12px;border-radius:12px;border:1.5px solid rgba(245,196,48,0.5);'
+      + 'font-family:Fraunces,Georgia,serif;font-size:20px;font-weight:900;text-align:center;color:#1a0820;outline:none;box-sizing:border-box">'
+      + '<div id="ic-change-display" style="text-align:center;margin-top:10px;font-size:13px;font-weight:700"></div>'
+      + '<button onclick="icConfirmCash()" style="width:100%;padding:13px;margin-top:12px;'
+      + 'background:linear-gradient(135deg,#6e0977,#9c0ca1);color:#fff;font-size:13px;font-weight:700;'
+      + 'border:none;border-radius:12px;cursor:pointer">✅ Confirm Cash Collect</button>'
+      + '</div>'
+    : '';
+
+  body.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">' + methodGrid + '</div>' + cashSection;
+}
+
+function icSelectMethod(key) {
+  if (key !== 'cash') {
+    icFinalize(key, null, null);
+    return;
+  }
+  _icMethod = 'cash';
+  icRenderMethodBody();
+  setTimeout(function () {
+    var el = document.getElementById('ic-cash-received');
+    if (el) el.focus();
+  }, 50);
+}
+
+function icUpdateChange() {
+  var qty = parseInt(document.getElementById('ic-qty').textContent, 10) || 0;
+  var amount = qty * _icUnitPrice;
+  var received = parseFloat(document.getElementById('ic-cash-received').value) || 0;
+  var change = Math.round((received - amount) * 100) / 100;
+  var display = document.getElementById('ic-change-display');
+  if (received === 0) {
+    display.textContent = '';
+  } else if (change > 0) {
+    display.style.color = '#15803d';
+    display.innerHTML = '💰 Change to return: ₹' + change;
+  } else if (change < 0) {
+    display.style.color = '#dc2626';
+    display.textContent = '⚠️ ₹' + Math.abs(change) + ' short';
+  } else {
+    display.style.color = '#15803d';
+    display.textContent = '✅ Exact amount — no change needed';
+  }
+}
+
+async function icConfirmCash() {
+  var qty = parseInt(document.getElementById('ic-qty').textContent, 10) || 0;
+  var amount = qty * _icUnitPrice;
+  var received = parseFloat(document.getElementById('ic-cash-received').value) || 0;
+  if (received < amount) {
+    var proceed = confirm('Amount received (₹' + received + ') is less than ₹' + amount + '. Confirm anyway?');
+    if (!proceed) return;
+  }
+  var change = Math.max(0, Math.round((received - amount) * 100) / 100);
+  await icFinalize('cash', received, change);
+}
+
+// Re-reads the order fresh (rather than trusting whatever was in memory
+// when the picker opened) so two staff collecting on different items of
+// the same table at nearly the same time can't clobber each other's
+// paidQty/collected_amount — last write still wins per field, but each
+// write is built from its own fresh read immediately before saving.
+async function icFinalize(method, cashReceived, changeGiven) {
+  if (_icOrderId === null || _icItemIndex === null) return;
+  var qty = parseInt(document.getElementById('ic-qty').textContent, 10) || _icRemainingQty;
+
+  try {
+    var res = await db.from('store_orders')
+      .select('items, total, collected_amount, payment_split, table_code, customer_phone')
+      .eq('id', _icOrderId).single();
+    if (res.error) throw res.error;
+
+    var items = Array.isArray(res.data.items) ? res.data.items : JSON.parse(res.data.items || '[]');
+    var item = items[_icItemIndex];
+    if (!item) throw new Error('Item no longer exists on this order');
+
+    var alreadyPaid = item.paidQty || 0;
+    if (alreadyPaid + qty > item.qty) qty = item.qty - alreadyPaid; // clamp against any race since the picker opened
+    if (qty <= 0) { showStoreToast('This item is already fully paid'); closeItemCollectPicker(); kitchenManualRefresh(); return; }
+    var amount = Math.round(qty * _icUnitPrice * 100) / 100;
+
+    item.paidQty = alreadyPaid + qty;
+
+    var splitObj = res.data.payment_split
+      ? (typeof res.data.payment_split === 'string' ? JSON.parse(res.data.payment_split) : res.data.payment_split)
+      : {};
+    splitObj[method] = Math.round(((splitObj[method] || 0) + amount) * 100) / 100;
+
+    var newCollected = Math.round(((res.data.collected_amount || 0) + amount) * 100) / 100;
+    var total = res.data.total || 0;
+    var remaining = Math.round((total - newCollected) * 100) / 100;
+
+    var labels = { cash: 'Cash', upi: 'UPI', upi_qr: 'Scan QR', card: 'Card' };
+    var usedMethods = Object.keys(splitObj).filter(function (k) { return splitObj[k] > 0; });
+    var summaryMethod = usedMethods.length === 1 ? usedMethods[0] : (usedMethods.length > 1 ? 'split' : method);
+    var breakdownText = usedMethods.map(function (k) { return labels[k] + ' ₹' + splitObj[k]; }).join(' + ');
+
+    var updatePayload = {
+      items: JSON.stringify(items),
+      collected_amount: newCollected,
+      payment_split: JSON.stringify(splitObj),
+      payment_method: summaryMethod
+    };
+
+    var fullyClosed = remaining <= 0.01;
+    if (fullyClosed) {
+      updatePayload.status = 'collected';
+      updatePayload.payment_status = 'paid';
+      updatePayload.collected_at = new Date().toISOString();
+    }
+
+    var upd = await db.from('store_orders').update(updatePayload).eq('id', _icOrderId);
+    if (upd.error) throw upd.error;
+
+    var orderId = _icOrderId;
+    var tableCode = res.data.table_code;
+    closeItemCollectPicker();
+
+    var m = SP_METHOD_META[method];
+    var changeNote = (changeGiven && changeGiven > 0) ? (' · Change: ₹' + changeGiven) : '';
+    showStoreToast(fullyClosed
+      ? '✅ ' + (tableCode || 'Order') + ' fully paid — closed & cleared from Kitchen'
+      : '💰 Collected ₹' + amount + ' (' + m.label + ')' + changeNote + ' · ₹' + Math.max(0, remaining) + ' left');
+    kitchenManualRefresh();
+
+    if (method === 'cash') {
+      try {
+        var staffName = (typeof _staffSession !== 'undefined' && _staffSession && _staffSession.name)
+          ? _staffSession.name : ((typeof isAdmin !== 'undefined' && isAdmin) ? 'Admin' : null);
+        await db.from('cash_counter_entries').insert([{
+          entry_type: 'order_payment',
+          amount: amount,
+          note: 'Cash payment — ' + item.name + ' ×' + qty + (tableCode ? (' — Table ' + tableCode) : ''),
+          staff_name: staffName
+        }]);
+        var ccSheet = document.getElementById('cc-sheet');
+        if (ccSheet && ccSheet.style.display === 'block' && typeof loadCashCounter === 'function') loadCashCounter();
+      } catch (ccErr) {
+        // Cash Counter table may not exist yet — payment itself still succeeded.
+      }
+    }
+
+    if (fullyClosed && tableCode) {
+      await sendTableBillWhatsApp(orderId, tableCode, breakdownText);
+    }
+  } catch (e) {
+    showStoreToast('Error: ' + e.message);
+  }
+}
+
+function closeItemCollectPicker() {
+  var el = document.getElementById('ic-overlay');
+  if (el) el.remove();
+  _icOrderId = null;
+  _icItemIndex = null;
+  _icMethod = null;
 }
 
 // ══════════════════════════════════════════════════════════════
