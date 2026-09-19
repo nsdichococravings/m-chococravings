@@ -81,3 +81,6 @@
 @media(min-width:1100px){#pg-kitchen:has(.pd-kitchen-sidebar){padding-right:326px}.pd-kitchen-sidebar{position:absolute;right:18px;top:84px;width:288px;margin:0}}
 @media(max-width:760px){#production-workspace .pd-grid{grid-template-columns:1fr}#production-workspace .pd-stats{grid-template-columns:repeat(2,minmax(0,1fr))}#production-workspace main{padding:16px}#production-workspace .pd-header,#production-workspace nav{padding:14px 16px}}
 @media(max-width:430px){#production-workspace .pd-fields{grid-template-columns:1fr}#production-workspace .pd-ingredient{grid-template-columns:1fr}#production-workspace .pd-card{padding:14px}}
+
+/* A deletion request keeps the recipe visible until admin review. */
+#production-workspace .pd-delete-pending { background:#eee; color:#666; padding:12px; border-radius:8px; }
