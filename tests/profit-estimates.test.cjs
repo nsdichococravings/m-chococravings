@@ -16,7 +16,7 @@ assert.equal(ctx.estimateUnitCost('Cake','2026-07-01').cost,2,'explicit zero is 
 assert.match(ctx.estimateUnitCost('No recipe','2026-07-01').missing,/Add a recipe/);
 console.log('PASS: batch precedence, dates, recipe unit conversion, packaging, missing and explicit zero costs.');
 
-ctx.esc=v=>String(v);ctx.cash=v=>'₹'+Number(v).toFixed(2);
+ctx.state={data:{corrections:[]}};ctx.button=()=>'';ctx.esc=v=>String(v);ctx.cash=v=>'₹'+Number(v).toFixed(2);
 vm.runInContext(s.slice(s.indexOf('  function profitRows'),s.indexOf('  async function deletionForm')),ctx);
 data.orders=[{status:'collected',payment_status:'paid',created_at:'2026-07-01',items:[{name:'Cake',qty:10,price:30}]}];
 data.materials[0].cost_per_unit=100;
@@ -31,3 +31,12 @@ assert.match(report[5],/₹300.00 sales − ₹120.00 making cost/);
 data.batches[0].labor_cost=null;report=ctx.profitRows()[0];
 assert.match(report[4],/Not ready/,'null batch labor must not become zero');
 console.log('PASS: simple per-piece display, calculation details, incomplete-cost profit suppression.');
+
+data.corrections=[{id:'c',product_name:'Cake',status:'pending',effective_from:'2026-09-01',effective_to:'2026-09-30',material_cost:8,packaging_cost:1,labor_cost:2,overhead_cost:1,reviewed_at:'2026-10-01'}];
+assert.equal(ctx.estimateUnitCost('Cake','2026-09-01').complete,false,'pending override ignored');
+data.corrections[0].status='approved';
+assert.equal(ctx.estimateUnitCost('Cake','2026-09-01').cost,12);
+assert.equal(ctx.estimateUnitCost('Cake','2026-09-01').complete,true);
+assert.notEqual(ctx.estimateUnitCost('Cake','2026-08-01').basis,'Admin-approved cost correction','outside range uses original basis');
+data.corrections[0].status='rejected';assert.equal(ctx.estimateUnitCost('Cake','2026-09-01').complete,false);
+console.log('PASS: only approved corrections affect matching sale dates.');
