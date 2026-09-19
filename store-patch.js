@@ -295,7 +295,6 @@ function subscribeKitchen() {
         return;
       }
       if (!p.new || !p.new.id) return;
-      if(p.new.table_code && typeof kitchenSilentRefresh==='function') { kitchenSilentRefresh(); return; }
       var card = document.getElementById('kt-' + p.new.id);
       // A new order needs a data refresh, not another auth check and channel.
       if (!card) {
