@@ -28,7 +28,7 @@ function injectMenuSearchBar() {
   wrap.innerHTML =
       '<div style="position:relative">'
     + '<span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:14px;color:#9a8aaa">🔍</span>'
-    + '<input id="menu-search" type="text" placeholder="Search menu..." oninput="onMenuSearchInput()" '
+    + '<input id="menu-search" name="menu-item-query" type="search" autocomplete="off" inputmode="search" aria-label="Search menu items" placeholder="Search menu..." oninput="onMenuSearchInput()" '
     +   'style="width:100%;padding:12px 14px 12px 38px;border-radius:24px;border:1.5px solid rgba(18,10,30,0.1);'
     +   'background:#fffbf2;font-family:\'Instrument Sans\',sans-serif;font-size:14px;outline:none;'
     +   'box-sizing:border-box;color:#120a1e">'
@@ -93,7 +93,7 @@ function renderMenuSearchResults(query) {
           + '<div class="ctrl">' + remBtn + qtyLbl + '<div class="btn-add add-' + c.cls + '" onclick="add(\'' + item.id + '\')">+</div></div>'
           + '</div>';
       }).join('')
-    : '<div style="text-align:center;padding:40px 20px;font-family:Fraunces,serif;font-size:15px;color:#9a8aaa">No items match "' + query + '"</div>';
+    : '<div style="text-align:center;padding:40px 20px;font-family:Fraunces,serif;font-size:15px;color:#9a8aaa">No items match "' + query.replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }) + '"</div>';
 
   updateBar();
 }
