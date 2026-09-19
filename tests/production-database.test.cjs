@@ -105,6 +105,24 @@ const { PGlite } = require('../.production-test-runtime/node_modules/@electric-s
   await rejects(()=>command('start',{id:req2,recipe_id:badRecipe,planned_qty:10,planned_kg:1}),/Insufficient/);
   assert.equal(Number(await scalar("select current_stock from inventory_items where name='Chocolate'")),before,'failed batch rolls back every material issue');
   assert.equal(await scalar(`select status from cc_production_requests where id='${req2}'`),'approved');
+  const deletionMigration=fs.readFileSync(path.join(__dirname,'../migrations/20260919_recipe_deletion.sql'),'utf8');
+  await db.exec(deletionMigration); await db.exec(deletionMigration);
+  async function deletion(action,id,reason='Old version') { return db.query('select cc_recipe_delete($1,$2,$3)',[action,id,reason]); }
+  await actor(production);
+  await deletion('request',recipe); await deletion('request',recipe);
+  assert.equal(Number(await scalar('select count(*) from cc_recipe_delete_requests')),1);
+  assert.equal(await scalar('select deleted_at from cc_production_recipes where id=\''+recipe+'\''),null);
+  const deleteId=await scalar('select id from cc_recipe_delete_requests');
+  await rejects(()=>deletion('approve',deleteId),/Only an admin/);
+  await actor(admin); await deletion('reject',deleteId);
+  await deletion('request',recipe);
+  const pendingId=await scalar("select id from cc_recipe_delete_requests where status='pending'");
+  await deletion('approve',pendingId); await deletion('approve',pendingId);
+  assert.ok(await scalar('select deleted_at from cc_production_recipes where id=\''+recipe+'\''));
+  assert.equal(Number(await scalar('select total_cost from cc_production_batches')),1692,'deletion preserves batch costs');
+  const deleteStock=await scalar("select current_stock from inventory_items where name='Chocolate'");
+  await rejects(()=>command('start',{id:req2,recipe_id:recipe,planned_qty:10,planned_kg:0.5}),/deleted/);
+  assert.equal(await scalar("select current_stock from inventory_items where name='Chocolate'"),deleteStock,'deleted recipe start rolls back stock');
   await db.exec('grant usage on schema auth to authenticated; grant execute on function auth.uid() to authenticated; set role authenticated;');
   await rejects(()=>db.exec("update inventory_items set current_stock=999"),/permission denied/);
   await actor(stranger);

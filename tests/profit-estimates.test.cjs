@@ -1,0 +1,17 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const s=fs.readFileSync('production-dashboard.js','utf8');
+const data={batches:[],recipes:[{id:'r',product_name:'Cake',created_at:'2026-01-01',yield_qty:10,ingredients:[{name:'Flour',unit:'g',quantity:500}],packaging:[{name:'Box',unit:'pcs',quantity:10}]}],materials:[{name:'Flour',unit:'kg',cost_per_unit:100}],packaging:[{name:'Box',unit:'pcs',cost_per_unit:2}]};
+const ctx={rows:k=>data[k]||[],num:v=>Number(v)||0,Date};vm.createContext(ctx);
+vm.runInContext(s.slice(s.indexOf('  const unitInfo ='),s.indexOf('  function allowedUnits')),ctx);
+vm.runInContext(s.slice(s.indexOf('  function convertQuantity'),s.indexOf('  function updateIngredientUnits')),ctx);
+vm.runInContext(s.slice(s.indexOf('  function estimateUnitCost'),s.indexOf('  function profitRows')),ctx);
+assert.equal(ctx.estimateUnitCost('Cake','2026-09-01').cost,7,'grams converted before calculating per-piece cost');
+data.batches.push({id:'b',product_name:'Cake',status:'completed',completed_at:'2026-08-01',actual_qty:10,unit_cost:12,material_cost:50,packaging_cost:20,labor_cost:30,overhead_cost:20});
+assert.equal(ctx.estimateUnitCost('Cake','2026-09-01').cost,12,'historical batch preferred');
+assert.equal(ctx.estimateUnitCost('Cake','2026-07-01').cost,7,'future batch must not price earlier sale');
+data.materials[0].cost_per_unit=null;
+assert.match(ctx.estimateUnitCost('Cake','2026-07-01').missing,/Record unit cost/);
+data.materials[0].cost_per_unit=0;
+assert.equal(ctx.estimateUnitCost('Cake','2026-07-01').cost,2,'explicit zero is valid');
+assert.match(ctx.estimateUnitCost('No recipe','2026-07-01').missing,/Add a recipe/);
+console.log('PASS: batch precedence, dates, recipe unit conversion, packaging, missing and explicit zero costs.');
