@@ -18,8 +18,12 @@
 document.addEventListener('DOMContentLoaded', function () {
   injectMenuSearchBar();
 });
+window.addEventListener('pageshow', function (event) {
+  if (event.persisted) clearMenuSearch(false);
+});
 
 function injectMenuSearchBar() {
+  if (document.getElementById('menu-search')) return;
   var secLbl = document.querySelector('.sec-lbl');
   if (!secLbl) return;
 
@@ -28,23 +32,55 @@ function injectMenuSearchBar() {
   wrap.innerHTML =
       '<div style="position:relative">'
     + '<span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:14px;color:#9a8aaa">🔍</span>'
-    + '<input id="menu-search" type="text" placeholder="Search menu..." oninput="onMenuSearchInput()" '
-    +   'style="width:100%;padding:12px 14px 12px 38px;border-radius:24px;border:1.5px solid rgba(18,10,30,0.1);'
+    + '<style>#menu-search:empty:before{content:attr(data-placeholder);color:#82758b;pointer-events:none}</style>'
+    + '<div id="menu-search" contenteditable="plaintext-only" role="searchbox" tabindex="0" aria-multiline="false" inputmode="search" aria-label="Search menu items" data-placeholder="Search menu..." oninput="onMenuSearchInput()" '
+    +   'style="width:100%;min-height:44px;white-space:pre;overflow-x:auto;padding:12px 14px 12px 38px;border-radius:24px;border:1.5px solid rgba(18,10,30,0.1);'
     +   'background:#fffbf2;font-family:\'Instrument Sans\',sans-serif;font-size:14px;outline:none;'
-    +   'box-sizing:border-box;color:#120a1e">'
+    +   'box-sizing:border-box;color:#120a1e"></div>'
     + '</div>';
 
   secLbl.parentNode.insertBefore(wrap, secLbl);
+  var search = document.getElementById('menu-search');
+  // No form input: browser contact autofill must not supply the menu query.
+  search.addEventListener('keydown', function (event) {
+    if (event.key === 'Enter') { event.preventDefault(); search.blur(); }
+    if (event.key === 'Escape') { event.preventDefault(); clearMenuSearch(); }
+  });
+  search.addEventListener('beforeinput', function (event) {
+    if (event.inputType === 'insertParagraph' || event.inputType === 'insertLineBreak') event.preventDefault();
+  });
+  search.addEventListener('paste', function (event) {
+    if (!event.clipboardData) return;
+    event.preventDefault();
+    var text = event.clipboardData.getData('text/plain').replace(/[\r\n]+/g, ' ');
+    var selection = window.getSelection();
+    if (selection && selection.rangeCount && search.contains(selection.getRangeAt(0).commonAncestorContainer)) {
+      var range = selection.getRangeAt(0);
+      range.deleteContents();
+      var node = document.createTextNode(text);
+      range.insertNode(node); range.setStartAfter(node); range.collapse(true);
+      selection.removeAllRanges(); selection.addRange(range);
+    } else search.appendChild(document.createTextNode(text));
+    onMenuSearchInput();
+  });
 }
 
 function onMenuSearchInput() {
+  var search = document.getElementById('menu-search');
+  if (search && !search.textContent.trim()) search.textContent = '';
+  renderItems();
+}
+
+function clearMenuSearch(focus) {
+  var search = document.getElementById('menu-search');
+  if (search) { search.textContent = ''; if (focus !== false) search.focus(); }
   renderItems();
 }
 
 // ── Override: renderItems() — search-aware ─────────────────────
 function renderItems() {
   var searchEl = document.getElementById('menu-search');
-  var query = searchEl ? searchEl.value.trim() : '';
+  var query = searchEl ? searchEl.textContent.trim() : '';
 
   if (query) {
     renderMenuSearchResults(query);
@@ -93,7 +129,7 @@ function renderMenuSearchResults(query) {
           + '<div class="ctrl">' + remBtn + qtyLbl + '<div class="btn-add add-' + c.cls + '" onclick="add(\'' + item.id + '\')">+</div></div>'
           + '</div>';
       }).join('')
-    : '<div style="text-align:center;padding:40px 20px;font-family:Fraunces,serif;font-size:15px;color:#9a8aaa">No items match "' + query + '"</div>';
+    : '<div style="text-align:center;padding:40px 20px;font-family:Fraunces,serif;font-size:15px;color:#9a8aaa">No items match "' + query.replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }) + '"</div>';
 
   updateBar();
 }
@@ -101,7 +137,7 @@ function renderMenuSearchResults(query) {
 // ── Override: setTab() — clear search when a category is tapped ─
 function setTab(t) {
   var searchEl = document.getElementById('menu-search');
-  if (searchEl) searchEl.value = '';
+  if (searchEl) searchEl.textContent = '';
 
   tab = t;
   document.querySelectorAll('.tab').forEach(function (el) {

@@ -823,14 +823,53 @@ function showSkeleton(){
   overlay.style.display = 'flex';
   document.getElementById('cart-empty').style.display = 'none';
 }
+var storeMenuLoading = false;
+var storeMenuClient = null;
+var storeVerifiedUserPending = null;
+function getStoreMenuClient() {
+  if (!storeMenuClient) {
+    if (typeof supabase === 'undefined') throw new Error('Connection library unavailable');
+    // Public catalog only. Never use this client for orders, staff data or stock writes.
+    // No stored session means no wait for the signed-in client's Auth refresh lock.
+    storeMenuClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'cc-public-menu' }
+    });
+  }
+  return storeMenuClient;
+}
+function getStoreVerifiedUser() {
+  if (!db) return Promise.resolve({ data: { user: null } });
+  if (!storeVerifiedUserPending) {
+    storeVerifiedUserPending = db.auth.getUser().finally(function() { storeVerifiedUserPending = null; });
+  }
+  return storeVerifiedUserPending;
+}
+function hideStoreLoader() {
+  var overlay = document.getElementById('store-loading-overlay');
+  if (overlay) { overlay.style.display = 'none'; overlay.style.opacity = '1'; }
+  document.getElementById('cart-empty').style.display = 'block';
+}
 async function loadMenu(){
-  if(!db) return;
+  if (storeMenuLoading) return;
+  storeMenuLoading = true;
   showSkeleton();
+  document.getElementById('items-list').innerHTML = '<div role="status" style="padding:32px;text-align:center;color:#6e0977">Connecting to the menu…</div>';
+  var revealTimer = setTimeout(hideStoreLoader, 2500);
+  var timeoutTimer;
+  var controller = new AbortController();
   try {
-    var res = await db.from('store_menu')
-      .select('*')
+    var request = getStoreMenuClient().from('store_menu')
+      .select('id,name,price,tag,category')
       .eq('available', true)
-      .order('sort_order', {ascending:true});
+      .order('sort_order', {ascending:true})
+      .abortSignal(controller.signal);
+    var timeout = new Promise(function(_, reject) {
+      timeoutTimer = setTimeout(function() {
+        reject(new Error('Menu connection timed out'));
+        controller.abort();
+      }, 12000);
+    });
+    var res = await Promise.race([request, timeout]);
     if(res.error) throw res.error;
     Object.keys(MENU).forEach(function(k){ MENU[k].items = []; });
     (res.data||[]).forEach(function(row){
@@ -848,16 +887,10 @@ async function loadMenu(){
     });
   } catch(e){
     console.error('loadMenu', e);
-    document.getElementById('items-list').innerHTML = '<div style="text-align:center;padding:40px 20px;font-family:Fraunces,serif;font-size:15px;color:#9a8aaa">Could not load menu.<br>Check connection.</div>';
+    document.getElementById('items-list').innerHTML = '<div role="alert" style="text-align:center;padding:40px 20px;color:#6e0977">The menu connection is taking too long or is unavailable.<br><button type="button" onclick="loadMenu()" style="margin-top:16px;padding:12px 20px;border:0;border-radius:10px;background:#6e0977;color:white;cursor:pointer">Retry loading menu</button><p style="margin-top:12px;font-size:13px">Check your connection and try again.</p></div>';
   } finally {
-    // Hide overlay whether success or error
-    var overlay = document.getElementById('store-loading-overlay');
-    if (overlay) {
-      overlay.style.transition = 'opacity 0.4s ease';
-      overlay.style.opacity = '0';
-      setTimeout(function() { overlay.style.display = 'none'; overlay.style.opacity = '1'; }, 400);
-    }
-    document.getElementById('cart-empty').style.display = 'block';
+    clearTimeout(revealTimer); clearTimeout(timeoutTimer);
+    hideStoreLoader(); storeMenuLoading = false;
   }
 }
 
@@ -882,12 +915,13 @@ function goTo(id){
   history.pushState({pg:id},'','#'+id);
   if(id==='pg-kitchen') kitchenLoad();
   if(id==='pg-status')  checkNotifBanner();
-  if(id==='pg-menu')    loadMyOrders();
+  if(id==='pg-menu') { if(typeof clearMenuSearch==='function') clearMenuSearch(false); loadMyOrders(); }
 }
 window.addEventListener('popstate',function(e){
   var pg=(e.state&&e.state.pg)||'pg-menu';
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
   document.getElementById(pg).classList.add('active');
+  if(pg==='pg-menu' && typeof clearMenuSearch==='function') clearMenuSearch(false);
   closeSheet();
 });
 
@@ -1700,7 +1734,7 @@ async function loadMyOrders(){
   if(!db) return;
   try {
     var user = null;
-    try { var s = await db.auth.getUser(); user = s.data.user; } catch(e){}
+    try { var s = await getStoreVerifiedUser(); user = s.data.user; } catch(e){}
     if(!user) return;
 
     var today = new Date().toISOString().slice(0,10);
@@ -2758,12 +2792,12 @@ async function toggleStoreOpenStatus() {
 </div>
 <!-- END QUICK ADD MENU ITEM SHEET -->
 <script src="admin-command-center.js"></script>
-<script src="store-patch.js"></script>
-<script src="menu-search-patch.js"></script>
+<script src="store-patch.js?v=20260919-realtime-io"></script>
+<script src="menu-search-patch.js?v=20260920-search-v3"></script>
 <script src="remember-phone-patch.js"></script>
-<script src="checkadminbadge-override.js"></script>
+<script src="checkadminbadge-override.js?v=20260919-io"></script>
 <script src="production-purchases-patch.js"></script>
-<link rel="stylesheet" href="production-dashboard.css">
-<script src="production-dashboard.js"></script>
+<link rel="stylesheet" href="production-dashboard.css?v=20260920-approvals">
+<script src="production-dashboard.js?v=20260920-approvals"></script>
 </body>
 </html>

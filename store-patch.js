@@ -287,8 +287,20 @@ function subscribeKitchen() {
   if (kitchenCh) { try { db.removeChannel(kitchenCh); } catch (e) {} }
   kitchenCh = db.channel('kitchen-live')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'store_orders' }, function (p) {
+      var page = document.getElementById('pg-kitchen');
+      if (document.hidden || !page || !page.classList.contains('active')) return;
+      if (p.eventType === 'DELETE') {
+        var removed = document.getElementById('kt-' + (p.old || {}).id);
+        if (removed) removed.remove();
+        return;
+      }
+      if (!p.new || !p.new.id) return;
       var card = document.getElementById('kt-' + p.new.id);
-      if (!card) { kitchenLoad(); return; }
+      // A new order needs a data refresh, not another auth check and channel.
+      if (!card) {
+        if (typeof kitchenSilentRefresh === 'function') kitchenSilentRefresh();
+        return;
+      }
       if (p.new.status === 'collected') { card.remove(); return; }
 
       var prevStatus = card.dataset.s;
