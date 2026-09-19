@@ -1,0 +1,67 @@
+const assert=require('node:assert/strict'),fs=require('node:fs');
+const {randomUUID}=require('node:crypto');
+const {PGlite}=require('../.production-test-runtime/node_modules/@electric-sql/pglite');
+(async()=>{
+ const db=new PGlite();try {
+ const admin=randomUUID(),staff=randomUUID(),guest=randomUUID(),id=randomUUID();
+ await db.exec(`create role anon;create role authenticated;create schema auth;
+ create table auth.users(id uuid primary key,email text,email_confirmed_at timestamptz);
+ create function auth.uid() returns uuid language sql as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+ create table customers(email text,is_employee boolean);
+ create function cc_production_role() returns text language sql as $$select case when auth.uid()='${admin}'::uuid then 'admin' else null end$$;
+ create table store_orders(id uuid primary key,items jsonb,total numeric,table_code text,status text default 'pending',payment_status text default 'pending',payment_method text);
+ create table cash_counter_entries(id uuid default gen_random_uuid(),entry_type text,amount numeric,note text,staff_name text);
+ insert into auth.users values('${admin}','admin@test',now()),('${staff}','staff@test',now()),('${guest}','guest@test',now());
+ insert into customers values('staff@test',true);
+ grant usage on schema auth to authenticated;
+ `);
+ const migration=fs.readFileSync('migrations/20260920_table_item_payments.sql','utf8');await db.exec(migration);await db.exec(migration);
+ const items=[{name:'Coffee',price:30,qty:3},{name:'Sandwich',price:89,qty:1}];
+ await db.query("insert into store_orders(id,items,total,table_code) values($1,$2,179,'T2')",[id,JSON.stringify(items)]);
+ const actor=async x=>db.query("select set_config('request.jwt.claim.sub',$1,false)",[x]);
+ const scalar=async sql=>Object.values((await db.query(sql)).rows[0])[0];
+ const pay=async(payload,key=randomUUID())=>(await db.query('select cc_collect_table_payment($1,$2) result',[JSON.stringify(payload),key])).rows[0].result;
+ const payload={order_id:id,item_index:0,quantity:1,expected_name:'Coffee',expected_price:30,expected_total:179,split:{cash:30}};
+ await actor(guest);await assert.rejects(()=>pay(payload),/Staff payment access/);
+ await actor(staff);const key=randomUUID();let result=await pay(payload,key);
+ assert.equal(Number(result.balance),149);assert.equal(result.closed,false);
+ assert.equal((await pay(payload,key)).receipt_id,result.receipt_id);
+ assert.equal(Number(await scalar('select count(*) from cash_counter_entries')),1,'retry cannot double-count cash');
+ assert.equal(Number(await scalar('select total from store_orders')),179,'original revenue retained');
+ assert.equal(await scalar('select status from store_orders'),'pending');
+ assert.equal((await scalar('select paid_item_quantities from store_orders'))['0'],1);
+ await assert.rejects(()=>pay({...payload,quantity:2,split:{cash:60}},key),/different input/);
+ await assert.rejects(()=>pay({...payload,quantity:3,split:{cash:90}}),/already paid/);
+ await assert.rejects(()=>pay({...payload,split:{cash:29}}),/does not match/);
+ await assert.rejects(()=>db.exec("update store_orders set status='collected',payment_status='paid'"),/Balance is still due/);
+ await assert.rejects(()=>db.exec("update store_orders set status='cancelled'"),/Payments already collected/);
+ await assert.rejects(()=>db.query('update store_orders set items=$1',[JSON.stringify([{name:'Coffee',price:30,qty:0},items[1]])]),/Paid items/);
+ await assert.rejects(()=>db.query('update store_orders set items=$1',[JSON.stringify([{name:'Coffee',price:20,qty:3},items[1]])]),/Paid items/);
+ // Appending another guest's items remains supported.
+ const expanded=[...items,{name:'Water',price:20,qty:1}];
+ await db.query('update store_orders set items=$1,total=199',[JSON.stringify(expanded)]);
+ await assert.rejects(()=>pay(payload),/Bill changed/);
+ const next={...payload,expected_total:199,quantity:2,split:{upi:60}};
+ result=await pay(next);assert.equal(Number(result.balance),109);
+ assert.equal((await scalar('select paid_item_quantities from store_orders'))['0'],3);
+ await assert.rejects(()=>pay({...payload,expected_total:199}),/already paid/);
+ const final={order_id:id,item_index:null,expected_total:199,split:{cash:50,card:59}};
+ result=await pay(final);assert.equal(result.closed,true);assert.equal(Number(result.balance),0);
+ assert.equal(await scalar('select payment_status from store_orders'),'paid');
+ assert.equal(await scalar('select status from store_orders'),'collected');
+ assert.equal(Number(await scalar('select paid_amount from store_orders')),199);
+ assert.equal(Number(await scalar('select sum(amount) from cash_counter_entries')),80);
+ assert.deepEqual(await scalar('select payment_split from store_orders'),{cash:80,upi:60,card:59});
+ await assert.rejects(()=>pay(final),/not open/);
+ await assert.rejects(()=>db.exec('update store_orders set total=200'),/settled/);
+ await db.exec('set role authenticated');
+ await assert.rejects(()=>db.exec('delete from cc_table_payments'),/permission denied/);
+ await actor(guest);assert.equal(Number(await scalar('select count(*) from cc_table_payments')),0);
+ await db.exec('reset role');
+ // String-encoded item arrays used by the legacy editor are accepted.
+ await actor(staff);const stringId=randomUUID();
+ await db.query("insert into store_orders(id,items,total,table_code) values($1,$2,179,'T3')",[stringId,JSON.stringify(JSON.stringify(items))]);
+ await pay({...payload,order_id:stringId});
+ console.log('PASS: partial quantities, retries, stale balances, role/RLS checks, protected paid items, added items, mixed final settlement, cash ledger and legacy JSON.');
+ } finally {await db.close();}
+})().catch(e=>{console.error(e);process.exitCode=1;});

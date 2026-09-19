@@ -143,7 +143,7 @@ function closeTablesBoard() {
 async function loadTablesStatus() {
   var today = new Date().toISOString().slice(0, 10);
   var res = await db.from('store_orders')
-    .select('id, table_code, items, total, status, staff_name, created_at')
+    .select('id, table_code, items, total, paid_amount, status, staff_name, created_at')
     .not('table_code', 'is', null)
     .not('status', 'in', '("collected","cancelled")')
     .gte('created_at', today + 'T00:00:00.000Z');
@@ -188,7 +188,7 @@ function renderTablesGrid(map, rankMap) {
         + rankBadge
         + '<div style="font-family:Fraunces,Georgia,serif;font-size:22px;font-weight:900;color:#b87410">' + code + '</div>'
         + '<div style="font-size:10px;font-weight:700;color:#b87410;letter-spacing:1px;margin-top:2px">' + statusLbl.toUpperCase() + '</div>'
-        + '<div style="font-size:12px;color:#8a6a3a;margin-top:6px">' + count + ' items · ₹' + o.total + '</div>'
+        + '<div style="font-size:12px;color:#8a6a3a;margin-top:6px">' + count + ' items · Due ₹' + Math.max(0,Number(o.total)-Number(o.paid_amount||0)).toFixed(2) + '</div>'
         + staffBadge
         + '</div>';
     }
@@ -625,6 +625,7 @@ function renderKitchen(orders) {
             + '<span style="font-size:12px;color:#c084fc;font-weight:700;background:rgba(192,132,252,0.12);'
             + 'border-radius:8px;padding:2px 7px;flex-shrink:0">₹' + (i.price || 0) + '</span>'
             + '<span style="font-size:12px;color:#f5c430;font-weight:700;flex-shrink:0">×' + i.qty + '</span>'
+            + (typeof tableItemPaymentControl==='function' ? tableItemPaymentControl(o,i,idx) : '')
             + '</div>';
         }).join('')
       : (itemsArr || []).map(function (i, idx) {
@@ -660,8 +661,8 @@ function renderKitchen(orders) {
       + '<div style="display:flex;justify-content:space-between;align-items:center;'
       + 'background:linear-gradient(135deg,rgba(245,196,48,0.18),rgba(245,196,48,0.06));'
       + 'border:1.5px solid rgba(245,196,48,0.4);border-radius:12px;padding:10px 14px;margin-bottom:10px">'
-      + '<span style="font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(245,196,48,0.85)">TOTAL</span>'
-      + '<span style="font-family:Fraunces,Georgia,serif;font-size:26px;font-weight:900;color:#f5c430">₹' + (o.total || 0) + '</span>'
+      + '<span style="font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(245,196,48,0.85)">' + (o.table_code && Number(o.paid_amount)>0 ? 'BALANCE DUE' : 'TOTAL') + '</span>'
+      + '<span style="font-family:Fraunces,Georgia,serif;font-size:26px;font-weight:900;color:#f5c430">₹' + Math.max(0,Number(o.total||0)-Number(o.paid_amount||0)).toFixed(2) + '</span>'
       + '</div>'
       + '<div style="display:flex;gap:8px">'
       + '<button class="k-btn" onclick="' + primaryAction.onclick + '" style="flex:1;padding:12px;'
@@ -672,6 +673,7 @@ function renderKitchen(orders) {
       + 'background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:rgba(245,234,220,.6);'
       + 'font-size:16px;cursor:pointer">⋯</button>'
       + '</div>'
+      + (typeof tablePaymentSummary==='function' ? tablePaymentSummary(o) : '')
       + kMoreActionsRow(o)
       + '</div>';
   }).join('');
@@ -773,7 +775,8 @@ async function kBump(id, status) {
   } else if (status === 'collected') {
     payload.collected_at = new Date().toISOString();
   }
-  await db.from('store_orders').update(payload).eq('id', id);
+  var changed=await db.from('store_orders').update(payload).eq('id', id);
+  if(changed.error) {showStoreToast(changed.error.message);return;}
 }
 
 function kCancelOrder(id) {
@@ -1218,7 +1221,18 @@ var SP_METHOD_META = {
   card:   { label: 'Card',     icon: '💳', color: '#2563eb', bg: 'rgba(37,99,235,0.1)',   border: 'rgba(37,99,235,0.35)' }
 };
 
-function openSplitPaymentPicker(orderId, total, context) {
+var _spSaving = false;
+async function openSplitPaymentPicker(orderId, total, context) {
+  if (_spSaving) return;
+  if (context && context.type === 'table') {
+    try {
+      var current = await db.from('store_orders').select('id,total,paid_amount,status,payment_status').eq('id',orderId).single();
+      if(current.error) throw current.error;
+      if(['collected','cancelled'].includes(current.data.status) || current.data.payment_status==='paid') throw Error('Order is already closed or paid. Refresh Kitchen.');
+      total=Math.round((Number(current.data.total)-Number(current.data.paid_amount||0))*100)/100;
+      context.expectedTotal=Number(current.data.total);context.paymentKey=crypto.randomUUID();
+    } catch(error) {showStoreToast(error.message);return;}
+  }
   _spOrderId = orderId;
   _spTotal = total || 0;
   _spContext = context || { type: 'walkin' };
@@ -1446,6 +1460,7 @@ function spUpdatePartialChange() {
 }
 
 function closeSplitPaymentPicker() {
+  if (_spSaving) return;
   var el = document.getElementById('sp-overlay');
   if (el) el.remove();
   _spOrderId = null;
@@ -1458,6 +1473,7 @@ async function confirmSplitPayment() {
   var remaining = Math.round((_spTotal - entered) * 100) / 100;
 
   if (entered === 0) { showStoreToast('Enter at least one amount'); return; }
+  if (remaining !== 0 && _spContext && _spContext.type==='table') { showStoreToast('The payment must exactly match the remaining balance.'); return; }
   if (remaining !== 0) {
     var proceed = confirm(remaining > 0
       ? '₹' + remaining + ' is still unaccounted for. Confirm anyway?'
@@ -1478,16 +1494,25 @@ async function confirmSplitPayment() {
 
 // ── Shared finalize step for both Full and Partial modes ──
 async function spFinalizePayment(splitObj, summaryMethod, breakdownText, cashReceived, changeGiven) {
+  if (_spSaving) return;
+  _spSaving=true;
   try {
-    await db.from('store_orders').update({
+    if (_spContext && _spContext.type==='table') {
+      var payment=await db.rpc('cc_collect_table_payment',{p_key:_spContext.paymentKey,p_payload:{order_id:_spOrderId,item_index:null,expected_total:_spContext.expectedTotal,split:splitObj}});
+      if(payment.error) throw payment.error;
+    } else {
+    var updated=await db.from('store_orders').update({
       status: 'collected',
       payment_status: 'paid',
       payment_method: summaryMethod,
       payment_split: JSON.stringify(splitObj)
     }).eq('id', _spOrderId);
+    if(updated.error) throw updated.error;
+    }
 
     var context = _spContext;
     var orderId = _spOrderId;
+    _spSaving=false;
     closeSplitPaymentPicker();
 
     var changeNote = (changeGiven && changeGiven > 0) ? (' · Change given: ₹' + changeGiven) : '';
@@ -1498,7 +1523,7 @@ async function spFinalizePayment(splitObj, summaryMethod, breakdownText, cashRec
     // no separate manual re-entry needed. Wrapped in its own try/catch so
     // this never blocks the actual payment collection if it fails for
     // any reason (e.g. cash_counter_entries table not set up yet).
-    if (splitObj.cash > 0) {
+    if (splitObj.cash > 0 && context.type !== 'table') {
       try {
         var label = context.type === 'table' ? ('Table ' + context.tableCode) : ('Order ' + orderId.slice(0, 8));
         var staffName = (typeof _staffSession !== 'undefined' && _staffSession && _staffSession.name)
@@ -1522,15 +1547,18 @@ async function spFinalizePayment(splitObj, summaryMethod, breakdownText, cashRec
     }
   } catch (e) {
     showStoreToast('Error: ' + e.message);
-  }
+  } finally { _spSaving=false; }
 }
 
 async function sendTableBillWhatsApp(orderId, tableCode, breakdownText) {
   try {
-    var res = await db.from('store_orders').select('items, total, customer_phone').eq('id', orderId).single();
+    var res = await db.from('store_orders').select('items, total, customer_phone, payment_split').eq('id', orderId).single();
     if (res.error) throw res.error;
     var items = Array.isArray(res.data.items) ? res.data.items : JSON.parse(res.data.items || '[]');
     var total = res.data.total || 0;
+    var allPayments=res.data.payment_split;
+    if(typeof allPayments==='string') { try {allPayments=JSON.parse(allPayments);} catch(_) {allPayments=null;} }
+    if(allPayments) breakdownText=Object.keys(allPayments).filter(function(k){return Number(allPayments[k])>0;}).map(function(k){return k.toUpperCase()+' ₹'+Number(allPayments[k]).toFixed(2);}).join(' + ');
 
     var phone = prompt('Customer phone number for WhatsApp bill (leave blank to skip):', res.data.customer_phone || '');
     if (!phone) return;
