@@ -20,6 +20,20 @@ var _tsExistingOrder = null;
 var _tsBoardCh      = null;
 var _tsOpenedFromKitchen = false; // true when opened via kOpenOrderEditFromKitchen(), not the Tables board
 
+// Item-level partial-collection amounts derive straight from the items
+// jsonb array (each item's paidQty × price) rather than a separate DB
+// column — items already exists on every order, so this needs no schema
+// migration and can never break Tables/Kitchen if a migration hasn't run.
+function tsParseItems(raw) {
+  return Array.isArray(raw) ? raw : JSON.parse(raw || '[]');
+}
+
+function tsCollectedAmount(items) {
+  return Math.round((items || []).reduce(function (s, i) {
+    return s + (i.complimentary ? 0 : (i.paidQty || 0) * (i.price || 0));
+  }, 0) * 100) / 100;
+}
+
 function _tsInit() {
   registerAdminTool('Daily Operations', {
     icon: '🍽️', iconBg: 'rgba(184,116,16,0.12)',
@@ -143,7 +157,7 @@ function closeTablesBoard() {
 async function loadTablesStatus() {
   var today = new Date().toISOString().slice(0, 10);
   var res = await db.from('store_orders')
-    .select('id, table_code, items, total, collected_amount, status, staff_name, created_at')
+    .select('id, table_code, items, total, status, staff_name, created_at')
     .not('table_code', 'is', null)
     .not('status', 'in', '("collected","cancelled")')
     .gte('created_at', today + 'T00:00:00.000Z');
@@ -171,7 +185,7 @@ function renderTablesGrid(map, rankMap) {
       var count = items.reduce(function (s, i) { return s + (i.qty || 1); }, 0);
       var statusLbl = { pending: 'Pending', preparing: 'Preparing', ready: 'Ready!', delivered: 'Waiting for Bill' }[o.status] || o.status;
       var staffBadge = o.staff_name ? ('<div style="font-size:10px;color:#8a6a3a;margin-top:2px">👤 ' + o.staff_name + '</div>') : '';
-      var collected = o.collected_amount || 0;
+      var collected = tsCollectedAmount(items);
       var billLine = collected > 0
         ? count + ' items · 💰 ₹' + Math.max(0, Math.round((o.total - collected) * 100) / 100) + ' left'
         : count + ' items · ₹' + o.total;
@@ -228,7 +242,7 @@ function openTableOrderSheet(code) {
   var moveBtn = document.getElementById('ts-move-btn');
 
   db.from('store_orders')
-    .select('id, items, total, collected_amount, status, created_at, staff_name, customer_phone')
+    .select('id, items, total, status, created_at, staff_name, customer_phone')
     .eq('table_code', code)
     .not('status', 'in', '("collected","cancelled")')
     .order('created_at', { ascending: false })
@@ -275,7 +289,7 @@ async function kOpenOrderEditFromKitchen(orderId) {
   _tsItems = [];
 
   var res = await db.from('store_orders')
-    .select('id, items, total, collected_amount, status, created_at, staff_name, customer_phone, table_code, token')
+    .select('id, items, total, status, created_at, staff_name, customer_phone, table_code, token')
     .eq('id', orderId)
     .maybeSingle();
   if (!res.data) { showStoreToast('Could not load this order'); return; }
@@ -557,7 +571,8 @@ async function tsUndoDelivered() {
 
 async function tsBillAndClose() {
   if (!_tsExistingOrder) return;
-  var remaining = Math.max(0, Math.round((_tsExistingOrder.total - (_tsExistingOrder.collected_amount || 0)) * 100) / 100);
+  var collected = tsCollectedAmount(tsParseItems(_tsExistingOrder.items));
+  var remaining = Math.max(0, Math.round((_tsExistingOrder.total - collected) * 100) / 100);
   openSplitPaymentPicker(_tsExistingOrder.id, remaining, { type: 'table', tableCode: _tsTableCode, fromTablesBoard: true });
 }
 
@@ -684,7 +699,7 @@ function renderKitchen(orders) {
 
     var primaryAction = kPrimaryActionFor(o);
 
-    var collectedSoFar = o.table_code ? (o.collected_amount || 0) : 0;
+    var collectedSoFar = o.table_code ? tsCollectedAmount(itemsArr) : 0;
     var remainingBill = Math.max(0, Math.round(((o.total || 0) - collectedSoFar) * 100) / 100);
     var totalBox = collectedSoFar > 0
       ? '<div style="display:flex;justify-content:space-between;align-items:center;'
@@ -747,7 +762,7 @@ function kPrimaryActionFor(o) {
       bg: 'rgba(74,222,128,.1)', border: 'rgba(74,222,128,.3)', color: '#4ade80' };
   }
   if (o.status === 'delivered' && o.table_code) {
-    var remainingA = Math.max(0, Math.round(((o.total || 0) - (o.collected_amount || 0)) * 100) / 100);
+    var remainingA = Math.max(0, Math.round(((o.total || 0) - tsCollectedAmount(tsParseItems(o.items))) * 100) / 100);
     return { label: '💰 Mark Bill Collected', onclick: "openSplitPaymentPicker('" + o.id + "'," + remainingA + ",{type:'table',tableCode:'" + o.table_code + "'})",
       bg: 'rgba(34,197,94,.12)', border: 'rgba(34,197,94,.35)', color: '#15803d' };
   }
@@ -768,7 +783,7 @@ function kMoreActionsRow(o) {
   var items = [];
   items.push({ icon: '✏️', label: 'Add / Edit', color: '#c084fc', onclick: "kOpenOrderEditFromKitchen('" + o.id + "')" });
   if (o.table_code && o.status !== 'delivered') {
-    var remainingB = Math.max(0, Math.round(((o.total || 0) - (o.collected_amount || 0)) * 100) / 100);
+    var remainingB = Math.max(0, Math.round(((o.total || 0) - tsCollectedAmount(tsParseItems(o.items))) * 100) / 100);
     items.push({ icon: '💰', label: 'Bill Collected', color: '#4ade80',
       onclick: "openSplitPaymentPicker('" + o.id + "'," + remainingB + ",{type:'table',tableCode:'" + o.table_code + "'})" });
   }
@@ -1532,10 +1547,10 @@ async function confirmSplitPayment() {
 // closes the order. It merges into any prior item-level partial
 // collections (see icFinalize) rather than overwriting them, so per-item
 // "Collect" payments made earlier still show up correctly in the final
-// payment_split/collected_amount and every item is marked fully paid.
+// payment_split and every item is marked fully paid.
 async function spFinalizePayment(splitObj, summaryMethod, breakdownText, cashReceived, changeGiven) {
   try {
-    var existing = await db.from('store_orders').select('items, total, collected_amount, payment_split').eq('id', _spOrderId).single();
+    var existing = await db.from('store_orders').select('items, total, payment_split').eq('id', _spOrderId).single();
     if (existing.error) throw existing.error;
 
     var items = Array.isArray(existing.data.items) ? existing.data.items : JSON.parse(existing.data.items || '[]');
@@ -1548,9 +1563,6 @@ async function spFinalizePayment(splitObj, summaryMethod, breakdownText, cashRec
     Object.keys(prevSplit).forEach(function (k) { mergedSplit[k] = prevSplit[k]; });
     Object.keys(splitObj).forEach(function (k) { mergedSplit[k] = Math.round(((mergedSplit[k] || 0) + splitObj[k]) * 100) / 100; });
 
-    var thisAmount = Object.keys(splitObj).reduce(function (s, k) { return s + splitObj[k]; }, 0);
-    var newCollected = Math.round(((existing.data.collected_amount || 0) + thisAmount) * 100) / 100;
-
     var labels = { cash: 'Cash', upi: 'UPI', upi_qr: 'Scan QR', card: 'Card' };
     var mergedMethods = Object.keys(mergedSplit).filter(function (k) { return mergedSplit[k] > 0; });
     var mergedSummaryMethod = mergedMethods.length === 1 ? mergedMethods[0] : (mergedMethods.length > 1 ? 'split' : summaryMethod);
@@ -1561,7 +1573,6 @@ async function spFinalizePayment(splitObj, summaryMethod, breakdownText, cashRec
       payment_status: 'paid',
       payment_method: mergedSummaryMethod,
       payment_split: JSON.stringify(mergedSplit),
-      collected_amount: newCollected,
       items: JSON.stringify(items),
       collected_at: new Date().toISOString()
     }).eq('id', _spOrderId);
@@ -1652,7 +1663,7 @@ var _icMethod = null;
 
 async function openItemCollectPicker(orderId, itemIndex) {
   var res = await db.from('store_orders')
-    .select('id, items, total, collected_amount, payment_split, payment_method, table_code, customer_phone')
+    .select('id, items, total, payment_split, payment_method, table_code, customer_phone')
     .eq('id', orderId).single();
   if (res.error || !res.data) { showStoreToast('Could not load this order'); return; }
 
@@ -1798,7 +1809,7 @@ async function icConfirmCash() {
 // Re-reads the order fresh (rather than trusting whatever was in memory
 // when the picker opened) so two staff collecting on different items of
 // the same table at nearly the same time can't clobber each other's
-// paidQty/collected_amount — last write still wins per field, but each
+// paidQty — last write still wins per field, but each
 // write is built from its own fresh read immediately before saving.
 async function icFinalize(method, cashReceived, changeGiven) {
   if (_icOrderId === null || _icItemIndex === null) return;
@@ -1806,7 +1817,7 @@ async function icFinalize(method, cashReceived, changeGiven) {
 
   try {
     var res = await db.from('store_orders')
-      .select('items, total, collected_amount, payment_split, table_code, customer_phone')
+      .select('items, total, payment_split, table_code, customer_phone')
       .eq('id', _icOrderId).single();
     if (res.error) throw res.error;
 
@@ -1826,7 +1837,7 @@ async function icFinalize(method, cashReceived, changeGiven) {
       : {};
     splitObj[method] = Math.round(((splitObj[method] || 0) + amount) * 100) / 100;
 
-    var newCollected = Math.round(((res.data.collected_amount || 0) + amount) * 100) / 100;
+    var newCollected = tsCollectedAmount(items);
     var total = res.data.total || 0;
     var remaining = Math.round((total - newCollected) * 100) / 100;
 
@@ -1837,7 +1848,6 @@ async function icFinalize(method, cashReceived, changeGiven) {
 
     var updatePayload = {
       items: JSON.stringify(items),
-      collected_amount: newCollected,
       payment_split: JSON.stringify(splitObj),
       payment_method: summaryMethod
     };
