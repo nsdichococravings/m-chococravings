@@ -867,7 +867,36 @@ async function kitchenSilentRefresh() {
   await kitchenRefresh(false);
 }
 
-async function kitchenRefresh(showFeedback) {
+var _kRefreshPending = null;
+var _kRefreshTimer = null;
+var _kLastRefresh = 0;
+
+function kitchenIsVisible() {
+  var page = document.getElementById('pg-kitchen');
+  return !document.hidden && page && page.classList.contains('active');
+}
+
+function kitchenRefresh(showFeedback) {
+  if (!showFeedback && !kitchenIsVisible()) return Promise.resolve();
+  // Collapse event bursts into one trailing refresh, preserving events that
+  // arrive while a request is still reading an older database snapshot.
+  if (!showFeedback && (_kRefreshPending || Date.now() - _kLastRefresh < 3000)) {
+    if (!_kRefreshTimer) _kRefreshTimer = setTimeout(function () {
+      _kRefreshTimer = null;
+      kitchenRefresh(false);
+    }, 3000);
+    return _kRefreshPending || Promise.resolve();
+  }
+  if (_kRefreshPending) return _kRefreshPending;
+  if (_kRefreshTimer) { clearTimeout(_kRefreshTimer); _kRefreshTimer = null; }
+  _kLastRefresh = Date.now();
+  _kRefreshPending = kitchenFetchOrders(showFeedback).finally(function () {
+    _kRefreshPending = null;
+  });
+  return _kRefreshPending;
+}
+
+async function kitchenFetchOrders(showFeedback) {
   var icon = document.getElementById('kitchen-refresh-icon');
   if (showFeedback && icon) icon.style.animation = 'kitchenRefreshSpin .6s linear';
 
@@ -896,20 +925,22 @@ async function kitchenRefresh(showFeedback) {
 // drop that doesn't visibly error, or a Supabase realtime hiccup) new
 // orders and status changes stop showing up until something else forces
 // a fetch — exactly the "only updates after I manually refresh" symptom.
-// Polling every 15s while Kitchen is actually the visible page makes
-// that failure mode structurally impossible: even if realtime never
-// fires again, the view can never be more than 15 seconds stale.
+// Check once a minute when visible. Realtime still supplies prompt updates;
+// background browser tabs must not continuously query the database.
 var _kPollTimer = null;
 
 function kStartPolling() {
   if (_kPollTimer) return; // already running — never stack multiple intervals
   _kPollTimer = setInterval(function () {
-    var kitchenPage = document.getElementById('pg-kitchen');
-    if (kitchenPage && kitchenPage.classList.contains('active')) {
+    if (kitchenIsVisible()) {
       kitchenSilentRefresh();
     }
-  }, 15000);
+  }, 60000);
 }
+
+document.addEventListener('visibilitychange', function () {
+  if (kitchenIsVisible()) kitchenSilentRefresh();
+});
 
 function kStopPolling() {
   if (_kPollTimer) { clearInterval(_kPollTimer); _kPollTimer = null; }
