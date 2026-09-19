@@ -105,7 +105,7 @@ const { PGlite } = require('../.production-test-runtime/node_modules/@electric-s
   await rejects(()=>command('start',{id:req2,recipe_id:badRecipe,planned_qty:10,planned_kg:1}),/Insufficient/);
   assert.equal(Number(await scalar("select current_stock from inventory_items where name='Chocolate'")),before,'failed batch rolls back every material issue');
   assert.equal(await scalar(`select status from cc_production_requests where id='${req2}'`),'approved');
-  const deletionMigration=fs.readFileSync(path.join(__dirname,'../migrations/20260919_recipe_deletion.sql'),'utf8');
+  const deletionMigration=fs.readFileSync(path.join(__dirname,'../migrations/20260920_approvals.sql'),'utf8');
   await db.exec(deletionMigration); await db.exec(deletionMigration);
   async function deletion(action,id,reason='Old version') { return db.query('select cc_recipe_delete($1,$2,$3)',[action,id,reason]); }
   await actor(production);
@@ -123,8 +123,40 @@ const { PGlite } = require('../.production-test-runtime/node_modules/@electric-s
   const deleteStock=await scalar("select current_stock from inventory_items where name='Chocolate'");
   await rejects(()=>command('start',{id:req2,recipe_id:recipe,planned_qty:10,planned_kg:0.5}),/deleted/);
   assert.equal(await scalar("select current_stock from inventory_items where name='Chocolate'"),deleteStock,'deleted recipe start rolls back stock');
+  const costPayload={product_name:'Brownie',effective_from:'2026-09-01',effective_to:'2026-09-30',material_cost:10,packaging_cost:2,labor_cost:3,overhead_cost:1,reason:'Correct making cost'};
+  async function costRequest(payload,key=randomUUID()) {return (await db.query('select cc_request_cost_correction($1::jsonb,$2) id',[JSON.stringify(payload),key])).rows[0].id;}
+  async function costReview(id,approved) {return db.query('select cc_review_cost_correction($1,$2,$3)',[id,approved,'Reviewed']);}
+  await actor(sales);
+  const costKey=randomUUID(), costId=await costRequest(costPayload,costKey);
+  assert.equal(await costRequest(costPayload,costKey),costId,'submission retry returns same request');
+  await rejects(()=>costRequest({...costPayload,labor_cost:9},costKey),/different input/);
+  assert.equal(Number(await scalar("select count(*) from cc_cost_corrections where status='approved'")),0,'submission does not apply costs');
+  await rejects(()=>costReview(costId,true),/Only admin/);
+  await rejects(()=>costRequest(costPayload),/already awaiting/);
+  await actor(admin);await costReview(costId,true);await costReview(costId,true);
+  assert.equal(await scalar("select status from cc_cost_corrections where id='"+costId+"'"),'approved');
+  await rejects(()=>costReview(costId,false),/already reviewed/);
+  const rejectedCost=await costRequest({...costPayload,material_cost:100});await costReview(rejectedCost,false);
+  assert.equal(Number(await scalar("select count(*) from cc_cost_corrections where status='approved'")),1,'rejection leaves approved costs alone');
+  await rejects(()=>costRequest({...costPayload,labor_cost:-1}),/check constraint/);
+  await rejects(()=>costRequest({...costPayload,effective_to:'2026-08-01'}),/check constraint/);
+  await actor(sales);
+  const adminRequest=(await command('request',{product_name:'Brownie',quantity:1,due_date:'2026-09-30'})).id;
+  await rejects(()=>command('approve',{id:adminRequest}),/Only admin/);
+  await rejects(()=>db.query('select cc_review_sales_request($1,true)',[adminRequest]),/Only admin/);
+  await actor(admin);await db.query('select cc_review_sales_request($1,true)',[adminRequest]);
+  await db.exec('alter table customers add column is_super_user boolean default false');
+  await db.query('insert into customers(email,is_admin,is_super_user) values($1,false,true)',['visitor@example.test']);
+  await actor(stranger);
+  assert.equal(await scalar('select cc_can_review_approvals()'),true,'super admin can review without is_admin flag');
+  const superCost=await costRequest({...costPayload,material_cost:11});await costReview(superCost,true);
+  await db.exec("update customers set is_super_user=false where email='visitor@example.test'");
+  assert.equal(await scalar('select cc_can_review_approvals()'),false);
   await db.exec('grant usage on schema auth to authenticated; grant execute on function auth.uid() to authenticated; set role authenticated;');
   await rejects(()=>db.exec("update inventory_items set current_stock=999"),/permission denied/);
+  await rejects(()=>db.exec("update cc_cost_corrections set status='approved'"),/permission denied/);
+  await actor(stranger);
+  assert.equal(Number(await scalar('select count(*) from cc_cost_corrections')),0,'outsider cannot read corrections');
   await actor(stranger);
   assert.equal(Number(await scalar('select count(*) from cc_production_batches')),0,'RLS hides production records from other customers');
   await actor(admin);

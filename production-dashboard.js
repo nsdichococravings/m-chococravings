@@ -1,20 +1,22 @@
 /* Production workspace: real Supabase data only. Stock writes use transactional RPCs. */
 (function () {
   'use strict';
-  const tabs = ['Dashboard', 'Production', 'Materials', 'Recipes', 'Outlet', 'Profit report'];
-  const sources = { deletions: 'cc_recipe_delete_requests', materials: 'inventory_items', packaging: 'packaging_materials', purchases: 'material_purchases', menu: 'store_menu', outlet: 'display_stock', requests: 'cc_production_requests', recipes: 'cc_production_recipes', batches: 'cc_production_batches', orders: 'store_orders' };
+  const tabs = ['Dashboard', 'Production', 'Materials', 'Recipes', 'Outlet', 'Profit report', 'Approvals'];
+  const sources = { corrections: 'cc_cost_corrections', deletions: 'cc_recipe_delete_requests', materials: 'inventory_items', packaging: 'packaging_materials', purchases: 'material_purchases', menu: 'store_menu', outlet: 'display_stock', requests: 'cc_production_requests', recipes: 'cc_production_recipes', batches: 'cc_production_batches', orders: 'store_orders' };
   const screenSources = {
     Dashboard: ['materials','outlet','requests','batches'], Production: ['requests','batches'],
     Materials: ['materials','packaging','purchases'], Recipes: ['recipes','menu','materials','packaging','deletions'],
-    Outlet: ['outlet','batches'], 'Profit report': ['orders','batches','recipes','materials','packaging']
+    Outlet: ['outlet','batches'], 'Profit report': ['orders','batches','recipes','materials','packaging','corrections'],
+    Approvals: ['requests','recipes','deletions','corrections']
   };
   const columns = {
-    cc_recipe_delete_requests: 'id,recipe_id,reason,status,requested_by,created_at',
+    cc_cost_corrections: 'id,product_name,effective_from,effective_to,material_cost,packaging_cost,labor_cost,overhead_cost,reason,status,requested_by,created_at,reviewed_by,reviewed_at,review_note',
+    cc_recipe_delete_requests: 'id,recipe_id,reason,status,requested_by,created_at,reviewed_by,reviewed_at,review_note',
     inventory_items: 'id,name,unit,current_stock,cost_per_unit,low_stock_threshold',
     packaging_materials: 'id,name,unit,category,current_stock,cost_per_unit',
     material_purchases: 'id,item_name,quantity,unit,cost_total,purchase_date',
     store_menu: 'id,name', display_stock: 'id,item_name,current_stock,low_stock_threshold',
-    cc_production_requests: 'id,product_name,outlet_name,quantity,status,requested_by,approved_by,approved_at',
+    cc_production_requests: 'id,product_name,outlet_name,quantity,status,requested_by,approved_by,approved_at,reviewed_by,reviewed_at,review_note',
     cc_production_recipes: 'id,product_name,yield_qty,yield_kg,ingredients,packaging,created_at,approved_by,deleted_at',
     cc_production_batches: 'id,product_name,outlet_name,status,planned_qty,planned_kg,actual_qty,collected_qty,material_cost,packaging_cost,labor_cost,overhead_cost,total_cost,unit_cost,completed_at',
     store_orders: 'id,items,status,payment_status,created_at'
@@ -132,6 +134,10 @@
       state.errors = [capability.error ? capability.error.message : 'This account has not been granted production access.'];
       render(); return;
     }
+    canReviewDeletion = false;
+    try { const review = await dbClient().rpc('cc_can_review_approvals'); canReviewDeletion = !review.error && review.data === true; } catch (_) {}
+    if (generation !== loadId) return;
+    if (state.tab === 'Approvals' && !canReviewDeletion) { state.tab='Dashboard'; await refresh(true); return; }
     const entries = keys.map(key => [key, sources[key]]);
     const results = await Promise.allSettled(entries.map(([, name]) => readAll(name,useCache)));
     if (generation !== loadId) return;
@@ -141,12 +147,6 @@
       else { delete state.data[entries[i][0]]; state.errors.push(entries[i][1] + ': ' + (result.reason.message || 'Could not load')); }
     });
     if (keys.includes('outlet') && readCache.has('display_stock')) stockUpdated = new Date(readCache.get('display_stock').at);
-    if (state.tab === 'Recipes') {
-      canReviewDeletion = false;
-      try { const role = await dbClient().rpc('cc_production_role'); canReviewDeletion = !role.error && role.data === 'admin'; }
-      catch (_) { /* review RPC still enforces admin authorization */ }
-      if (generation !== loadId) return;
-    }
     state.loading = false; state.refreshed = new Date(); render(); renderKitchen(); loadCollectionHistory();
     // Names must not block stock and request rendering. Never replace an open form.
     loadApprovers().then(()=>{
@@ -158,13 +158,13 @@
     return '<section class="pd-card"><h3>Ready for collection</h3>' + (batches.length ? batches.map(b => '<div class="pd-line"><strong>' + esc(b.product_name) + '</strong><p class="pd-muted">' + esc(b.outlet_name) + ' · ' + date(b.completed_at) + '</p><div class="pd-value">' + (num(b.actual_qty) - num(b.collected_qty)) + ' <span class="pd-muted">pcs</span></div>' + button('collect', 'Confirm collection', b.id, !state.ready) + '</div>').join('') : empty('Completed batches will appear here.')) + '</section>';
   }
   function productionTable() {
-    return table(['Product / outlet', 'Requested', 'Status', 'Approved by', 'Action'], rows('requests').map(r => [esc(r.product_name) + '<br><span class="pd-muted">' + esc(r.outlet_name) + '</span>', esc(r.quantity) + ' pcs', badge(r.status), approvedBy(r), r.status === 'pending' ? button('approve', 'Approve sales request', r.id, !state.ready) : r.status === 'approved' ? button('start', 'Plan & start baking', r.id, !state.ready) : '—']));
+    return table(['Product / outlet', 'Requested', 'Status', 'Approved by', 'Action'], rows('requests').map(r => [esc(r.product_name) + '<br><span class="pd-muted">' + esc(r.outlet_name) + '</span>', esc(r.quantity) + ' pcs', badge(r.status), approvedBy(r), r.status === 'pending' ? 'Pending admin approval' : r.status === 'approved' ? button('start', 'Plan & start baking', r.id, !state.ready) : '—']));
   }
   function recipeRows() {
     return rows('recipes').filter(r => !r.deleted_at).map(r => {
       const pending = rows('deletions').find(d => d.recipe_id === r.id && d.status === 'pending');
       const controls = pending ? badge('Pending admin approval') + '<p>' + esc(pending.reason) + '</p>' +
-        (canReviewDeletion ? button('approve-delete','Approve deletion',pending.id) + ' ' + button('reject-delete','Reject deletion',pending.id) : '') :
+        (canReviewDeletion ? '<p>Review in the Approvals tab.</p>' : '') :
         button('edit-recipe','Edit recipe',r.id,!state.ready) + ' ' + button('delete-recipe','Request deletion',r.id,!state.ready || !state.data.deletions);
       const cells = [esc(r.product_name) + '<br><span class="pd-muted">' + date(r.created_at) + ' · ' + esc(r.id.slice(0,8)) + '</span><div class="pd-line">' + controls + '</div>',
         esc(r.yield_qty) + ' pcs / ' + esc(r.yield_kg) + ' kg', (r.ingredients || []).map(recipeLineLabel).join('<br>'), (r.packaging || []).map(recipeLineLabel).join('<br>') || 'None'];
@@ -172,11 +172,18 @@
     });
   }
   function estimateUnitCost(name, soldAt) {
+    const soldDay = Number.isFinite(new Date(soldAt).getTime()) ? new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(soldAt)) : '';
+    const correction=rows('corrections').filter(c=>c.product_name===name && c.status==='approved' && soldDay>=c.effective_from && soldDay<=c.effective_to)
+      .sort((a,b)=>String(b.reviewed_at).localeCompare(String(a.reviewed_at)) || String(b.id).localeCompare(String(a.id)))[0];
+    if(correction) return {cost:num(correction.material_cost)+num(correction.packaging_cost)+num(correction.labor_cost)+num(correction.overhead_cost),
+      material:num(correction.material_cost),packaging:num(correction.packaging_cost),extra:num(correction.labor_cost)+num(correction.overhead_cost),
+      labor:num(correction.labor_cost),overhead:num(correction.overhead_cost),complete:true,basis:'Admin-approved cost correction'};
     const completed = rows('batches').filter(b => b.product_name === name && b.status === 'completed' && num(b.actual_qty)>0 && b.unit_cost != null &&
       new Date(b.completed_at).getTime() <= new Date(soldAt).getTime()).sort((a,b)=>String(b.completed_at).localeCompare(String(a.completed_at)) || String(b.id).localeCompare(String(a.id)));
     if (completed.length) {
       const b=completed[0];
       return {cost:num(b.unit_cost), material:num(b.material_cost)/num(b.actual_qty), packaging:num(b.packaging_cost)/num(b.actual_qty),
+        labor:b.labor_cost==null?null:num(b.labor_cost)/num(b.actual_qty),overhead:b.overhead_cost==null?null:num(b.overhead_cost)/num(b.actual_qty),
         extra:(num(b.labor_cost)+num(b.overhead_cost))/num(b.actual_qty), complete:[b.material_cost,b.packaging_cost,b.labor_cost,b.overhead_cost].every(v=>v!=null), basis:'Recorded batch costs'};
     }
     const recipes=rows('recipes').filter(r=>r.product_name===name && (!r.deleted_at || new Date(soldAt)<new Date(r.deleted_at))).sort((a,b)=>String(b.created_at).localeCompare(String(a.created_at)) || String(b.id).localeCompare(String(a.id)));
@@ -212,18 +219,75 @@
     });
     return [...sales].map(([name,r])=>{
       const known=!r.missing.size, full=known && r.complete;
+      const pending=rows('corrections').find(c=>c.product_name===name && c.status==='pending');
       const details='<details class="pd-cost-details"><summary>How this is calculated</summary>'+
         '<p><strong>Sales:</strong> '+esc(r.quantity)+' pieces · '+cash(r.gross)+' total</p>'+
         (known?'<p><strong>Cost for one piece</strong><br>Ingredients: '+cash(r.material/r.quantity)+'<br>Packaging: '+cash(r.packaging/r.quantity)+
           '<br>Labor + electricity / other making costs: '+(r.complete?cash(r.extra/r.quantity):'Not fully recorded')+'</p>'+
           '<p>'+ (full?'Making cost':'Recorded cost only')+': '+cash(r.cost/r.quantity)+' per piece × '+esc(r.quantity)+' pieces = '+cash(r.cost)+'</p>'+
           (full?'<p>Estimated profit: '+cash(r.gross)+' sales − '+cash(r.cost)+' making cost = <strong>'+cash(r.gross-r.cost)+'</strong></p>':
-          '<p>Complete a production batch with ingredient, packaging, labor and other making costs to calculate full making cost and profit. Recipe costs alone are incomplete.</p>'):
+          '<p>Request a cost correction below with all four making costs, or record a completed production batch. A correction changes this report only after admin approval.</p>'):
           '<p>'+esc([...r.missing].join('; '))+'</p>')+
-        '<p class="pd-muted">'+esc([...r.bases].join('; '))+'</p></details>';
+        '<p class="pd-muted">'+esc([...r.bases].join('; '))+'</p>'+
+        (pending?'<p class="pd-notice">Cost correction pending admin approval. Current costs remain in use.</p>':button('cost-correction','Request cost correction',name,!state.data.corrections))+'</details>';
       return [esc(name),esc(r.quantity),cash(r.gross/r.quantity)+'<br><small class="pd-muted">Average sold price</small>',
         known?cash(r.cost/r.quantity)+'<br><small class="pd-muted">'+(full?'Estimated making cost':'Ingredients + packaging only')+'</small>':'Needs recipe / prices',
         full?cash(r.gross-r.cost)+'<br><small class="pd-muted">'+cash((r.gross-r.cost)/r.quantity)+' per piece</small>':'Not ready<br><small class="pd-muted">'+(known?'Making costs incomplete':'Cost setup required')+'</small>',details];
+    });
+  }
+  function approvalItems() {
+    return [
+      ...rows('corrections').map(r=>({...r,kind:'cost',title:'Cost correction · '+r.product_name,details:
+        'Per piece: ingredients '+cash(r.material_cost)+', packaging '+cash(r.packaging_cost)+', labor '+cash(r.labor_cost)+', other '+cash(r.overhead_cost)+'. Total '+cash(num(r.material_cost)+num(r.packaging_cost)+num(r.labor_cost)+num(r.overhead_cost))+'. Applies '+r.effective_from+' to '+r.effective_to+'. '+r.reason})),
+      ...rows('deletions').map(r=>({...r,kind:'deletion',title:'Delete recipe · '+(rows('recipes').find(p=>p.id===r.recipe_id)?.product_name || r.recipe_id),details:'Version '+r.recipe_id.slice(0,8)+': '+r.reason})),
+      ...rows('requests').map(r=>({...r,kind:'sales',title:'Production request · '+r.product_name,details:r.quantity+' pieces · '+r.outlet_name,
+        status:r.status==='cancelled'?'rejected':r.status==='pending'?'pending':'approved',reviewed_by:r.reviewed_by||r.approved_by,reviewed_at:r.reviewed_at||r.approved_at}))
+    ].sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||'')) || String(b.id).localeCompare(String(a.id)));
+  }
+  function approvalsPanel() {
+    const items=approvalItems();
+    const reviewButton=(r,decision)=>'<button type="button" data-action="review-request" data-kind="'+r.kind+'" data-id="'+esc(r.id)+'" data-decision="'+decision+'">'+(decision==='approve'?'Review & approve':'Reject')+'</button>';
+    return '<section class="pd-card"><h3>Pending approvals</h3><p class="pd-muted">Admin and super admin only. Changes take effect after approval.</p>'+table(['Request','Proposed change / reason','Requested by','Action'],items.filter(r=>r.status==='pending').map(r=>[esc(r.title),esc(r.details),esc((r.requested_by||'').slice(0,8)),reviewButton(r,'approve')+' '+reviewButton(r,'reject')]))+'</section>'+
+      '<section class="pd-card pd-line"><h3>Approval history</h3>'+table(['Request','Decision','Reviewed','Reviewed by','Details'],items.filter(r=>r.status!=='pending').map(r=>[esc(r.title),badge(r.status),date(r.reviewed_at),esc((r.reviewed_by||'').slice(0,8)||'—'),esc(r.details)+(r.review_note?'<p>'+esc(r.review_note)+'</p>':'')]))+'</section>';
+  }
+  async function costCorrectionForm(name) {
+    const estimate=estimateUnitCost(name,new Date().toISOString()),dialog=root.querySelector('dialog'),key=crypto.randomUUID();
+    const value=v=>v==null?'':Number(Number(v).toFixed(6));
+    const start=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(Date.now()-30*86400000));
+    dialog.innerHTML='<form><h3>Request cost correction: '+esc(name)+'</h3><p>Enter making costs for <strong>one piece</strong>. These replace the report estimate only after approval. Selling prices and original batch records stay unchanged.</p><div class="pd-error" role="alert"></div><div class="pd-fields">'+
+      field('material_cost','Ingredients ₹ / piece','number',value(estimate.material),'min="0" max="99999999" step="any"')+
+      field('packaging_cost','Packaging ₹ / piece','number',value(estimate.packaging),'min="0" max="99999999" step="any"')+
+      field('labor_cost','Labor ₹ / piece','number',value(estimate.labor),'min="0" max="99999999" step="any"')+
+      field('overhead_cost','Electricity / other ₹ / piece','number',value(estimate.overhead),'min="0" max="99999999" step="any"')+
+      field('effective_from','Sales from (India date)','date',start)+field('effective_to','Sales through (India date)','date',today())+'</div><p class="pd-cost-total"></p>'+field('reason','Reason for correction','text','')+
+      '<p class="pd-muted">Starting values use the latest available cost basis. Review all four costs and the date range; enter 0 only if there is no cost. Old reports within these dates will recalculate after approval.</p><div class="pd-line pd-row">'+button('cancel','Cancel')+'<button type="submit">Submit for approval</button></div></form>';
+    const updateTotal=()=>{const inputs=[...dialog.querySelectorAll('input[type=number]')];dialog.querySelector('.pd-cost-total').textContent=inputs.every(i=>i.value!=='' && Number.isFinite(Number(i.value)) && Number(i.value)>=0)?'Proposed making cost per piece: '+cash(inputs.reduce((sum,i)=>sum+Number(i.value),0)):'Enter all four costs to see the total.';};
+    dialog.querySelector('form').addEventListener('input',updateTotal);updateTotal();dialog.showModal();
+    dialog.querySelector('form').addEventListener('submit',async e=>{
+      e.preventDefault();if(state.busy)return;
+      const payload={...Object.fromEntries(new FormData(e.target)),product_name:name};
+      if(payload.effective_from>payload.effective_to){dialog.querySelector('[role=alert]').textContent='The end date must be on or after the start date.';return;}
+      state.busy=true;dialog.querySelector('[type=submit]').disabled=true;
+      try {const result=await dbClient().rpc('cc_request_cost_correction',{p_payload:payload,p_key:key});if(result.error)throw result.error;invalidateReads();dialog.close();await refresh();}
+      catch(error){dialog.querySelector('[role=alert]').textContent=error.message;}
+      finally{state.busy=false;dialog.querySelector('[type=submit]').disabled=false;}
+    });
+  }
+  async function reviewForm(kind,id,approve) {
+    if(!canReviewDeletion)throw new Error('Admin or super admin access required.');
+    const item=approvalItems().find(r=>r.kind===kind && r.id===id);
+    if(!item || item.status!=='pending')throw new Error('This request is no longer pending. Refresh the list.');
+    const dialog=root.querySelector('dialog');
+    dialog.innerHTML='<form><h3>'+ (approve?'Approve: ':'Reject: ')+esc(item.title)+'</h3><p>'+esc(item.details)+'</p><p>'+ (approve?'The proposed change will take effect when you confirm.':'Current records will remain unchanged.')+'</p><div role="alert" class="pd-error"></div><label>Review note (optional)<input name="note"></label><div class="pd-line pd-row">'+button('cancel','Cancel')+'<button type="submit">Confirm '+(approve?'approval':'rejection')+'</button></div></form>';
+    dialog.showModal();dialog.querySelector('form').addEventListener('submit',async e=>{
+      e.preventDefault();if(state.busy)return;state.busy=true;dialog.querySelector('[type=submit]').disabled=true;
+      try {
+        const rpc=kind==='cost'?'cc_review_cost_correction':kind==='sales'?'cc_review_sales_request':'cc_recipe_delete';
+        const args=kind==='deletion'?{p_action:approve?'approve':'reject',p_id:id,p_reason:dialog.querySelector('[name=note]').value}:{p_id:id,p_approve:approve,p_note:dialog.querySelector('[name=note]').value};
+        const result=await dbClient().rpc(rpc,args);if(result.error)throw result.error;
+        invalidateReads();dialog.close();await refresh();
+      }catch(error){dialog.querySelector('[role=alert]').textContent=error.message;}
+      finally{state.busy=false;dialog.querySelector('[type=submit]').disabled=false;}
     });
   }
   async function deletionForm(action,id) {
@@ -244,7 +308,7 @@
   }
   function render() {
     if (!root) return;
-    root.querySelector('nav').innerHTML = tabs.map(t => '<button type="button" data-tab="' + t + '" aria-pressed="' + (state.tab === t) + '">' + t + '</button>').join('');
+    root.querySelector('nav').innerHTML = tabs.filter(t=>t!=='Approvals' || canReviewDeletion).map(t => '<button type="button" data-tab="' + t + '" aria-pressed="' + (state.tab === t) + '">' + t + '</button>').join('');
     const content = root.querySelector('main');
     if (state.loading) { content.innerHTML = '<h2>' + state.tab + '</h2>' + empty('Loading current stock and production records…'); return; }
     let html = '<div class="pd-title pd-row"><div><h2>' + state.tab + '</h2><p class="pd-muted">Central kitchen → Main outlet · Current records</p></div>' + button('refresh', 'Refresh') + '</div>';
@@ -258,8 +322,9 @@
     if (state.tab === 'Materials') html += '<div class="pd-stack"><section class="pd-card"><div class="pd-row"><h3>Raw materials</h3>' + button('purchase', 'Record stock-in', null, !state.ready) + '</div>' + table(['Material', 'Available', 'Unit cost', 'Stock value'], raw.map(r => [esc(r.name), esc(r.current_stock) + ' ' + esc(r.unit), cash(r.cost_per_unit), r.cost_per_unit == null ? 'Cost unavailable' : cash(num(r.current_stock) * num(r.cost_per_unit))])) + '</section><section class="pd-card"><h3>Packaging by category</h3>' + table(['Packaging', 'Category', 'Available', 'Unit cost'], rows('packaging').map(r => [esc(r.name), esc(r.category || 'Uncategorized'), esc(r.current_stock) + ' ' + esc(r.unit), cash(r.cost_per_unit)])) + '</section><section class="pd-card"><h3>Stock-in history</h3>' + table(['Date', 'Material', 'Quantity', 'Total cost'], rows('purchases').slice().sort((a,b) => String(b.purchase_date).localeCompare(String(a.purchase_date))).slice(0,100).map(r => [date(r.purchase_date), esc(r.item_name), esc(r.quantity) + ' ' + esc(r.unit), cash(r.cost_total)])) + '</section></div>';
     if (state.tab === 'Recipes') html += '<section class="pd-card"><div class="pd-row"><h3>Production recipes</h3>' + button('recipe', 'Add recipe version', null, !state.ready) + '</div>' + table(['Product / revision', 'Base yield', 'Ingredients', 'Packaging'], recipeRows()) + '</section>';
     if (state.tab === 'Outlet') html += '<div class="pd-grid"><section class="pd-card"><h3>Main outlet stock</h3>' + table(['Product', 'Available', 'Reorder level'], rows('outlet').map(r => [esc(r.item_name), esc(r.current_stock) + ' pcs', esc(r.low_stock_threshold)])) + '<p class="pd-muted">Sales continue through the existing order screen. Its database stock deduction remains the only sales stock writer.</p></section>' + readyPanel() + '</div>';
+    if (state.tab === 'Approvals' && canReviewDeletion) html += approvalsPanel();
     if (state.tab === 'Profit report') {
-      html += '<div class="pd-stack"><section class="pd-card"><h3>Paid, collected item sales · Last 30 days</h3>' + '<p class="pd-notice">Making cost per piece = (ingredients + packaging + labor + other making costs) ÷ good pieces produced. Estimated profit = sales − making cost of the pieces sold.</p>' + table(['Item', 'Pieces sold', 'Selling price / piece', 'Making cost / piece', 'Estimated profit · all sold pieces', 'Cost details'], profitRows()) + '<p class="pd-muted">Line prices before order-level discounts and refunds. Only paid orders marked collected are included.</p></section><section class="pd-card"><div class="pd-row"><h3>Production cost by batch</h3>' + button('export', 'Export batch costs') + '</div>' + table(['Product', 'Baked', 'Collected', 'Ingredients', 'Packaging', 'Labor / overhead', 'Cost / piece'], rows('batches').filter(b => b.status === 'completed').map(b => [esc(b.product_name), esc(b.actual_qty), esc(b.collected_qty), cash(b.material_cost), cash(b.packaging_cost), cash(num(b.labor_cost) + num(b.overhead_cost)), cash(b.unit_cost)])) + '<div class="pd-notice pd-line">Batch estimates use the latest completed batch before the sale. Recipe-only costs use current material prices and do not include all making costs, so profit stays “Not ready.” All profits shown are estimates before discounts, refunds, tax and other business expenses. Recorded zero batch costs are treated as entered; review them if costs were omitted.</div></section></div>';
+      html += '<div class="pd-stack"><section class="pd-card"><h3>Paid, collected item sales · Last 30 days</h3>' + '<p class="pd-notice">Making cost per piece = (ingredients + packaging + labor + other making costs) ÷ good pieces produced. Estimated profit = sales − making cost of the pieces sold.</p>' + table(['Item', 'Pieces sold', 'Selling price / piece', 'Making cost / piece', 'Estimated profit · all sold pieces', 'Cost details'], profitRows()) + '<p class="pd-muted">Line prices before order-level discounts and refunds. Only paid orders marked collected are included.</p></section><section class="pd-card"><div class="pd-row"><h3>Production cost by batch</h3>' + button('export', 'Export batch costs') + '</div>' + table(['Product', 'Baked', 'Collected', 'Ingredients', 'Packaging', 'Labor / overhead', 'Cost / piece'], rows('batches').filter(b => b.status === 'completed').map(b => [esc(b.product_name), esc(b.actual_qty), esc(b.collected_qty), cash(b.material_cost), cash(b.packaging_cost), cash(num(b.labor_cost) + num(b.overhead_cost)), cash(b.unit_cost)])) + '<div class="pd-notice pd-line">Approved cost corrections take priority within their selected dates. Otherwise, batch estimates use the latest completed batch before the sale. Recipe-only costs use current material prices and do not include all making costs, so profit stays “Not ready.” All profits shown are estimates before discounts, refunds, tax and other business expenses. Recorded zero batch costs are treated as entered; review them if costs were omitted.</div></section></div>';
     }
     content.innerHTML = html;
     announce(stockVisible() && stockUpdated ? 'Outlet stock checked ' + stockUpdated.toLocaleTimeString('en-IN') + ' · Auto-check every 3 hours while visible' : state.refreshed ? 'Updated ' + state.refreshed.toLocaleTimeString('en-IN') : '');
@@ -545,8 +610,10 @@
       const target = event.target.closest('button'); if (!target || target.disabled) return;
       const action = target.dataset.action;
       try {
-        if (target.dataset.tab) { state.tab = target.dataset.tab; clearTimeout(refreshTimer); refreshTimer = null; await refresh(true); return; }
+        if (target.dataset.tab) { if(target.dataset.tab==='Approvals' && !canReviewDeletion) return; state.tab = target.dataset.tab; clearTimeout(refreshTimer); refreshTimer = null; await refresh(true); return; }
         if (action === 'close') close();
+        else if (action === 'cost-correction') await costCorrectionForm(target.dataset.id);
+        else if (action === 'review-request') await reviewForm(target.dataset.kind,target.dataset.id,target.dataset.decision==='approve');
         else if (action === 'refresh') await refresh();
         else if (action === 'cancel') { if (!state.busy) root.querySelector('dialog').close(); }
         else if (action === 'create-missing-recipe') { root.querySelector('dialog').close(); await showForm('recipe'); }

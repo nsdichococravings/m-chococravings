@@ -7,14 +7,14 @@ const { parseHTML } = require('../.production-test-runtime/node_modules/linkedom
 const source = fs.readFileSync(path.join(__dirname, '../production-dashboard.js'), 'utf8');
 const tick = () => new Promise(resolve => setImmediate(resolve));
 
-function setup(authorized = true) {
+function setup(authorized = true, reviewer = true) {
   const { window } = parseHTML('<html><body><button id="kitchen-fab">Kitchen</button><section id="pg-kitchen"></section></body></html>');
   window.HTMLElement.prototype.focus = function () {};
   window.HTMLElement.prototype.showModal = function () { this.open = true; };
   window.HTMLElement.prototype.close = function () { this.open = false; };
   const calls = [], reads = [], tools = [], intervals = [];
   const data = {
-    cc_recipe_delete_requests: [],
+    cc_recipe_delete_requests: [], cc_cost_corrections: [],
     inventory_items: [{ id:'i',name:'<img src=x onerror=alert(1)>',unit:'kg',current_stock:2,cost_per_unit:50,low_stock_threshold:3 }],
     packaging_materials: [{id:'p',name:'Sleeve',unit:'pcs',current_stock:20,cost_per_unit:1,category:'Brownie'}],
     material_purchases: [], store_menu: [{ id:'m',name:'Brownie',category:'Brownie' }],
@@ -28,7 +28,10 @@ function setup(authorized = true) {
     auth: { getUser: async () => ({data:{user:{id:'admin'}}}) },
     from(name) { reads.push(name); return { select(){return this;}, order(){return this;}, gte(){return this;}, eq(){return this;}, limit(){return this;}, async range(a,b){return {data:(data[name]||[]).slice(a,b+1),error:null};} }; },
     async rpc(name,args) {
+      if(name==='cc_can_review_approvals') return {data:reviewer};
       if(name==='cc_production_role') return {data:'admin'};
+      if(name==='cc_request_cost_correction') { calls.push({name,args});data.cc_cost_corrections.push({id:'cost',...args.p_payload,status:'pending',requested_by:'admin'});return {data:'cost'}; }
+      if(name==='cc_review_cost_correction') {calls.push({name,args});Object.assign(data.cc_cost_corrections.find(c=>c.id===args.p_id),{status:args.p_approve?'approved':'rejected',reviewed_at:new Date().toISOString()});return {data:null};}
       if(name==='cc_recipe_delete') { calls.push({name,args}); return {data:null}; }
       if(name==='cc_production_access') return authorized ? {data:true,error:null} : {data:null,error:{message:'Migration not installed'}};
       if(name==='cc_production_approver_names') return {data:[{user_id:'admin',display_name:'Sales Manager'}]};
@@ -94,18 +97,40 @@ function setup(authorized = true) {
   assert.match(root.textContent,/Recorded batch costs/);
   assert.match(root.textContent,/₹100/);
   assert.match(root.textContent,/₹20/);
+  await click('[data-action="cost-correction"]');
+  root.querySelector('[name=material_cost]').value='8';
+  root.querySelector('[name=packaging_cost]').value='1';
+  root.querySelector('[name=labor_cost]').value='2';
+  root.querySelector('[name=overhead_cost]').value='1';
+  root.querySelector('[name=effective_from]').value='2026-09-01';
+  root.querySelector('[name=effective_to]').value='2026-09-30';
+  root.querySelector('[name=reason]').value='Correct cost';
+  root.querySelector('dialog form').dispatchEvent(new env.window.Event('submit',{bubbles:true,cancelable:true}));
+  await tick();await tick();
+  assert.match(root.textContent,/pending admin approval/);
+  assert.match(root.textContent,/₹100/,'pending correction does not alter costs');
+  await click('[data-tab="Approvals"]');
+  assert.match(root.textContent,/Cost correction/);
+  await click('[data-action="review-request"][data-kind="cost"][data-decision="approve"]');
+  root.querySelector('dialog form').dispatchEvent(new env.window.Event('submit',{bubbles:true,cancelable:true}));
+  await tick();await tick();
+  await click('[data-tab="Profit report"]');
+  assert.match(root.textContent,/Admin-approved cost correction/);
+  assert.match(root.textContent,/₹140/,'approved per-piece cost applies to five sold pieces');
   await click('[data-tab="Recipes"]');
   env.data.cc_recipe_delete_requests=[{id:'del',recipe_id:'recipe',reason:'Duplicate',status:'pending'}];
   await click('[data-action="refresh"]');
   assert.match(root.textContent,/Pending admin approval/);
   assert.ok(root.querySelector('.pd-delete-pending'));
-  assert.ok(root.querySelector('[data-action="approve-delete"]'));
-  await click('[data-action="approve-delete"]');
+  assert.equal(root.querySelector('[data-action="approve-delete"]'),null);
+  await click('[data-tab="Approvals"]');
+  await click('[data-action="review-request"][data-kind="deletion"][data-decision="approve"]');
   root.querySelector('dialog form').dispatchEvent(new env.window.Event('submit',{bubbles:true,cancelable:true}));
   await tick();await tick();
   assert.equal(env.calls.at(-1).name,'cc_recipe_delete');
   assert.equal(env.calls.at(-1).args.p_action,'approve');
   env.data.cc_recipe_delete_requests=[];
+  await click('[data-tab="Recipes"]');
   await click('[data-action="refresh"]');
   await click('[data-action="recipe"]');
   const line=root.querySelector('.pd-ingredient');
@@ -159,6 +184,10 @@ function setup(authorized = true) {
   assert.match(root.querySelector('[name=ingredient_name]').textContent,/New flour/);
   await click('[data-action="cancel"]');
   await click('[data-action="close"]');assert.equal(root.hidden,true);
+  const staff=setup(true,false);await staff.window.openProductionDashboard();
+  assert.equal(staff.document.querySelector('[data-tab="Approvals"]'),null,'staff cannot see approval tab');
+  await staff.window.openProductionDashboard('Approvals');
+  assert.equal(staff.reads.includes('cc_cost_corrections'),false,'staff cannot load approval queue by direct navigation');
   const missing=setup(false);await missing.window.openProductionDashboard();
   assert.equal(missing.reads.length,0,'no production reads before authorization');
   assert.match(missing.document.getElementById('production-workspace').textContent,/Migration not installed/);
