@@ -915,12 +915,13 @@ function goTo(id){
   history.pushState({pg:id},'','#'+id);
   if(id==='pg-kitchen') kitchenLoad();
   if(id==='pg-status')  checkNotifBanner();
-  if(id==='pg-menu')    loadMyOrders();
+  if(id==='pg-menu') { if(typeof clearMenuSearch==='function') clearMenuSearch(false); loadMyOrders(); }
 }
 window.addEventListener('popstate',function(e){
   var pg=(e.state&&e.state.pg)||'pg-menu';
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
   document.getElementById(pg).classList.add('active');
+  if(pg==='pg-menu' && typeof clearMenuSearch==='function') clearMenuSearch(false);
   closeSheet();
 });
 
@@ -2792,7 +2793,7 @@ async function toggleStoreOpenStatus() {
 <!-- END QUICK ADD MENU ITEM SHEET -->
 <script src="admin-command-center.js"></script>
 <script src="store-patch.js?v=20260919-realtime-io"></script>
-<script src="menu-search-patch.js?v=20260920-search"></script>
+<script src="menu-search-patch.js?v=20260920-search-v3"></script>
 <script src="remember-phone-patch.js"></script>
 <script src="checkadminbadge-override.js?v=20260919-io"></script>
 <script src="production-purchases-patch.js"></script>

@@ -1,0 +1,18 @@
+const assert=require('node:assert/strict'),vm=require('node:vm'),fs=require('node:fs');
+const {parseHTML}=require('../.production-test-runtime/node_modules/linkedom');
+const {window}=parseHTML('<html><body><section><div class="sec-lbl"><span id="sec-dot"></span><span id="sec-name"></span><span id="sec-cnt"></span></div><div id="items-list"></div></section></body></html>');
+window.HTMLElement.prototype.focus=function(){};
+const category={dot:'red',accent:'red',cls:'cake',items:[{id:'cake',name:'Chocolate cake',tag:'Fresh',price:99}]};
+const ctx={window,document:window.document,MENU:{Cake:category},tab:'Cake',cart:{},allItems:()=>category.items,catOf:()=>category,updateBar(){}};
+vm.createContext(ctx);vm.runInContext(fs.readFileSync('menu-search-patch.js','utf8'),ctx);
+ctx.injectMenuSearchBar();ctx.injectMenuSearchBar();
+const el=window.document.getElementById('menu-search');
+assert.equal(window.document.querySelectorAll('#menu-search').length,1);
+assert.equal(el.tagName,'DIV');assert.equal(el.getAttribute('role'),'searchbox');
+el.value='9999999999';ctx.renderItems();
+assert.match(window.document.getElementById('items-list').textContent,/Chocolate cake/,'form autofill value cannot become the query');
+el.textContent='chocolate';ctx.onMenuSearchInput();assert.match(window.document.getElementById('sec-name').textContent,/SEARCH RESULTS/);
+ctx.clearMenuSearch();assert.equal(el.textContent,'');
+el.textContent='<img src=x onerror=alert(1)>';ctx.onMenuSearchInput();assert.equal(window.document.querySelector('#items-list img'),null);
+ctx.setTab('Cake');assert.equal(el.textContent,'');
+console.log('PASS: non-form search, typed queries, clear/category reset, duplicate setup, escaped search text.');
