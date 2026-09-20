@@ -1674,73 +1674,59 @@ function icAmount() {
   },0));
 }
 async function openItemCollectPicker(orderId, itemIndex) {
-  var res = await db.from('store_orders')
-    .select('id, items, total, payment_split, payment_method, table_code, customer_phone')
-    .eq('id', orderId).single();
-  if (res.error || !res.data) { showStoreToast('Could not load this order'); return; }
-
-  var items = Array.isArray(res.data.items) ? res.data.items : JSON.parse(res.data.items || '[]');
-  var item = items[itemIndex];
-  if (!item) { showStoreToast('Item not found'); return; }
-
-  var paidQty = item.paidQty || 0;
-  var remaining = item.qty - paidQty;
-  if (item.complimentary || remaining <= 0) { showStoreToast('This item is already fully paid'); return; }
-
-  _icOrderId = orderId;
-  _icItemIndex = itemIndex;
-  _icUnitPrice = item.price || 0;
-  _icRemainingQty = remaining;
-  _icMethod = null;
-
-  var existing = document.getElementById('ic-overlay');
-  if (existing) existing.remove();
-
-  var overlay = document.createElement('div');
-  overlay.id = 'ic-overlay';
-  overlay.onclick = function (e) { if (e.target === overlay) closeItemCollectPicker(); };
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(18,10,30,0.65);backdrop-filter:blur(3px);'
-    + 'z-index:4400;display:flex;align-items:center;justify-content:center;padding:16px;font-family:\'DM Sans\',sans-serif';
-
-  var box = document.createElement('div');
-  box.id = 'ic-card';
-  box.style.cssText = 'background:#fff;border-radius:26px;max-width:400px;width:100%;'
-    + 'max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,0.3)';
-
-  box.innerHTML =
-      '<div style="background:linear-gradient(135deg,#6e0977,#9c0ca1);padding:24px 22px;border-radius:26px 26px 0 0;text-align:center">'
-    + '<div style="font-size:10px;font-weight:700;letter-spacing:3px;color:rgba(255,255,255,.7)">COLLECT FOR ITEM</div>'
-    + '<div style="font-family:Fraunces,Georgia,serif;font-size:19px;font-weight:900;color:#fff;margin-top:2px">' + item.name + '</div>'
-    + '<div style="font-size:11px;color:rgba(255,255,255,.65);margin-top:6px">₹' + _icUnitPrice + ' each · ' + remaining + ' of ' + item.qty + ' unpaid</div>'
-    + '</div>'
-    + '<div style="padding:20px 22px 24px">'
-    + '<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:#9c0ca1;margin-bottom:10px;text-align:center">QTY BEING PAID NOW</div>'
-    + '<div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:8px">'
-    +   '<div onclick="icStepQty(-1)" style="width:38px;height:38px;border-radius:50%;background:#f5eeff;'
-    +     'border:1.5px solid #e0c8f0;display:flex;align-items:center;justify-content:center;cursor:pointer;'
-    +     'font-size:18px;font-weight:700;color:#6e0977">−</div>'
-    +   '<div id="ic-qty" style="font-family:Fraunces,Georgia,serif;font-size:32px;font-weight:900;color:#1a0820;min-width:44px;text-align:center">' + remaining + '</div>'
-    +   '<div onclick="icStepQty(1)" style="width:38px;height:38px;border-radius:50%;background:#6e0977;color:#fff;'
-    +     'display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;font-weight:700">+</div>'
-    + '</div>'
-    + '<div style="text-align:center;font-size:13px;color:#9a8aaa;margin-bottom:18px">Amount: <b id="ic-amount" style="color:#6e0977">₹' + (remaining * _icUnitPrice) + '</b></div>'
-    + '<div id="ic-method-body"></div>'
-    + '<button onclick="closeItemCollectPicker()" style="width:100%;padding:12px;margin-top:14px;'
-    + 'background:transparent;color:#9a8aaa;font-size:12px;font-weight:600;border-radius:12px;border:none;cursor:pointer">Cancel</button>'
-    + '</div>';
-
-  overlay.appendChild(box);
-  document.body.appendChild(overlay);
-  icRenderMethodBody();
+  if (_icBusy) return;
+  try {
+    var res = await db.from('store_orders')
+      .select('id, items, total, payment_split, payment_method, table_code, customer_phone, status, payment_status')
+      .eq('id',orderId).single();
+    if (res.error) throw res.error;
+    var order=res.data;
+    if (!order || !order.table_code || ['collected','cancelled'].includes(order.status) || order.payment_status==='paid') throw new Error('This table is no longer open for collection.');
+    var items=Array.isArray(order.items)?order.items:JSON.parse(order.items||'[]');
+    order.collected_amount=tsCollectedAmount(items);
+    var selected=items[itemIndex];
+    if (!selected || selected.complimentary || Number(selected.price)<=0 || Number(selected.qty)-Number(selected.paidQty||0)<=0) throw new Error('This item has no unpaid pieces.');
+    closeItemCollectPicker();
+    _icOrderId=orderId;
+    _icItems=items;
+    _icSnapshot=order;
+    _icSelection={};
+    _icSelection[itemIndex]=Number(selected.qty)-Number(selected.paidQty||0);
+    var overlay=document.createElement('div');
+    overlay.id='ic-overlay';
+    overlay.style.cssText='position:fixed;inset:0;background:rgba(18,10,30,.65);z-index:4400;display:flex;align-items:center;justify-content:center;padding:16px;font-family:Arial,sans-serif';
+    overlay.onclick=function(e){if(e.target===overlay)closeItemCollectPicker();};
+    overlay.innerHTML='<div id="ic-card" role="dialog" aria-modal="true" aria-labelledby="ic-title" style="background:#fff;color:#261330;border-radius:22px;width:100%;max-width:520px;max-height:90vh;overflow:auto;padding:22px;box-sizing:border-box">'
+      +'<h2 id="ic-title" style="margin:0 0 8px">Collect payment · '+icEscape(order.table_code)+'</h2>'
+      +'<p style="font-size:14px;color:#786880">Choose pieces from any items below. Collect them together in one payment.</p>'
+      +'<div id="ic-items"></div><div style="margin:18px 0;padding:14px;background:#f5eeff;border-radius:12px">Collect now <strong id="ic-amount" style="float:right"></strong><div id="ic-after" style="font-size:12px;margin-top:8px"></div></div>'
+      +'<div id="ic-method-body"></div><button onclick="closeItemCollectPicker()" style="width:100%;padding:12px;margin-top:14px;border-radius:12px">Cancel</button></div>';
+    document.body.appendChild(overlay);
+    icRenderItems();
+    icRenderMethodBody();
+  } catch(e) { showStoreToast('Error: '+e.message); }
 }
-
-function icStepQty(delta) {
-  var el = document.getElementById('ic-qty');
-  var qty = parseInt(el.textContent, 10) + delta;
-  qty = Math.max(1, Math.min(_icRemainingQty, qty));
-  el.textContent = qty;
-  document.getElementById('ic-amount').textContent = '₹' + (qty * _icUnitPrice);
-  _icMethod = null;
+function icRenderItems() {
+  document.getElementById('ic-items').innerHTML=_icItems.map(function(item,index) {
+    var remaining=Math.max(0,Number(item.qty)-Number(item.paidQty||0));
+    var eligible=remaining>0 && !item.complimentary && Number(item.price)>0;
+    var qty=_icSelection[index]||0;
+    return '<div style="padding:12px 0;border-bottom:1px solid #eee;opacity:'+(eligible?'1':'.55')+'">'
+      +'<div style="display:flex;align-items:center;gap:10px"><strong style="flex:1">'+icEscape(item.name)+'</strong>'
+      +(eligible?'<button aria-label="Remove one '+icEscape(item.name)+'" onclick="icStepQty('+index+',-1)" '+(qty===0?'disabled':'')+'>−</button><span style="min-width:24px;text-align:center">'+qty+'</span><button aria-label="Add one '+icEscape(item.name)+'" onclick="icStepQty('+index+',1)" '+(qty>=remaining?'disabled':'')+'>+</button>':'<span>'+(item.complimentary?'Complimentary':Number(item.price)<=0?'No charge':'Paid')+'</span>')
+      +'</div><div style="font-size:12px;color:#786880;margin-top:8px">₹'+icMoney(item.price).toFixed(2)+' each · '+remaining+' unpaid'+(qty?' · Selected ₹'+icMoney(qty*item.price).toFixed(2):'')+'</div></div>';
+  }).join('');
+  document.getElementById('ic-amount').textContent='₹'+icAmount().toFixed(2);
+  document.getElementById('ic-after').textContent='Table balance after payment: ₹'+icMoney(_icSnapshot.total-(_icSnapshot.collected_amount||0)-icAmount()).toFixed(2);
+}
+function icStepQty(index,delta) {
+  if (_icBusy) return;
+  var item=_icItems[index];
+  if (!item || item.complimentary || Number(item.price)<=0) return;
+  _icSelection[index]=Math.max(0,Math.min(Number(item.qty)-Number(item.paidQty||0),(_icSelection[index]||0)+delta));
+  if (!_icSelection[index]) delete _icSelection[index];
+  _icMethod=null;
+  icRenderItems();
   icRenderMethodBody();
 }
 
@@ -1810,25 +1796,23 @@ async function icConfirmCash() {
   await icFinalize('cash', received, change);
 }
 
-// Re-reads the order fresh (rather than trusting whatever was in memory
-// when the picker opened) so two staff collecting on different items of
-// the same table at nearly the same time can't clobber each other's
-// paidQty/collected_amount — last write still wins per field, but each
-// write is built from its own fresh read immediately before saving.
+// Save only if the items, total and status still match the loaded order.
 async function icFinalize(method, cashReceived, changeGiven) {
   if (_icBusy || !_icOrderId || !SP_METHOD_META[method] || icAmount()<=0) return;
   _icBusy=true;
   document.getElementById('ic-card').style.pointerEvents='none';
   try {
     var res = await db.from('store_orders')
-      .select('items, total, collected_amount, payment_split, table_code, customer_phone')
+      .select('items, total, payment_split, table_code, customer_phone, status, payment_status')
       .eq('id', _icOrderId).single();
     if (res.error) throw res.error;
 
     var items = Array.isArray(res.data.items) ? res.data.items : JSON.parse(res.data.items || '[]');
     if (['collected','cancelled'].includes(res.data.status) || res.data.payment_status==='paid') throw new Error('Order is already closed. Reopen the table.');
-    if (Number(res.data.total)!==Number(_icSnapshot.total) || Number(res.data.collected_amount||0)!==Number(_icSnapshot.collected_amount||0) || JSON.stringify(items)!==JSON.stringify(_icItems)) throw new Error('This bill has changed. Close and reopen collection to review it.');
+    if (Number(res.data.total)!==Number(_icSnapshot.total) || tsCollectedAmount(items)!==Number(_icSnapshot.collected_amount||0) || JSON.stringify(items)!==JSON.stringify(_icItems)) throw new Error('This bill has changed. Close and reopen collection to review it.');
     var amount=icAmount();
+    var previouslyCollected=tsCollectedAmount(items);
+    var originalItemsFilter=JSON.stringify(res.data.items);
     var selectedNames=[];
     Object.keys(_icSelection).forEach(function(index) {
       var item=items[index],qty=_icSelection[index];
@@ -1836,7 +1820,7 @@ async function icFinalize(method, cashReceived, changeGiven) {
       item.paidQty=Number(item.paidQty||0)+qty;
       selectedNames.push(item.name+' ×'+qty);
     });
-    if (amount>icMoney(res.data.total-Number(res.data.collected_amount||0))) throw new Error('Selection exceeds the balance. Use Bill Collected for an adjusted bill.');
+    if (amount>icMoney(res.data.total-previouslyCollected)) throw new Error('Selection exceeds the balance. Use Bill Collected for an adjusted bill.');
 
     var splitObj = res.data.payment_split
       ? (typeof res.data.payment_split === 'string' ? JSON.parse(res.data.payment_split) : res.data.payment_split)
@@ -1866,7 +1850,7 @@ async function icFinalize(method, cashReceived, changeGiven) {
     }
 
     var write=db.from('store_orders').update(updatePayload).eq('id',_icOrderId).eq('total',res.data.total).eq('status',res.data.status);
-    write=res.data.collected_amount==null?write.is('collected_amount',null):write.eq('collected_amount',res.data.collected_amount);
+    write=write.filter('items','eq',originalItemsFilter);
     var upd=await write.select('id');
     if (upd.error) throw upd.error;
     if (!upd.data || upd.data.length!==1) throw new Error('Payment was not saved: the bill changed or access was denied. Refresh before collecting.');
