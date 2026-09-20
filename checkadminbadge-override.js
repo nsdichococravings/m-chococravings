@@ -75,7 +75,7 @@ async function checkAdminBadge(){
     // flag, for staff PIN login to the Tables board) — everything else
     // is admin-only.
     if (admin || employee) {
-      loadScriptsSequentially(['table-service-patch.js?v=20260920-multi-item-pay', 'staff-order-patch.js']);
+      loadScriptsSequentially(['table-service-patch.js?v=20260920-multi-item-v2', 'staff-order-patch.js']);
     }
     if (admin) {
       loadScriptsSequentially([
