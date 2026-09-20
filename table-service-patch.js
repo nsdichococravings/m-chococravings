@@ -20,6 +20,20 @@ var _tsExistingOrder = null;
 var _tsBoardCh      = null;
 var _tsOpenedFromKitchen = false; // true when opened via kOpenOrderEditFromKitchen(), not the Tables board
 
+// Item-level partial-collection amounts derive straight from the items
+// jsonb array (each item's paidQty × price) rather than a separate DB
+// column — items already exists on every order, so this needs no schema
+// migration and can never break Tables/Kitchen if a migration hasn't run.
+function tsParseItems(raw) {
+  return Array.isArray(raw) ? raw : JSON.parse(raw || '[]');
+}
+
+function tsCollectedAmount(items) {
+  return Math.round((items || []).reduce(function (s, i) {
+    return s + (i.complimentary ? 0 : (i.paidQty || 0) * (i.price || 0));
+  }, 0) * 100) / 100;
+}
+
 function _tsInit() {
   registerAdminTool('Daily Operations', {
     icon: '🍽️', iconBg: 'rgba(184,116,16,0.12)',
@@ -143,7 +157,7 @@ function closeTablesBoard() {
 async function loadTablesStatus() {
   var today = new Date().toISOString().slice(0, 10);
   var res = await db.from('store_orders')
-    .select('id, table_code, items, total, collected_amount, status, staff_name, created_at')
+    .select('id, table_code, items, total, status, staff_name, created_at')
     .not('table_code', 'is', null)
     .not('status', 'in', '("collected","cancelled")')
     .gte('created_at', today + 'T00:00:00.000Z');
@@ -171,7 +185,7 @@ function renderTablesGrid(map, rankMap) {
       var count = items.reduce(function (s, i) { return s + (i.qty || 1); }, 0);
       var statusLbl = { pending: 'Pending', preparing: 'Preparing', ready: 'Ready!', delivered: 'Waiting for Bill' }[o.status] || o.status;
       var staffBadge = o.staff_name ? ('<div style="font-size:10px;color:#8a6a3a;margin-top:2px">👤 ' + o.staff_name + '</div>') : '';
-      var collected = o.collected_amount || 0;
+      var collected = tsCollectedAmount(items);
       var billLine = collected > 0
         ? count + ' items · 💰 ₹' + Math.max(0, Math.round((o.total - collected) * 100) / 100) + ' left'
         : count + ' items · ₹' + o.total;
@@ -228,7 +242,7 @@ function openTableOrderSheet(code) {
   var moveBtn = document.getElementById('ts-move-btn');
 
   db.from('store_orders')
-    .select('id, items, total, collected_amount, status, created_at, staff_name, customer_phone')
+    .select('id, items, total, status, created_at, staff_name, customer_phone')
     .eq('table_code', code)
     .not('status', 'in', '("collected","cancelled")')
     .order('created_at', { ascending: false })
@@ -275,7 +289,7 @@ async function kOpenOrderEditFromKitchen(orderId) {
   _tsItems = [];
 
   var res = await db.from('store_orders')
-    .select('id, items, total, collected_amount, status, created_at, staff_name, customer_phone, table_code, token')
+    .select('id, items, total, status, created_at, staff_name, customer_phone, table_code, token')
     .eq('id', orderId)
     .maybeSingle();
   if (!res.data) { showStoreToast('Could not load this order'); return; }
@@ -557,7 +571,8 @@ async function tsUndoDelivered() {
 
 async function tsBillAndClose() {
   if (!_tsExistingOrder) return;
-  var remaining = Math.max(0, Math.round((_tsExistingOrder.total - (_tsExistingOrder.collected_amount || 0)) * 100) / 100);
+  var collected = tsCollectedAmount(tsParseItems(_tsExistingOrder.items));
+  var remaining = Math.max(0, Math.round((_tsExistingOrder.total - collected) * 100) / 100);
   openSplitPaymentPicker(_tsExistingOrder.id, remaining, { type: 'table', tableCode: _tsTableCode, fromTablesBoard: true });
 }
 
@@ -684,7 +699,7 @@ function renderKitchen(orders) {
 
     var primaryAction = kPrimaryActionFor(o);
 
-    var collectedSoFar = o.table_code ? (o.collected_amount || 0) : 0;
+    var collectedSoFar = o.table_code ? tsCollectedAmount(itemsArr) : 0;
     var remainingBill = Math.max(0, Math.round(((o.total || 0) - collectedSoFar) * 100) / 100);
     var totalBox = collectedSoFar > 0
       ? '<div style="display:flex;justify-content:space-between;align-items:center;'
@@ -747,7 +762,7 @@ function kPrimaryActionFor(o) {
       bg: 'rgba(74,222,128,.1)', border: 'rgba(74,222,128,.3)', color: '#4ade80' };
   }
   if (o.status === 'delivered' && o.table_code) {
-    var remainingA = Math.max(0, Math.round(((o.total || 0) - (o.collected_amount || 0)) * 100) / 100);
+    var remainingA = Math.max(0, Math.round(((o.total || 0) - tsCollectedAmount(tsParseItems(o.items))) * 100) / 100);
     return { label: '💰 Mark Bill Collected', onclick: "openSplitPaymentPicker('" + o.id + "'," + remainingA + ",{type:'table',tableCode:'" + o.table_code + "'})",
       bg: 'rgba(34,197,94,.12)', border: 'rgba(34,197,94,.35)', color: '#15803d' };
   }
@@ -768,7 +783,7 @@ function kMoreActionsRow(o) {
   var items = [];
   items.push({ icon: '✏️', label: 'Add / Edit', color: '#c084fc', onclick: "kOpenOrderEditFromKitchen('" + o.id + "')" });
   if (o.table_code && o.status !== 'delivered') {
-    var remainingB = Math.max(0, Math.round(((o.total || 0) - (o.collected_amount || 0)) * 100) / 100);
+    var remainingB = Math.max(0, Math.round(((o.total || 0) - tsCollectedAmount(tsParseItems(o.items))) * 100) / 100);
     items.push({ icon: '💰', label: 'Bill Collected', color: '#4ade80',
       onclick: "openSplitPaymentPicker('" + o.id + "'," + remainingB + ",{type:'table',tableCode:'" + o.table_code + "'})" });
   }
@@ -1532,10 +1547,10 @@ async function confirmSplitPayment() {
 // closes the order. It merges into any prior item-level partial
 // collections (see icFinalize) rather than overwriting them, so per-item
 // "Collect" payments made earlier still show up correctly in the final
-// payment_split/collected_amount and every item is marked fully paid.
+// payment_split and every item is marked fully paid.
 async function spFinalizePayment(splitObj, summaryMethod, breakdownText, cashReceived, changeGiven) {
   try {
-    var existing = await db.from('store_orders').select('items, total, collected_amount, payment_split').eq('id', _spOrderId).single();
+    var existing = await db.from('store_orders').select('items, total, payment_split').eq('id', _spOrderId).single();
     if (existing.error) throw existing.error;
 
     var items = Array.isArray(existing.data.items) ? existing.data.items : JSON.parse(existing.data.items || '[]');
@@ -1548,9 +1563,6 @@ async function spFinalizePayment(splitObj, summaryMethod, breakdownText, cashRec
     Object.keys(prevSplit).forEach(function (k) { mergedSplit[k] = prevSplit[k]; });
     Object.keys(splitObj).forEach(function (k) { mergedSplit[k] = Math.round(((mergedSplit[k] || 0) + splitObj[k]) * 100) / 100; });
 
-    var thisAmount = Object.keys(splitObj).reduce(function (s, k) { return s + splitObj[k]; }, 0);
-    var newCollected = Math.round(((existing.data.collected_amount || 0) + thisAmount) * 100) / 100;
-
     var labels = { cash: 'Cash', upi: 'UPI', upi_qr: 'Scan QR', card: 'Card' };
     var mergedMethods = Object.keys(mergedSplit).filter(function (k) { return mergedSplit[k] > 0; });
     var mergedSummaryMethod = mergedMethods.length === 1 ? mergedMethods[0] : (mergedMethods.length > 1 ? 'split' : summaryMethod);
@@ -1561,7 +1573,6 @@ async function spFinalizePayment(splitObj, summaryMethod, breakdownText, cashRec
       payment_status: 'paid',
       payment_method: mergedSummaryMethod,
       payment_split: JSON.stringify(mergedSplit),
-      collected_amount: newCollected,
       items: JSON.stringify(items),
       collected_at: new Date().toISOString()
     }).eq('id', _spOrderId);
@@ -1663,58 +1674,73 @@ function icAmount() {
   },0));
 }
 async function openItemCollectPicker(orderId, itemIndex) {
-  if (_icBusy) return;
-  try {
-    var res = await db.from('store_orders')
-      .select('id, items, total, collected_amount, payment_split, payment_method, table_code, customer_phone, status, payment_status')
-      .eq('id',orderId).single();
-    if (res.error) throw res.error;
-    var order=res.data;
-    if (!order || !order.table_code || ['collected','cancelled'].includes(order.status) || order.payment_status==='paid') throw new Error('This table is no longer open for collection.');
-    var items=Array.isArray(order.items)?order.items:JSON.parse(order.items||'[]');
-    var selected=items[itemIndex];
-    if (!selected || selected.complimentary || Number(selected.price)<=0 || Number(selected.qty)-Number(selected.paidQty||0)<=0) throw new Error('This item has no unpaid pieces.');
-    closeItemCollectPicker();
-    _icOrderId=orderId;
-    _icItems=items;
-    _icSnapshot=order;
-    _icSelection={};
-    _icSelection[itemIndex]=Number(selected.qty)-Number(selected.paidQty||0);
-    var overlay=document.createElement('div');
-    overlay.id='ic-overlay';
-    overlay.style.cssText='position:fixed;inset:0;background:rgba(18,10,30,.65);z-index:4400;display:flex;align-items:center;justify-content:center;padding:16px;font-family:Arial,sans-serif';
-    overlay.onclick=function(e){if(e.target===overlay)closeItemCollectPicker();};
-    overlay.innerHTML='<div id="ic-card" role="dialog" aria-modal="true" aria-labelledby="ic-title" style="background:#fff;color:#261330;border-radius:22px;width:100%;max-width:520px;max-height:90vh;overflow:auto;padding:22px;box-sizing:border-box">'
-      +'<h2 id="ic-title" style="margin:0 0 8px">Collect payment · '+icEscape(order.table_code)+'</h2>'
-      +'<p style="font-size:14px;color:#786880">Choose pieces from any items below. Collect them together in one payment.</p>'
-      +'<div id="ic-items"></div><div style="margin:18px 0;padding:14px;background:#f5eeff;border-radius:12px">Collect now <strong id="ic-amount" style="float:right"></strong><div id="ic-after" style="font-size:12px;margin-top:8px"></div></div>'
-      +'<div id="ic-method-body"></div><button onclick="closeItemCollectPicker()" style="width:100%;padding:12px;margin-top:14px;border-radius:12px">Cancel</button></div>';
-    document.body.appendChild(overlay);
-    icRenderItems();
-    icRenderMethodBody();
-  } catch(e) { showStoreToast('Error: '+e.message); }
+  var res = await db.from('store_orders')
+    .select('id, items, total, payment_split, payment_method, table_code, customer_phone')
+    .eq('id', orderId).single();
+  if (res.error || !res.data) { showStoreToast('Could not load this order'); return; }
+
+  var items = Array.isArray(res.data.items) ? res.data.items : JSON.parse(res.data.items || '[]');
+  var item = items[itemIndex];
+  if (!item) { showStoreToast('Item not found'); return; }
+
+  var paidQty = item.paidQty || 0;
+  var remaining = item.qty - paidQty;
+  if (item.complimentary || remaining <= 0) { showStoreToast('This item is already fully paid'); return; }
+
+  _icOrderId = orderId;
+  _icItemIndex = itemIndex;
+  _icUnitPrice = item.price || 0;
+  _icRemainingQty = remaining;
+  _icMethod = null;
+
+  var existing = document.getElementById('ic-overlay');
+  if (existing) existing.remove();
+
+  var overlay = document.createElement('div');
+  overlay.id = 'ic-overlay';
+  overlay.onclick = function (e) { if (e.target === overlay) closeItemCollectPicker(); };
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(18,10,30,0.65);backdrop-filter:blur(3px);'
+    + 'z-index:4400;display:flex;align-items:center;justify-content:center;padding:16px;font-family:\'DM Sans\',sans-serif';
+
+  var box = document.createElement('div');
+  box.id = 'ic-card';
+  box.style.cssText = 'background:#fff;border-radius:26px;max-width:400px;width:100%;'
+    + 'max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,0.3)';
+
+  box.innerHTML =
+      '<div style="background:linear-gradient(135deg,#6e0977,#9c0ca1);padding:24px 22px;border-radius:26px 26px 0 0;text-align:center">'
+    + '<div style="font-size:10px;font-weight:700;letter-spacing:3px;color:rgba(255,255,255,.7)">COLLECT FOR ITEM</div>'
+    + '<div style="font-family:Fraunces,Georgia,serif;font-size:19px;font-weight:900;color:#fff;margin-top:2px">' + item.name + '</div>'
+    + '<div style="font-size:11px;color:rgba(255,255,255,.65);margin-top:6px">₹' + _icUnitPrice + ' each · ' + remaining + ' of ' + item.qty + ' unpaid</div>'
+    + '</div>'
+    + '<div style="padding:20px 22px 24px">'
+    + '<div style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:#9c0ca1;margin-bottom:10px;text-align:center">QTY BEING PAID NOW</div>'
+    + '<div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:8px">'
+    +   '<div onclick="icStepQty(-1)" style="width:38px;height:38px;border-radius:50%;background:#f5eeff;'
+    +     'border:1.5px solid #e0c8f0;display:flex;align-items:center;justify-content:center;cursor:pointer;'
+    +     'font-size:18px;font-weight:700;color:#6e0977">−</div>'
+    +   '<div id="ic-qty" style="font-family:Fraunces,Georgia,serif;font-size:32px;font-weight:900;color:#1a0820;min-width:44px;text-align:center">' + remaining + '</div>'
+    +   '<div onclick="icStepQty(1)" style="width:38px;height:38px;border-radius:50%;background:#6e0977;color:#fff;'
+    +     'display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;font-weight:700">+</div>'
+    + '</div>'
+    + '<div style="text-align:center;font-size:13px;color:#9a8aaa;margin-bottom:18px">Amount: <b id="ic-amount" style="color:#6e0977">₹' + (remaining * _icUnitPrice) + '</b></div>'
+    + '<div id="ic-method-body"></div>'
+    + '<button onclick="closeItemCollectPicker()" style="width:100%;padding:12px;margin-top:14px;'
+    + 'background:transparent;color:#9a8aaa;font-size:12px;font-weight:600;border-radius:12px;border:none;cursor:pointer">Cancel</button>'
+    + '</div>';
+
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  icRenderMethodBody();
 }
-function icRenderItems() {
-  document.getElementById('ic-items').innerHTML=_icItems.map(function(item,index) {
-    var remaining=Math.max(0,Number(item.qty)-Number(item.paidQty||0));
-    var eligible=remaining>0 && !item.complimentary && Number(item.price)>0;
-    var qty=_icSelection[index]||0;
-    return '<div style="padding:12px 0;border-bottom:1px solid #eee;opacity:'+(eligible?'1':'.55')+'">'
-      +'<div style="display:flex;align-items:center;gap:10px"><strong style="flex:1">'+icEscape(item.name)+'</strong>'
-      +(eligible?'<button aria-label="Remove one '+icEscape(item.name)+'" onclick="icStepQty('+index+',-1)" '+(qty===0?'disabled':'')+'>−</button><span style="min-width:24px;text-align:center">'+qty+'</span><button aria-label="Add one '+icEscape(item.name)+'" onclick="icStepQty('+index+',1)" '+(qty>=remaining?'disabled':'')+'>+</button>':'<span>'+(item.complimentary?'Complimentary':Number(item.price)<=0?'No charge':'Paid')+'</span>')
-      +'</div><div style="font-size:12px;color:#786880;margin-top:8px">₹'+icMoney(item.price).toFixed(2)+' each · '+remaining+' unpaid'+(qty?' · Selected ₹'+icMoney(qty*item.price).toFixed(2):'')+'</div></div>';
-  }).join('');
-  document.getElementById('ic-amount').textContent='₹'+icAmount().toFixed(2);
-  document.getElementById('ic-after').textContent='Table balance after payment: ₹'+icMoney(_icSnapshot.total-(_icSnapshot.collected_amount||0)-icAmount()).toFixed(2);
-}
-function icStepQty(index,delta) {
-  if (_icBusy) return;
-  var item=_icItems[index];
-  if (!item || item.complimentary || Number(item.price)<=0) return;
-  _icSelection[index]=Math.max(0,Math.min(Number(item.qty)-Number(item.paidQty||0),(_icSelection[index]||0)+delta));
-  if (!_icSelection[index]) delete _icSelection[index];
-  _icMethod=null;
-  icRenderItems();
+
+function icStepQty(delta) {
+  var el = document.getElementById('ic-qty');
+  var qty = parseInt(el.textContent, 10) + delta;
+  qty = Math.max(1, Math.min(_icRemainingQty, qty));
+  el.textContent = qty;
+  document.getElementById('ic-amount').textContent = '₹' + (qty * _icUnitPrice);
+  _icMethod = null;
   icRenderMethodBody();
 }
 
@@ -1784,14 +1810,18 @@ async function icConfirmCash() {
   await icFinalize('cash', received, change);
 }
 
-// Save the entire selection together. A changed balance rejects this write.
+// Re-reads the order fresh (rather than trusting whatever was in memory
+// when the picker opened) so two staff collecting on different items of
+// the same table at nearly the same time can't clobber each other's
+// paidQty/collected_amount — last write still wins per field, but each
+// write is built from its own fresh read immediately before saving.
 async function icFinalize(method, cashReceived, changeGiven) {
   if (_icBusy || !_icOrderId || !SP_METHOD_META[method] || icAmount()<=0) return;
   _icBusy=true;
   document.getElementById('ic-card').style.pointerEvents='none';
   try {
     var res = await db.from('store_orders')
-      .select('items, total, collected_amount, payment_split, table_code, customer_phone, status, payment_status')
+      .select('items, total, collected_amount, payment_split, table_code, customer_phone')
       .eq('id', _icOrderId).single();
     if (res.error) throw res.error;
 
@@ -1813,7 +1843,7 @@ async function icFinalize(method, cashReceived, changeGiven) {
       : {};
     splitObj[method] = Math.round(((splitObj[method] || 0) + amount) * 100) / 100;
 
-    var newCollected = Math.round(((res.data.collected_amount || 0) + amount) * 100) / 100;
+    var newCollected = tsCollectedAmount(items);
     var total = res.data.total || 0;
     var remaining = Math.round((total - newCollected) * 100) / 100;
 
@@ -1824,7 +1854,6 @@ async function icFinalize(method, cashReceived, changeGiven) {
 
     var updatePayload = {
       items: JSON.stringify(items),
-      collected_amount: newCollected,
       payment_split: JSON.stringify(splitObj),
       payment_method: summaryMethod
     };
