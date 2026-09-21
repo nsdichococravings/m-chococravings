@@ -12,7 +12,7 @@ const {PGlite}=require('../.production-test-runtime/node_modules/@electric-sql/p
  create table store_orders(id uuid primary key default gen_random_uuid(),customer_id uuid,items jsonb,total numeric,status text default 'pending',payment_status text default 'pending');
  insert into auth.users values('${admin}','admin@test','911111111111',now(),now()),('${staff}','staff@test','912222222222',now(),now()),('${alice}','alice@test','913333333333',now(),now()),('${bob}','bob@test','914444444444',now(),now());
  insert into customers values('staff@test',true);`);
- const sql=fs.readFileSync('migrations/20260921_premium_cards.sql','utf8');await db.exec(sql);await db.exec(sql);
+ const sql=fs.readFileSync('migrations/20260921_premium_cards.sql','utf8');await db.exec(sql);await db.exec(sql);const emailPatch=fs.readFileSync('migrations/20260921b_premium_email_verification.sql','utf8');await db.exec(emailPatch);await db.exec(emailPatch);
  const actor=id=>db.query("select set_config('request.jwt.claim.sub',$1,false)",[id]);
  const command=async(a,p={})=>(await db.query('select cc_premium_command($1,$2::jsonb) x',[a,JSON.stringify(p)])).rows[0].x;
  const scalar=async(q,p=[])=>(Object.values((await db.query(q,p)).rows[0])[0]);
@@ -22,8 +22,10 @@ const {PGlite}=require('../.production-test-runtime/node_modules/@electric-sql/p
  await actor(alice);await assert.rejects(()=>command('issue',{}),/Admin/);
  await actor(admin);
  const ca=await command('issue',{name:'Alice',email:'alice@test',minimum_spend:0,schedule:[{day:1,item:'Coffee'},{day:100,item:'Brownie'}]});
- const cb=await command('issue',{name:'Bob',email:'bob@test',minimum_spend:0,schedule:[{day:1,item:'Coffee'}]});
+ const cb=await command('issue',{name:'Bob',email:'bob@test',phone:'+914444444444',minimum_spend:0,schedule:[{day:1,item:'Coffee'}]});
  await assert.rejects(()=>command('issue',{name:'Again',email:'alice@test',schedule:[{day:1,item:'Coffee'}]}),/duplicate/);
+ await db.query('update auth.users set phone=null,phone_confirmed_at=null where id in ($1,$2)',[alice,bob]);
+ await db.exec(emailPatch);assert.equal(await scalar('select number from cc_premium_cards where id=$1',[ca.id]),ca.number,'email upgrade preserves issued cards');
  await actor(alice);const first=await order(alice);assert.equal(Number(await scalar('select count(*) from cc_premium_allocations where order_id=$1',[first])),1);
  await assert.rejects(()=>collect(first),/Staff must/);await actor(staff);await collect(first);
  assert.equal(Number(await scalar('select count(*) from cc_premium_stamps')),1);
@@ -55,10 +57,10 @@ const {PGlite}=require('../.production-test-runtime/node_modules/@electric-sql/p
  const restore=await command('request_review',{member_id:ca.member_id,order_id:second,reason:'Restore test purchase'});
  await command('review',{id:restore.id,approve:true,note:'Purchase was paid and collected',resolution:'restore_purchase'});
  assert.equal(Number(await scalar('select count(*) from cc_premium_stamps where member_id=$1',[ca.member_id])),1);
- const charlie=randomUUID();await db.query('insert into auth.users values($1,$2,$3,null,now())',[charlie,'charlie@test','915555555555']);
- await assert.rejects(()=>command('issue',{name:'Charlie',email:'charlie@test',minimum_spend:60,schedule:[{day:15,item:'Brownie'}]}),/verify/);
- await db.query('update auth.users set phone_confirmed_at=now() where id=$1',[charlie]);
- const cc=await command('issue',{name:'Charlie',email:'charlie@test',minimum_spend:60,schedule:[{day:15,item:'Brownie'}]});
+ const charlie=randomUUID();await db.query('insert into auth.users values($1,$2,$3,null,null)',[charlie,'charlie@test','915555555555']);
+ await assert.rejects(()=>command('issue',{name:'Charlie',email:'charlie@test',phone:'+915555555555',minimum_spend:60,schedule:[{day:15,item:'Brownie'}]}),/verify/);
+ await db.query('update auth.users set email_confirmed_at=now(),phone=null where id=$1',[charlie]);
+ const cc=await command('issue',{name:'Charlie',email:'charlie@test',phone:'+915555555555',minimum_spend:60,schedule:[{day:15,item:'Brownie'}]});
  await actor(charlie);const c1=await order(charlie,item(1),30);await actor(staff);await collect(c1);
  assert.equal(Number(await scalar('select count(*) from cc_premium_stamps where member_id=$1',[cc.member_id])),0);
  await actor(charlie);const c2=await order(charlie,item(1),30);await actor(staff);await collect(c2);

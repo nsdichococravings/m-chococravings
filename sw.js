@@ -1,5 +1,5 @@
 // NSDI ChocoCravings — Service Worker
-const CACHE_NAME = 'chococravings-v19-premium-cards';
+const CACHE_NAME = 'chococravings-v20-premium-email';
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache immediately on install
