@@ -1,0 +1,4 @@
+#lc-dialog::backdrop{background:#160820aa}
+#lc-dialog *{box-sizing:border-box}
+#lc-dialog progress::-webkit-progress-value{background:#790c88}
+#lc-dialog progress::-webkit-progress-bar{background:#f4e7f7;border-radius:8px}

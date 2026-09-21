@@ -734,7 +734,6 @@ function renderKitchen(orders) {
       + 'background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:rgba(245,234,220,.6);'
       + 'font-size:16px;cursor:pointer">⋯</button>'
       + '</div>'
-      + (typeof window.openPremiumOrder === 'function' ? '<button class="pc-kitchen-entry" onclick="openPremiumOrder(\'' + o.id + '\')">♛ Premium customers & rewards</button>' : '')
       + kMoreActionsRow(o)
       + '</div>';
   }).join('');
@@ -2059,7 +2058,6 @@ function renderKitchenHistory(orders) {
       + '</div>'
       + '<div style="text-align:center;margin-top:6px;font-size:10px;color:rgba(255,255,255,.3)">' + (expanded ? '▲ tap to collapse' : '▼ tap to expand · ' + items.length + ' items') + '</div>'
       + itemsDetail
-      + (expanded && typeof window.openPremiumOrder === 'function' ? '<button class="pc-kitchen-entry" onclick="event.stopPropagation();openPremiumOrder(\'' + o.id + '\')">Premium assignments & correction request</button>' : '')
       + '</div>';
   }).join('');
 }
