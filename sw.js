@@ -1,5 +1,5 @@
 // NSDI ChocoCravings — Service Worker
-const CACHE_NAME = 'chococravings-v17-multi-item-payments';
+const CACHE_NAME = 'chococravings-v19-premium-cards';
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache immediately on install

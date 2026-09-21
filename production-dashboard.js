@@ -492,6 +492,7 @@
     const url = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
     const a = document.createElement('a'); a.href = url; a.download = 'production-costs-' + today() + '.csv'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
+  let kitchenHistoryClosed = false;
   function histTime(value) { return new Date(value).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); }
   function renderKitchen() {
     const kitchen = document.getElementById('pg-kitchen'); if (!kitchen || !state.ready) return;
@@ -519,7 +520,15 @@
     let history = kitchen.querySelector('.pd-kitchen-history');
     if (!history) { history = document.createElement('aside'); history.className = 'pd-kitchen-history'; }
     sidebar.appendChild(history);
-    history.innerHTML = '<div class="pdk-eyebrow">Recent collections</div>' + (collectionHistory.length
+    history.style.display = kitchenHistoryClosed ? 'none' : '';
+    let reopen = sidebar.querySelector('[data-action="show-collections"]');
+    if (!reopen) {
+      reopen = document.createElement('button'); reopen.type = 'button'; reopen.className = 'pdk-link';
+      reopen.dataset.action = 'show-collections'; reopen.textContent = 'Show recent collections';
+      sidebar.appendChild(reopen);
+    }
+    reopen.style.display = kitchenHistoryClosed ? '' : 'none';
+    history.innerHTML = '<div class="pdk-top"><div class="pdk-eyebrow">Recent collections</div><button type="button" class="pdk-link" data-action="hide-collections" aria-label="Close recent collections" title="Close recent collections" style="min-width:44px;min-height:44px;font-size:24px">×</button></div>' + (collectionHistory.length
       ? collectionHistory.map(h => '<div class="pdk-hist-row"><div class="pdk-hist-name">' + esc(h.item_name) + '<span>' + num(h.quantity) + ' pcs</span></div><div class="pdk-hist-meta">' + esc(h.collected_by || 'Unrecorded') + ' · ' + histTime(h.created_at) + '</div></div>').join('')
       : '<div class="pdk-hist-empty">No collections recorded yet.</div>');
   }
@@ -546,6 +555,12 @@
     const kitchen = document.getElementById('pg-kitchen'); if (!kitchen || kitchen.dataset.pdkBound) return;
     kitchen.dataset.pdkBound = '1';
     kitchen.addEventListener('click', event => {
+      if (event.target.closest('[data-action="hide-collections"], [data-action="show-collections"]')) {
+        kitchenHistoryClosed = !!event.target.closest('[data-action="hide-collections"]');
+        renderKitchen();
+        kitchen.querySelector(kitchenHistoryClosed ? '[data-action="show-collections"]' : '[data-action="hide-collections"]').focus();
+        return;
+      }
       if (event.target.closest('[data-action="open-dashboard"]')) { open('Production').catch(() => {}); return; }
       const btn = event.target.closest('[data-action="mark-collected"]');
       if (!btn || btn.disabled) return;
