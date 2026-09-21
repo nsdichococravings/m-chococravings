@@ -1,0 +1,24 @@
+const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict');
+const {parseHTML}=require('../.production-test-runtime/node_modules/linkedom');
+const {window}=parseHTML('<html><body><section id="pg-menu"><div class="pg-hdr"></div></section></body></html>');
+window.HTMLElement.prototype.focus=function(){};window.HTMLElement.prototype.select=function(){};
+window.HTMLElement.prototype.showModal=function(){this.open=true;};window.HTMLElement.prototype.close=function(){this.open=false;};
+const calls=[];let view={role:'customer',member:{name:'<img src=x onerror=alert(1)>',phone:'••••••4321'},cards:[{id:'c',number:'CC-P-123',cycle:1,days:9,minimum_spend:0,schedule:[{day:10,item:'Coffee'}]}],rewards:[],stamps:[]};
+window.db={auth:{getUser:async()=>({data:{user:{id:'u'}}})},rpc:async(name,args)=>{calls.push({name,args});return {data:name==='cc_premium_view'?view:{code:'one-time-code',expires_at:new Date(Date.now()+300000).toISOString()}};}};
+window.registerAdminTool=()=>{};
+vm.runInNewContext(fs.readFileSync('premium-cards.js','utf8'),{window,document:window.document,Intl,Date,console,FormData});
+window.document.dispatchEvent(new window.Event('DOMContentLoaded'));
+const tick=()=>new Promise(r=>setImmediate(r));
+(async()=>{
+ assert.equal(calls.length,0,'no background queries');await window.openPremiumCards();
+ assert.match(window.document.querySelector('.pc-body').textContent,/9 \/ 100/);
+ assert.equal(window.document.querySelector('.pc-membership img'),null,'escaped customer name');
+ assert.ok(!window.document.querySelector('[data-form=issue]'),'customer cannot see admin controls');
+ window.document.querySelector('[data-pc=code]').click();await tick();await tick();
+ assert.match(window.document.querySelector('.pc-code').textContent,/expires/);assert.equal(calls.at(-1).args.p_action,'code');
+ window.document.querySelector('[data-pc=close]').click();assert.equal(window.document.querySelector('#pc-dialog').open,false);
+ view={role:'admin',member:null,cards:[],rewards:[],stamps:[],menu:['Coffee'],members:[],reviews:[]};await window.openPremiumCards();assert.ok(window.document.querySelector('[data-form=issue]'));assert.ok(window.document.querySelector('[data-form=phone]'));
+ view={order:{id:'order',status:'pending',total:90,items:[{name:'Coffee',qty:3,price:30}]},allocations:[{item_index:0,quantity:1,member_id:'m',customer_name:'Alice',phone:'••••••4321',name:'Coffee'}]};
+ await window.openPremiumOrder('order');assert.equal(window.document.querySelector('[data-index="0"]').getAttribute('max'),'2');assert.ok(window.document.querySelector('[data-form=reserve]'));assert.equal(calls.at(-1).args.p_order,'order');
+ console.log('PASS premium UI: on-demand reads, customer/admin views, escaped identity, verification code, close and shared quantities.');
+})().catch(e=>{console.error(e);process.exit(1);});
