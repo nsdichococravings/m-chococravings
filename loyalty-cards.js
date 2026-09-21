@@ -309,6 +309,87 @@ async function lcIssue() {
   } catch (e) { lcMsg(e.message); } finally { lcBusy(false); }
 }
 
+// ══════════════════════════════════════════════════════════════
+// Kitchen integration — shows a table order's loyalty card (code,
+// visit count, any reward ready) right on its ticket when the order's
+// phone number matches an existing card, and lets staff apply an
+// unlocked reward straight to that order's bill.
+// ══════════════════════════════════════════════════════════════
+function lcLast10(phone) {
+  var digits = String(phone || '').replace(/\D/g, '');
+  return digits.slice(-10);
+}
+
+// Batch-fetches loyalty cards for every table order's phone in one
+// round trip. Never throws — Kitchen must still render fine even if
+// Loyalty Cards isn't installed yet or the call fails for any reason.
+async function lcLoyaltyMapFor(orders) {
+  var phones = [];
+  var seen = {};
+  (orders || []).forEach(function (o) {
+    if (!o.table_code || !o.customer_phone) return;
+    var last10 = lcLast10(o.customer_phone);
+    if (last10.length === 10 && !seen[last10]) { seen[last10] = true; phones.push(o.customer_phone); }
+  });
+  if (!phones.length) return {};
+  try {
+    var res = await lcCommand('lookup_many', { phones: phones });
+    var map = {};
+    (res.members || []).forEach(function (m) { map[lcLast10(m.phone)] = m; });
+    return map;
+  } catch (e) {
+    return {};
+  }
+}
+
+// One item's reward status for a given card: available now, still
+// locked, or already given.
+function lcRewardsFor(member) {
+  return (member.schedule || []).map(function (s) {
+    var status = (member.redeemed_days || []).indexOf(s.day) !== -1 ? 'redeemed'
+      : s.day <= member.stamp_count ? 'available' : 'locked';
+    return { day: s.day, item: s.item, status: status };
+  });
+}
+
+// Applies one unlocked reward to a specific table order: finds a
+// matching, not-already-complimentary unit of that item in the order,
+// marks it complimentary (splitting the line if more than one was
+// ordered), recomputes the total, and marks the reward redeemed. If the
+// item isn't in the order at all, asks staff to add it first rather
+// than guessing.
+async function lcApplyRewardToOrder(orderId, memberId, day, itemName) {
+  try {
+    var res = await db.from('store_orders').select('items,total').eq('id', orderId).single();
+    if (res.error) throw res.error;
+    var items = Array.isArray(res.data.items) ? res.data.items : JSON.parse(res.data.items || '[]');
+    var idx = items.findIndex(function (i) { return i.name === itemName && !i.complimentary; });
+    if (idx === -1) {
+      showStoreToast('Add ' + itemName + ' to this order first, then apply the reward.');
+      return;
+    }
+    if (items[idx].qty > 1) {
+      items[idx].qty -= 1;
+      items.splice(idx + 1, 0, { name: itemName, price: items[idx].price, qty: 1, complimentary: true });
+    } else {
+      items[idx].complimentary = true;
+    }
+    var newTotal = items.reduce(function (s, i) { return s + (i.complimentary ? 0 : i.price * i.qty); }, 0);
+
+    var upd = await db.from('store_orders').update({ items: JSON.stringify(items), total: newTotal }).eq('id', orderId);
+    if (upd.error) throw upd.error;
+
+    await lcCommand('redeem', { member_id: memberId, day: day });
+    showStoreToast('🎁 ' + itemName + ' applied free — reward redeemed');
+    if (typeof kitchenManualRefresh === 'function') kitchenManualRefresh();
+  } catch (e) {
+    showStoreToast('Error: ' + e.message);
+  }
+}
+window.lcLoyaltyMapFor = lcLoyaltyMapFor;
+window.lcRewardsFor = lcRewardsFor;
+window.lcApplyRewardToOrder = lcApplyRewardToOrder;
+
 // ── Entry points ──
 function _lcRegister() {
   if (window.registerAdminTool) {

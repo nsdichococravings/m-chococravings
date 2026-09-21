@@ -577,7 +577,8 @@ async function tsBillAndClose() {
 }
 
 // ── 5. Kitchen display — show table code instead of token ──────
-function renderKitchen(orders) {
+function renderKitchen(orders, loyaltyMap) {
+  loyaltyMap = loyaltyMap || {};
   updateKitchenOrderCountBadge(orders.length);
   var list = document.getElementById('k-list');
   if (!orders.length) { list.innerHTML = '<div class="k-empty">No pending orders</div>'; return; }
@@ -699,6 +700,27 @@ function renderKitchen(orders) {
 
     var primaryAction = kPrimaryActionFor(o);
 
+    // Loyalty card lookup only ever succeeds once loyalty-cards.js's own
+    // functions are all defined (same script, same load), so a single
+    // guard here covers lcRewardsFor/lcEsc/lcApplyRewardToOrder below too.
+    var loyaltyMember = (o.table_code && o.customer_phone && typeof lcLast10 === 'function')
+      ? (loyaltyMap[lcLast10(o.customer_phone)] || null) : null;
+    var loyaltyBox = '';
+    if (loyaltyMember) {
+      var lcAvailable = lcRewardsFor(loyaltyMember).filter(function (r) { return r.status === 'available'; });
+      loyaltyBox = '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;'
+        + 'background:rgba(121,12,136,0.14);border:1.5px solid rgba(192,132,252,0.35);border-radius:12px;'
+        + 'padding:9px 14px;margin-bottom:10px">'
+        + '<div><span style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:#c084fc">💳 ' + lcEsc(loyaltyMember.card_code) + '</span>'
+        + '<div style="font-size:10.5px;color:rgba(245,234,220,.6);margin-top:2px">' + lcEsc(loyaltyMember.name) + ' · Day ' + loyaltyMember.stamp_count + '/100</div></div>'
+        + '<div style="display:flex;gap:6px;flex-wrap:wrap">' + lcAvailable.map(function (r) {
+            return '<button onclick="lcApplyRewardToOrder(\'' + o.id + '\',\'' + loyaltyMember.id + '\',' + r.day + ',\'' + String(r.item).replace(/'/g, "\\'") + '\')" '
+              + 'style="background:#c084fc;color:#1a0820;border:none;border-radius:8px;padding:7px 10px;font-size:10.5px;font-weight:700;cursor:pointer;white-space:nowrap">'
+              + '🎁 ' + lcEsc(r.item) + '</button>';
+          }).join('') + '</div>'
+        + '</div>';
+    }
+
     var collectedSoFar = o.table_code ? tsCollectedAmount(itemsArr) : 0;
     var remainingBill = Math.max(0, Math.round(((o.total || 0) - collectedSoFar) * 100) / 100);
     var totalBox = collectedSoFar > 0
@@ -723,6 +745,7 @@ function renderKitchen(orders) {
       + '<div class="k-badge">' + o.status.toUpperCase() + '</div>'
       + '<div class="k-age">' + age + '</div></div>'
       + '<div style="font-size:11.5px;color:rgba(245,234,220,.65);margin-bottom:9px;font-weight:600">' + metaLine + payBadge + '</div>'
+      + loyaltyBox
       + '<div style="background:rgba(0,0,0,0.22);border-radius:10px;padding:9px 12px;margin-bottom:10px">' + itemsHtml + '</div>'
       + totalBox
       + '<div style="display:flex;gap:8px">'
@@ -973,7 +996,9 @@ async function kitchenFetchOrders(showFeedback) {
       .order('created_at', { ascending: true });
 
     if (res.error) throw res.error;
-    renderKitchen(res.data || []);
+    var orders = res.data || [];
+    var loyaltyMap = typeof lcLoyaltyMapFor === 'function' ? await lcLoyaltyMapFor(orders) : {};
+    renderKitchen(orders, loyaltyMap);
     if (typeof loadProductionRequests === 'function') loadProductionRequests();
     if (showFeedback) showStoreToast('🔄 Refreshed');
   } catch (e) {
