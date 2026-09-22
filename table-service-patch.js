@@ -793,8 +793,8 @@ function renderKitchen(orders, loyaltyMap) {
         + 'background:rgba(121,12,136,0.14);border:1.5px solid rgba(192,132,252,0.35);border-radius:12px;'
         + 'padding:9px 14px;margin-bottom:10px">'
         + '<div><span style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:#c084fc">💳 ' + lcEsc(loyaltyMember.card_code) + '</span>'
-        + '<div style="font-size:10.5px;color:rgba(245,234,220,.6);margin-top:2px">' + lcEsc(loyaltyMember.name) + ' · Day ' + loyaltyMember.stamp_count + '/100 · ' + lcMaskPhone(loyaltyMember.phone) + (loyaltyMember.suspended ? ' · Suspended' : '') + '</div></div>'
-        + '<div style="display:flex;gap:6px;flex-wrap:wrap">' + lcAvailable.map(function (r) {
+        + '<div style="font-size:10.5px;color:rgba(245,234,220,.6);margin-top:2px">' + lcEsc(loyaltyMember.name_pending ? 'Name needed' : loyaltyMember.name) + ' · Day ' + loyaltyMember.stamp_count + '/100 · ' + lcMaskPhone(loyaltyMember.phone) + (loyaltyMember.suspended ? ' · Suspended' : '') + '</div></div>'
+        + '<div style="display:flex;gap:6px;flex-wrap:wrap"><button onclick="lcOpenPhone(&quot;' + lcEsc(loyaltyMember.phone) + '&quot;)" style="padding:7px;border-radius:8px;cursor:pointer">' + (loyaltyMember.name_pending ? 'Add name' : 'Edit name / card') + '</button>' + (!(loyaltyMember.schedule || []).length ? '<small>Rewards pending admin setup</small>' : '') + lcAvailable.map(function (r) {
             return '<button onclick="lcApplyRewardToOrder(\'' + o.id + '\',\'' + loyaltyMember.id + '\',' + r.day + ',\'' + String(r.item).replace(/'/g, "\\'") + '\')" '
               + 'style="background:#c084fc;color:#1a0820;border:none;border-radius:8px;padding:7px 10px;font-size:10.5px;font-weight:700;cursor:pointer;white-space:nowrap">'
               + '🎁 ' + lcEsc(r.item) + '</button>';
