@@ -189,6 +189,12 @@ function lcMemberCard(m) {
   var available = (m.schedule || []).filter(function (s) { return s.day <= m.stamp_count && (m.redeemed_days || []).indexOf(s.day) === -1; });
   var upcoming = (m.schedule || []).filter(function (s) { return s.day > m.stamp_count; }).sort(function (a, b) { return a.day - b.day; })[0];
   var redeemed = (m.schedule || []).filter(function (s) { return (m.redeemed_days || []).indexOf(s.day) !== -1; });
+  // A card completes at its OWN last milestone, not a fixed 100 — a
+  // card with no schedule set yet still falls back to 100 (matches
+  // cc_loyalty_command's own fallback server-side).
+  var cycleLen = (m.schedule || []).length
+    ? Math.max.apply(null, m.schedule.map(function (s) { return s.day; }))
+    : 100;
 
   return '<div style="background:radial-gradient(ellipse at right top,#672477,transparent 70%),#29112f;'
     + 'border:1px solid #a37d47;border-radius:18px;padding:22px;color:#fff3df;margin-top:16px">'
@@ -202,14 +208,14 @@ function lcMemberCard(m) {
     + lcProfileFields(m)
 
     + '<div style="margin:18px 0"><div style="display:flex;justify-content:space-between;align-items:center">'
-    + '<h3 style="font-size:17px;margin:0">Visit count</h3><strong>' + m.stamp_count + ' / 100</strong></div>'
-    + '<progress max="100" value="' + m.stamp_count + '" style="width:100%;height:8px;accent-color:#790c88;margin-top:8px"></progress>'
+    + '<h3 style="font-size:17px;margin:0">Visit count</h3><strong>' + m.stamp_count + ' / ' + cycleLen + '</strong></div>'
+    + '<progress max="' + cycleLen + '" value="' + m.stamp_count + '" style="width:100%;height:8px;accent-color:#790c88;margin-top:8px"></progress>'
     + '<div style="display:flex;gap:10px;align-items:center;margin-top:12px">'
     + '<input id="lc-stamp-input" type="number" min="0" max="100" value="' + m.stamp_count + '" '
     +   'style="width:90px;padding:11px;border:1px solid #ddcce2;border-radius:9px;font:inherit">'
     + '<button onclick="lcSetStamp()" style="cursor:pointer;background:#790c88;color:#fff;border:0;border-radius:10px;'
     +   'padding:11px 16px;min-height:44px;font:inherit">Save count</button>'
-    + (m.stamp_count >= 100 ? '<button onclick="lcCompleteCycle()" style="cursor:pointer;background:white;color:#790c88;'
+    + (m.stamp_count >= cycleLen ? '<button onclick="lcCompleteCycle()" style="cursor:pointer;background:white;color:#790c88;'
         + 'border:1px solid #e2cfe6;border-radius:10px;padding:11px 16px;min-height:44px;font:inherit">Complete cycle → new card</button>' : '')
     + '</div>'
     + (upcoming ? '<p style="font-size:12px;color:#79677e;margin-top:10px">Next: ' + lcEsc(upcoming.item) + ' at day ' + upcoming.day
@@ -296,6 +302,9 @@ function lcIssueFormHtml() {
     +   'style="width:100%;padding:12px;border:1px solid #ddcce2;border-radius:9px;font:inherit;min-height:44px;margin-top:4px"></label>'
     + '<label style="display:block;margin:10px 0 4px;font-size:13px">Mobile number<input id="lc-new-phone" type="tel" value="' + lcEsc(prefillPhone) + '" '
     +   'placeholder="9876543210" style="width:100%;padding:12px;border:1px solid #ddcce2;border-radius:9px;font:inherit;min-height:44px;margin-top:4px"></label>'
+    + '<label style="display:block;margin:10px 0 4px;font-size:13px">Already has a physical card? Starting stamp count'
+    +   '<input id="lc-new-starting" type="number" min="0" max="100" value="0" placeholder="0" '
+    +     'style="width:100%;padding:12px;border:1px solid #ddcce2;border-radius:9px;font:inherit;min-height:44px;margin-top:4px"></label>'
     + '<p style="font-size:11px;color:#79677e;margin:10px 0">Reward milestones follow the shared Cycle Settings above — same schedule for every customer.</p>'
     + '<button onclick="lcIssue()" style="cursor:pointer;background:#790c88;color:#fff;border:0;border-radius:10px;'
     +   'padding:13px 16px;min-height:44px;font:inherit;margin-top:6px;width:100%">Issue card</button>'
@@ -306,12 +315,16 @@ async function lcIssue() {
   var name = (document.getElementById('lc-new-name').value || '').trim();
   var phoneRaw = (document.getElementById('lc-new-phone').value || '').replace(/\D/g, '');
   var phone = phoneRaw.length === 10 ? '+91' + phoneRaw : (phoneRaw.length ? phoneRaw : '');
+  var startingEl = document.getElementById('lc-new-starting');
+  var startingStamps = startingEl ? parseInt(startingEl.value, 10) : 0;
+  if (isNaN(startingStamps)) startingStamps = 0;
   if (!name) { lcMsg('Enter the customer\'s name'); return; }
   if (phoneRaw.length !== 10) { lcMsg('Enter a valid 10-digit mobile number'); return; }
+  if (startingStamps < 0 || startingStamps > 100) { lcMsg('Starting stamp count must be from 0 to 100'); return; }
 
   lcBusy(true);
   try {
-    _lcMember = await lcCommand('issue', { name: name, phone: phone });
+    _lcMember = await lcCommand('issue', { name: name, phone: phone, starting_stamps: startingStamps });
     _lcMembers = [_lcMember];
     lcMsg('');
     showStoreToast('✅ Card issued — ' + _lcMember.card_code);
