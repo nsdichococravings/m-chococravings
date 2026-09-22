@@ -71,6 +71,7 @@ function lcRender() {
   var body = document.getElementById('lc-body');
   if (!body) return;
   var html = '<div id="lc-msg" style="min-height:18px;font-size:13px;color:#a02929"></div>'
+    + lcCycleSettingsHtml()
     + '<label style="display:block;margin:10px 0 4px;font-size:13px">Customer mobile number or card code</label>'
     + '<div style="display:flex;gap:10px;align-items:flex-start">'
     +   '<input id="lc-query" type="text" placeholder="9876543210 or NSDI-CARD-8994" '
@@ -283,13 +284,11 @@ async function lcSuspend(suspended) {
 }
 
 // ── Issue a new card ──
-var _lcScheduleDays = [];
-
+// Reward milestones are no longer picked per card — every new card
+// copies whatever the shared default schedule (Cycle Settings, below)
+// currently is, so every customer is on the same cycle unless a super
+// admin deliberately changes it.
 function lcIssueFormHtml() {
-  var options = (typeof MENU !== 'undefined')
-    ? Object.keys(MENU).reduce(function (acc, cat) { return acc.concat((MENU[cat].items || []).map(function (i) { return i.name; })); }, [])
-    : [];
-  var optHtml = options.map(function (n) { return '<option>' + lcEsc(n) + '</option>'; }).join('');
   var prefillPhone = document.getElementById('lc-query') ? (document.getElementById('lc-query').value || '').replace(/\D/g, '') : '';
 
   return '<div style="margin-top:8px">'
@@ -297,28 +296,94 @@ function lcIssueFormHtml() {
     +   'style="width:100%;padding:12px;border:1px solid #ddcce2;border-radius:9px;font:inherit;min-height:44px;margin-top:4px"></label>'
     + '<label style="display:block;margin:10px 0 4px;font-size:13px">Mobile number<input id="lc-new-phone" type="tel" value="' + lcEsc(prefillPhone) + '" '
     +   'placeholder="9876543210" style="width:100%;padding:12px;border:1px solid #ddcce2;border-radius:9px;font:inherit;min-height:44px;margin-top:4px"></label>'
-    + '<div style="display:flex;gap:10px;align-items:flex-end;margin:14px 0 6px">'
-    +   '<label style="flex:1;font-size:13px">Reward every<select id="lc-new-interval" style="width:100%;padding:12px;border:1px solid #ddcce2;'
-    +     'border-radius:9px;font:inherit;min-height:44px;margin-top:4px"><option value="10">10 days</option><option value="15">15 days</option></select></label>'
-    +   '<label style="flex:1;font-size:13px">Complimentary item<select id="lc-new-item" style="width:100%;padding:12px;border:1px solid #ddcce2;'
-    +     'border-radius:9px;font:inherit;min-height:44px;margin-top:4px">' + optHtml + '</select></label>'
-    + '</div>'
-    + '<button type="button" onclick="lcBuildSchedule()" style="cursor:pointer;border:1px solid #e2cfe6;background:white;color:#790c88;'
-    +   'border-radius:10px;padding:11px 15px;min-height:44px;font:inherit">Build reward milestones</button>'
-    + '<div id="lc-new-schedule" style="margin-top:10px"></div>'
+    + '<p style="font-size:11px;color:#79677e;margin:10px 0">Reward milestones follow the shared Cycle Settings above — same schedule for every customer.</p>'
     + '<button onclick="lcIssue()" style="cursor:pointer;background:#790c88;color:#fff;border:0;border-radius:10px;'
-    +   'padding:13px 16px;min-height:44px;font:inherit;margin-top:14px;width:100%">Issue card</button>'
+    +   'padding:13px 16px;min-height:44px;font:inherit;margin-top:6px;width:100%">Issue card</button>'
     + '</div>';
 }
 
-function lcBuildSchedule() {
-  var interval = Number(document.getElementById('lc-new-interval').value);
-  var item = document.getElementById('lc-new-item').value;
+async function lcIssue() {
+  var name = (document.getElementById('lc-new-name').value || '').trim();
+  var phoneRaw = (document.getElementById('lc-new-phone').value || '').replace(/\D/g, '');
+  var phone = phoneRaw.length === 10 ? '+91' + phoneRaw : (phoneRaw.length ? phoneRaw : '');
+  if (!name) { lcMsg('Enter the customer\'s name'); return; }
+  if (phoneRaw.length !== 10) { lcMsg('Enter a valid 10-digit mobile number'); return; }
+
+  lcBusy(true);
+  try {
+    _lcMember = await lcCommand('issue', { name: name, phone: phone });
+    _lcMembers = [_lcMember];
+    lcMsg('');
+    showStoreToast('✅ Card issued — ' + _lcMember.card_code);
+    lcRenderResults();
+  } catch (e) { lcMsg(e.message); } finally { lcBusy(false); }
+}
+
+// ── Cycle Settings — one shared reward schedule for every card ──
+// Regular admin still issues cards (lcIssue above); this is the only
+// place the actual milestones get chosen. cc_loyalty_command enforces
+// super-admin-only server-side for both actions below — this UI shows
+// the panel to any admin, and just surfaces the RPC's error if someone
+// without that flag tries to save or apply it.
+var _lcDefaultSchedule = null;
+
+function lcCycleSettingsHtml() {
+  return '<details id="lc-cycle-details" style="margin:14px 0;border:1px solid #eadfeb;border-radius:12px;padding:0 14px" ontoggle="if(this.open) lcLoadCycleSettings()">'
+    + '<summary style="cursor:pointer;font-weight:600;padding:12px 0">⚙️ Cycle Settings — reward schedule for all cards</summary>'
+    + '<div id="lc-cycle-body" style="padding-bottom:14px">Loading…</div>'
+    + '</details>';
+}
+
+async function lcLoadCycleSettings() {
+  var body = document.getElementById('lc-cycle-body');
+  if (!body) return;
+  try {
+    var res = await lcCommand('get_default_schedule', {});
+    _lcDefaultSchedule = (res && res.schedule) || [];
+    lcRenderCycleSettings();
+  } catch (e) {
+    body.innerHTML = '<p style="color:#a02929;font-size:13px">' + lcEsc(e.message) + '</p>';
+  }
+}
+
+function lcRenderCycleSettings() {
+  var body = document.getElementById('lc-cycle-body');
+  if (!body) return;
+  var options = (typeof MENU !== 'undefined')
+    ? Object.keys(MENU).reduce(function (acc, cat) { return acc.concat((MENU[cat].items || []).map(function (i) { return i.name; })); }, [])
+    : [];
+  var optHtml = options.map(function (n) { return '<option>' + lcEsc(n) + '</option>'; }).join('');
+  var current = _lcDefaultSchedule.length
+    ? _lcDefaultSchedule.map(function (s) { return 'Day ' + s.day + ' → ' + lcEsc(s.item); }).join(', ')
+    : 'Not set yet — new cards start with stamps only, no rewards';
+
+  body.innerHTML = '<p style="font-size:12px;color:#79677e;margin:6px 0 12px">Current: ' + current + '</p>'
+    + '<div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:10px">'
+    +   '<label style="flex:1;font-size:13px">Reward every<select id="lc-cyc-interval" style="width:100%;padding:12px;border:1px solid #ddcce2;'
+    +     'border-radius:9px;font:inherit;min-height:44px;margin-top:4px"><option value="10">10 days</option><option value="15">15 days</option><option value="20">20 days</option><option value="25">25 days</option></select></label>'
+    +   '<label style="flex:1;font-size:13px">Complimentary item<select id="lc-cyc-item" style="width:100%;padding:12px;border:1px solid #ddcce2;'
+    +     'border-radius:9px;font:inherit;min-height:44px;margin-top:4px">' + optHtml + '</select></label>'
+    + '</div>'
+    + '<button type="button" onclick="lcCycleBuild()" style="cursor:pointer;border:1px solid #e2cfe6;background:white;color:#790c88;'
+    +   'border-radius:10px;padding:11px 15px;min-height:44px;font:inherit">Build milestones (always ends at day 100)</button>'
+    + '<div id="lc-cyc-preview" style="margin-top:10px"></div>'
+    + '<div style="display:flex;gap:10px;margin-top:14px">'
+    +   '<button onclick="lcSaveDefaultSchedule()" style="cursor:pointer;background:#790c88;color:#fff;border:0;border-radius:10px;'
+    +     'padding:11px 16px;min-height:44px;font:inherit;flex:1">Save as default</button>'
+    +   '<button onclick="lcApplyDefaultToAll()" style="cursor:pointer;background:white;color:#a02929;border:1px solid #f0d0d0;border-radius:10px;'
+    +     'padding:11px 16px;min-height:44px;font:inherit;flex:1">Apply to all existing cards</button>'
+    + '</div>'
+    + '<p style="font-size:11px;color:#a08b9f;margin-top:10px">Only a super admin can change this or apply it to existing customers.</p>';
+}
+
+function lcCycleBuild() {
+  var interval = Number(document.getElementById('lc-cyc-interval').value);
+  var item = document.getElementById('lc-cyc-item').value;
   var days = [];
   for (var d = interval; d < 100; d += interval) days.push(d);
   days.push(100);
-  var opts = Array.prototype.map.call(document.getElementById('lc-new-item').options, function (o) { return o.value; });
-  document.getElementById('lc-new-schedule').innerHTML = days.map(function (d) {
+  var opts = Array.prototype.map.call(document.getElementById('lc-cyc-item').options, function (o) { return o.value; });
+  document.getElementById('lc-cyc-preview').innerHTML = days.map(function (d) {
     return '<label style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px">Day ' + d
       + '<select data-day="' + d + '" style="width:60%;padding:9px;border:1px solid #ddcce2;border-radius:9px;font:inherit">'
       + opts.map(function (n) { return '<option ' + (n === item ? 'selected' : '') + '>' + lcEsc(n) + '</option>'; }).join('')
@@ -326,23 +391,28 @@ function lcBuildSchedule() {
   }).join('');
 }
 
-async function lcIssue() {
-  var name = (document.getElementById('lc-new-name').value || '').trim();
-  var phoneRaw = (document.getElementById('lc-new-phone').value || '').replace(/\D/g, '');
-  var phone = phoneRaw.length === 10 ? '+91' + phoneRaw : (phoneRaw.length ? phoneRaw : '');
-  var scheduleEls = document.querySelectorAll('#lc-new-schedule [data-day]');
-  if (!name) { lcMsg('Enter the customer\'s name'); return; }
-  if (phoneRaw.length !== 10) { lcMsg('Enter a valid 10-digit mobile number'); return; }
-  if (!scheduleEls.length) { lcMsg('Build and review the reward milestones first'); return; }
-  var schedule = Array.prototype.map.call(scheduleEls, function (s) { return { day: Number(s.dataset.day), item: s.value }; });
-
+async function lcSaveDefaultSchedule() {
+  var els = document.querySelectorAll('#lc-cyc-preview [data-day]');
+  if (!els.length) { lcMsg('Build the milestones first'); return; }
+  var schedule = Array.prototype.map.call(els, function (s) { return { day: Number(s.dataset.day), item: s.value }; });
   lcBusy(true);
   try {
-    _lcMember = await lcCommand('issue', { name: name, phone: phone, schedule: schedule });
-    _lcMembers = [_lcMember];
+    var res = await lcCommand('set_default_schedule', { schedule: schedule });
+    _lcDefaultSchedule = res.schedule || [];
     lcMsg('');
-    showStoreToast('✅ Card issued — ' + _lcMember.card_code);
-    lcRenderResults();
+    lcRenderCycleSettings();
+    showStoreToast('✅ Default reward schedule saved');
+  } catch (e) { lcMsg(e.message); } finally { lcBusy(false); }
+}
+
+async function lcApplyDefaultToAll() {
+  if (!_lcDefaultSchedule || !_lcDefaultSchedule.length) { lcMsg('Save a default schedule first'); return; }
+  if (!confirm('Apply this reward schedule to EVERY existing customer\'s card? This replaces their current milestones.')) return;
+  lcBusy(true);
+  try {
+    var res = await lcCommand('apply_default_to_all', {});
+    lcMsg('');
+    showStoreToast('✅ Applied to ' + (res.updated || 0) + ' cards');
   } catch (e) { lcMsg(e.message); } finally { lcBusy(false); }
 }
 
