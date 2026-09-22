@@ -4167,9 +4167,7 @@ setTimeout(updateCartDots, 100);
 loadProducts();
 loadBrowniePricing();
 loadTreats();
-trRenderSlider();
-trGoToSlide(0);
-trStartAutoSlide();
+trLoadSlides();
 
 debugProducts();
 
@@ -7173,23 +7171,56 @@ function vsAddToCart(btn, productId, name, price, sku, pack) {
 // since these SKUs aren't in the `products` table (same as accessories
 // whose SKU lookup misses), but name/price/qty still save correctly.
 
-// Sliding banner — highlights, combo offers, bestsellers
-var TR_SLIDES = [
-  { bg:'linear-gradient(120deg,#231205,#3d1f05 45%,#0a2e3d 100%)', eyebrow:'NSDI ChocoCravings · In-Store Favourites', title:'Treats<br><em>&amp; Sips</em>', tagline:'Coffee, tea, ice cream &amp; desserts — the café menu our regulars already love, now just a tap away', cta:null },
-  { bg:'linear-gradient(120deg,#2b0a35 0%,#6e0977 60%,#1a0820 100%)', eyebrow:'Combo Offer · Limited Time', title:'Coffee + Dessert<br><em>Combo</em>', tagline:'Any hot beverage + any dessert, ordered together — save ₹20 instantly', cta:'Grab The Combo' },
-  { bg:'linear-gradient(120deg,#3d1f05 0%,#8a4a0f 55%,#c9781f 100%)', eyebrow:'Most Loved This Week', title:'Cold Coffee<br><em>Bestseller</em>', tagline:'Our top-rated pick — chilled, rich, ready in minutes', cta:'Order Now' },
-  { bg:'linear-gradient(120deg,#0a2e3d 0%,#1c5468 55%,#4a9fc4 100%)', eyebrow:'Beat The Heat', title:'Ice Cream<br><em>Specials</em>', tagline:'Cool down with scoops starting at just ₹80', cta:'Explore Scoops' }
+// Sliding banner — highlights, combo offers, bestsellers.
+// Reads staff-managed slides from home_banners (added/edited from the
+// On Store app); falls back to these built-in defaults if that table
+// is empty or unreachable, so the carousel is never blank.
+var TR_DEFAULT_SLIDES = [
+  { bg:'linear-gradient(120deg,#231205,#3d1f05 45%,#0a2e3d 100%)', eyebrow:'NSDI ChocoCravings · In-Store Favourites', title:'Treats<br><em>&amp; Sips</em>', tagline:'Coffee, tea, ice cream &amp; desserts — the café menu our regulars already love, now just a tap away', cta:null, linkType:'grid', linkValue:null },
+  { bg:'linear-gradient(120deg,#2b0a35 0%,#6e0977 60%,#1a0820 100%)', eyebrow:'Combo Offer · Limited Time', title:'Coffee + Dessert<br><em>Combo</em>', tagline:'Any hot beverage + any dessert, ordered together — save ₹20 instantly', cta:'Grab The Combo', linkType:'grid', linkValue:null },
+  { bg:'linear-gradient(120deg,#3d1f05 0%,#8a4a0f 55%,#c9781f 100%)', eyebrow:'Most Loved This Week', title:'Cold Coffee<br><em>Bestseller</em>', tagline:'Our top-rated pick — chilled, rich, ready in minutes', cta:'Order Now', linkType:'category', linkValue:'beverages' },
+  { bg:'linear-gradient(120deg,#0a2e3d 0%,#1c5468 55%,#4a9fc4 100%)', eyebrow:'Beat The Heat', title:'Ice Cream<br><em>Specials</em>', tagline:'Cool down with scoops starting at just ₹80', cta:'Explore Scoops', linkType:'category', linkValue:'ice_cream' }
 ];
+var _trActiveSlides = TR_DEFAULT_SLIDES;
 var _trSlideIdx = 0;
 var _trSlideTimer = null;
+
+async function trLoadSlides() {
+  _trActiveSlides = TR_DEFAULT_SLIDES;
+  try {
+    var { data, error } = await db.from('home_banners')
+      .select('eyebrow,title_main,title_accent,tagline,cta_label,color_1,color_2,color_3,link_type,link_value')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
+    console.log('HOME BANNERS:', data, error);
+    if (data && data.length > 0) {
+      _trActiveSlides = data.map(function(b) {
+        return {
+          bg: 'linear-gradient(120deg,' + b.color_1 + ' 0%,' + b.color_2 + ' 55%,' + b.color_3 + ' 100%)',
+          eyebrow: b.eyebrow,
+          title: b.title_main + '<br><em>' + b.title_accent + '</em>',
+          tagline: b.tagline,
+          cta: b.cta_label,
+          linkType: b.link_type,
+          linkValue: b.link_value
+        };
+      });
+    }
+  } catch (e) {
+    console.error('trLoadSlides:', e);
+  }
+  trRenderSlider();
+  trGoToSlide(0);
+  trStartAutoSlide();
+}
 
 function trRenderSlider() {
   var track = document.getElementById('tr-slider-track');
   var dots  = document.getElementById('tr-slider-dots');
   if (!track || !dots) return;
 
-  track.innerHTML = TR_SLIDES.map(function(s) {
-    return '<div class="tr-slide" style="background:' + s.bg + '" onclick="trSlideGoToGrid()">'
+  track.innerHTML = _trActiveSlides.map(function(s, i) {
+    return '<div class="tr-slide" style="background:' + s.bg + '" onclick="trSlideClick(' + i + ')">'
       + '<svg class="tr-hero-deco" viewBox="0 0 180 180" fill="none"><circle cx="140" cy="40" r="80" stroke="#ffd9a0" stroke-width="0.5"/><circle cx="140" cy="40" r="60" stroke="#ffd9a0" stroke-width="0.5"/><circle cx="140" cy="40" r="40" stroke="#ffd9a0" stroke-width="0.5"/></svg>'
       + '<div class="tr-eyebrow"><div class="tr-eyebrow-line"></div><span class="tr-eyebrow-text">' + s.eyebrow + '</span></div>'
       + '<div class="tr-title">' + s.title + '</div>'
@@ -7198,13 +7229,14 @@ function trRenderSlider() {
       + '</div>';
   }).join('');
 
-  dots.innerHTML = TR_SLIDES.map(function(_, i) {
+  dots.innerHTML = _trActiveSlides.map(function(_, i) {
     return '<span class="tr-dot' + (i === 0 ? ' on' : '') + '" onclick="event.stopPropagation();trGoToSlide(' + i + ');trStartAutoSlide()"></span>';
   }).join('');
 }
 
 function trGoToSlide(i) {
-  _trSlideIdx = (i + TR_SLIDES.length) % TR_SLIDES.length;
+  if (!_trActiveSlides.length) return;
+  _trSlideIdx = (i + _trActiveSlides.length) % _trActiveSlides.length;
   var track = document.getElementById('tr-slider-track');
   if (track) track.style.transform = 'translateX(-' + (_trSlideIdx * 100) + '%)';
   document.querySelectorAll('#tr-slider-dots .tr-dot').forEach(function(d, di) {
@@ -7214,12 +7246,22 @@ function trGoToSlide(i) {
 
 function trStartAutoSlide() {
   if (_trSlideTimer) clearInterval(_trSlideTimer);
+  if (_trActiveSlides.length < 2) return;
   _trSlideTimer = setInterval(function() {
     trGoToSlide(_trSlideIdx + 1);
   }, 4000);
 }
 
-function trSlideGoToGrid() {
+function trSlideClick(i) {
+  var s = _trActiveSlides[i];
+  var linkType = s ? s.linkType : 'grid';
+  if (linkType === 'explore') { showPage('explore'); return; }
+  if (linkType === 'accessories') { showPage('accessories'); return; }
+  if (linkType === 'none') { return; }
+  if (linkType === 'category' && s.linkValue) {
+    var chip = document.querySelector('.tr-chip[data-cat="' + s.linkValue + '"]');
+    if (chip) trFilter(chip);
+  }
   var g = document.getElementById('tr-pgrid');
   if (g) g.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
