@@ -204,7 +204,7 @@ function lcMemberCard(m) {
     + '<div style="font-size:12px;color:#dcc2df;margin-top:4px">' + lcMaskPhone(m.phone) + '</div>'
     + '<div style="display:flex;justify-content:space-between;margin-top:20px;font-size:12px">'
     + '<span style="font-size:20px;font-weight:700;letter-spacing:1px">' + lcEsc(m.card_code) + '</span>'
-    + '<span>Cycle ' + m.cycle + '</span></div></div>'
+    + '<span>Card ' + m.cycle + '</span></div></div>'
     + lcProfileFields(m)
 
     + '<div style="margin:18px 0"><div style="display:flex;justify-content:space-between;align-items:center">'
@@ -258,13 +258,13 @@ async function lcSetStamp() {
 }
 
 async function lcCompleteCycle() {
-  if (!confirm('Start a new 100-day card for ' + _lcMember.name + '? This resets the visit count to 0.')) return;
+  if (!confirm('Move ' + _lcMember.name + ' on to Card ' + (_lcMember.cycle + 1) + '? This resets the visit count to 0.')) return;
   lcBusy(true);
   try {
     _lcMember = await lcCommand('complete_cycle', { member_id: _lcMember.id });
     lcMsg('');
     lcRenderResults();
-    showStoreToast('🎉 New cycle started');
+    showStoreToast('🎉 Card ' + _lcMember.cycle + ' started');
   } catch (e) { lcMsg(e.message); } finally { lcBusy(false); }
 }
 
@@ -291,9 +291,8 @@ async function lcSuspend(suspended) {
 
 // ── Issue a new card ──
 // Reward milestones are no longer picked per card — every new card
-// copies whatever the shared default schedule (Cycle Settings, below)
-// currently is, so every customer is on the same cycle unless a super
-// admin deliberately changes it.
+// starts on Card 1 and copies whatever Card 1's schedule (Card Levels,
+// below) currently is.
 function lcIssueFormHtml() {
   var prefillPhone = document.getElementById('lc-query') ? (document.getElementById('lc-query').value || '').replace(/\D/g, '') : '';
 
@@ -305,7 +304,7 @@ function lcIssueFormHtml() {
     + '<label style="display:block;margin:10px 0 4px;font-size:13px">Already has a physical card? Starting stamp count'
     +   '<input id="lc-new-starting" type="number" min="0" max="100" value="0" placeholder="0" '
     +     'style="width:100%;padding:12px;border:1px solid #ddcce2;border-radius:9px;font:inherit;min-height:44px;margin-top:4px"></label>'
-    + '<p style="font-size:11px;color:#79677e;margin:10px 0">Reward milestones follow the shared Cycle Settings above — same schedule for every customer.</p>'
+    + '<p style="font-size:11px;color:#79677e;margin:10px 0">Reward milestones follow Card 1\'s schedule, set in Card Levels above.</p>'
     + '<button onclick="lcIssue()" style="cursor:pointer;background:#790c88;color:#fff;border:0;border-radius:10px;'
     +   'padding:13px 16px;min-height:44px;font:inherit;margin-top:6px;width:100%">Issue card</button>'
     + '</div>';
@@ -332,18 +331,22 @@ async function lcIssue() {
   } catch (e) { lcMsg(e.message); } finally { lcBusy(false); }
 }
 
-// ── Cycle Settings — one shared reward schedule for every card ──
-// Regular admin still issues cards (lcIssue above); this is the only
-// place the actual milestones get chosen. cc_loyalty_command enforces
-// super-admin-only server-side for both actions below — this UI shows
-// the panel to any admin, and just surfaces the RPC's error if someone
-// without that flag tries to save or apply it.
-var _lcDefaultSchedule = null;
-var _lcCycRows = [];  // builder state: [{day, item}, ...] — freely mixed days/items, not a fixed interval
+// ── Card Levels — each numbered physical card (Card 1, Card 2, Card 3…)
+// has its OWN reward schedule, e.g. Card 1 might be 15 days while Card 2
+// is 10 days. cc_loyalty_members.cycle is which numbered card a customer
+// is currently on; completing a cycle moves them to cycle+1 and pulls
+// that level's own schedule (falling back to keeping the current one if
+// that level hasn't been set up yet). cc_loyalty_command enforces
+// super-admin-only server-side for set_cycle_level/apply_level_to_cards —
+// this UI shows the panel to any admin, and just surfaces the RPC's
+// error if someone without that flag tries to save or apply one.
+var _lcLevels = [];      // every level fetched so far: [{level, schedule, updated_at, updated_by}, ...]
+var _lcCurLevel = 1;     // which numbered card is currently being viewed/edited
+var _lcCycRows = [];     // builder state for _lcCurLevel: [{day, item}, ...] — freely mixed days/items, not a fixed interval
 
 function lcCycleSettingsHtml() {
   return '<details id="lc-cycle-details" style="margin:14px 0;border:1px solid #eadfeb;border-radius:12px;padding:0 14px" ontoggle="if(this.open) lcLoadCycleSettings()">'
-    + '<summary style="cursor:pointer;font-weight:600;padding:12px 0">⚙️ Cycle Settings — reward schedule for all cards</summary>'
+    + '<summary style="cursor:pointer;font-weight:600;padding:12px 0">⚙️ Card Levels — each numbered card has its own reward schedule</summary>'
     + '<div id="lc-cycle-body" style="padding-bottom:14px">Loading…</div>'
     + '</details>';
 }
@@ -352,13 +355,34 @@ async function lcLoadCycleSettings() {
   var body = document.getElementById('lc-cycle-body');
   if (!body) return;
   try {
-    var res = await lcCommand('get_default_schedule', {});
-    _lcDefaultSchedule = (res && res.schedule) || [];
-    _lcCycRows = _lcDefaultSchedule.map(function (s) { return { day: s.day, item: s.item }; });
-    lcRenderCycleSettings();
+    var res = await lcCommand('list_cycle_levels', {});
+    _lcLevels = (res && res.levels) || [];
+    lcCycSelectLevel(_lcCurLevel || 1);
   } catch (e) {
     body.innerHTML = '<p style="color:#a02929;font-size:13px">' + lcEsc(e.message) + '</p>';
   }
+}
+
+function lcCycLevelEntry(level) {
+  return _lcLevels.filter(function (l) { return l.level === level; })[0] || null;
+}
+
+// Switches the builder to a different numbered card — loads that
+// level's saved schedule (or starts blank if it's never been set).
+function lcCycSelectLevel(level) {
+  level = parseInt(level, 10);
+  if (!level || level < 1) return;
+  _lcCurLevel = level;
+  var entry = lcCycLevelEntry(level);
+  _lcCycRows = entry ? entry.schedule.map(function (s) { return { day: s.day, item: s.item }; }) : [];
+  lcRenderCycleSettings();
+}
+
+function lcCycAddLevel() {
+  var input = document.getElementById('lc-cyc-newlevel');
+  var level = parseInt(input.value, 10);
+  if (!level || level < 1) { lcMsg('Enter a card number of 1 or more'); return; }
+  lcCycSelectLevel(level);
 }
 
 // Each milestone is added one at a time with its own day and item —
@@ -372,9 +396,20 @@ function lcRenderCycleSettings() {
     ? Object.keys(MENU).reduce(function (acc, cat) { return acc.concat((MENU[cat].items || []).map(function (i) { return i.name; })); }, [])
     : [];
   var optHtml = options.map(function (n) { return '<option>' + lcEsc(n) + '</option>'; }).join('');
-  var current = _lcDefaultSchedule.length
-    ? _lcDefaultSchedule.map(function (s) { return 'Day ' + s.day + ' → ' + lcEsc(s.item); }).join(', ')
-    : 'Not set yet — new cards start with stamps only, no rewards';
+
+  var knownLevels = _lcLevels.map(function (l) { return l.level; }).sort(function (a, b) { return a - b; });
+  if (knownLevels.indexOf(1) === -1) knownLevels.unshift(1);
+  var chipsHtml = knownLevels.map(function (lvl) {
+    var active = lvl === _lcCurLevel;
+    return '<button type="button" onclick="lcCycSelectLevel(' + lvl + ')" style="cursor:pointer;border:1px solid ' + (active ? '#790c88' : '#e2cfe6') + ';'
+      + 'background:' + (active ? '#790c88' : 'white') + ';color:' + (active ? '#fff' : '#790c88') + ';border-radius:20px;'
+      + 'padding:7px 14px;font:inherit;font-size:12px;margin:0 6px 6px 0">Card ' + lvl + '</button>';
+  }).join('');
+
+  var entry = lcCycLevelEntry(_lcCurLevel);
+  var current = entry && entry.schedule.length
+    ? entry.schedule.map(function (s) { return 'Day ' + s.day + ' → ' + lcEsc(s.item); }).join(', ')
+    : 'Not set yet for Card ' + _lcCurLevel;
 
   var sortedRows = _lcCycRows.slice().sort(function (a, b) { return a.day - b.day; });
   var rowsHtml = sortedRows.length
@@ -387,7 +422,15 @@ function lcRenderCycleSettings() {
       }).join('')
     : '<p style="font-size:12px;color:#a08b9f;margin:4px 0">No milestones added yet</p>';
 
-  body.innerHTML = '<p style="font-size:12px;color:#79677e;margin:6px 0 12px">Current default: ' + current + '</p>'
+  body.innerHTML = '<p style="font-size:12px;color:#79677e;margin:6px 0">Pick which numbered card to edit — a customer completing Card ' + _lcCurLevel
+    + ' moves on to Card ' + (_lcCurLevel + 1) + ' and picks up whatever schedule is set for it.</p>'
+    + '<div style="display:flex;flex-wrap:wrap;align-items:center;margin:8px 0">' + chipsHtml
+    +   '<input id="lc-cyc-newlevel" type="number" min="1" placeholder="#" style="width:52px;padding:7px;border:1px solid #ddcce2;'
+    +     'border-radius:9px;font:inherit;font-size:12px;margin:0 6px 6px 0">'
+    +   '<button type="button" onclick="lcCycAddLevel()" style="cursor:pointer;border:1px dashed #c9a8d0;background:white;color:#790c88;'
+    +     'border-radius:20px;padding:7px 14px;font:inherit;font-size:12px;margin:0 0 6px 0">+ Other card #</button>'
+    + '</div>'
+    + '<p style="font-size:12px;color:#79677e;margin:6px 0 12px">Card ' + _lcCurLevel + ' now: ' + current + '</p>'
     + '<div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:6px">'
     +   '<label style="width:100px;font-size:13px">Day (1–100)<input id="lc-cyc-day" type="number" min="1" max="100" '
     +     'style="width:100%;padding:12px;border:1px solid #ddcce2;border-radius:9px;font:inherit;min-height:44px;margin-top:4px"></label>'
@@ -399,12 +442,12 @@ function lcRenderCycleSettings() {
     + '<p style="font-size:11px;color:#a08b9f;margin:4px 0 10px">Add each milestone one at a time — different days and items are fine, e.g. Coffee at day 10, Brownie at day 25, Coffee again at day 35.</p>'
     + '<div id="lc-cyc-rows">' + rowsHtml + '</div>'
     + '<div style="display:flex;gap:10px;margin-top:14px">'
-    +   '<button onclick="lcSaveDefaultSchedule()" style="cursor:pointer;background:#790c88;color:#fff;border:0;border-radius:10px;'
-    +     'padding:11px 16px;min-height:44px;font:inherit;flex:1">Save as default</button>'
-    +   '<button onclick="lcApplyDefaultToAll()" style="cursor:pointer;background:white;color:#a02929;border:1px solid #f0d0d0;border-radius:10px;'
-    +     'padding:11px 16px;min-height:44px;font:inherit;flex:1">Apply to all existing cards</button>'
+    +   '<button onclick="lcSaveCycleLevel()" style="cursor:pointer;background:#790c88;color:#fff;border:0;border-radius:10px;'
+    +     'padding:11px 16px;min-height:44px;font:inherit;flex:1">Save Card ' + _lcCurLevel + '</button>'
+    +   '<button onclick="lcApplyCycleLevel()" style="cursor:pointer;background:white;color:#a02929;border:1px solid #f0d0d0;border-radius:10px;'
+    +     'padding:11px 16px;min-height:44px;font:inherit;flex:1">Apply to customers on Card ' + _lcCurLevel + '</button>'
     + '</div>'
-    + '<p style="font-size:11px;color:#a08b9f;margin-top:10px">Only a super admin can change this or apply it to existing customers.</p>';
+    + '<p style="font-size:11px;color:#a08b9f;margin-top:10px">Only a super admin can change a card level or apply it to existing customers currently on that card.</p>';
 }
 
 function lcCycAddRow() {
@@ -424,28 +467,30 @@ function lcCycRemove(idx) {
   lcRenderCycleSettings();
 }
 
-async function lcSaveDefaultSchedule() {
+async function lcSaveCycleLevel() {
   if (!_lcCycRows.length) { lcMsg('Add at least one milestone first'); return; }
   var schedule = _lcCycRows.map(function (r) { return { day: r.day, item: r.item }; });
   lcBusy(true);
   try {
-    var res = await lcCommand('set_default_schedule', { schedule: schedule });
-    _lcDefaultSchedule = res.schedule || [];
-    _lcCycRows = _lcDefaultSchedule.map(function (s) { return { day: s.day, item: s.item }; });
+    var res = await lcCommand('set_cycle_level', { level: _lcCurLevel, schedule: schedule });
+    var idx = _lcLevels.findIndex(function (l) { return l.level === res.level; });
+    if (idx === -1) _lcLevels.push(res); else _lcLevels[idx] = res;
+    _lcCycRows = res.schedule.map(function (s) { return { day: s.day, item: s.item }; });
     lcMsg('');
     lcRenderCycleSettings();
-    showStoreToast('✅ Default reward schedule saved');
+    showStoreToast('✅ Card ' + res.level + ' schedule saved');
   } catch (e) { lcMsg(e.message); } finally { lcBusy(false); }
 }
 
-async function lcApplyDefaultToAll() {
-  if (!_lcDefaultSchedule || !_lcDefaultSchedule.length) { lcMsg('Save a default schedule first'); return; }
-  if (!confirm('Apply this reward schedule to EVERY existing customer\'s card? This replaces their current milestones.')) return;
+async function lcApplyCycleLevel() {
+  var entry = lcCycLevelEntry(_lcCurLevel);
+  if (!entry || !entry.schedule.length) { lcMsg('Save Card ' + _lcCurLevel + '\'s schedule first'); return; }
+  if (!confirm('Apply Card ' + _lcCurLevel + '\'s reward schedule to every customer currently ON Card ' + _lcCurLevel + '? This replaces their current milestones. Customers on other cards are not affected.')) return;
   lcBusy(true);
   try {
-    var res = await lcCommand('apply_default_to_all', {});
+    var res = await lcCommand('apply_level_to_cards', { level: _lcCurLevel });
     lcMsg('');
-    showStoreToast('✅ Applied to ' + (res.updated || 0) + ' cards');
+    showStoreToast('✅ Applied to ' + (res.updated || 0) + ' card' + (res.updated === 1 ? '' : 's') + ' on Card ' + _lcCurLevel);
   } catch (e) { lcMsg(e.message); } finally { lcBusy(false); }
 }
 
