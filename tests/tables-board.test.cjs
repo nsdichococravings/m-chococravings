@@ -1,0 +1,24 @@
+const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict');
+const {parseHTML}=require('../.production-test-runtime/node_modules/linkedom');
+const source=fs.readFileSync('table-service-patch.js','utf8');
+const ids=['ts-grid','ts-board-status','ts-order-title','ts-send-btn','ts-bill-btn','ts-undo-btn','ts-move-btn','ts-items-list','ts-cust-phone','ts-board-overlay','ts-board-sheet','ts-order-overlay','ts-order-sheet'];
+const {document}=parseHTML('<html><body>'+ids.map(id=>'<div id="'+id+'"></div>').join('')+'</body></html>').window;
+let orders=[],failure=null,delayed=false,pending=[],reads=[];
+const db={from(table){assert.equal(table,'store_orders');let filters=[],single=false;const q={select(){return q;},not(k,op,v){filters.push(o=>!['collected','cancelled'].includes(o.status));return q;},in(k,values){filters.push(o=>values.includes(o[k]));return q;},eq(k,v){filters.push(o=>o[k]===v);return q;},order(){return q;},limit(){return q;},range(a,b){reads.push([a,b]);return result(a,b,false);},maybeSingle(){return result(0,0,true);}};
+function result(a,b,one){const selected=orders.filter(o=>filters.every(f=>f(o))).sort((x,y)=>y.created_at.localeCompare(x.created_at)||y.id.localeCompare(x.id)).slice(a,b+1);const r={error:failure,data:failure?null:one?(selected[0]||null):selected};if(delayed)return new Promise(resolve=>pending.push(()=>resolve(r)));return Promise.resolve(r);}return q;}};
+const ctx={db,document,console:{warn(){}},TABLE_CODES:['T1','T2'],tsParseItems:x=>Array.isArray(x)?x:JSON.parse(x||'[]'),tsCollectedAmount:items=>items.reduce((s,i)=>s+(i.paidQty||0)*i.price,0),tsPopulateDropdown(){},tsRenderItems(){},tsCalcTotal(){},showStoreToast(){}};
+vm.createContext(ctx);vm.runInContext(source.slice(source.indexOf('var _tsBoardRead ='),source.indexOf('function subscribeTablesBoard()')),ctx);
+vm.runInContext(source.slice(source.indexOf('function openTableOrderSheet(code)'),source.indexOf('// Opens the same order-editing sheet')),ctx);
+const order=(id,table='T1',date='2026-09-21T18:01:00Z')=>({id,table_code:table,items:[{name:'Coffee',qty:1,price:30}],total:30,status:'pending',created_at:date});
+const tick=()=>new Promise(r=>setImmediate(r));
+(async()=>{
+ failure={message:'timeout'};await ctx.loadTablesStatus();assert.ok(!document.getElementById('ts-grid').innerHTML.includes('>FREE<'));assert.match(document.getElementById('ts-board-status').textContent,/unknown/);
+ failure=null;orders=[order('overnight')];await ctx.loadTablesStatus();let grid=document.getElementById('ts-grid').innerHTML;assert.match(grid,/PENDING/);assert.match(grid,/₹30/);assert.equal((grid.match(/>FREE</g)||[]).length,1);
+ orders=[];failure={message:'database unavailable'};await ctx.loadTablesStatus();assert.equal(document.getElementById('ts-grid').innerHTML,grid);assert.match(document.getElementById('ts-board-status').textContent,/last successful/);
+ failure=null;orders=[order('new')];delayed=true;const older=ctx.loadTablesStatus();orders=[];const newer=ctx.loadTablesStatus();pending.pop()();await newer;pending.pop()();await older;assert.equal((document.getElementById('ts-grid').innerHTML.match(/>FREE</g)||[]).length,2,'late response must not undo latest result');delayed=false;
+ orders=Array.from({length:201},(_,i)=>order(String(i).padStart(4,'0'),i===0?'T2':'T1'));reads=[];await ctx.loadTablesStatus();assert.equal(reads.length,2);assert.ok(!document.getElementById('ts-grid').innerHTML.includes('>FREE<'));assert.match(document.getElementById('ts-grid').textContent,/200 open bills/);
+ orders=[order('closed')];orders[0].status='collected';await ctx.loadTablesStatus();assert.equal((document.getElementById('ts-grid').innerHTML.match(/>FREE</g)||[]).length,2);
+ orders=[order('older','T1','2026-09-19T15:00:00Z')];ctx.openTableOrderSheet('T1');await tick();assert.equal(ctx._tsExistingOrder.id,'older');assert.equal(ctx._tsOrderLoading,false);
+ failure={message:'timeout'};ctx.openTableOrderSheet('T1');await tick();assert.equal(ctx._tsOrderLoading,true);assert.equal(document.getElementById('ts-send-btn').disabled,true);
+ console.log('PASS table board: overnight orders, initial errors, stale snapshot, response races, pagination, closed orders and safe detail-load failures.');
+})().catch(e=>{console.error(e);process.exit(1);});
