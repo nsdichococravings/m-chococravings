@@ -323,13 +323,35 @@ function lcLast10(phone) {
 // Batch-fetches loyalty cards for every table order's phone in one
 // round trip. Never throws — Kitchen must still render fine even if
 // Loyalty Cards isn't installed yet or the call fails for any reason.
+function lcParseGroupPhones(value) {
+  var result=[];
+  String(value || '').split(',').forEach(function(part) {
+    part=part.trim(); if(!part) return;
+    if(!/^\+?[0-9 ()-]+$/.test(part)) throw new Error('Enter valid mobile numbers separated by commas.');
+    var digits=part.replace(/\D/g,'');
+    if(digits.length===12 && digits.slice(0,2)==='91') digits=digits.slice(2);
+    if(digits.length!==10) throw new Error('Each mobile number must contain 10 digits (optional +91).');
+    var phone='+91'+digits;
+    if(result.indexOf(phone)===-1) result.push(phone);
+  });
+  if(result.length>20) throw new Error('Enter at most 20 friends per order.');
+  return result;
+}
+function lcOrderPhones(order) {
+  var values=[order.customer_phone].concat(Array.isArray(order.customer_group_phones)?order.customer_group_phones:[]);
+  var result=[];
+  values.forEach(function(p) { try { lcParseGroupPhones(p).forEach(function(n) {if(result.indexOf(n)<0) result.push(n);}); } catch(e) {} });
+  return result;
+}
+
 async function lcLoyaltyMapFor(orders) {
   var phones = [];
   var seen = {};
   (orders || []).forEach(function (o) {
-    if (!o.table_code || !o.customer_phone) return;
-    var last10 = lcLast10(o.customer_phone);
-    if (last10.length === 10 && !seen[last10]) { seen[last10] = true; phones.push(o.customer_phone); }
+    lcOrderPhones(o).forEach(function(phone) {
+      var last10=lcLast10(phone);
+      if(!seen[last10]) { seen[last10]=true; phones.push(phone); }
+    });
   });
   if (!phones.length) return {};
   try {
@@ -338,7 +360,7 @@ async function lcLoyaltyMapFor(orders) {
     (res.members || []).forEach(function (m) { map[lcLast10(m.phone)] = m; });
     return map;
   } catch (e) {
-    return {};
+    return {_unavailable:true};
   }
 }
 

@@ -105,6 +105,10 @@ function buildTablesBoardDOM() {
     +   '<input id="ts-cust-phone" type="tel" inputmode="numeric" maxlength="10" placeholder="📱 Customer phone (optional)" '
     +     'style="width:100%;padding:12px 14px;border:1.5px solid #e0c8f0;border-radius:12px;font-size:14px;'
     +     'font-family:\'DM Sans\',sans-serif;outline:none;box-sizing:border-box;margin-top:12px">'
+    + '<label style="display:block;margin-top:12px;font-size:13px;color:#6e0977">Friends’ NSDI card mobile numbers (comma separated)</label>'
+    + '<input id="ts-group-phones" type="text" autocomplete="off" placeholder="9876543210, 9123456780" style="width:100%;padding:12px;border:1px solid #e0c8f0;border-radius:12px;box-sizing:border-box">'
+    + '<button type="button" onclick="tsSaveGroupPhones(true)" style="margin-top:8px;padding:8px 12px;border-radius:8px;border:1px solid #e0c8f0;background:#fff;color:#6e0977">Save friends on existing bill</button>'
+    + '<small>Only include friends present. Each matching card earns one stamp per day after payment and collection.</small>'
     + '</div>'
     + '<div style="padding:18px 20px;display:flex;flex-direction:column;gap:14px">'
     +   '<div id="ts-items-list" style="display:flex;flex-direction:column;gap:8px">'
@@ -276,8 +280,9 @@ function openTableOrderSheet(code) {
   billBtn.style.display='none';undoBtn.style.display='none';moveBtn.style.display='none';
   document.getElementById('ts-items-list').textContent='Loading current order…';
   document.getElementById('ts-cust-phone').value='';
+  if(document.getElementById('ts-group-phones')) document.getElementById('ts-group-phones').value='';
 
-  tsOpenOrdersQuery('id, items, total, status, created_at, staff_name, customer_phone')
+  tsOpenOrdersQuery('id, items, total, status, created_at, staff_name, customer_phone, customer_group_phones')
     .eq('table_code', code)
     .order('created_at', { ascending: false })
     .order('id', { ascending: false })
@@ -298,6 +303,7 @@ function openTableOrderSheet(code) {
         undoBtn.style.display = res.data.status === 'delivered' ? 'block' : 'none';
         moveBtn.style.display = 'block';
         phoneInput.value = (res.data.customer_phone || '').replace(/^\+?91/, '');
+        if(document.getElementById('ts-group-phones')) document.getElementById('ts-group-phones').value=(res.data.customer_group_phones || []).join(', ');
       } else {
         sendBtn.textContent = '➕ Send to Kitchen';
         billBtn.style.display = 'none';
@@ -334,7 +340,7 @@ async function kOpenOrderEditFromKitchen(orderId) {
   _tsItems = [];
 
   var res = await db.from('store_orders')
-    .select('id, items, total, status, created_at, staff_name, customer_phone, table_code, token')
+    .select('id, items, total, status, created_at, staff_name, customer_phone, customer_group_phones, table_code, token')
     .eq('id', orderId)
     .maybeSingle();
   if (!res.data) { showStoreToast('Could not load this order'); return; }
@@ -354,6 +360,7 @@ async function kOpenOrderEditFromKitchen(orderId) {
   document.getElementById('ts-send-btn').textContent = '➕ Add Items';
   document.getElementById('ts-send-btn').disabled = false;
   document.getElementById('ts-cust-phone').value = (o.customer_phone || '').replace(/^\+?91/, '');
+        if(document.getElementById('ts-group-phones')) document.getElementById('ts-group-phones').value=(o.customer_group_phones || []).join(', ');
 
   // Quick-edit from Kitchen is purely for adding/modifying items — the
   // billing/undo/move actions already live on the ticket itself, so
@@ -532,6 +539,9 @@ async function tsSubmit() {
   var btn = document.getElementById('ts-send-btn');
   var total = tsCalcTotal();
 
+  var groupPhones;
+  try { groupPhones = lcParseGroupPhones((document.getElementById('ts-group-phones') || {}).value || ''); }
+  catch(e) { showStoreToast(e.message); return; }
   var phoneRaw = (document.getElementById('ts-cust-phone').value || '').replace(/\D/g, '');
   var phone = phoneRaw.length === 10 ? '+91' + phoneRaw : null;
 
@@ -556,6 +566,7 @@ async function tsSubmit() {
       btn.disabled = true; btn.textContent = 'Sending…';
       var updatePayload = { items: JSON.stringify(finalItems), total: total };
       if (phone) updatePayload.customer_phone = phone;
+      updatePayload.customer_group_phones = groupPhones;
       var wasReady = _tsExistingOrder.status === 'ready' || _tsExistingOrder.status === 'delivered';
       if (wasReady) updatePayload.status = 'preparing';
 
@@ -578,6 +589,7 @@ async function tsSubmit() {
         table_code:      _tsTableCode,
         customer_name:   'Table ' + _tsTableCode,
         customer_phone:  phone,
+        customer_group_phones: groupPhones,
         staff_name:      placedBy,
         items:           JSON.stringify(finalItems),
         total:           total,
@@ -618,8 +630,25 @@ async function tsUndoDelivered() {
   }
 }
 
+async function tsSaveGroupPhones(feedback) {
+  if (_tsOrderLoading || !_tsExistingOrder) { if(feedback) showStoreToast('Send the new order to Kitchen first.'); return false; }
+  try {
+    var phones=lcParseGroupPhones((document.getElementById('ts-group-phones') || {}).value || '');
+    if(JSON.stringify(phones)!==JSON.stringify(_tsExistingOrder.customer_group_phones || [])) {
+      var res=await db.from('store_orders').update({customer_group_phones:phones}).eq('id',_tsExistingOrder.id)
+        .not('status','in','(collected,cancelled)').select('id').maybeSingle();
+      if(res.error) throw res.error;
+      if(!res.data) throw new Error('This bill has closed. Reopen the table to refresh.');
+      _tsExistingOrder.customer_group_phones=phones;
+    }
+    if(feedback) {showStoreToast('Friends saved. Their cards will appear in Kitchen.'); if(typeof kitchenManualRefresh==='function') kitchenManualRefresh();}
+    return true;
+  } catch(e) {showStoreToast(e.message);return false;}
+}
+
 async function tsBillAndClose() {
   if (!_tsExistingOrder) return;
+  if(!await tsSaveGroupPhones(false)) return;
   var collected = tsCollectedAmount(tsParseItems(_tsExistingOrder.items));
   var remaining = Math.max(0, Math.round((_tsExistingOrder.total - collected) * 100) / 100);
   openSplitPaymentPicker(_tsExistingOrder.id, remaining, { type: 'table', tableCode: _tsTableCode, fromTablesBoard: true });
@@ -752,23 +781,26 @@ function renderKitchen(orders, loyaltyMap) {
     // Loyalty card lookup only ever succeeds once loyalty-cards.js's own
     // functions are all defined (same script, same load), so a single
     // guard here covers lcRewardsFor/lcEsc/lcApplyRewardToOrder below too.
-    var loyaltyMember = (o.table_code && o.customer_phone && typeof lcLast10 === 'function')
-      ? (loyaltyMap[lcLast10(o.customer_phone)] || null) : null;
     var loyaltyBox = '';
-    if (loyaltyMember) {
-      var lcAvailable = lcRewardsFor(loyaltyMember).filter(function (r) { return r.status === 'available'; });
-      loyaltyBox = '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;'
+    if (typeof lcOrderPhones === 'function') lcOrderPhones(o).forEach(function(phone) {
+      var loyaltyMember=loyaltyMap[lcLast10(phone)];
+      if (!loyaltyMember) {
+        loyaltyBox += '<div style="padding:8px;color:#c9b5cf">NSDI card ' + lcMaskPhone(phone) + (loyaltyMap._unavailable ? ' · Lookup unavailable; refresh to retry' : ' · No card found') + '</div>';
+        return;
+      }
+      var lcAvailable = lcRewardsFor(loyaltyMember).filter(function (r) { return !loyaltyMember.suspended && r.status === 'available'; });
+      loyaltyBox += '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;'
         + 'background:rgba(121,12,136,0.14);border:1.5px solid rgba(192,132,252,0.35);border-radius:12px;'
         + 'padding:9px 14px;margin-bottom:10px">'
         + '<div><span style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:#c084fc">💳 ' + lcEsc(loyaltyMember.card_code) + '</span>'
-        + '<div style="font-size:10.5px;color:rgba(245,234,220,.6);margin-top:2px">' + lcEsc(loyaltyMember.name) + ' · Day ' + loyaltyMember.stamp_count + '/100</div></div>'
+        + '<div style="font-size:10.5px;color:rgba(245,234,220,.6);margin-top:2px">' + lcEsc(loyaltyMember.name) + ' · Day ' + loyaltyMember.stamp_count + '/100 · ' + lcMaskPhone(loyaltyMember.phone) + (loyaltyMember.suspended ? ' · Suspended' : '') + '</div></div>'
         + '<div style="display:flex;gap:6px;flex-wrap:wrap">' + lcAvailable.map(function (r) {
             return '<button onclick="lcApplyRewardToOrder(\'' + o.id + '\',\'' + loyaltyMember.id + '\',' + r.day + ',\'' + String(r.item).replace(/'/g, "\\'") + '\')" '
               + 'style="background:#c084fc;color:#1a0820;border:none;border-radius:8px;padding:7px 10px;font-size:10.5px;font-weight:700;cursor:pointer;white-space:nowrap">'
               + '🎁 ' + lcEsc(r.item) + '</button>';
           }).join('') + '</div>'
         + '</div>';
-    }
+    });
 
     var collectedSoFar = o.table_code ? tsCollectedAmount(itemsArr) : 0;
     var remainingBill = Math.max(0, Math.round(((o.total || 0) - collectedSoFar) * 100) / 100);
