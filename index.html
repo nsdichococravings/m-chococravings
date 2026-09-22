@@ -7157,12 +7157,24 @@ var _trSlideTimer = null;
 async function trLoadSlides() {
   _trActiveSlides = TR_DEFAULT_SLIDES;
   try {
-    var { data, error } = await getTreatsMenuClient().from('home_banners')
-      .select('eyebrow,title_main,title_accent,tagline,cta_label,color_1,color_2,color_3,image_url,link_type,link_value')
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true });
+    var bannerQuery = function(client) {
+      return client.from('home_banners')
+        .select('eyebrow,title_main,title_accent,tagline,cta_label,color_1,color_2,color_3,image_url,link_type,link_value')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+    };
+    var data, error;
+    try {
+      var r1 = await bannerQuery(getTreatsMenuClient());
+      data = r1.data; error = r1.error;
+      if (error) throw error;
+    } catch (e1) {
+      console.warn('trLoadSlides: treats client failed, retrying with db:', e1);
+      var r2 = await bannerQuery(db);
+      data = r2.data; error = r2.error;
+      if (error) throw error;
+    }
     console.log('HOME BANNERS:', data, error);
-    if (error) throw error;
     if (data && data.length > 0) {
       _trActiveSlides = data.map(function(b) {
         return {
@@ -7287,14 +7299,30 @@ async function loadTreats() {
   if (!grid) return;
 
   try {
-    var { data: items, error } = await getTreatsMenuClient().from('store_menu')
-      .select('id,name,price,tag,category')
-      .eq('available', true)
-      .in('category', Object.keys(TR_BUCKET))
-      .order('sort_order', { ascending: true });
+    var query = function(client) {
+      return client.from('store_menu')
+        .select('id,name,price,tag,category')
+        .eq('available', true)
+        .in('category', Object.keys(TR_BUCKET))
+        .order('sort_order', { ascending: true });
+    };
+
+    var items, error;
+    try {
+      var res1 = await query(getTreatsMenuClient());
+      items = res1.data; error = res1.error;
+      if (error) throw error;
+    } catch (e1) {
+      // Session-less client failed (network, RLS scoped to authenticated
+      // only, storage blocked, etc.) — retry once with the signed-in
+      // client before giving up.
+      console.warn('loadTreats: treats client failed, retrying with db:', e1);
+      var res2 = await query(db);
+      items = res2.data; error = res2.error;
+      if (error) throw error;
+    }
 
     console.log('TREATS & SIPS:', items, error);
-    if (error) throw error;
     if (!items || items.length === 0) {
       grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:50px 20px"><div style="font-size:40px;margin-bottom:12px">☕</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:18px;font-style:italic;color:#b8590f">Coming Soon</div><div style="font-size:11px;color:#8a6248;margin-top:6px">Our café menu is being added — check back shortly</div></div>';
       return;
@@ -7309,7 +7337,8 @@ async function loadTreats() {
     trRenderGrid(items);
   } catch (e) {
     console.error('loadTreats:', e);
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#b8590f">Could not load. Please try again.</div>';
+    var msg = (e && (e.message || e.error_description || e.details)) || 'Unknown error';
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#b8590f">Could not load: ' + msg.replace(/</g,'&lt;') + '<br><span style="text-decoration:underline;cursor:pointer;font-size:12px" onclick="loadTreats()">Tap to retry</span></div>';
   }
 }
 
