@@ -1,0 +1,124 @@
+      <!-- ═══ HOME HERO — PHOTO EDITION ═══ -->
+      <div style="margin:0 16px 20px;position:relative">
+        <!--onclick="showPage('custom-order')"-->
+        <div  onclick="showPage('cake-studio');setTimeout(function(){if(typeof initCakeGL==='function')initCakeGL();},200)" style="position:relative;border-radius:26px;overflow:hidden;cursor:pointer;height:220px">
+
+          <!-- Real photo background -->
+          <img src="https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/diya.jpeg"
+            style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top">
+
+          <!-- Dark gradient overlay for text readability -->
+          <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(10,0,25,.85) 0%,rgba(60,5,80,.7) 50%,rgba(0,0,0,.2) 100%)"></div>
+
+          <!-- Luxury traced border + gold dust -->
+          <div style="position:absolute;inset:0;z-index:2;pointer-events:none">
+            <svg style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 400 220" fill="none">
+              <rect x="4" y="4" width="392" height="212" rx="22"
+                stroke="url(#luxGrad)" stroke-width="1.5"
+                stroke-dasharray="600" stroke-dashoffset="600"
+                style="animation:borderTrace 3s ease forwards"/>
+              <defs>
+                <linearGradient id="luxGrad" x1="0" y1="0" x2="400" y2="220" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%"   stop-color="rgba(249,200,255,0)"/>
+                  <stop offset="30%"  stop-color="rgba(249,200,255,.7)"/>
+                  <stop offset="60%"  stop-color="rgba(255,214,176,.8)"/>
+                  <stop offset="100%" stop-color="rgba(201,160,64,.5)"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <div style="position:absolute;top:15%;left:18%;width:2px;height:2px;border-radius:50%;background:rgba(255,214,176,.8);animation:dustRise 3.5s ease-in-out infinite 0s"></div>
+            <div style="position:absolute;top:30%;left:35%;width:3px;height:3px;border-radius:50%;background:rgba(201,160,64,.7);animation:dustRise 3.5s ease-in-out infinite .6s"></div>
+            <div style="position:absolute;top:20%;left:55%;width:2px;height:2px;border-radius:50%;background:rgba(249,200,255,.8);animation:dustRise 3.5s ease-in-out infinite 1.2s"></div>
+            <div style="position:absolute;top:35%;left:72%;width:3px;height:3px;border-radius:50%;background:rgba(255,214,176,.7);animation:dustRise 3.5s ease-in-out infinite 1.8s"></div>
+            <div style="position:absolute;top:25%;left:85%;width:2px;height:2px;border-radius:50%;background:rgba(201,160,64,.8);animation:dustRise 3.5s ease-in-out infinite .4s"></div>
+            <div style="position:absolute;top:40%;left:50%;width:2px;height:2px;border-radius:50%;background:rgba(249,200,255,.6);animation:dustRise 3.5s ease-in-out infinite 2.2s"></div>
+            <div style="position:absolute;top:10%;left:65%;width:3px;height:3px;border-radius:50%;background:rgba(255,214,176,.7);animation:dustRise 3.5s ease-in-out infinite 1s"></div>
+          </div>
+          <!-- Grain -->
+          <div style="position:absolute;inset:0;opacity:.05;background-image:url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E');pointer-events:none"></div>
+
+          <!-- Content -->
+          <div style="position:relative;z-index:2;padding:22px 20px 20px;height:100%;display:flex;flex-direction:column;justify-content:flex-end">
+
+            <!-- Live badge -->
+            <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.12);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:4px 11px;margin-bottom:10px;width:fit-content">
+              <span style="width:5px;height:5px;border-radius:50%;background:#ff9de2;display:inline-block;box-shadow:0 0 6px #ff9de2;animation:hmPulse 1.5s infinite"></span>
+              <span style="font-size:9px;font-weight:700;color:rgba(255,255,255,.9);letter-spacing:2px;text-transform:uppercase">New · Design Yours</span>
+            </div>
+
+            <!-- Headline -->
+            <div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:#fff;line-height:1.1;margin-bottom:5px;letter-spacing:-.5px;text-shadow:0 2px 12px rgba(0,0,0,.4)">
+              Custom<br>
+              <span style="font-style:italic;background:linear-gradient(90deg,#f9c8ff,#ffb3f0,#ffd6b0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Premium Cakes</span>
+            </div>
+
+            <div style="font-size:11px;color:rgba(255,255,255,.7);margin-bottom:14px;letter-spacing:.3px">Birthday · Anniversary · Any occasion</div>
+
+            <!-- CTA -->
+            <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.92);border-radius:22px;padding:9px 18px;width:fit-content;backdrop-filter:blur(8px)">
+              <span style="font-size:12px;font-weight:800;color:#5c0872;letter-spacing:.3px">Build Your Creation</span>
+              <div style="width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#8b0f96,#5c0872);display:flex;align-items:center;justify-content:center">
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2L7 5L3 8" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STATS ROW -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+          <div style="background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:12px 10px;text-align:center;position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#22c55e,#4ade80)"></div>
+            <div style="font-size:20px;margin-bottom:3px">💚</div>
+            <div style="font-size:11px;font-weight:700;color:var(--white);line-height:1.2">Eggless</div>
+            <div style="font-size:9px;color:var(--faint);margin-top:1px">Available</div>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:12px 10px;text-align:center;position:relative;overflow:hidden">
+            <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#f59e0b,#fbbf24)"></div>
+            <div style="font-size:20px;margin-bottom:3px">🚚</div>
+            <div style="font-size:11px;font-weight:700;color:var(--white);line-height:1.2">Fresh</div>
+            <div style="font-size:9px;color:var(--faint);margin-top:1px">Baked daily</div>
+          </div>
+        </div>
+      </div>
+      
+
+      <!-- CUSTOM BROWNIE SLAB CARD -->
+      <div onclick="showPage('custom-order')" style="margin:0 16px 20px;position:relative;border-radius:18px;overflow:hidden;cursor:pointer;height:220px">
+
+        <!-- Real photo background -->
+        <img src="https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/brownieCard.jpeg"
+          style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 60%">
+
+        <!-- Dark gradient overlay -->
+        <div style="position:absolute;inset:0;background:linear-gradient(105deg,rgba(20,8,0,.88) 0%,rgba(80,35,5,.78) 50%,rgba(0,0,0,.15) 100%)"></div>
+        <!-- Gold foil sweep -->
+        <div style="position:absolute;inset:0;z-index:2;overflow:hidden;pointer-events:none">
+          <div style="position:absolute;top:0;left:-100%;width:40%;height:100%;background:linear-gradient(105deg,transparent 30%,rgba(201,160,64,.18) 50%,rgba(255,220,120,.22) 55%,rgba(201,160,64,.12) 65%,transparent 80%);transform:skewX(-12deg);animation:foilSweep 3.5s ease-in-out infinite"></div>
+          <div style="position:absolute;inset:0;border:1.5px solid rgba(201,160,64,.25);border-radius:18px;animation:borderGlow 3s ease-in-out infinite"></div>
+          <div style="position:absolute;top:10px;left:10px;right:10px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,160,64,.4),transparent)"></div>
+          <div style="position:absolute;bottom:10px;left:10px;right:10px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,160,64,.4),transparent)"></div>
+          <!-- Chocolate crack lines -->
+          <svg style="position:absolute;inset:0;width:100%;height:100%" viewBox="0 0 400 220" preserveAspectRatio="none">
+            <path d="M160,0 L190,55 L150,80 L210,130 L176,220" fill="none" stroke="rgba(201,160,64,.35)" stroke-width="1.2" stroke-dasharray="200" stroke-dashoffset="200" style="animation:crackGrow 2.5s ease forwards .3s"/>
+            <path d="M260,0 L236,40 L280,75 L244,110 L270,155 L240,220" fill="none" stroke="rgba(201,160,64,.25)" stroke-width=".8" stroke-dasharray="200" stroke-dashoffset="200" style="animation:crackGrow 2.5s ease forwards .8s"/>
+            <path d="M190,55 L240,60 L230,72" fill="none" stroke="rgba(201,160,64,.3)" stroke-width=".8" stroke-dasharray="60" stroke-dashoffset="60" style="animation:crackGrow 1.5s ease forwards .9s"/>
+            <path d="M210,130 L260,138" fill="none" stroke="rgba(201,160,64,.25)" stroke-width=".7" stroke-dasharray="40" stroke-dashoffset="40" style="animation:crackGrow 1s ease forwards 1.4s"/>
+          </svg>
+          <div style="position:absolute;top:12px;right:12px;font-size:9px;font-weight:700;letter-spacing:2px;color:rgba(201,160,64,.6);text-transform:uppercase">Fresh Baked</div>
+        </div>
+        <!-- Content -->
+        <div style="position:relative;z-index:2;padding:16px 18px;height:100%;display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:700;color:#fff;line-height:1.1;text-shadow:0 2px 12px rgba(0,0,0,.4)">Custom Brownie<br><span style="font-style:italic;background:linear-gradient(90deg,#ffd6b0,#ffb347,#c9a040);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Slab & Creations</span></div>
+         </div>
+          <!-- CTA arrow -->
+          <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0">
+            <div style="font-size:28px"></div>
+            <div style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border-radius:20px;padding:4px 10px">
+              <span style="font-size:9px;font-weight:700;color:#fff">Design</span>
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2L7 5L3 8" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+      

@@ -148,6 +148,42 @@ function lcPick(i) {
   lcRenderResults();
 }
 
+async function lcProfile(action,payload) {
+  var res=await db.rpc('cc_loyalty_profile',{p_action:action,p_payload:payload});
+  if(res.error) throw new Error(res.error.message);
+  return res.data;
+}
+function lcOpenPhone(phone) {
+  if(_lcBusy) return;
+  lcOpen(); document.getElementById('lc-query').value=phone; lcLookup();
+}
+function lcProfileFields(m) {
+  var html='<label style="display:block;margin-top:16px">Customer name<input id="lc-edit-name" maxlength="120" value="'+lcEsc(m.name_pending?'':m.name)+'" placeholder="Add customer name" style="display:block;width:100%;box-sizing:border-box;padding:12px;margin-top:5px"></label>';
+  if(!(m.schedule || []).length) {
+    html+='<p>Reward schedule pending admin setup. Stamps continue to count.</p>';
+    if(typeof isAdmin!=='undefined' && isAdmin) {
+      var names=typeof MENU==='undefined'?[]:Object.keys(MENU).reduce(function(a,k){return a.concat((MENU[k].items||[]).map(function(i){return i.name;}));},[]);
+      html+='<label><input id="lc-setup-rewards" type="checkbox"> Set rewards for this card</label><div>Every <select id="lc-edit-interval"><option value="10">10 days</option><option value="15">15 days</option></select> <select id="lc-edit-reward">'+names.map(function(n){return '<option>'+lcEsc(n)+'</option>';}).join('')+'</select></div>';
+    }
+  }
+  return html+'<button onclick="lcSaveProfile()" style="margin:12px 0;padding:12px;background:#790c88;color:white;border:0;border-radius:9px">Save name / details</button>';
+}
+async function lcSaveProfile() {
+  if(_lcBusy || !_lcMember) return;
+  var name=document.getElementById('lc-edit-name').value.trim();
+  if(!name || name.length>120) {lcMsg('Enter the customer name (up to 120 characters).');return;}
+  var payload={member_id:_lcMember.id,name:name};
+  var setup=document.getElementById('lc-setup-rewards');
+  if(setup && setup.checked) {
+    var interval=Number(document.getElementById('lc-edit-interval').value),item=document.getElementById('lc-edit-reward').value;
+    payload.schedule=[];for(var day=interval;day<100;day+=interval) payload.schedule.push({day:day,item:item});
+    payload.schedule.push({day:100,item:item});
+  }
+  lcBusy(true);
+  try {_lcMember=await lcProfile('save',payload);lcMsg('');lcRenderResults();showStoreToast('Customer details saved');if(typeof kitchenManualRefresh==='function') kitchenManualRefresh();}
+  catch(e){lcMsg(e.message);}finally{lcBusy(false);}
+}
+
 function lcMemberCard(m) {
   var available = (m.schedule || []).filter(function (s) { return s.day <= m.stamp_count && (m.redeemed_days || []).indexOf(s.day) === -1; });
   var upcoming = (m.schedule || []).filter(function (s) { return s.day > m.stamp_count; }).sort(function (a, b) { return a.day - b.day; })[0];
@@ -162,6 +198,7 @@ function lcMemberCard(m) {
     + '<div style="display:flex;justify-content:space-between;margin-top:20px;font-size:12px">'
     + '<span style="font-size:20px;font-weight:700;letter-spacing:1px">' + lcEsc(m.card_code) + '</span>'
     + '<span>Cycle ' + m.cycle + '</span></div></div>'
+    + lcProfileFields(m)
 
     + '<div style="margin:18px 0"><div style="display:flex;justify-content:space-between;align-items:center">'
     + '<h3 style="font-size:17px;margin:0">Visit count</h3><strong>' + m.stamp_count + ' / 100</strong></div>'
@@ -356,6 +393,12 @@ async function lcLoyaltyMapFor(orders) {
   if (!phones.length) return {};
   try {
     var res = await lcCommand('lookup_many', { phones: phones });
+    var found={};(res.members || []).forEach(function(m){found[lcLast10(m.phone)]=true;});
+    var missingOrders=(orders || []).filter(function(o){return o.id && lcOrderPhones(o).some(function(p){return !found[lcLast10(p)];});}).map(function(o){return o.id;});
+    if(missingOrders.length) {
+      for(var offset=0;offset<missingOrders.length;offset+=200) await lcProfile('ensure_orders',{ids:missingOrders.slice(offset,offset+200)});
+      res=await lcCommand('lookup_many',{phones:phones});
+    }
     var map = {};
     (res.members || []).forEach(function (m) { map[lcLast10(m.phone)] = m; });
     return map;

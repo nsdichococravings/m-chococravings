@@ -1,0 +1,883 @@
+    <!-- ═══ CAKE STUDIO ═══ -->
+        <div class="page" id="page-cake-studio">
+        <div class="back" onclick="goBack()" style="position:fixed;top:calc(14px + env(safe-area-inset-top));left:16px;z-index:1100">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        </div>
+        <div class="canvas-wrap" id="cs-photo-wrap"
+          style="height:55vw;min-height:240px;max-height:380px;width:100%;position:relative;overflow:hidden"
+          onmouseenter="csPauseScroll()"
+          onmouseleave="csResumeScroll()"
+          ontouchstart="csPauseScroll()"
+          onclick="csOpenLightbox()">       
+
+        <!-- Main photo -->
+        <img id="cs-photo-main" src="https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/cake-reference-1.jpeg"
+          style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;transition:opacity .5s ease">
+        <!-- Crossfade layer -->
+        <img id="cs-photo-fade" src=""
+          style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;opacity:0;transition:opacity .5s ease;pointer-events:none">
+
+        <!-- Dark vignette overlay -->
+        <div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.12) 0%,transparent 40%,transparent 55%,rgba(0,0,0,.72) 100%);pointer-events:none;z-index:1"></div>
+
+        <!-- Top-left: brand pill -->
+        <div style="position:absolute;top:14px;left:14px;z-index:3;display:flex;align-items:center;gap:6px;background:rgba(10,5,1,.65);border:1px solid rgba(201,160,64,.3);backdrop-filter:blur(10px);padding:5px 12px">
+          <div style="width:5px;height:5px;border-radius:50%;background:#e0bc5a;box-shadow:0 0 6px rgba(201,160,64,.8);animation:pulse 1.5s infinite"></div>
+          <div style="font-family:'Cinzel',serif;font-size:7px;letter-spacing:.35em;color:rgba(201,160,64,.9);text-transform:uppercase">Live Preview</div>
+        </div>
+
+        <!-- Top-right: photo counter -->
+        <div id="cs-photo-counter" style="position:absolute;top:14px;right:14px;z-index:3;font-family:'Cinzel',serif;font-size:8px;letter-spacing:.2em;color:rgba(240,220,170,.6);background:rgba(0,0,0,.45);backdrop-filter:blur(8px);padding:4px 10px;border:1px solid rgba(201,160,64,.15)">1 / 1</div>
+
+        <!-- Prev / Next arrows (shown when multiple matching photos) -->
+        <div onclick="csPhotoNav(-1)" id="cs-photo-prev" style="display:none;position:absolute;left:10px;top:50%;transform:translateY(-50%);z-index:4;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.5);border:1px solid rgba(201,160,64,.3);display:none;align-items:center;justify-content:center;font-size:18px;color:#e0bc5a;cursor:pointer;backdrop-filter:blur(6px)">‹</div>
+        <div onclick="csPhotoNav(1)"  id="cs-photo-next" style="display:none;position:absolute;right:10px;top:50%;transform:translateY(-50%);z-index:4;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.5);border:1px solid rgba(201,160,64,.3);display:none;align-items:center;justify-content:center;font-size:18px;color:#e0bc5a;cursor:pointer;backdrop-filter:blur(6px)">›</div>
+
+        <!-- Corner brackets for luxury feel -->
+        <div class="cbracket tl" style="z-index:2"></div>
+        <div class="cbracket tr" style="z-index:2"></div>
+        <div class="cbracket bl" style="z-index:2"></div>
+        <div class="cbracket br" style="z-index:2"></div>
+     </div><!-- closes canvas-wrap -->
+    <div class="panel">
+    <!-- Flavour -->
+    <div>
+      <div class="sh"><div class="sh-dot"></div><div class="sh-text">Flavour</div><div class="sh-line"></div></div>
+      
+       <div class="flavor-cards" id="cs-flavours">
+
+        <div class="fcard active" data-f="vanilla" onclick="setFlavor('vanilla')">
+          <div class="fcard-head">
+            <div class="fswatch"></div>
+            <div>
+              <div class="ftitle">Vanilla Pineapple</div>
+            </div>
+          </div>
+          <div class="fdesc">Soft vanilla sponge, pineapple compote filling between layers, whipped cream frosting.</div>
+        </div>
+
+        <div class="fcard" data-f="chocberry" onclick="setFlavor('chocberry')">
+          <div class="fcard-head">
+            <div class="fswatch"></div>
+            <div>
+              <div class="ftitle">Chocolate Strawberry</div>
+            </div>
+          </div>
+          <div class="fdesc">Rich chocolate sponge, fresh strawberry cream filling, finished with your chosen frosting.</div>
+         </div>
+
+      </div>
+    </div>
+
+    <!-- Frosting -->
+    <div>
+      <div class="sh"><div class="sh-dot"></div><div class="sh-text">Frosting</div><div class="sh-line"></div></div>
+      <div class="frost-row" id="cs-frostings">
+        <button class="fbtn active" onclick="setFrost(this,'fresh',0xfff0e0)">
+          <div class="frost-swatch" style="background:radial-gradient(circle at 38% 32%,#fff8f0,#ede0c8 55%,#d0bea0)"></div>
+          <div class="frost-name">Fresh<br>Cream</div>
+        </button>
+        <button class="fbtn" onclick="setFrost(this,'choc',0x7a3010)">
+          <div class="frost-swatch" style="background:radial-gradient(circle at 38% 32%,#b06030,#7a3010 55%,#3e1005)"></div>
+          <div class="frost-name">Chocolate<br>Frosting</div>
+        </button>
+        <button class="fbtn" onclick="setFrost(this,'truffle',0x220a04)">
+          <div class="frost-swatch" style="background:radial-gradient(circle at 38% 32%,#3e1408,#1e0806 55%,#0a0402)"></div>
+          <div class="frost-name">Truffle<br>Dark</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- Tiers -->
+    <div>
+      <div class="sh"><div class="sh-dot"></div><div class="sh-text">Tiers</div><div class="sh-line"></div></div>
+      <div class="pill-row" id="cs-tiers">
+        <button class="pill active" onclick="setTiers(this,1)"><span class="pill-icon">▬</span>Single</button>
+        <button class="pill" onclick="setTiers(this,2)"><span class="pill-icon">▬▬</span>Two Tier</button>
+        <button class="pill" onclick="setTiers(this,3)"><span class="pill-icon">▬▬▬</span>Three Tier</button>
+      </div>
+    </div>
+
+    <!-- Weight -->
+    <div>
+      <div class="sh"><div class="sh-dot"></div><div class="sh-text">Cake Weight</div><div class="sh-line"></div></div>
+      <div class="pill-row" id="cs-weights">
+        <button class="pill" onclick="setWeight(this,'0.5kg',0)"><div class="pill-big">½</div><div class="pill-sub">0.5 kg</div></button>
+        <button class="pill active" onclick="setWeight(this,'1kg',200)"><div class="pill-big">1</div><div class="pill-sub">1.0 kg</div></button>
+        <button class="pill" onclick="setWeight(this,'1.5kg',400)"><div class="pill-big">1½</div><div class="pill-sub">1.5 kg</div></button>
+        <button class="pill" onclick="setWeight(this,'2kg',700)"><div class="pill-big">2</div><div class="pill-sub">2.0 kg</div></button>
+      </div>
+    </div>
+
+    <!-- Finishing -->
+    <div>
+      <div class="sh"><div class="sh-dot"></div><div class="sh-text">Finishing Touches</div><div class="sh-line"></div></div>
+      <div class="touches-grid" id="cs-touches">
+        <button class="tchip" data-k="goldLeaf" onclick="setTouch(this,'goldLeaf',80)">Gold Leaf</button>
+        <button class="tchip" data-k="flowers" onclick="setTouch(this,'flowers',50)">Edible Flowers</button>
+        <button class="tchip" data-k="customMsg" onclick="setTouch(this,'customMsg',0)">Custom Message</button>
+        <button class="tchip" data-k="fauxBalls" onclick="setTouch(this,'fauxBalls',60)">Faux Balls</button>
+        <button class="tchip" data-k="chocDrips" onclick="setTouch(this,'chocDrips',50)">Chocolate Drips</button>
+        <button class="tchip" data-k="hbd" onclick="setTouch(this,'hbd',90)">Happy Birthday Topper</button>
+        <button class="tchip" id="toy-btn" onclick="toggleToys(this)">Toys</button>
+        <button class="tchip" id="sprinkle-btn" onclick="toggleSprinkles(this)">✨ Sprinkles</button>
+        <div class="toy-sub" id="toy-sub">
+          <div class="toy-sub-lbl">Choose Theme</div>
+          <button class="topt" onclick="pickToy(this,'Car')">🚗 Car</button>
+          <button class="topt" onclick="pickToy(this,'Animals')">🦁 Animals</button>
+          <button class="topt" onclick="pickToy(this,'Avengers')">⚡ Avengers</button>
+          <button class="topt" onclick="pickToy(this,'Princess')">👑 Princess</button>
+          <button class="topt" onclick="pickToy(this,'Dinosaur')">🦕 Dinosaur</button>
+          <button class="topt" onclick="pickToy(this,'Unicorn')">🦄 Unicorn</button>
+        </div>
+        <div class="toy-sub" id="sprinkle-sub">
+          <div class="toy-sub-lbl">Sprinkle Colour</div>
+          <button class="sopt topt active" onclick="pickSprinkle(this,0xd4a820)">✦ Gold</button>
+          <button class="sopt topt" onclick="pickSprinkle(this,0xc8c8d0)">◆ Silver</button>
+          <button class="sopt topt" onclick="pickSprinkle(this,0xffffff)">◆ White</button>
+          <button class="sopt topt" onclick="pickSprinkle(this,0x60a8e0)">◆ Blue</button>
+          <button class="sopt topt" onclick="pickSprinkle(this,0xe04040)">◆ Red</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Name on Cake -->
+    <div>
+      <div class="sh"><div class="sh-dot"></div><div class="sh-text">Name on Cake</div><div class="sh-line"></div></div>
+      <div class="name-input-wrap">
+        <span class="name-input-icon">✍️</span>
+        <input class="name-input" id="cake-name-input" type="text" maxlength="18"
+          placeholder="e.g. Happy Birthday Diya"
+          oninput="setName(this.value)"/>
+        <span class="name-char-count" id="name-cc">0/18</span>
+      </div>
+      <div class="placement-row">
+        <button class="pplace active" onclick="setPlacement(this,'top')">
+          <span class="pplace-icon">🎂</span>
+          Top
+          <span class="pplace-sub">On surface</span>
+        </button>
+        <button class="pplace" onclick="setPlacement(this,'front')">
+          <span class="pplace-icon">◻️</span>
+          Front Side
+          <span class="pplace-sub">Facing you</span>
+        </button>
+        <button class="pplace" onclick="setPlacement(this,'board')">
+          <span class="pplace-icon">🟫</span>
+          Base Board
+          <span class="pplace-sub">Gold board</span>
+        </button>
+      </div>
+    </div>
+    <!-- Delivery Date -->
+    <div>
+      <div class="sh"><div class="sh-dot"></div><div class="sh-text">Delivery Date</div><div class="sh-line"></div></div>
+      <div style="position:relative">
+        <input type="date" id="cake-delivery-date" min=""
+          style="width:100%;background:var(--panel-raised);border:1px solid var(--border);padding:13px 14px;color:var(--text);font-family:'Jost',sans-serif;font-size:13px;outline:none;color-scheme:dark;-webkit-text-fill-color:transparent"
+          oninput="this.style.webkitTextFillColor='var(--text)';document.getElementById('cake-date-ph').style.display='none';document.getElementById('cake-date-err').style.display='none'">
+          <div id="cake-date-ph" style="position:absolute;top:50%;left:14px;transform:translateY(-50%);font-size:13px;color:var(--faint);pointer-events:none">
+              📅 Select delivery date
+            </div>
+      </div>
+      <div id="cake-date-err" style="display:none;font-size:10px;color:#ff6b6b;margin-top:6px;letter-spacing:.05em">⚠️ Please select a date at least 7 days from today</div>
+    </div>
+    <!-- Quantity -->
+    <div>
+      <div class="sh"><div class="sh-dot"></div><div class="sh-text">Quantity</div><div class="sh-line"></div></div>
+      <div class="qty-row">
+        <button class="qbtn" onclick="setQty(-1)">−</button>
+        <div class="qval" id="qval">1</div>
+        <button class="qbtn" onclick="setQty(1)">+</button>
+      </div>
+    </div>
+
+    <!-- Price + CTA -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="price-block">
+        <div class="price-lbl">Total Price</div>
+        <div class="price-amount"><span class="sym">₹</span><span id="pnum">0</span></div>
+      </div>
+      <button class="cta" onclick="addCart()">Add to Cart</button>
+    </div>
+
+  </div>
+  </div>
+    </div>
+
+    <!-- ═══ CUSTOM ORDER ═══ -->
+    <div class="page" id="page-custom-order">
+      <!-- Header -->
+      <!-- HERO HEADER -->
+      <div style="position:relative;overflow:hidden;min-height:220px;">
+        <!-- Photo background focused on cake table -->
+        <img src="https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object/public/product-images/diya.jpeg"
+          style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 75%">
+
+        <!-- Dark overlay for readability -->
+        <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(10,0,25,.88) 0%,rgba(60,5,80,.75) 45%,rgba(0,0,0,.3) 100%)"></div>
+        <!-- Animated blobs -->
+        <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none">
+          <div style="position:absolute;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(255,180,255,.18),transparent 70%);top:-60px;right:-40px;animation:blobDrift 6s ease-in-out infinite"></div>
+          <div style="position:absolute;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(200,100,255,.15),transparent 70%);bottom:10px;left:-30px;animation:blobDrift 8s ease-in-out infinite reverse"></div>
+          <div style="position:absolute;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,rgba(255,220,100,.12),transparent 70%);top:50%;left:40%;animation:blobDrift 5s ease-in-out infinite 2s"></div>
+        </div>
+
+        <!-- Shimmer lines -->
+        <div style="position:absolute;inset:0;pointer-events:none">
+          <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent)"></div>
+          <div style="position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent)"></div>
+        </div>
+
+        <!-- Noise grain texture -->
+        <div style="position:absolute;inset:0;opacity:.04;background-image:url('data:image/svg+xml,%3Csvg viewBox=%220 0 256 256%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.9%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E');pointer-events:none"></div>
+
+        <!-- Back button -->
+         <!--
+        <div class="back" onclick="goBack()" style="position:absolute;top:calc(14px + env(safe-area-inset-top));left:16px;width:36px;height:36px;background:rgba(255,255,255,.12);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.2);box-shadow:0 4px 16px rgba(0,0,0,.2)">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>-->
+
+        <!-- Content -->
+        <div style="position:relative;z-index:2;padding:calc(4px + env(safe-area-inset-top)) 22px 24px">
+
+          <!-- Badge pill -->
+          <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.12);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2);border-radius:20px;padding:4px 12px;margin-bottom:12px">
+            <span style="width:6px;height:6px;border-radius:50%;background:#ff9de2;display:inline-block;animation:pulse 1.5s infinite"></span>
+            <span style="font-size:10px;font-weight:700;color:rgba(255,255,255,.9);letter-spacing:1.5px;text-transform:uppercase">Made to Order</span>
+          </div>
+
+          <!-- Title -->
+          <div style="font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:700;color:#fff;line-height:1.15;margin-bottom:6px;letter-spacing:-.3px">
+            Custom Brownie<br><span style="font-style:italic;color:#f9c8ff">Creations</span>
+          </div>
+
+          <!-- Subtitle -->
+          <div style="font-size:12px;color:rgba(255,255,255,.65);margin-bottom:16px;line-height:1.6">
+            Birthday · Anniversary · Baby Shower<br>Designed & baked just for you 🍫
+          </div>
+
+          <!-- Feature chips -->
+          <div style="display:flex;gap:7px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:4px;background:rgba(255,255,255,.1);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:5px 10px">
+              <span style="font-size:11px">📅</span><span style="font-size:10px;font-weight:600;color:rgba(255,255,255,.85)">Book 7 days ahead</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom fade -->
+        <div style="position:absolute;bottom:0;left:0;right:0;height:32px;background:linear-gradient(to bottom,transparent,var(--dark));pointer-events:none"></div>
+      </div>
+
+      <!-- Add keyframes if not already present -->
+      <style>
+      @keyframes floatY {
+        0%,100% { transform: translateY(0px) rotate(-4deg); }
+        50%      { transform: translateY(-12px) rotate(4deg); }
+      }
+      @keyframes blobDrift {
+        0%,100% { transform: translate(0,0) scale(1); }
+        50%      { transform: translate(-15px,20px) scale(1.1); }
+      }
+    .cs-studio-inner {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    padding-top: calc(60px + env(safe-area-inset-top));
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+    }
+    .cs-canvas-wrap {
+    height: 55vw;
+    min-height: 240px;
+    max-height: 320px;
+    position: relative;
+    flex-shrink: 0;
+    }
+    .cs-panel {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 18px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    background: #160c05;
+    }
+
+      </style>
+    <div style="margin-top:10px" id="flavour-base-wrap">
+
+  <!-- Shown when nothing selected yet -->
+        <div id="fbv-empty-hint" style="display:flex;align-items:center;gap:8px;padding:10px 13px;background:rgba(110,9,119,.06);border:1px dashed rgba(110,9,119,.25);border-radius:12px;cursor:pointer" onclick="openFlavourSheet()">
+          <span style="font-size:16px">🥜</span>
+          <div style="flex:1">
+            <div style="font-size:11px;font-weight:700;color:var(--pl)">Add Loaded Base <span style="font-weight:400;color:var(--faint)">(optional)</span></div>
+            <div style="font-size:10px;color:var(--faint);margin-top:1px">Nuts · Seeds · Hazelnut · Walnut · Dark Chips</div>
+          </div>
+          <div style="font-size:11px;color:var(--p);font-weight:700">+ Add →</div>
+        </div>
+
+        <!-- Shown after selection -->
+        <div id="fbv-selected-badge" style="display:none;align-items:center;gap:10px;padding:11px 14px;background:rgba(110,9,119,.1);border:1.5px solid rgba(110,9,119,.3);border-radius:12px;cursor:pointer" onclick="openFlavourSheet()">
+          <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--p),var(--p2));display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🥜</div>
+          <div style="flex:1">
+            <div style="font-size:10px;color:var(--faint);letter-spacing:.5px;text-transform:uppercase;margin-bottom:2px">Loaded Base</div>
+            <div style="font-size:13px;font-weight:700;color:var(--white)" id="fbv-badge-name">Plain Classic</div>
+          </div>
+          <div style="font-size:10px;color:var(--pl);font-weight:600;border:1px solid rgba(110,9,119,.3);padding:4px 10px;border-radius:20px">Change</div>
+        </div>
+
+      </div>
+      <div style="padding:18px 22px;display:flex;flex-direction:column;gap:20px;padding-bottom:30px">
+
+        <!-- OCCASION -->
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Occasion</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px" id="occasion-grid">
+            <div class="cust-chip on" data-group="occasion" data-val="Birthday" onclick="selChip(this,'occasion')" style="padding:10px 6px;border-radius:12px;background:rgba(107,47,206,.15);border:1.5px solid var(--p);text-align:center;cursor:pointer">
+              <div style="font-size:20px;margin-bottom:4px">🎂</div><div style="font-size:11px;font-weight:600;color:var(--pl)">Birthday</div>
+            </div>
+            <div class="cust-chip" data-group="occasion" data-val="Anniversary" onclick="selChip(this,'occasion')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+              <div style="font-size:20px;margin-bottom:4px">💑</div><div style="font-size:11px;font-weight:600;color:var(--dim)">Anniversary</div>
+            </div>
+            <div class="cust-chip" data-group="occasion" data-val="Baby Shower" onclick="selChip(this,'occasion')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+              <div style="font-size:20px;margin-bottom:4px">👶</div><div style="font-size:11px;font-weight:600;color:var(--dim)">Baby Shower</div>
+            </div>
+            <div class="cust-chip" data-group="occasion" data-val="My Own" onclick="selChip(this,'occasion');toggleOccasionInput(this)" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+              <div style="font-size:20px;margin-bottom:4px">✨</div><div style="font-size:11px;font-weight:600;color:var(--dim)">My Own</div>
+          </div>
+          </div>
+        </div>
+        <div id="occasion-custom-wrap" style="display:none;margin-top:10px">
+            <input type="text" id="occasion-custom-input" maxlength="30"
+              placeholder="e.g. Retirement, Farewell, Festival..."
+              style="width:100%;background:rgba(255,255,255,.06);border:1.5px solid var(--p);
+              border-radius:12px;padding:12px 14px;color:var(--white);
+              font-family:'DM Sans',sans-serif;font-size:13px;outline:none"
+              oninput="customSelections.occasion = this.value.trim() || 'My Own'">
+            <div style="font-size:10px;color:var(--faint);margin-top:4px">Max 30 characters</div>
+        </div>
+
+        <!-- SHAPE -->
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Shape</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px">
+            <div class="cust-chip" data-group="shape" data-val="Square" onclick="selChip(this,'shape')" style="padding:10px 4px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+              <div style="font-size:18px;margin-bottom:3px">■</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Square</div>
+            </div>
+            <div class="cust-chip" data-group="shape" data-val="Round" onclick="selChip(this,'shape')" style="padding:10px 4px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+              <div style="font-size:18px;margin-bottom:3px">⬤</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Round</div>
+            </div>
+            <div class="cust-chip" data-group="shape" data-val="Heart" onclick="selChip(this,'shape')" style="padding:10px 4px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+              <div style="font-size:18px;margin-bottom:3px">♥</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Heart</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- THEME -->
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Theme</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <div class="cust-chip on" data-group="theme" data-val="Floral" onclick="selChip(this,'theme')" style="padding:10px 6px;border-radius:12px;background:rgba(107,47,206,.15);border:1.5px solid var(--p);text-align:center;cursor:pointer">
+              <div style="font-size:20px;margin-bottom:4px">🌸</div><div style="font-size:11px;font-weight:600;color:var(--pl)">Fairy</div>
+            </div>
+            <div class="cust-chip" data-group="theme" data-val="Jungle" onclick="selChip(this,'theme')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+              <div style="font-size:20px;margin-bottom:4px">🌿</div><div style="font-size:11px;font-weight:600;color:var(--dim)">Jungle</div>
+            </div>
+            <div class="cust-chip" data-group="theme" data-val="Avengers" onclick="selChip(this,'theme')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+              <div style="font-size:20px;margin-bottom:4px">🦸</div><div style="font-size:11px;font-weight:600;color:var(--dim)">Avengers</div>
+            </div>
+            <div class="cust-chip" data-group="theme" data-val="Princess" onclick="selChip(this,'theme')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+              <div style="font-size:20px;margin-bottom:4px">👑</div><div style="font-size:11px;font-weight:600;color:var(--dim)">Prince/Princess</div>
+            </div>
+            <div class="cust-chip" data-group="theme" data-val="Galaxy" onclick="selChip(this,'theme')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+              <div style="font-size:20px;margin-bottom:4px">🌌</div><div style="font-size:11px;font-weight:600;color:var(--dim)">Galaxy</div>
+            </div>
+            <!--
+            <div class="cust-chip" data-group="theme" data-val="Minimalist" onclick="selChip(this,'theme')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+              <div style="font-size:20px;margin-bottom:4px">◾</div><div style="font-size:11px;font-weight:600;color:var(--dim)">Minimal</div>
+            </div>-->
+            <div class="cust-chip" data-group="theme" data-val="Sports" onclick="selChip(this,'theme')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+              <div style="font-size:20px;margin-bottom:4px">⚽</div><div style="font-size:11px;font-weight:600;color:var(--dim)">Sports</div>
+            </div>
+            <div class="cust-chip" data-group="theme" data-val="Custom" onclick="selChip(this,'theme')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+              <div style="font-size:20px;margin-bottom:4px">🎨</div><div style="font-size:11px;font-weight:600;color:var(--dim)">My Own</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- WEIGHT / KG -->
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Weight (KG)</div>
+          <div style="font-size:11px;color:var(--faint);margin-bottom:10px">Custom brownies are made by weight · 1 kg serves approx 8–10 pieces</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <div class="cust-chip on" data-group="serves" data-val="0.5 kg" onclick="selChip(this,'serves')" style="padding:12px 6px;border-radius:12px;background:rgba(107,47,206,.15);border:1.5px solid var(--p);text-align:center;cursor:pointer">
+              <div style="font-size:14px;font-weight:700;color:var(--pl)">½ kg</div><div style="font-size:10px;color:var(--dim);margin-top:2px">~4–5 pcs</div>
+            </div>
+            <div class="cust-chip" data-group="serves" data-val="1 kg" onclick="selChip(this,'serves')" style="padding:12px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+              <div style="font-size:14px;font-weight:700;color:var(--white)">1 kg</div><div style="font-size:10px;color:var(--dim);margin-top:2px">~8–10 pcs</div>
+            </div>
+            <div class="cust-chip" data-group="serves" data-val="1.5 kg" onclick="selChip(this,'serves')" style="padding:12px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+              <div style="font-size:14px;font-weight:700;color:var(--white)">1.5 kg</div><div style="font-size:10px;color:var(--dim);margin-top:2px">~12–15 pcs</div>
+            </div>
+            <div class="cust-chip" data-group="serves" data-val="2 kg" onclick="selChip(this,'serves')" style="padding:12px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+              <div style="font-size:14px;font-weight:700;color:var(--white)">2 kg</div><div style="font-size:10px;color:var(--dim);margin-top:2px">~16–20 pcs</div>
+            </div>
+            <div class="cust-chip" data-group="serves" data-val="3 kg" onclick="selChip(this,'serves')" style="padding:12px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+              <div style="font-size:14px;font-weight:700;color:var(--white)">3 kg</div><div style="font-size:10px;color:var(--dim);margin-top:2px">~24–30 pcs</div>
+            </div>
+            <div class="cust-chip" data-group="serves" data-val="5 kg+" onclick="selChip(this,'serves')" style="padding:12px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+              <div style="font-size:14px;font-weight:700;color:var(--white)">5 kg+</div><div style="font-size:10px;color:var(--dim);margin-top:2px">Bulk / Event</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- FLAVOUR BASE -->
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Flavour Base</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="cust-chip on" data-group="flavour" data-val="Classic Dark Chocolate" onclick="selChip(this,'flavour')" style="padding:12px;border-radius:12px;background:rgba(107,47,206,.15);border:1.5px solid var(--p);cursor:pointer">
+              <div style="font-size:12px;font-weight:700;color:var(--pl)">Classic Dark</div>
+              <div style="font-size:10px;color:var(--dim);margin-top:2px">Rich & fudgy</div>
+              <!-- Loaded base indicator — shown inside chip -->
+              <div id="fbv-inline-classic" onclick="event.stopPropagation();openFlavourSheet()"
+                style="margin-top:6px;padding:4px 8px;border-radius:8px;
+                background:rgba(110,9,119,.12);border:1px dashed rgba(110,9,119,.3);
+                font-size:9px;font-weight:700;color:var(--pl);text-align:center">
+                🥜 + Choose loaded base
+              </div>
+            </div>
+            <div class="cust-chip" data-group="flavour" data-val="Couverture Belgian" onclick="selChip(this,'flavour')" style="padding:12px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer">
+              <div style="font-size:12px;font-weight:700;color:var(--white)">Couverture</div>
+              <div style="font-size:10px;color:var(--dim);margin-top:2px">Premium Belgian</div>
+              <div id="fbv-inline-couverture" onclick="event.stopPropagation();openFlavourSheet()"
+                style="display:none;margin-top:6px;padding:4px 8px;border-radius:8px;
+                background:rgba(110,9,119,.12);border:1px dashed rgba(110,9,119,.3);
+                font-size:9px;font-weight:700;color:var(--pl);text-align:center">
+                🥜 + Choose loaded base
+              </div>
+            </div>
+            <div class="cust-chip" data-group="flavour" data-val="Double Chocolate" onclick="selChip(this,'flavour')" style="padding:12px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer">
+              <div style="font-size:12px;font-weight:700;color:var(--white)">Double Chocolate</div>
+              <div style="font-size:10px;color:var(--dim);margin-top:2px">Dark + Milk</div>
+            </div>
+            <div class="cust-chip" data-group="flavour" data-val="Triple Chocolate" onclick="selChip(this,'flavour')" style="padding:12px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer">
+              <div style="font-size:12px;font-weight:700;color:var(--white)">Triple Choco</div>
+              <div style="font-size:10px;color:var(--dim);margin-top:2px">Dark + Milk + White</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TRIPS & DRIZZLE -->
+        <!-- TRIPS & DRIZZLE -->
+        <div>
+          <!-- Animated drizzle header -->
+          <div style="position:relative;border-radius:16px;overflow:hidden;margin-bottom:14px;background:linear-gradient(135deg,#1a0030,#3d0060,#5c0872);padding:16px 14px 14px">
+            
+            <!-- Animated drizzle lines -->
+            <div style="position:absolute;inset:0;pointer-events:none;overflow:hidden">
+              <div style="position:absolute;top:-10px;left:10%;width:2px;height:60px;background:linear-gradient(to bottom,transparent,rgba(255,200,100,.6),transparent);border-radius:2px;animation:drizzleFall 2s ease-in-out infinite 0s"></div>
+              <div style="position:absolute;top:-10px;left:22%;width:1.5px;height:50px;background:linear-gradient(to bottom,transparent,rgba(255,150,50,.5),transparent);border-radius:2px;animation:drizzleFall 2.4s ease-in-out infinite .3s"></div>
+              <div style="position:absolute;top:-10px;left:38%;width:2px;height:70px;background:linear-gradient(to bottom,transparent,rgba(200,100,255,.5),transparent);border-radius:2px;animation:drizzleFall 1.8s ease-in-out infinite .6s"></div>
+              <div style="position:absolute;top:-10px;left:55%;width:1.5px;height:55px;background:linear-gradient(to bottom,transparent,rgba(255,200,100,.6),transparent);border-radius:2px;animation:drizzleFall 2.2s ease-in-out infinite .2s"></div>
+              <div style="position:absolute;top:-10px;left:68%;width:2px;height:65px;background:linear-gradient(to bottom,transparent,rgba(255,150,50,.5),transparent);border-radius:2px;animation:drizzleFall 2.6s ease-in-out infinite .8s"></div>
+              <div style="position:absolute;top:-10px;left:80%;width:1.5px;height:45px;background:linear-gradient(to bottom,transparent,rgba(200,100,255,.4),transparent);border-radius:2px;animation:drizzleFall 2s ease-in-out infinite .4s"></div>
+              <div style="position:absolute;top:-10px;left:92%;width:2px;height:60px;background:linear-gradient(to bottom,transparent,rgba(255,200,100,.5),transparent);border-radius:2px;animation:drizzleFall 2.3s ease-in-out infinite 1s"></div>
+
+              <!-- Drizzle pool dots at bottom -->
+              <div style="position:absolute;bottom:6px;left:10%;width:6px;height:3px;border-radius:50%;background:rgba(255,200,100,.4);animation:drizzlePool 2s ease-in-out infinite 0s"></div>
+              <div style="position:absolute;bottom:6px;left:38%;width:8px;height:3px;border-radius:50%;background:rgba(200,100,255,.3);animation:drizzlePool 1.8s ease-in-out infinite .6s"></div>
+              <div style="position:absolute;bottom:6px;left:68%;width:6px;height:3px;border-radius:50%;background:rgba(255,150,50,.4);animation:drizzlePool 2.2s ease-in-out infinite .2s"></div>
+            </div>
+
+            <!-- Grain overlay -->
+            <div style="position:absolute;inset:0;opacity:.05;background-image:url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22n%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.85%22 numOctaves=%224%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23n)%22/%3E%3C/svg%3E');pointer-events:none"></div>
+
+            <!-- Content -->
+            <div style="position:relative;z-index:2;display:flex;align-items:center;gap:10px">
+              <div style="width:44px;height:44px;flex-shrink:0;position:relative">
+                <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <!-- Piping bag body -->
+                  <path d="M8 6 L36 6 L36 10 Q36 12 34 13 L26 18 L26 24 Q26 26 24 27 L22 28 L20 27 Q18 26 18 24 L18 18 L10 13 Q8 12 8 10 Z" fill="rgba(255,255,255,0.25)" stroke="rgba(255,255,255,0.4)" stroke-width="1"/>
+                  <!-- Bag twist top -->
+                  <path d="M14 6 Q22 3 30 6" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+                  <!-- Bag clip/tie -->
+                  <rect x="16" y="5" width="12" height="3" rx="1.5" fill="rgba(255,200,100,0.7)"/>
+                  <!-- Nozzle -->
+                  <path d="M20 27 L21 32 L22 34 L23 32 L24 27" fill="rgba(255,255,255,0.3)" stroke="rgba(255,255,255,0.4)" stroke-width="0.8"/>
+                  <!-- Chocolate drop 1 — falling -->
+                  <ellipse cx="22" cy="37" rx="2" ry="2.5" fill="rgba(255,180,60,0.9)" style="animation:dropFall1 1.8s ease-in infinite"/>
+                  <!-- Chocolate drop 2 — mid fall -->
+                  <ellipse cx="22" cy="41" rx="1.5" ry="1.8" fill="rgba(255,160,40,0.7)" style="animation:dropFall2 1.8s ease-in infinite 0.4s"/>
+                  <!-- Shine on bag -->
+                  <path d="M12 8 Q14 10 13 14" stroke="rgba(255,255,255,0.3)" stroke-width="1" stroke-linecap="round" fill="none"/>
+                </svg>
+                <style>
+                @keyframes dropFall1 {
+                  0%   { transform:translateY(0);   opacity:1;   }
+                  70%  { transform:translateY(4px); opacity:1;   }
+                  100% { transform:translateY(8px); opacity:0;   }
+                }
+                @keyframes dropFall2 {
+                  0%   { transform:translateY(0);   opacity:.7; }
+                  100% { transform:translateY(6px); opacity:0;  }
+                }
+                </style>
+              </div>
+              <div>
+                <div style="font-size:13px;font-weight:700;color:#fff;letter-spacing:.3px">Drips & Drizzle</div>
+                <div style="font-size:10px;color:rgba(255,255,255,.6);margin-top:2px">Choose your topping drizzle style</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Drizzle keyframes -->
+          <style>
+          @keyframes drizzleFall {
+            0%   { transform:translateY(-20px); opacity:0; }
+            20%  { opacity:1; }
+            80%  { opacity:1; }
+            100% { transform:translateY(90px); opacity:0; }
+          }
+          @keyframes drizzlePool {
+            0%,100% { transform:scaleX(1); opacity:.4; }
+            50%      { transform:scaleX(1.6); opacity:.7; }
+          }
+        input[type="date"]::-webkit-datetime-edit,
+        input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+        input[type="date"]::-webkit-datetime-edit-text,
+        input[type="date"]::-webkit-datetime-edit-month-field,
+        input[type="date"]::-webkit-datetime-edit-day-field,
+        input[type="date"]::-webkit-datetime-edit-year-field {
+          color: var(--white);
+          -webkit-text-fill-color: var(--white);
+        }
+        </style>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="cust-chip on" data-group="drizzle" data-val="None" onclick="selChip(this,'drizzle')" style="padding:12px;border-radius:12px;background:rgba(107,47,206,.15);border:1.5px solid var(--p);cursor:pointer;text-align:center">
+              <div style="font-size:11px;font-weight:700;color:var(--pl)">No Drizzle</div>
+            </div>
+            <div class="cust-chip" data-group="drizzle" data-val="Dark Ganache Drizzle" onclick="selChip(this,'drizzle')" style="padding:12px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer;text-align:center">
+              <div style="font-size:11px;font-weight:700;color:var(--white)">Dark Ganache</div>
+              <div style="font-size:9px;color:var(--dim);margin-top:2px">Rich dark drizzle</div>
+            </div>
+            <div class="cust-chip" data-group="drizzle" data-val="Nutella Drizzle" onclick="selChip(this,'drizzle')" style="padding:12px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer;text-align:center">
+              <div style="font-size:11px;font-weight:700;color:var(--white)">Nutella</div>
+              <div style="font-size:9px;color:var(--dim);margin-top:2px">Hazelnut drizzle</div>
+            </div>
+            <div class="cust-chip" data-group="drizzle" data-val="Other Drizzle" onclick="selChip(this,'drizzle')" style="padding:12px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);cursor:pointer;text-align:center">
+              <div style="font-size:11px;font-weight:700;color:var(--white)">Other</div>
+              <div style="font-size:9px;color:var(--dim);margin-top:2px">Mention in notes</div>
+            </div>
+          </div>
+        </div>
+        <!-- LAYERS -->
+
+        <!-- LAYERS -->
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Brownie Layers</div>
+          <div style="font-size:11px;color:var(--faint);margin-bottom:10px">More layers = more height, filling & drama!</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+
+            <div class="cust-chip on" data-group="layers" data-val="1" onclick="selChip(this,'layers')" style="padding:14px 6px;border-radius:12px;background:rgba(107,47,206,.15);border:1.5px solid var(--p);text-align:center;cursor:pointer">
+              <div style="display:flex;justify-content:center;margin-bottom:6px">
+                <div style="width:36px;height:10px;background:var(--p);border-radius:3px;opacity:.9"></div>
+              </div>
+              <div style="font-size:12px;font-weight:700;color:var(--pl)">Single</div>
+              <div style="font-size:9px;color:var(--faint);margin-top:2px">Classic slab</div>
+              <div style="font-size:9px;color:var(--pl);margin-top:3px;font-weight:600">Base price</div>
+            </div>
+
+            <div class="cust-chip" data-group="layers" data-val="2" onclick="selChip(this,'layers')" style="padding:14px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:2px;margin-bottom:6px">
+                <div style="width:36px;height:8px;background:var(--dim);border-radius:3px;opacity:.6"></div>
+                <div style="width:36px;height:8px;background:var(--dim);border-radius:3px;opacity:.9"></div>
+              </div>
+              <div style="font-size:12px;font-weight:700;color:var(--white)">Double</div>
+              <div style="font-size:9px;color:var(--faint);margin-top:2px">With filling</div>
+              <div style="font-size:9px;color:var(--gold);margin-top:3px;font-weight:600">+₹150/kg</div>
+            </div>
+
+            <div class="cust-chip" data-group="layers" data-val="3" onclick="selChip(this,'layers')" style="padding:14px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:2px;margin-bottom:6px">
+                <div style="width:36px;height:7px;background:var(--dim);border-radius:3px;opacity:.5"></div>
+                <div style="width:36px;height:7px;background:var(--dim);border-radius:3px;opacity:.7"></div>
+                <div style="width:36px;height:7px;background:var(--dim);border-radius:3px;opacity:.9"></div>
+              </div>
+              <div style="font-size:12px;font-weight:700;color:var(--white)">Triple</div>
+              <div style="font-size:9px;color:var(--faint);margin-top:2px">Max indulgence</div>
+              <div style="font-size:9px;color:var(--gold);margin-top:3px;font-weight:600">+₹300/kg</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- EGG PREFERENCE -->
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Egg Preference</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div class="cust-chip on" data-group="egg" data-val="Eggless" onclick="selChip(this,'egg')" style="padding:12px;border-radius:12px;background:rgba(107,47,206,.15);border:1.5px solid var(--p);text-align:center;cursor:pointer">
+              <div style="font-size:12px;font-weight:700;color:var(--pl)">💚 Eggless</div>
+            </div>
+            <div class="cust-chip" data-group="egg" data-val="With Egg" onclick="selChip(this,'egg')" style="padding:12px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+              <div style="font-size:12px;font-weight:700;color:var(--white)">❤️ With Egg</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DELIVERY DATE -->
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Delivery Date <span style="color:var(--pink)">*</span></div>
+          <div style="position:relative">
+            <input type="date" id="custom-date" min=""
+              style="width:100%;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;padding:13px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;color-scheme:light;-webkit-text-fill-color:transparent"
+              oninput="validateCustomDate(this);this.style.webkitTextFillColor='var(--white)';document.getElementById('custom-date-ph').style.display='none'">
+            <div id="custom-date-ph" style="position:absolute;top:50%;left:14px;transform:translateY(-50%);font-size:13px;color:var(--faint);pointer-events:none">
+              📅 Select delivery date
+            </div>
+          </div>
+            <div id="custom-date-msg" style="font-size:11px;color:var(--pink);margin-top:6px;display:none">⚠️ Please select a date at least 7 days from today</div>
+        </div>
+
+        <!-- ── ADD-ONS ── -->
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Add-ons & Extras</div>
+          <div style="font-size:11px;color:var(--faint);margin-bottom:12px">Choose decorative elements for your slab</div>
+
+          <!-- Faux Ball -->
+          <div style="margin-bottom:14px">
+            <div style="font-size:12px;font-weight:600;color:var(--white);margin-bottom:8px">🟡 Faux Ball Design</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+              <div class="cust-chip" data-group="Fauxball" data-val="None" onclick="selChip(this,'Fauxball')" style="padding:10px 6px;border-radius:12px;background:rgba(107,47,206,.15);border:1.5px solid var(--p);text-align:center;cursor:pointer">
+                <div style="font-size:18px;margin-bottom:3px">✕</div><div style="font-size:10px;font-weight:600;color:var(--pl)">None</div>
+              </div>
+              <!--
+              <div class="cust-chip" data-group="Fauxball" data-val="Faux Ball – 1 Corner" onclick="selChip(this,'Fauxball')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+                <div style="font-size:18px;margin-bottom:3px">🟡</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Corner Design</div>
+              </div>-->
+              <div class="cust-chip" data-group="Fauxball" data-val="Faux Balls – 4 Corners" onclick="selChip(this,'Fauxball')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+                <div style="font-size:18px;margin-bottom:3px">🟡</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Corners Design</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Butterfly -->
+          <div style="margin-bottom:14px">
+            <div style="font-size:12px;font-weight:600;color:var(--white);margin-bottom:8px">🦋 Butterfly Decoration</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+              <div class="cust-chip on" data-group="butterfly" data-val="None" onclick="selChip(this,'butterfly')" style="padding:10px 6px;border-radius:12px;background:rgba(107,47,206,.15);border:1.5px solid var(--p);text-align:center;cursor:pointer">
+                <div style="font-size:18px;margin-bottom:3px">✕</div><div style="font-size:10px;font-weight:600;color:var(--pl)">None</div>
+              </div>
+              <!--
+              <div class="cust-chip" data-group="butterfly" data-val="1 Butterfly" onclick="selChip(this,'butterfly')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+                <div style="font-size:18px;margin-bottom:3px">🦋</div><div style="font-size:10px;font-weight:600;color:var(--dim)">1 Butterfly</div>
+              </div>-->
+              <div class="cust-chip" data-group="butterfly" data-val="3 Butterflies" onclick="selChip(this,'butterfly')" style="padding:10px 6px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+                <div style="font-size:18px;margin-bottom:3px">🦋</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Butterflies</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Name Topper -->
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--white);margin-bottom:8px">✨ Name Topper</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+              <div class="cust-chip on" data-group="topper" data-val="None" onclick="selTopperChip(this,'None')" style="padding:12px;border-radius:12px;background:rgba(107,47,206,.15);border:1.5px solid var(--p);text-align:center;cursor:pointer">
+                <div style="font-size:12px;font-weight:700;color:var(--pl)">No Topper</div>
+              </div>
+              <div class="cust-chip" data-group="topper" data-val="Acrylic Topper" onclick="selTopperChip(this,'Acrylic Topper')" style="padding:12px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+                <div style="font-size:20px;margin-bottom:3px">🪟</div>
+                <div style="font-size:11px;font-weight:700;color:var(--white)">Acrylic Topper</div>
+                <div style="font-size:9px;color:var(--dim);margin-top:2px">Premium clear/gold/rose</div>
+              </div>
+              <div class="cust-chip" data-group="topper" data-val="White Chocolate Name" onclick="selTopperChip(this,'White Chocolate Name')" style="padding:12px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+                <div style="font-size:20px;margin-bottom:3px">🤍</div>
+                <div style="font-size:11px;font-weight:700;color:var(--white)">White Choco Name</div>
+                <div style="font-size:9px;color:var(--dim);margin-top:2px">Written in white chocolate</div>
+              </div>
+              <div class="cust-chip" data-group="topper" data-val="Dark Chocolate Name" onclick="selTopperChip(this,'Dark Chocolate Name')" style="padding:12px;border-radius:12px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+                <div style="font-size:20px;margin-bottom:3px">🍫</div>
+                <div style="font-size:11px;font-weight:700;color:var(--white)">Dark Choco Name</div>
+                <div style="font-size:9px;color:var(--dim);margin-top:2px">Written in dark chocolate</div>
+              </div>
+            </div>
+
+            <!-- Topper name input — shown when topper selected -->
+            <div id="topper-name-wrap" style="display:none">
+              <input type="text" id="topper-name" maxlength="20" placeholder="Name to write / engrave (e.g. Diya)" style="width:100%;background:rgba(255,255,255,.06);border:1.5px solid var(--p);border-radius:12px;padding:12px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none" oninput="updateBrowniePreview()">
+              <div style="font-size:10px;color:var(--faint);margin-top:5px">Max 20 characters</div>
+            </div>
+
+            <!-- Acrylic style — shown when acrylic selected -->
+            <div id="acrylic-style-wrap" style="display:none;margin-top:10px">
+              <div style="font-size:11px;font-weight:600;color:var(--dim);margin-bottom:8px">Acrylic Style</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+                <div class="acrylic-chip on" onclick="selAcrylic(this,'Clear')" style="padding:10px 6px;border-radius:10px;background:rgba(255,255,255,.1);border:1.5px solid rgba(255,255,255,.3);text-align:center;cursor:pointer">
+                  <div style="font-size:16px;margin-bottom:3px">💎</div><div style="font-size:10px;font-weight:600;color:var(--white)">Clear</div>
+                </div>
+                <div class="acrylic-chip" onclick="selAcrylic(this,'Gold')" style="padding:10px 6px;border-radius:10px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+                  <div style="font-size:16px;margin-bottom:3px">🥇</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Gold</div>
+                </div>
+                <div class="acrylic-chip" onclick="selAcrylic(this,'Rose Gold')" style="padding:10px 6px;border-radius:10px;background:var(--card);border:1.5px solid var(--bdr);text-align:center;cursor:pointer">
+                  <div style="font-size:16px;margin-bottom:3px">🌸</div><div style="font-size:10px;font-weight:600;color:var(--dim)">Rose Gold</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MESSAGE ON BROWNIE -->
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Message on Brownie <span style="color:var(--dim);font-weight:400;text-transform:none;letter-spacing:0">optional</span></div>
+          <input type="text" id="custom-message" maxlength="40" placeholder="e.g. Happy Birthday Diya! 🎉" style="width:100%;background:rgba(255,255,255,.06);border:1.5px solid var(--bdr);border-radius:12px;padding:13px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none" oninput="document.getElementById('msg-count').textContent=(40-this.value.length)+' left';updateBrowniePreview()">
+          <div style="font-size:10px;color:var(--faint);margin-top:4px;text-align:right" id="msg-count">40 left</div>
+        </div>
+
+        <!-- SPECIAL INSTRUCTIONS -->
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px">Special Instructions <span style="color:var(--dim);font-weight:400;text-transform:none;letter-spacing:0">optional</span></div>
+          <textarea id="custom-notes" rows="3" placeholder="Any specific colours, design details, allergens, or reference images..." style="width:100%;background:rgba(255,255,255,.06);border:1.5px solid var(--bdr);border-radius:12px;padding:13px 14px;color:var(--white);font-family:'DM Sans',sans-serif;font-size:13px;outline:none;resize:none"></textarea>
+        </div>
+        <!-- LIVE PREVIEW CARD -->
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:16px;margin-bottom:14px">
+          <div style="font-size:10px;font-weight:700;color:var(--faint);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px">Your Brownie Preview</div>
+          <div style="display:flex;gap:14px;align-items:center">
+            <!-- SVG brownie shape preview 
+            <!-- <div style="flex-shrink:0">
+              <canvas id="brownie-canvas" width="100" height="100" style="border-radius:12px"></canvas>
+            </div>-->
+            <!-- Details -->
+            <div style="flex:1;display:flex;flex-direction:column;gap:5px">
+              <div style="font-family:'Cormorant Garamond',serif;font-size:17px;font-weight:700;color:var(--white)" id="prev-title">Birthday Brownie Slab</div>
+              <div style="display:flex;flex-wrap:wrap;gap:5px" id="prev-tags">
+                <span style="font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(107,47,206,.2);color:var(--pl)">Rectangle</span>
+                <span style="font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(255,255,255,.07);color:var(--dim)">Floral</span>
+                <span style="font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(34,197,94,.12);color:#4ADE80">💚 Eggless</span>
+              </div>
+              <div style="font-size:11px;color:var(--dim)" id="prev-serves">Serves 6–8 people</div>
+              <div style="font-size:11px;color:var(--gold)" id="prev-price">Est. ₹600 – ₹900</div>
+            </div>
+          </div>
+          <!-- Similarity hint -->
+          <!--
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.06)">
+            <div style="font-size:10px;color:var(--faint);margin-bottom:6px;letter-spacing:.5px">YOUR BROWNIE WILL LOOK SIMILAR TO</div>
+            <div style="display:flex;gap:8px;overflow-x:auto;scrollbar-width:none" id="prev-similar">
+              
+            </div>
+          </div> -->
+        </div>
+
+        <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:11px 14px;font-size:11px;color:var(--dim);line-height:1.7">
+          ⏰ Book at least <strong style="color:var(--white)">7 days in advance</strong> · We'll confirm via WhatsApp
+        </div>
+
+        <!-- SUBMIT -->
+        <div style="background:rgba(107,47,206,.08);border:1px solid rgba(107,47,206,.2);border-radius:14px;padding:13px 14px;font-size:11px;color:var(--dim);line-height:1.7;margin-bottom:4px">
+          🎂 Custom orders are quoted individually · We'll WhatsApp you a price within 2 hrs of enquiry
+        </div>
+        <button id="custom-submit-btn" onclick="submitCustomOrder()" style="width:100%;padding:16px;background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:700;border:none;border-radius:16px;cursor:pointer">
+          📲 Submit
+        </button>
+      </div>
+    </div><!-- /custom-order -->
+
+    <!-- FLAVOUR BASE SHEET -->
+    <div id="fbv-overlay" onclick="cancelFlavourSheet()"
+      style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.55);z-index:2500;backdrop-filter:blur(4px)"></div>
+
+    <div id="fbv-sheet"
+      style="display:none;position:absolute;bottom:0;left:0;right:0;
+      background:#fff;border-radius:20px 20px 0 0;z-index:2501;
+      padding:0 0 28px;font-family:'DM Sans',sans-serif;overflow:hidden">
+
+      <!-- Purple gradient top strip -->
+      <div style="height:3px;background:linear-gradient(90deg,#6e0977,#9c0ca1,#c84fd0)"></div>
+
+      <!-- Header -->
+      <div style="padding:16px 18px 12px;border-bottom:1px solid rgba(110,9,119,.08)">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(110,9,119,.4);margin-bottom:4px">Classic Dark · Couverture</div>
+            <div style="font-size:17px;font-weight:700;color:#1a0820;line-height:1.2">Pick your <span style="color:#6e0977;font-style:italic">loaded base</span></div>
+          </div>
+          <div onclick="cancelFlavourSheet()"
+            style="width:34px;height:34px;border-radius:50%;background:rgba(110,9,119,.07);
+            border:1px solid rgba(110,9,119,.15);display:flex;align-items:center;
+            justify-content:center;font-size:14px;cursor:pointer;color:#6e0977">✕</div>
+        </div>
+      </div>
+
+      <!-- Options Grid -->
+      <div style="padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+
+        <div class="fbv-opt" data-val="Plain" onclick="selFbv(this)"
+          style="padding:12px 11px;border-radius:14px;background:linear-gradient(135deg,rgba(110,9,119,.1),rgba(156,12,161,.05));border:1.5px solid #6e0977;cursor:pointer;position:relative;transition:all .2s">
+          <div class="fbv-chk" style="position:absolute;top:8px;right:8px;width:16px;height:16px;border-radius:50%;background:#6e0977;border:1.5px solid #6e0977;display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff">✓</div>
+          <div style="font-size:20px;margin-bottom:6px">🍫</div>
+          <div class="fbv-title" style="font-size:12px;font-weight:700;color:#6e0977;margin-bottom:2px;line-height:1.2">Plain Classic</div>
+          <div style="font-size:9px;color:rgba(110,9,119,.5);line-height:1.4">Pure chocolate, no add-ins</div>
+        </div>
+
+        <div class="fbv-opt" data-val="Nuts Loaded" onclick="selFbv(this)"
+          style="padding:12px 11px;border-radius:14px;background:#fff;border:1px solid rgba(110,9,119,.12);cursor:pointer;position:relative;transition:all .2s">
+          <div class="fbv-chk" style="position:absolute;top:8px;right:8px;width:16px;height:16px;border-radius:50%;background:transparent;border:1.5px solid rgba(110,9,119,.2);display:flex;align-items:center;justify-content:center;font-size:9px;color:transparent">✓</div>
+          <div style="font-size:20px;margin-bottom:6px">🥜</div>
+          <div class="fbv-title" style="font-size:12px;font-weight:700;color:#1a0820;margin-bottom:2px;line-height:1.2">Nuts Loaded</div>
+          <div style="font-size:9px;color:#888;line-height:1.4">Roasted mixed nuts</div>
+        </div>
+
+        <div class="fbv-opt" data-val="Seeds Loaded" onclick="selFbv(this)"
+          style="padding:12px 11px;border-radius:14px;background:#fff;border:1px solid rgba(110,9,119,.12);cursor:pointer;position:relative;transition:all .2s">
+          <div class="fbv-chk" style="position:absolute;top:8px;right:8px;width:16px;height:16px;border-radius:50%;background:transparent;border:1.5px solid rgba(110,9,119,.2);display:flex;align-items:center;justify-content:center;font-size:9px;color:transparent">✓</div>
+          <div style="font-size:20px;margin-bottom:6px">🌿</div>
+          <div class="fbv-title" style="font-size:12px;font-weight:700;color:#1a0820;margin-bottom:2px;line-height:1.2">Seeds Loaded</div>
+          <div style="font-size:9px;color:#888;line-height:1.4">Healthy seeds blend</div>
+        </div>
+
+        <div class="fbv-opt" data-val="Hazelnut Loaded" onclick="selFbv(this)"
+          style="padding:12px 11px;border-radius:14px;background:#fff;border:1px solid rgba(110,9,119,.12);cursor:pointer;position:relative;transition:all .2s">
+          <div class="fbv-chk" style="position:absolute;top:8px;right:8px;width:16px;height:16px;border-radius:50%;background:transparent;border:1.5px solid rgba(110,9,119,.2);display:flex;align-items:center;justify-content:center;font-size:9px;color:transparent">✓</div>
+          <div style="font-size:20px;margin-bottom:6px">🌰</div>
+          <div class="fbv-title" style="font-size:12px;font-weight:700;color:#1a0820;margin-bottom:2px;line-height:1.2">Hazelnut Loaded</div>
+          <div style="font-size:9px;color:#888;line-height:1.4">Roasted hazelnuts</div>
+        </div>
+
+        <div class="fbv-opt" data-val="Walnut Loaded" onclick="selFbv(this)"
+          style="padding:12px 11px;border-radius:14px;background:#fff;border:1px solid rgba(110,9,119,.12);cursor:pointer;position:relative;transition:all .2s">
+          <div class="fbv-chk" style="position:absolute;top:8px;right:8px;width:16px;height:16px;border-radius:50%;background:transparent;border:1.5px solid rgba(110,9,119,.2);display:flex;align-items:center;justify-content:center;font-size:9px;color:transparent">✓</div>
+          <div style="font-size:20px;margin-bottom:6px">🪨</div>
+          <div class="fbv-title" style="font-size:12px;font-weight:700;color:#1a0820;margin-bottom:2px;line-height:1.2">Walnut Loaded</div>
+          <div style="font-size:9px;color:#888;line-height:1.4">California walnuts</div>
+        </div>
+
+        <div class="fbv-opt" data-val="Dark Choco Loaded" onclick="selFbv(this)"
+          style="padding:12px 11px;border-radius:14px;background:#fff;border:1px solid rgba(110,9,119,.12);cursor:pointer;position:relative;transition:all .2s">
+          <div class="fbv-chk" style="position:absolute;top:8px;right:8px;width:16px;height:16px;border-radius:50%;background:transparent;border:1.5px solid rgba(110,9,119,.2);display:flex;align-items:center;justify-content:center;font-size:9px;color:transparent">✓</div>
+          <div style="font-size:20px;margin-bottom:6px">🍫</div>
+          <div class="fbv-title" style="font-size:12px;font-weight:700;color:#1a0820;margin-bottom:2px;line-height:1.2">Dark Choco Loaded</div>
+          <div style="font-size:9px;color:#888;line-height:1.4">Extra dark chips inside</div>
+        </div>
+
+      </div>
+      <!-- Selected badge -->
+      <div style="margin:0 14px 12px;display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(110,9,119,.06);border-radius:10px;border:1px solid rgba(110,9,119,.15)">
+        <div style="width:6px;height:6px;border-radius:50%;background:#6e0977;flex-shrink:0"></div>
+        <div style="font-size:11px;color:#6e0977;font-weight:600;flex:1" id="fbv-badge-lbl">Plain Classic selected</div>
+        <div style="font-size:10px;color:rgba(110,9,119,.4);font-weight:500">Edit anytime</div>
+      </div>
+
+      <!-- Buttons -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 14px">
+        <button onclick="cancelFlavourSheet()"
+          style="padding:13px;background:transparent;border:1.5px solid rgba(110,9,119,.2);
+          color:rgba(110,9,119,.6);font-size:12px;font-weight:600;border-radius:12px;
+          cursor:pointer;font-family:'DM Sans',sans-serif">Cancel</button>
+        <button onclick="confirmFlavourBase()"
+          style="padding:13px;background:linear-gradient(135deg,#6e0977,#9c0ca1);
+          color:#fff;font-size:12px;font-weight:700;border:none;border-radius:12px;
+          cursor:pointer;font-family:'DM Sans',sans-serif;letter-spacing:.3px">Confirm ✓</button>
+      </div>
+    </div>
