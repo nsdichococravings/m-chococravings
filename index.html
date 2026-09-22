@@ -1119,100 +1119,25 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
         <div class="greet-main" id="greet-main">What's your <em>craving</em> today?</div>
       </div>
 
-      <!-- Searches the same Treats & Sips catalog the On Store app sells from -->
-      <div class="srch">
-        <span class="srch-icon">🔍</span>
-        <input id="treats-search" type="text" placeholder="Search coffee, tea, ice cream, desserts…"
-          oninput="treatsSearch(this.value)">
-        <span id="treats-search-clear" style="font-size:16px;color:var(--faint);cursor:pointer;display:none" onclick="clearTreatsSearch()">✕</span>
-      </div>
-
-      <!-- ═══ TREATS & SIPS — beverages, ice cream, desserts (now the Home opener) ═══ -->
+      <!-- ═══ LOYALTY CARD — stamp progress ═══ -->
       <style>
-      .tr-hero{position:relative;background:linear-gradient(120deg,#231205,#3d1f05 45%,#0a2e3d 100%);padding:20px 24px 24px;overflow:hidden}
-      .tr-hero-deco{position:absolute;top:-20px;right:-20px;width:180px;height:180px;opacity:.1;pointer-events:none}
-      .tr-eyebrow{display:flex;align-items:center;gap:8px;margin-bottom:14px}
-      .tr-eyebrow-line{width:28px;height:1px;background:#ffb45c}
-      .tr-eyebrow-text{font-size:9px;font-weight:600;letter-spacing:3.5px;text-transform:uppercase;color:#ffb45c}
-      .tr-title{font-family:'Cormorant Garamond',serif;font-size:40px;font-weight:300;color:#fff;line-height:.95;letter-spacing:-1px;margin-bottom:8px}
-      .tr-title em{font-style:italic;background:linear-gradient(90deg,#ffd9a0,#fff,#cdeeff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:400}
-      .tr-tagline{font-size:11px;color:rgba(255,255,255,.65);letter-spacing:.5px;line-height:1.6;max-width:260px}
-      .tr-slider-wrap{position:relative}
-      .tr-slider{position:relative;overflow:hidden}
-      .tr-slider-track{display:flex;transition:transform .45s cubic-bezier(.16,1,.3,1)}
-      .tr-slide{flex:0 0 100%;width:100%;box-sizing:border-box;position:relative;padding:20px 24px 22px;overflow:hidden;cursor:pointer;min-height:184px}
-      .tr-slide-cta{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.95);border-radius:20px;padding:8px 16px;margin-top:14px;font-size:11px;font-weight:800;color:#2a1608}
-      .tr-slider-dots{display:flex;justify-content:center;gap:6px;padding:10px 0;background:#0a2e3d}
-      .tr-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.3);cursor:pointer;transition:all .25s}
-      .tr-dot.on{width:18px;border-radius:4px;background:#ffb45c}
-      .tr-hero-stats{display:flex;gap:0;background:#0a2e3d;border-top:1px solid rgba(255,255,255,.15);padding:14px 22px}
-      .tr-hstat{flex:1;text-align:center;padding:0 8px}
-      .tr-hstat+.tr-hstat{border-left:1px solid rgba(255,255,255,.15)}
-      .tr-hstat-n{font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:600;color:#ffd9a0;line-height:1}
-      .tr-hstat-l{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(255,255,255,.5);margin-top:3px}
-      .tr-cats-bar{display:flex;gap:6px;padding:14px 22px;overflow-x:auto;scrollbar-width:none;background:#faf8fc;border-bottom:1px solid #f0e4d8;flex-shrink:0}
-      .tr-cats-bar::-webkit-scrollbar{display:none}
-      .tr-chip{flex-shrink:0;padding:6px 14px;border:1px solid #ecd8c0;background:transparent;font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#8a6248;cursor:pointer;transition:all .2s;white-space:nowrap;border-radius:20px}
-      .tr-chip.on{background:#b8590f;border-color:#b8590f;color:#fff}
-      .tr-chip:active{transform:scale(.96)}
-      .tr-pgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px 22px 8px;background:#faf8fc}
-      .tr-card{background:#fff;border:1px solid #f0e4d8;border-radius:16px;overflow:hidden;transition:transform .15s}
-      .tr-card:active{transform:scale(.97)}
-      .tr-img{width:100%;height:88px;display:flex;align-items:center;justify-content:center;position:relative}
-      .tr-emoji{font-size:36px}
-      .tr-tag{position:absolute;top:8px;right:8px;font-size:7px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border-radius:20px;background:rgba(0,0,0,.55);color:#fff}
-      .tr-body{padding:10px 12px 12px}
-      .tr-cat{font-size:7px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#b8590f;margin-bottom:4px}
-      .tr-name{font-size:12px;font-weight:700;color:#2a1608;line-height:1.25;margin-bottom:8px;min-height:30px}
-      .tr-foot{display:flex;align-items:center;justify-content:space-between}
-      .tr-price{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:700;color:#2a1608}
-      .tr-add{width:28px;height:28px;border-radius:50%;background:transparent;border:1px solid #b8590f;color:#b8590f;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .18s;flex-shrink:0}
-      .tr-add:active{background:#b8590f;color:#fff;transform:scale(.9)}
-      .tr-acc-toast{margin:0 22px 12px;background:linear-gradient(135deg,#8a4a0f,#1c5468);padding:11px 16px;font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#fff;text-align:center;display:none;border-radius:12px}
-      #tr-loading{grid-column:1/-1;text-align:center;padding:50px 20px}
-      .tr-footer-bar{padding:16px 22px 20px;border-bottom:1px solid #f0e4d8;display:flex;align-items:center;gap:12px;background:#faf8fc}
-      .tr-fline{flex:1;height:1px;background:#f0e4d8}
-      .tr-ftxt{font-size:8px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#c0a888;white-space:nowrap}
+      .lc-card{position:relative;margin:0 16px 20px;border-radius:24px;overflow:hidden;background:linear-gradient(135deg,#2b0a35 0%,#6e0977 55%,#1a0820 100%);padding:20px 22px;cursor:pointer}
+      .lc-eyebrow{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+      .lc-eyebrow-text{font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.6)}
+      .lc-code{font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:700;color:#ffd6b0;letter-spacing:.5px}
+      .lc-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:#fff;line-height:1.1;margin-bottom:4px}
+      .lc-sub{font-size:11px;color:rgba(255,255,255,.6);margin-bottom:16px}
+      .lc-stampgrid{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;margin-bottom:14px}
+      .lc-stamp{aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;border:1px solid rgba(255,255,255,.2)}
+      .lc-stamp.filled{background:linear-gradient(135deg,#f9c8ff,#ffd6b0);color:#5c0872;font-weight:800;border-color:transparent}
+      .lc-stamp.reward{border:1.5px solid #ffd6b0}
+      .lc-foot{display:flex;justify-content:space-between;align-items:center;padding-top:14px;border-top:1px solid rgba(255,255,255,.12)}
+      .lc-foot-label{font-size:9px;color:rgba(255,255,255,.5);letter-spacing:1px;text-transform:uppercase}
+      .lc-foot-val{font-size:12px;color:#fff;font-weight:700;margin-top:2px}
+      .lc-empty{margin:0 16px 20px;border-radius:24px;background:var(--card);border:1px solid var(--bdr);padding:26px 22px;text-align:center}
       </style>
 
-      <!-- SLIDING BANNER — highlights, combos, bestsellers -->
-      <div class="tr-slider-wrap" id="home-treats-anchor">
-        <div class="tr-slider" id="tr-slider">
-          <div class="tr-slider-track" id="tr-slider-track"><!-- slides injected by trRenderSlider() --></div>
-        </div>
-        <div class="tr-slider-dots" id="tr-slider-dots"></div>
-        <div class="tr-hero-stats">
-          <div class="tr-hstat"><div class="tr-hstat-n" id="tr-count">—</div><div class="tr-hstat-l">Items</div></div>
-          <div class="tr-hstat"><div class="tr-hstat-n">☕🍨🍰</div><div class="tr-hstat-l">Hot &amp; Cold</div></div>
-          <div class="tr-hstat"><div class="tr-hstat-n">Fresh</div><div class="tr-hstat-l">Made to order</div></div>
-        </div>
-      </div>
-
-      <!-- CATEGORY CHIPS -->
-      <div class="tr-cats-bar" id="tr-cats-bar">
-        <div class="tr-chip on" data-cat="all" onclick="trFilter(this)">✦ All</div>
-        <div class="tr-chip" data-cat="beverages" onclick="trFilter(this)">☕ Beverages</div>
-        <div class="tr-chip" data-cat="ice_cream" onclick="trFilter(this)">🍦 Ice Cream</div>
-        <div class="tr-chip" data-cat="desserts" onclick="trFilter(this)">🍰 Desserts</div>
-      </div>
-
-      <!-- PRODUCTS GRID -->
-      <div class="tr-pgrid" id="tr-pgrid">
-        <div id="tr-loading">
-          <div style="font-size:32px;margin-bottom:10px">☕</div>
-          <div style="font-size:13px;color:#8a6248;font-family:'Cormorant Garamond',serif;font-style:italic">Loading Treats &amp; Sips...</div>
-        </div>
-      </div>
-
-      <!-- TOAST -->
-      <div class="tr-acc-toast" id="tr-toast"></div>
-
-      <!-- FOOTER / SECTION DIVIDER -->
-      <div class="tr-footer-bar">
-        <div class="tr-fline"></div>
-        <div class="tr-ftxt">Treats &amp; Sips · NSDI ChocoCravings</div>
-        <div class="tr-fline"></div>
-      </div>
+      <div id="lc-section"></div>
 
       <!--
       <div class="loc">
@@ -1774,8 +1699,8 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
             </svg>
           </div>
           <div>
-            <div class="ck-title">Checkout</div>
-            <div class="ck-sub">Complete your order · Delivery across Tamil Nadu</div>
+            <div class="ck-title" id="ck-title-text">Checkout</div>
+            <div class="ck-sub" id="ck-sub-text">Complete your order · Delivery across Tamil Nadu</div>
           </div>
         </div>
       </div>
@@ -1783,7 +1708,7 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 
         <!-- DELIVERY INFO -->
         <div class="ck-section">
-          <div class="ck-label">📍 Delivery Details</div>
+          <div class="ck-label" id="ck-details-label">📍 Delivery Details</div>
 
           <!-- SAVED ADDRESSES PICKER -->
           <div id="ck-saved-addrs" style="display:none;margin-bottom:12px">
@@ -2103,12 +2028,6 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
         </div>
       </div>
 
-      <div onclick="showPage('home');closeHamburgerMenu();setTimeout(function(){var e=document.getElementById('home-treats-anchor');if(e)e.scrollIntoView({behavior:'smooth',block:'start'});},420)" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;cursor:pointer;background:rgba(184,89,15,.08);border:1px solid rgba(184,89,15,.15);margin-bottom:6px">
-        <div>
-          <div style="font-size:13px;font-weight:700;color:#e08a3c">☕ Treats &amp; Sips</div>
-          <div style="font-size:11px;color:var(--dim)">Coffee · Ice Cream · Desserts</div>
-        </div>
-      </div>
 
       <!-- Live Tracking item — always visible -->
       <div onclick="openLiveTracking();closeHamburgerMenu()" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;cursor:pointer;background:rgba(110,9,119,.08);border:1px solid rgba(110,9,119,.15);margin-bottom:6px">
@@ -2893,6 +2812,76 @@ function updateProfileUI() {
     if (greetEl && firstName) {
     greetEl.innerHTML = 'What\'s your <em>craving</em> today, <em>' + firstName + '</em>?';
     }
+    loadLoyaltyCard();
+}
+
+// ── LOYALTY CARD (Home) ──
+// Reads the signed-in customer's own card via cc_loyalty_my_card(),
+// which is scoped server-side to their own phone -- there's no way to
+// pass a phone number in and see someone else's card. Staff still
+// manage stamps/rewards from store.html's Loyalty Cards tool.
+async function loadLoyaltyCard() {
+  var section = document.getElementById('lc-section');
+  if (!section) return;
+  if (!currentUser || !currentUser.db_id) {
+    section.innerHTML = '';
+    return;
+  }
+  try {
+    var res = await db.rpc('cc_loyalty_my_card');
+    if (res.error) throw res.error;
+    renderLoyaltyCard(res.data);
+  } catch (e) {
+    console.error('loadLoyaltyCard:', e);
+    section.innerHTML = '';
+  }
+}
+
+function renderLoyaltyCard(card) {
+  var section = document.getElementById('lc-section');
+  if (!section) return;
+
+  if (!card) {
+    section.innerHTML = '<div class="lc-empty">'
+      + '<div style="font-size:32px;margin-bottom:8px">🎫</div>'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:18px;font-weight:700;color:var(--white);margin-bottom:4px">No Loyalty Card Yet</div>'
+      + '<div style="font-size:12px;color:var(--dim)">Ask our staff to set one up on your next visit</div>'
+      + '</div>';
+    return;
+  }
+
+  var stampCount = card.stamp_count || 0;
+  var schedule = Array.isArray(card.schedule) ? card.schedule : [];
+  var redeemedDays = Array.isArray(card.redeemed_days) ? card.redeemed_days : [];
+  var rewardDays = {};
+  schedule.forEach(function(s) { rewardDays[s.day] = s.item; });
+
+  var nextReward = schedule
+    .filter(function(s) { return redeemedDays.indexOf(s.day) === -1; })
+    .sort(function(a, b) { return a.day - b.day; })[0];
+
+  var maxDay = schedule.length ? Math.max.apply(null, schedule.map(function(s) { return s.day; })) : 10;
+  var gridSize = Math.min(100, Math.max(10, Math.ceil(maxDay / 10) * 10));
+
+  var stampsHtml = '';
+  for (var d = 1; d <= gridSize; d++) {
+    var filled = d <= stampCount;
+    var isReward = rewardDays.hasOwnProperty(d);
+    stampsHtml += '<div class="lc-stamp' + (filled ? ' filled' : '') + (isReward ? ' reward' : '') + '">'
+      + (filled ? '✓' : (isReward ? '🎁' : d))
+      + '</div>';
+  }
+
+  section.innerHTML = '<div class="lc-card">'
+    + '<div class="lc-eyebrow"><span class="lc-eyebrow-text">Loyalty Card</span><span class="lc-code">' + (card.card_code || '') + '</span></div>'
+    + '<div class="lc-title">' + stampCount + ' Stamp' + (stampCount === 1 ? '' : 's') + '</div>'
+    + '<div class="lc-sub">' + (nextReward ? nextReward.item + ' unlocks at day ' + nextReward.day : 'All rewards on this card redeemed!') + '</div>'
+    + '<div class="lc-stampgrid">' + stampsHtml + '</div>'
+    + '<div class="lc-foot">'
+    + '<div><div class="lc-foot-label">Cycle</div><div class="lc-foot-val">#' + (card.cycle || 1) + '</div></div>'
+    + '<div style="text-align:right"><div class="lc-foot-label">Status</div><div class="lc-foot-val">' + (card.suspended ? 'Suspended' : 'Active') + '</div></div>'
+    + '</div>'
+    + '</div>';
 }
 
 var _profileLoading = false;
@@ -3839,20 +3828,6 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   }
 });
 
-// Public store_menu catalog only — same pattern store.html's
-// getStoreMenuClient() uses. A separate, session-less client so
-// reading the Treats & Sips catalog never waits on (or is blocked by)
-// the signed-in db client's auth token refresh.
-var _treatsMenuClient = null;
-function getTreatsMenuClient() {
-  if (!_treatsMenuClient) {
-    _treatsMenuClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'cc-treats-menu' }
-    });
-  }
-  return _treatsMenuClient;
-}
-
 // NSDI WhatsApp number (receives order notifications)
 const NSDI_PHONE = '+91 89731 41898';
 
@@ -4135,8 +4110,7 @@ setTimeout(updateCartDots, 100);
 // Load products dynamically
 loadProducts();
 loadBrowniePricing();
-loadTreats();
-trLoadSlides();
+loadLoyaltyCard();
 
 debugProducts();
 
@@ -5000,7 +4974,7 @@ function goToCheckout() {
   var totalAmt = cartItems.reduce(function(s, i) {
     return s + (i.base_price || 0) * (i.qty || i.quantity || 1) + (i.topping_price || 0);
   }, 0);
-  
+
   var discountedTotal = appliedPromo ? totalAmt - appliedPromo.discount : totalAmt;
   currentOrderTotal = discountedTotal;
 
@@ -7124,324 +7098,6 @@ function vsAddToCart(btn, productId, name, price, sku, pack) {
   setTimeout(function(){ btn.innerHTML = o; btn.style.background = ''; btn.style.color = ''; }, 1200);
 
   var toast = document.getElementById('vs-acc-toast');
-  if (toast) {
-    toast.textContent = '✦ ' + name.toUpperCase() + ' added to cart — ₹' + price;
-    toast.style.display = 'block';
-    setTimeout(function(){ toast.style.display = 'none'; }, 2400);
-  }
-
-  showToast('✓ ' + name + ' added!');
-}
-
-// ── TREATS & SIPS (beverages, ice cream, desserts) ──
-// Reads the same store_menu catalog the in-store "On Store" POS already
-// stocks and prices — no new product data needed. Cart items degrade
-// gracefully at checkout: order_items.product_id/variant_id stay null
-// since these SKUs aren't in the `products` table (same as accessories
-// whose SKU lookup misses), but name/price/qty still save correctly.
-
-// Sliding banner — highlights, combo offers, bestsellers.
-// Reads staff-managed slides from home_banners (added/edited from the
-// On Store app); falls back to these built-in defaults if that table
-// is empty or unreachable, so the carousel is never blank.
-var TR_DEFAULT_SLIDES = [
-  { bg:'linear-gradient(120deg,#231205,#3d1f05 45%,#0a2e3d 100%)', eyebrow:'NSDI ChocoCravings · In-Store Favourites', title:'Treats<br><em>&amp; Sips</em>', tagline:'Coffee, tea, ice cream &amp; desserts — the café menu our regulars already love, now just a tap away', cta:null, linkType:'grid', linkValue:null },
-  { bg:'linear-gradient(120deg,#2b0a35 0%,#6e0977 60%,#1a0820 100%)', eyebrow:'Combo Offer · Limited Time', title:'Coffee + Dessert<br><em>Combo</em>', tagline:'Any hot beverage + any dessert, ordered together — save ₹20 instantly', cta:'Grab The Combo', linkType:'grid', linkValue:null },
-  { bg:'linear-gradient(120deg,#3d1f05 0%,#8a4a0f 55%,#c9781f 100%)', eyebrow:'Most Loved This Week', title:'Cold Coffee<br><em>Bestseller</em>', tagline:'Our top-rated pick — chilled, rich, ready in minutes', cta:'Order Now', linkType:'category', linkValue:'beverages' },
-  { bg:'linear-gradient(120deg,#0a2e3d 0%,#1c5468 55%,#4a9fc4 100%)', eyebrow:'Beat The Heat', title:'Ice Cream<br><em>Specials</em>', tagline:'Cool down with scoops starting at just ₹80', cta:'Explore Scoops', linkType:'category', linkValue:'ice_cream' }
-];
-var _trActiveSlides = TR_DEFAULT_SLIDES;
-var _trSlideIdx = 0;
-var _trSlideTimer = null;
-
-async function trLoadSlides() {
-  _trActiveSlides = TR_DEFAULT_SLIDES;
-  try {
-    var bannerQuery = function(client) {
-      return client.from('home_banners')
-        .select('eyebrow,title_main,title_accent,tagline,cta_label,color_1,color_2,color_3,image_url,link_type,link_value')
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true });
-    };
-    var data, error;
-    try {
-      var r1 = await bannerQuery(getTreatsMenuClient());
-      data = r1.data; error = r1.error;
-      if (error) throw error;
-    } catch (e1) {
-      console.warn('trLoadSlides: treats client failed, retrying with db:', e1);
-      var r2 = await bannerQuery(db);
-      data = r2.data; error = r2.error;
-      if (error) throw error;
-    }
-    console.log('HOME BANNERS:', data, error);
-    if (data && data.length > 0) {
-      _trActiveSlides = data.map(function(b) {
-        return {
-          bg: 'linear-gradient(120deg,' + b.color_1 + ' 0%,' + b.color_2 + ' 55%,' + b.color_3 + ' 100%)',
-          img: b.image_url || null,
-          eyebrow: b.eyebrow,
-          title: b.title_main + '<br><em>' + b.title_accent + '</em>',
-          tagline: b.tagline,
-          cta: b.cta_label,
-          linkType: b.link_type,
-          linkValue: b.link_value
-        };
-      });
-    }
-  } catch (e) {
-    console.error('trLoadSlides:', e);
-  }
-  trRenderSlider();
-  trGoToSlide(0);
-  trStartAutoSlide();
-}
-
-function trRenderSlider() {
-  var track = document.getElementById('tr-slider-track');
-  var dots  = document.getElementById('tr-slider-dots');
-  if (!track || !dots) return;
-
-  track.innerHTML = _trActiveSlides.map(function(s, i) {
-    // A photo banner gets a dark gradient wash for text legibility, same
-    // treatment the app's original photo hero card used; no photo falls
-    // back to the plain colour gradient.
-    var bgStyle = s.img
-      ? "background:linear-gradient(to top,rgba(10,5,0,.75),rgba(10,5,0,.15) 55%,rgba(10,5,0,.55)),url('" + s.img + "') center/cover"
-      : 'background:' + s.bg;
-    return '<div class="tr-slide" style="' + bgStyle + '" onclick="trSlideClick(' + i + ')">'
-      + (s.img ? '' : '<svg class="tr-hero-deco" viewBox="0 0 180 180" fill="none"><circle cx="140" cy="40" r="80" stroke="#ffd9a0" stroke-width="0.5"/><circle cx="140" cy="40" r="60" stroke="#ffd9a0" stroke-width="0.5"/><circle cx="140" cy="40" r="40" stroke="#ffd9a0" stroke-width="0.5"/></svg>')
-      + '<div class="tr-eyebrow"><div class="tr-eyebrow-line"></div><span class="tr-eyebrow-text">' + s.eyebrow + '</span></div>'
-      + '<div class="tr-title">' + s.title + '</div>'
-      + '<div class="tr-tagline">' + s.tagline + '</div>'
-      + (s.cta ? '<div class="tr-slide-cta">' + s.cta + ' →</div>' : '')
-      + '</div>';
-  }).join('');
-
-  dots.innerHTML = _trActiveSlides.map(function(_, i) {
-    return '<span class="tr-dot' + (i === 0 ? ' on' : '') + '" onclick="event.stopPropagation();trGoToSlide(' + i + ');trStartAutoSlide()"></span>';
-  }).join('');
-}
-
-function trGoToSlide(i) {
-  if (!_trActiveSlides.length) return;
-  _trSlideIdx = (i + _trActiveSlides.length) % _trActiveSlides.length;
-  var track = document.getElementById('tr-slider-track');
-  if (track) track.style.transform = 'translateX(-' + (_trSlideIdx * 100) + '%)';
-  document.querySelectorAll('#tr-slider-dots .tr-dot').forEach(function(d, di) {
-    d.classList.toggle('on', di === _trSlideIdx);
-  });
-}
-
-function trStartAutoSlide() {
-  if (_trSlideTimer) clearInterval(_trSlideTimer);
-  if (_trActiveSlides.length < 2) return;
-  _trSlideTimer = setInterval(function() {
-    trGoToSlide(_trSlideIdx + 1);
-  }, 4000);
-}
-
-function trSlideClick(i) {
-  var s = _trActiveSlides[i];
-  var linkType = s ? s.linkType : 'grid';
-  if (linkType === 'explore') { showPage('explore'); return; }
-  if (linkType === 'accessories') { showPage('accessories'); return; }
-  if (linkType === 'none') { return; }
-  if (linkType === 'category' && s.linkValue) {
-    var chip = document.querySelector('.tr-chip[data-cat="' + s.linkValue + '"]');
-    if (chip) trFilter(chip);
-  }
-  var g = document.getElementById('tr-pgrid');
-  if (g) g.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-(function trInitSliderSwipe() {
-  var startX = 0, tracking = false;
-  document.addEventListener('touchstart', function(e) {
-    var wrap = e.target.closest && e.target.closest('#tr-slider');
-    if (!wrap) return;
-    tracking = true;
-    startX = e.touches[0].clientX;
-  }, { passive: true });
-  document.addEventListener('touchend', function(e) {
-    if (!tracking) return;
-    tracking = false;
-    var dx = e.changedTouches[0].clientX - startX;
-    if (Math.abs(dx) > 40) {
-      trGoToSlide(_trSlideIdx + (dx < 0 ? 1 : -1));
-      trStartAutoSlide();
-    }
-  }, { passive: true });
-})();
-
-var TR_BUCKET = {
-  Coffee:'beverages', Tea:'beverages', Milkshake:'beverages',
-  IceCream:'ice_cream',
-  Desserts:'desserts', Cookies:'desserts', Chocolate:'desserts',
-  Cupcake:'desserts', Blondie:'desserts', Combo:'desserts',
-  Spicy:'desserts', Others:'desserts'
-};
-var TR_EMOJIS = { beverages:'☕', ice_cream:'🍦', desserts:'🍰' };
-var TR_BG = {
-  beverages:'linear-gradient(145deg,#fdf3e6,#f5dcb8)',
-  ice_cream:'linear-gradient(145deg,#eaf7ff,#c9ecff)',
-  desserts:'linear-gradient(145deg,#fdf0f6,#f8d8e8)'
-};
-var TR_LABELS = { beverages:'Beverage', ice_cream:'Ice Cream', desserts:'Dessert' };
-
-var _treatsLoaded = false;
-var _allTreatItems = [];
-
-async function loadTreats() {
-  _treatsLoaded = false;
-  _allTreatItems = [];
-  var grid = document.getElementById('tr-pgrid');
-  if (!grid) return;
-
-  try {
-    var query = function(client) {
-      return client.from('store_menu')
-        .select('id,name,price,tag,category')
-        .eq('available', true)
-        .in('category', Object.keys(TR_BUCKET))
-        .order('sort_order', { ascending: true });
-    };
-
-    var items, error;
-    try {
-      var res1 = await query(getTreatsMenuClient());
-      items = res1.data; error = res1.error;
-      if (error) throw error;
-    } catch (e1) {
-      // Session-less client failed (network, RLS scoped to authenticated
-      // only, storage blocked, etc.) — retry once with the signed-in
-      // client before giving up.
-      console.warn('loadTreats: treats client failed, retrying with db:', e1);
-      var res2 = await query(db);
-      items = res2.data; error = res2.error;
-      if (error) throw error;
-    }
-
-    console.log('TREATS & SIPS:', items, error);
-    if (!items || items.length === 0) {
-      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:50px 20px"><div style="font-size:40px;margin-bottom:12px">☕</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:18px;font-style:italic;color:#b8590f">Coming Soon</div><div style="font-size:11px;color:#8a6248;margin-top:6px">Our café menu is being added — check back shortly</div></div>';
-      return;
-    }
-
-    _allTreatItems = items;
-    _treatsLoaded = true;
-
-    var countEl = document.getElementById('tr-count');
-    if (countEl) countEl.textContent = items.length + '+';
-
-    trRenderGrid(items);
-  } catch (e) {
-    console.error('loadTreats:', e);
-    var msg = (e && (e.message || e.error_description || e.details)) || 'Unknown error';
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#b8590f">Could not load: ' + msg.replace(/</g,'&lt;') + '<br><span style="text-decoration:underline;cursor:pointer;font-size:12px" onclick="loadTreats()">Tap to retry</span></div>';
-  }
-}
-
-function trRenderGrid(items) {
-  var grid = document.getElementById('tr-pgrid');
-  if (!grid) return;
-
-  if (!items || items.length === 0) {
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:30px;color:#8a6248">No items in this category</div>';
-    return;
-  }
-
-  grid.innerHTML = items.map(function(it) {
-    var bucket = TR_BUCKET[it.category] || 'desserts';
-    var emoji  = TR_EMOJIS[bucket];
-    var bg     = TR_BG[bucket];
-    var label  = TR_LABELS[bucket];
-    var name   = it.name || 'Item';
-    var price  = it.price || 0;
-
-    return '<div class="tr-card" data-tr-cat="' + bucket + '" data-name="' + name.replace(/"/g,'&quot;').toLowerCase() + '">'
-      + '<div class="tr-img" style="background:' + bg + '">'
-      + '<span class="tr-emoji">' + emoji + '</span>'
-      + (it.tag ? '<div class="tr-tag">' + it.tag + '</div>' : '')
-      + '</div>'
-      + '<div class="tr-body">'
-      + '<div class="tr-cat">' + label + '</div>'
-      + '<div class="tr-name">' + name + '</div>'
-      + '<div class="tr-foot">'
-      + '<div class="tr-price">₹' + price + '</div>'
-      + '<button class="tr-add" onclick="trAddToCart(this,\'' + name.replace(/'/g,"\\'") + '\',' + price + ',\'' + it.id + '\')">+</button>'
-      + '</div>'
-      + '</div>'
-      + '</div>';
-  }).join('');
-}
-
-var _trActiveCat = 'all';
-
-function trFilter(el) {
-  document.querySelectorAll('.tr-chip').forEach(function(c){ c.classList.remove('on'); });
-  el.classList.add('on');
-  _trActiveCat = el.getAttribute('data-cat');
-  trApplyFilters();
-}
-
-// Combines the category chip with the search box — a card shows only
-// when it matches both (an empty search or "all" category always match).
-function trApplyFilters() {
-  var q = (document.getElementById('treats-search') || {}).value || '';
-  q = q.trim().toLowerCase();
-  document.querySelectorAll('#tr-pgrid .tr-card[data-tr-cat]').forEach(function(card){
-    var inCat = (_trActiveCat === 'all' || card.getAttribute('data-tr-cat') === _trActiveCat);
-    var inSearch = (!q || (card.getAttribute('data-name') || '').indexOf(q) !== -1);
-    card.style.display = (inCat && inSearch) ? '' : 'none';
-  });
-}
-
-function treatsSearch(value) {
-  var clr = document.getElementById('treats-search-clear');
-  if (clr) clr.style.display = value ? 'inline' : 'none';
-  trApplyFilters();
-}
-
-function clearTreatsSearch() {
-  var inp = document.getElementById('treats-search');
-  if (inp) inp.value = '';
-  var clr = document.getElementById('treats-search-clear');
-  if (clr) clr.style.display = 'none';
-  trApplyFilters();
-}
-
-function trAddToCart(btn, name, price, itemId) {
-  cartItems.push({
-    product_name:  name,
-    name:          name,
-    tier:          'standard',
-    egg:           'na',
-    egg_type:      'na',
-    pack:          '1 serving',
-    pack_label:    '1 serving',
-    qty:           1,
-    quantity:      1,
-    base_price:    price,
-    topping_price: 0,
-    toppings:      [],
-    line_total:    price,
-    sku:           'TREAT-' + itemId,
-    product_type:  'treat'
-  });
-
-  renderCart();
-
-  var badge = document.getElementById('cart-badge');
-  if (badge) { badge.classList.add('bump'); setTimeout(function(){ badge.classList.remove('bump'); }, 200); }
-
-  var o = btn.innerHTML;
-  btn.innerHTML = '✓';
-  btn.style.background = '#b8590f';
-  btn.style.color = '#fff';
-  setTimeout(function(){ btn.innerHTML = o; btn.style.background = ''; btn.style.color = ''; }, 1200);
-
-  var toast = document.getElementById('tr-toast');
   if (toast) {
     toast.textContent = '✦ ' + name.toUpperCase() + ' added to cart — ₹' + price;
     toast.style.display = 'block';
