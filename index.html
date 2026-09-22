@@ -1774,8 +1774,8 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
             </svg>
           </div>
           <div>
-            <div class="ck-title">Checkout</div>
-            <div class="ck-sub">Complete your order · Delivery across Tamil Nadu</div>
+            <div class="ck-title" id="ck-title-text">Checkout</div>
+            <div class="ck-sub" id="ck-sub-text">Complete your order · Delivery across Tamil Nadu</div>
           </div>
         </div>
       </div>
@@ -1783,7 +1783,7 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 
         <!-- DELIVERY INFO -->
         <div class="ck-section">
-          <div class="ck-label">📍 Delivery Details</div>
+          <div class="ck-label" id="ck-details-label">📍 Delivery Details</div>
 
           <!-- SAVED ADDRESSES PICKER -->
           <div id="ck-saved-addrs" style="display:none;margin-bottom:12px">
@@ -1801,12 +1801,15 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
               <input class="ck-field" id="ck-phone" type="tel" placeholder="+91 phone *" required>
               <input class="ck-field" id="ck-email" type="email" placeholder="Email (optional)">
             </div>
-            <div class="ck-field-wrap">
-              <input class="ck-field" id="ck-address" type="text" placeholder="Door no, Street, Area *" required>
-            </div>
-            <div class="ck-row">
-              <input class="ck-field" id="ck-city" type="text" placeholder="City *" required>
-              <input class="ck-field" id="ck-pin" type="text" placeholder="Pincode">
+            <!-- Hidden for pickup (Treats & Sips) orders — no delivery address needed -->
+            <div id="ck-address-fields">
+              <div class="ck-field-wrap">
+                <input class="ck-field" id="ck-address" type="text" placeholder="Door no, Street, Area *" required>
+              </div>
+              <div class="ck-row">
+                <input class="ck-field" id="ck-city" type="text" placeholder="City *" required>
+                <input class="ck-field" id="ck-pin" type="text" placeholder="Pincode">
+              </div>
             </div>
           </div>
 
@@ -4382,7 +4385,11 @@ function renderCart() {
   if (subtotalLbl) subtotalLbl.textContent = 'Subtotal (' + totalQty + ' ' + itemWord + ')';
   if (subtotalEl) subtotalEl.textContent = '₹' + subtotal;
   if (totalEl) totalEl.textContent = '₹' + subtotal;
-  if (checkoutBtn) { checkoutBtn.disabled = false; checkoutBtn.style.opacity = '1'; checkoutBtn.textContent = '🎉 Proceed to Checkout — ₹' + subtotal; }
+  if (checkoutBtn) {
+    checkoutBtn.disabled = false;
+    checkoutBtn.style.opacity = '1';
+    checkoutBtn.textContent = isTreatsOnlyCart() ? '☕ Place Pickup Order — ₹' + subtotal : '🎉 Proceed to Checkout — ₹' + subtotal;
+  }
   var paySection = document.getElementById('cart-payment-section');
   if (paySection) paySection.style.display = cartItems.length > 0 ? 'block' : 'none';
   currentOrderTotal = subtotal;
@@ -4985,6 +4992,13 @@ let currentPayMethod = 'cod';
 let currentOrderTotal = 0;
 
 // ── CHECKOUT HELPERS ──
+// A cart is a pickup order only when every item came from Treats &
+// Sips — a mixed cart (treats + brownies/accessories) falls back to
+// the normal delivery checkout unchanged.
+function isTreatsOnlyCart() {
+  return cartItems.length > 0 && cartItems.every(function(i){ return i.product_type === 'treat'; });
+}
+
 function goToCheckout() {
   if (!cartItems || cartItems.length === 0) {
     alert('Your cart is empty! Add brownies first.');
@@ -4996,20 +5010,43 @@ function goToCheckout() {
     return;
   }
 
+  // Treats & Sips orders skip delivery entirely and become a pickup
+  // token on the same store_orders board the On Store app's Kitchen
+  // page already watches — set here so placeOrder() knows which path
+  // to take, and the checkout page adapts its copy/fields below.
+  window._isTreatsCheckout = isTreatsOnlyCart();
+  var addrFields = document.getElementById('ck-address-fields');
+  var titleEl = document.getElementById('ck-title-text');
+  var subEl   = document.getElementById('ck-sub-text');
+  var labelEl = document.getElementById('ck-details-label');
+  if (window._isTreatsCheckout) {
+    if (addrFields) addrFields.style.display = 'none';
+    if (titleEl) titleEl.textContent = 'Pickup Order';
+    if (subEl)   subEl.textContent   = "Collect at the counter · we'll give you a token";
+    if (labelEl) labelEl.textContent = '📍 Your Details';
+  } else {
+    if (addrFields) addrFields.style.display = '';
+    if (titleEl) titleEl.textContent = 'Checkout';
+    if (subEl)   subEl.textContent   = 'Complete your order · Delivery across Tamil Nadu';
+    if (labelEl) labelEl.textContent = '📍 Delivery Details';
+  }
+
   // Build checkout summary from ALL cart items
   var totalAmt = cartItems.reduce(function(s, i) {
     return s + (i.base_price || 0) * (i.qty || i.quantity || 1) + (i.topping_price || 0);
   }, 0);
-  
+
   var discountedTotal = appliedPromo ? totalAmt - appliedPromo.discount : totalAmt;
   currentOrderTotal = discountedTotal;
 
   // Show first item name + count in summary header
   var firstName = cartItems[0].name || cartItems[0].product_name || 'Brownie';
   var extraCount = cartItems.length > 1 ? ' + ' + (cartItems.length - 1) + ' more' : '';
-  var firstDesc = (cartItems[0].egg === 'eggless' ? '💚 Eggless' : '❤️ With Egg') +
-    ' · ' + (cartItems[0].pack || cartItems[0].pack_label || '4pcs') +
-    ' · ' + (cartItems[0].tier === 'couverture' ? 'Couverture' : 'Premium');
+  var firstDesc = window._isTreatsCheckout
+    ? 'Pickup at counter'
+    : (cartItems[0].egg === 'eggless' ? '💚 Eggless' : '❤️ With Egg') +
+      ' · ' + (cartItems[0].pack || cartItems[0].pack_label || '4pcs') +
+      ' · ' + (cartItems[0].tier === 'couverture' ? 'Couverture' : 'Premium');
 
   document.getElementById('ck-item-name').textContent = firstName + extraCount;
   document.getElementById('ck-item-desc').textContent = firstDesc;
@@ -5161,6 +5198,14 @@ async function placeOrder() {
     return;
   }
   if (errEl) errEl.style.display = 'none';
+
+  // Treats & Sips pickup orders take a completely separate, simpler
+  // path — no address, no order_items, straight into store_orders as
+  // a token ticket. Everything below this point is delivery-specific.
+  if (window._isTreatsCheckout) {
+    await submitTreatsPickupOrder(name, phone);
+    return;
+  }
 
   // ── DUPLICATE UTR CHECK ──
 if (currentPayTab === 'upi' && currentUtrValue) {
@@ -7449,6 +7494,107 @@ function trAddToCart(btn, name, price, itemId) {
   }
 
   showToast('✓ ' + name + ' added!');
+}
+
+// ── TREATS & SIPS PICKUP CHECKOUT ──
+// A Treats & Sips-only cart becomes a pickup token ticket in
+// store_orders -- the exact table/shape store.html's own customer
+// self-checkout (insertStoreOrder) already writes, and what its
+// Kitchen board (pending -> preparing -> ready -> collected) reads.
+// No delivery address, no order_items -- this intentionally never
+// touches the orders/order_items path the rest of placeOrder() uses.
+async function trGetPickupToken() {
+  try {
+    var today = new Date().toISOString().slice(0, 10);
+    var res = await db.from('store_orders')
+      .select('token')
+      .gte('created_at', today + 'T00:00:00.000Z')
+      .lte('created_at', today + 'T23:59:59.999Z');
+    return 'T-' + String(((res.data || []).length + 1)).padStart(3, '0');
+  } catch (e) {
+    return 'T-' + String(Math.floor(Math.random() * 900) + 100);
+  }
+}
+
+async function submitTreatsPickupOrder(name, phone) {
+  var loadingOverlay = document.getElementById('loading-overlay');
+  if (loadingOverlay) loadingOverlay.classList.add('show');
+  var placeBtn = document.getElementById('place-btn');
+  if (placeBtn) placeBtn.disabled = true;
+
+  try {
+    var token = await trGetPickupToken();
+    var items = cartItems.map(function(i) {
+      return { name: i.product_name || i.name, qty: i.qty || i.quantity || 1, price: i.base_price || 0 };
+    });
+    var total = items.reduce(function(s, i) { return s + i.price * i.qty; }, 0);
+
+    var customerId = null;
+    try {
+      var savedUser = JSON.parse(localStorage.getItem('cc_user'));
+      if (savedUser && savedUser.db_id) customerId = savedUser.db_id;
+    } catch (e) {}
+
+    var normalizedPhone = phone.startsWith('+') ? phone : ('+91' + phone.replace(/^0/, ''));
+
+    var payload = {
+      token:          token,
+      customer_id:    customerId,
+      customer_name:  name,
+      customer_phone: normalizedPhone,
+      items:          items,
+      total:          total,
+      payment_method: currentPayTab === 'cod' ? 'cash' : 'upi_qr',
+      payment_status: 'pending',
+      status:         'pending'
+    };
+
+    const { data, error } = await db.from('store_orders').insert([payload]).select().single();
+    if (error) throw error;
+
+    cartItems = [];
+    try { localStorage.setItem('cc_cart', JSON.stringify(cartItems)); } catch (e) {}
+    renderCart();
+
+    if (loadingOverlay) loadingOverlay.classList.remove('show');
+    if (placeBtn) placeBtn.disabled = false;
+    showTreatsPickupConfirmation(token, items, total);
+  } catch (e) {
+    console.error('submitTreatsPickupOrder:', e);
+    if (loadingOverlay) loadingOverlay.classList.remove('show');
+    if (placeBtn) placeBtn.disabled = false;
+    showToast('Could not place order: ' + (e.message || 'please try again'));
+  }
+}
+
+function showTreatsPickupConfirmation(token, items, total) {
+  var overlay = document.getElementById('tr-pickup-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'tr-pickup-overlay';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:5000;background:rgba(10,5,0,.72);display:flex;align-items:center;justify-content:center;padding:20px';
+    document.body.appendChild(overlay);
+  }
+  var itemsHtml = items.map(function(i) {
+    return '<div style="display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:#5a4030"><span>' + i.name + ' ×' + i.qty + '</span><span>₹' + (i.price * i.qty) + '</span></div>';
+  }).join('');
+  overlay.innerHTML = '<div style="background:#fffbf2;border-radius:24px;max-width:340px;width:100%;padding:28px 24px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)">'
+    + '<div style="font-size:40px;margin-bottom:10px">☕</div>'
+    + '<div style="font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#b8590f;margin-bottom:6px">Order Placed</div>'
+    + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:40px;font-weight:700;color:#2a1608;margin-bottom:4px">' + token + '</div>'
+    + '<div style="font-size:12px;color:#8a6248;margin-bottom:18px">Show this token at the counter to collect your order</div>'
+    + '<div style="background:#fdf3e6;border-radius:14px;padding:14px 16px;margin-bottom:18px;text-align:left">' + itemsHtml
+    + '<div style="display:flex;justify-content:space-between;padding-top:8px;margin-top:6px;border-top:1px solid #ecd8c0;font-weight:700;font-size:14px;color:#2a1608"><span>Total</span><span>₹' + total + '</span></div>'
+    + '</div>'
+    + '<button onclick="closeTreatsPickupConfirmation()" style="width:100%;padding:14px;border-radius:14px;background:#b8590f;color:#fff;border:none;font-size:14px;font-weight:700;cursor:pointer">Done</button>'
+    + '</div>';
+  overlay.style.display = 'flex';
+}
+
+function closeTreatsPickupConfirmation() {
+  var overlay = document.getElementById('tr-pickup-overlay');
+  if (overlay) overlay.style.display = 'none';
+  showPage('home');
 }
 
 function renderAccGrid(products) {
