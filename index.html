@@ -1122,7 +1122,7 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
       <!-- Searches the same Treats & Sips catalog the On Store app sells from -->
       <div class="srch">
         <span class="srch-icon">🔍</span>
-        <input id="treats-search" type="text" placeholder="Search coffee, tea, ice cream, desserts…"
+        <input id="treats-search" type="text" placeholder="Search menu…"
           oninput="treatsSearch(this.value)">
         <span id="treats-search-clear" style="font-size:16px;color:var(--faint);cursor:pointer;display:none" onclick="clearTreatsSearch()">✕</span>
       </div>
@@ -1191,9 +1191,6 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
       <!-- CATEGORY CHIPS -->
       <div class="tr-cats-bar" id="tr-cats-bar">
         <div class="tr-chip on" data-cat="all" onclick="trFilter(this)">✦ All</div>
-        <div class="tr-chip" data-cat="beverages" onclick="trFilter(this)">☕ Beverages</div>
-        <div class="tr-chip" data-cat="ice_cream" onclick="trFilter(this)">🍦 Ice Cream</div>
-        <div class="tr-chip" data-cat="desserts" onclick="trFilter(this)">🍰 Desserts</div>
       </div>
 
       <!-- PRODUCTS GRID -->
@@ -7319,20 +7316,37 @@ function trSlideClick(i) {
   }, { passive: true });
 })();
 
-var TR_BUCKET = {
-  Coffee:'beverages', Tea:'beverages', Milkshake:'beverages',
-  IceCream:'ice_cream',
-  Desserts:'desserts', Cookies:'desserts', Chocolate:'desserts',
-  Cupcake:'desserts', Blondie:'desserts', Combo:'desserts',
-  Spicy:'desserts', Others:'desserts'
+// Full store_menu category catalog — this mirrors On Store's own menu
+// page (store.html) 1:1 instead of a simplified 3-bucket view, so every
+// category staff actually stock (Coffee, Tea, Brownies, Cakes, …) gets
+// its own tab here too. TR_CAT_ORDER is just a preferred display order;
+// any category not listed (a brand-new one added from On Store) still
+// works via the fallbacks in trCatEmoji/trCatBg/trCatLabel below.
+var TR_CAT_ORDER = ['Coffee','Tea','Desserts','Brownies','Cakes','Cookies','IceCream','Milkshake','Chocolate','Spicy','Combo','Blondie','Cupcake','Others'];
+var TR_EMOJIS = {
+  Coffee:'☕', Tea:'🫖', Desserts:'🍫', Brownies:'🟫', Cakes:'🎂', Cookies:'🍪',
+  IceCream:'🍦', Others:'🧃', Milkshake:'🥤', Chocolate:'🍫', Spicy:'🌶️',
+  Combo:'🎁', Blondie:'🟨', Cupcake:'🧁'
 };
-var TR_EMOJIS = { beverages:'☕', ice_cream:'🍦', desserts:'🍰' };
 var TR_BG = {
-  beverages:'linear-gradient(145deg,#fdf3e6,#f5dcb8)',
-  ice_cream:'linear-gradient(145deg,#eaf7ff,#c9ecff)',
-  desserts:'linear-gradient(145deg,#fdf0f6,#f8d8e8)'
+  Coffee:'linear-gradient(145deg,#fdf3e6,#f5dcb8)',
+  Tea:'linear-gradient(145deg,#eef8ea,#cfe9c4)',
+  Desserts:'linear-gradient(145deg,#fdf0f6,#f8d8e8)',
+  Brownies:'linear-gradient(145deg,#f5e8da,#e0c3a3)',
+  Cakes:'linear-gradient(145deg,#fdeef4,#f7c7dc)',
+  Cookies:'linear-gradient(145deg,#fdf6e3,#f0dba8)',
+  IceCream:'linear-gradient(145deg,#eaf7ff,#c9ecff)',
+  Others:'linear-gradient(145deg,#f1f2f4,#d7dade)',
+  Milkshake:'linear-gradient(145deg,#fdeef2,#f9c3d6)',
+  Chocolate:'linear-gradient(145deg,#f3e6de,#d9b39a)',
+  Spicy:'linear-gradient(145deg,#fdece9,#f6b8ae)',
+  Combo:'linear-gradient(145deg,#e8f6f3,#b9e6dc)',
+  Blondie:'linear-gradient(145deg,#fdf8e3,#f3e0a0)',
+  Cupcake:'linear-gradient(145deg,#fdeef4,#f7c7dc)'
 };
-var TR_LABELS = { beverages:'Beverage', ice_cream:'Ice Cream', desserts:'Dessert' };
+function trCatEmoji(cat) { return TR_EMOJIS[cat] || '🍽️'; }
+function trCatBg(cat)    { return TR_BG[cat] || 'linear-gradient(145deg,#f5eeff,#e0c8f0)'; }
+function trCatLabel(cat) { return (cat || 'Others').replace(/([a-z])([A-Z])/g, '$1 $2'); }
 
 var _treatsLoaded = false;
 var _allTreatItems = [];
@@ -7348,7 +7362,6 @@ async function loadTreats() {
       return client.from('store_menu')
         .select('id,name,price,tag,category')
         .eq('available', true)
-        .in('category', Object.keys(TR_BUCKET))
         .order('sort_order', { ascending: true });
     };
 
@@ -7379,6 +7392,7 @@ async function loadTreats() {
     var countEl = document.getElementById('tr-count');
     if (countEl) countEl.textContent = items.length + '+';
 
+    trRenderCategoryChips(items);
     trRenderGrid(items);
   } catch (e) {
     console.error('loadTreats:', e);
@@ -7397,14 +7411,14 @@ function trRenderGrid(items) {
   }
 
   grid.innerHTML = items.map(function(it) {
-    var bucket = TR_BUCKET[it.category] || 'desserts';
-    var emoji  = TR_EMOJIS[bucket];
-    var bg     = TR_BG[bucket];
-    var label  = TR_LABELS[bucket];
-    var name   = it.name || 'Item';
-    var price  = it.price || 0;
+    var cat   = it.category || 'Others';
+    var emoji = trCatEmoji(cat);
+    var bg    = trCatBg(cat);
+    var label = trCatLabel(cat);
+    var name  = it.name || 'Item';
+    var price = it.price || 0;
 
-    return '<div class="tr-card" data-tr-cat="' + bucket + '" data-name="' + name.replace(/"/g,'&quot;').toLowerCase() + '">'
+    return '<div class="tr-card" data-tr-cat="' + cat + '" data-name="' + name.replace(/"/g,'&quot;').toLowerCase() + '">'
       + '<div class="tr-img" style="background:' + bg + '">'
       + '<span class="tr-emoji">' + emoji + '</span>'
       + (it.tag ? '<div class="tr-tag">' + it.tag + '</div>' : '')
@@ -7419,6 +7433,33 @@ function trRenderGrid(items) {
       + '</div>'
       + '</div>';
   }).join('');
+}
+
+// Builds the category tab bar from whatever categories are actually
+// present in the loaded items — same "only show tabs that have items"
+// behavior store.html's own menu page uses, so this stays in sync with
+// On Store automatically as staff add/remove categories.
+function trRenderCategoryChips(items) {
+  var bar = document.getElementById('tr-cats-bar');
+  if (!bar) return;
+
+  var seen = {};
+  var cats = [];
+  items.forEach(function(it) {
+    var c = it.category || 'Others';
+    if (!seen[c]) { seen[c] = true; cats.push(c); }
+  });
+  cats.sort(function(a, b) {
+    var ai = TR_CAT_ORDER.indexOf(a); if (ai === -1) ai = 999;
+    var bi = TR_CAT_ORDER.indexOf(b); if (bi === -1) bi = 999;
+    return ai - bi;
+  });
+
+  _trActiveCat = 'all';
+  bar.innerHTML = '<div class="tr-chip on" data-cat="all" onclick="trFilter(this)">✦ All</div>'
+    + cats.map(function(c) {
+        return '<div class="tr-chip" data-cat="' + c + '" onclick="trFilter(this)">' + trCatEmoji(c) + ' ' + trCatLabel(c) + '</div>';
+      }).join('');
 }
 
 var _trActiveCat = 'all';
