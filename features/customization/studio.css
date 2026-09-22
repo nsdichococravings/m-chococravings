@@ -1,0 +1,359 @@
+/* ══ CAKE STUDIO — DUSTY ROSE LUXURY ══ */
+#page-cake-studio {
+  background: #f0e4de;
+}
+#page-cake-studio .panel {
+  background: linear-gradient(180deg, #f0e4de 0%, #ead8d0 60%, #e8d2ca 100%);
+  border-left: none;
+  border-top: 1px solid rgba(201,160,64,.2);
+  padding: 24px 18px 32px;
+  gap: 26px;
+  overflow-y: visible;
+  height: auto;
+  min-height: unset;
+}
+
+/* Section headers */
+#page-cake-studio .sh-dot {
+  background: #c9a040;
+  box-shadow: 0 0 5px rgba(201,160,64,.5);
+}
+#page-cake-studio .sh-text {
+  font-size: 10.5px;
+  letter-spacing: .85em;
+  color: rgba(88, 2, 88, 0.6);
+}
+#page-cake-studio .sh-line {
+  background: linear-gradient(to right, rgba(201,160,64,.4), transparent);
+}
+
+/* ── FLAVOUR CARDS ── */
+#page-cake-studio .fcard {
+  background: #faf2ef;
+  border: 1px solid rgba(201,160,64,.18);
+  padding: 17px 17px 14px 20px;
+  box-shadow: 0 2px 14px rgba(180,90,70,.08), 0 1px 0 rgba(255,255,255,.6);
+  transition: border-color .3s, box-shadow .3s, transform .2s;
+}
+#page-cake-studio .fcard::after {
+  content: '';
+  position: absolute;
+  top: 10px; right: 12px;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: transparent;
+  transition: all .3s;
+  pointer-events: none;
+}
+#page-cake-studio .fcard.active::after {
+  background: #6e0977;
+  box-shadow: 0 0 8px rgba(110,9,119,.55);
+}
+#page-cake-studio .fcard:hover {
+  border-color: rgba(201,160,64,.42);
+  box-shadow: 0 8px 28px rgba(180,90,70,.12), 0 1px 0 rgba(255,255,255,.8);
+  transform: translateY(-2px);
+}
+#page-cake-studio .fcard.active {
+  background: #fff8f5;
+  border: 1.5px solid rgba(201,160,64,.6);
+  box-shadow: 0 10px 36px rgba(180,90,70,.14), 0 1px 0 rgba(255,255,255,.9);
+}
+#page-cake-studio .fcard::before {
+  background: linear-gradient(180deg, var(--card-accent,#c9a040), rgba(180,130,40,.5));
+  width: 3px;
+  box-shadow: 1px 0 8px rgba(201,160,64,.25);
+}
+#page-cake-studio .fswatch {
+  width: 34px; height: 34px;
+  border: 1.5px solid rgba(201,160,64,.3);
+  box-shadow: 0 3px 10px rgba(0,0,0,.1), inset 0 1px 0 rgba(255,255,255,.5);
+}
+#page-cake-studio .ftitle {
+  font-size: 17px;
+  font-weight: 600;
+  color: #2a0e08;
+  letter-spacing: .01em;
+}
+#page-cake-studio .fsub {
+  font-size: 8px;
+  letter-spacing: .2em;
+  color: rgba(180,90,70,.6);
+  margin-top: 2px;
+}
+#page-cake-studio .fdesc {
+  font-size: 11.5px;
+  color: #8a5a4a;
+  line-height: 1.65;
+  margin-top: 6px;
+}
+#page-cake-studio .fcard[data-f="vanilla"] .ftag {
+  border-color: rgba(201,160,64,.32);
+  color: rgba(160,100,30,.85);
+  background: rgba(201,160,64,.1);
+}
+#page-cake-studio .fcard[data-f="chocberry"] .ftag {
+  border-color: rgba(192,64,112,.28);
+  color: rgba(160,50,90,.85);
+  background: rgba(192,64,112,.08);
+}
+
+/* ── FROSTING BUTTONS ── */
+#page-cake-studio .fbtn {
+  background: #f5ece8;
+  border: 1px solid rgba(201,160,64,.18);
+  padding: 13px 8px 11px;
+  box-shadow: 0 2px 8px rgba(180,90,70,.07), 0 1px 0 rgba(255,255,255,.5);
+  transition: all .25s;
+}
+#page-cake-studio .fbtn:hover {
+  border-color: rgba(201,160,64,.38);
+  background: #faf2ef;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(180,90,70,.12);
+}
+#page-cake-studio .fbtn.active {
+  background: #fff8f5;
+  border: 1.5px solid rgba(201,160,64,.58);
+  box-shadow: 0 6px 22px rgba(180,90,70,.14), inset 0 1px 0 rgba(255,255,255,.9);
+}
+#page-cake-studio .frost-swatch {
+  width: 38px; height: 38px;
+  box-shadow: 0 3px 12px rgba(0,0,0,.1), inset 0 1px 0 rgba(255,255,255,.4);
+}
+#page-cake-studio .frost-name {
+  font-size: 7.5px;
+  letter-spacing: .2em;
+  color: #b08070;
+}
+#page-cake-studio .fbtn.active .frost-name {
+  color: rgba(160,100,30,.9);
+}
+
+/* ── PILLS (Tiers / Sizes / Weights) ── */
+#page-cake-studio .pill {
+  background: #f5ece8;
+  border: 1px solid rgba(201,160,64,.18);
+  color: #b08878;
+  box-shadow: 0 1px 6px rgba(180,90,70,.07), 0 1px 0 rgba(255,255,255,.5);
+  transition: all .22s;
+}
+#page-cake-studio .pill:hover {
+  border-color: rgba(110,9,119,.28);
+  color: #6e0977;
+  background: #faf2ef;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(110,9,119,.1);
+}
+#page-cake-studio .pill.active {
+  background: #fff8f5;
+  border: 1.5px solid rgba(201,160,64,.58);
+  color: #8a5c18;
+  box-shadow: 0 6px 20px rgba(180,90,70,.14), inset 0 1px 0 rgba(255,255,255,.9);
+}
+#page-cake-studio .pill-big {
+  color: #2a0e08;
+  font-size: 22px;
+}
+#page-cake-studio .pill.active .pill-big {
+  color: #1a0c04;
+}
+#page-cake-studio .pill-sub {
+  font-size: 7.5px;
+  letter-spacing: .15em;
+  color: #c09080;
+}
+#page-cake-studio .pill.active .pill-sub {
+  color: rgba(201,160,64,.7);
+}
+
+/* ── FINISHING TOUCH CHIPS ── */
+#page-cake-studio .tchip {
+  background: #f5ece8;
+  border: 1px solid rgba(201,160,64,.18);
+  color: #b08878;
+  font-size: 8px;
+  letter-spacing: .12em;
+  box-shadow: 0 1px 5px rgba(180,90,70,.07), 0 1px 0 rgba(255,255,255,.5);
+  transition: all .2s;
+}
+#page-cake-studio .tchip::before {
+  border: 1px solid rgba(201,160,64,.28);
+  background: transparent;
+}
+#page-cake-studio .tchip:hover {
+  border-color: rgba(110,9,119,.3);
+  color: #6e0977;
+  background: #faf2ef;
+  box-shadow: 0 4px 12px rgba(110,9,119,.09);
+}
+#page-cake-studio .tchip.active {
+  background: #fff8f5;
+  border: 1.5px solid rgba(201,160,64,.52);
+  color: #8a5c18;
+  box-shadow: 0 4px 14px rgba(180,90,70,.12);
+}
+#page-cake-studio .tchip.active::before {
+  background: #c9a040;
+  border-color: #c9a040;
+  box-shadow: 0 0 6px rgba(201,160,64,.55);
+}
+#page-cake-studio .toy-sub {
+  background: rgba(250,242,239,.7);
+  border: 1px solid rgba(201,160,64,.22);
+}
+#page-cake-studio .topt, #page-cake-studio .sopt {
+  background: #faf2ef;
+  border: 1px solid rgba(201,160,64,.22);
+  color: #b08878;
+}
+#page-cake-studio .topt:hover, #page-cake-studio .sopt:hover {
+  border-color: rgba(110,9,119,.3);
+  color: #6e0977;
+  background: #fff8f5;
+}
+#page-cake-studio .topt.active, #page-cake-studio .sopt.active {
+  border-color: rgba(201,160,64,.55);
+  color: #8a5c18;
+  background: #fff8f5;
+}
+
+/* ── NAME INPUT ── */
+#page-cake-studio .name-input-wrap {
+  background: #fff8f5;
+  border: 1px solid rgba(201,160,64,.28);
+  box-shadow: 0 2px 10px rgba(180,90,70,.07), inset 0 1px 0 rgba(255,255,255,.8);
+}
+#page-cake-studio .name-input-wrap:focus-within {
+  border-color: #6e0977;
+  box-shadow: 0 0 0 3px rgba(110,9,119,.1), 0 4px 16px rgba(180,90,70,.1);
+}
+#page-cake-studio .name-input {
+  color: #2a0e08;
+  font-size: 16px;
+}
+#page-cake-studio .name-input::placeholder {
+  color: rgba(180,120,100,.45);
+}
+#page-cake-studio .name-char-count {
+  color: rgba(180,120,100,.45);
+}
+
+/* ── PLACEMENT BUTTONS ── */
+#page-cake-studio .pplace {
+  background: #f5ece8;
+  border: 1px solid rgba(201,160,64,.2);
+  color: #b08878;
+  box-shadow: 0 1px 5px rgba(180,90,70,.07);
+}
+#page-cake-studio .pplace:hover {
+  border-color: rgba(110,9,119,.28);
+  color: #6e0977;
+  background: #faf2ef;
+  transform: translateY(-1px);
+}
+#page-cake-studio .pplace.active {
+  background: #fff8f5;
+  border: 1.5px solid rgba(201,160,64,.52);
+  color: #8a5c18;
+  box-shadow: 0 4px 14px rgba(180,90,70,.12);
+}
+#page-cake-studio .pplace-sub {
+  color: #c0a090;
+}
+
+/* ── QTY ROW ── */
+#page-cake-studio .qty-row {
+  border: 1px solid rgba(201,160,64,.28);
+  background: #fff8f5;
+  box-shadow: 0 2px 10px rgba(180,90,70,.08), inset 0 1px 0 rgba(255,255,255,.9);
+}
+#page-cake-studio .qbtn {
+  background: #f5ece8;
+  color: #c9a040;
+  font-size: 22px;
+}
+#page-cake-studio .qbtn:hover {
+  background: #fae8e0;
+}
+#page-cake-studio .qval {
+  background: #fff8f5;
+  color: #2a0e08;
+  border-color: rgba(201,160,64,.28);
+  letter-spacing: .3em;
+}
+
+/* ── PRICE BLOCK ── */
+#page-cake-studio .price-block {
+  background: linear-gradient(135deg, rgba(255,248,245,.95) 0%, rgba(245,236,232,.8) 100%);
+  border: 1px solid rgba(201,160,64,.32);
+  box-shadow: 0 4px 20px rgba(180,90,70,.1), inset 0 1px 0 rgba(255,255,255,.9);
+}
+#page-cake-studio .price-lbl {
+  color: rgba(180,100,70,.55);
+  letter-spacing: .65em;
+  font-size: 7px;
+}
+#page-cake-studio .price-amount {
+  font-size: 40px;
+  color: #2a0e08;
+}
+#page-cake-studio .price-amount .sym {
+  color: rgba(160,100,40,.6);
+}
+
+/* ── DATE INPUT ── */
+#page-cake-studio #cake-delivery-date {
+  background: #fff8f5;
+  border: 1px solid rgba(201,160,64,.28);
+  color: #0f0f0f;
+  font-family: 'Jost', sans-serif;
+  font-size: 13px;
+  border-radius: 2px;
+  box-shadow: 0 2px 10px rgba(180,90,70,.07), inset 0 1px 0 rgba(255,255,255,.8);
+  color-scheme: light;
+}
+#page-cake-studio #cake-delivery-date::-webkit-calendar-picker-indicator {
+  opacity: .5;
+  cursor: pointer;
+  filter: invert(30%) sepia(60%) saturate(400%) hue-rotate(340deg);
+}
+#page-cake-studio #cake-delivery-date::placeholder {
+  color: rgba(10, 0, 0, 0.5);
+}
+#page-cake-studio #cake-delivery-date:focus {
+  border-color: #6e0977;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(110,9,119,.1);
+}
+#page-cake-studio #cake-date-ph {
+  color: rgba(17, 5, 0, 0.5);
+}
+
+/* ── ADD TO CART CTA ── */
+#page-cake-studio .cta {
+  background: linear-gradient(135deg,
+    #c9a040 0%, #8a5c18 40%,
+    #c9a040 70%, #6e0977 100%);
+  background-size: 220% 100%;
+  background-position: 0%;
+  color: #fdf4dc;
+  letter-spacing: .6em;
+  font-size: 9.5px;
+  padding: 20px 24px;
+  box-shadow:
+    0 8px 32px rgba(180,90,70,.22),
+    0 4px 12px rgba(110,9,119,.18),
+    inset 0 1px 0 rgba(255,255,255,.2),
+    inset 0 -1px 0 rgba(0,0,0,.08);
+  border-top: 1px solid rgba(255,255,255,.18);
+  transition: all .45s;
+}
+#page-cake-studio .cta:hover {
+  background-position: 100%;
+  letter-spacing: .75em;
+  box-shadow:
+    0 14px 42px rgba(180,90,70,.28),
+    0 6px 18px rgba(110,9,119,.25);
+}
+
