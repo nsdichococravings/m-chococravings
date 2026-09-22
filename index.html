@@ -1119,6 +1119,14 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
         <div class="greet-main" id="greet-main">What's your <em>craving</em> today?</div>
       </div>
 
+      <!-- Searches the same Treats & Sips catalog the On Store app sells from -->
+      <div class="srch">
+        <span class="srch-icon">🔍</span>
+        <input id="treats-search" type="text" placeholder="Search coffee, tea, ice cream, desserts…"
+          oninput="treatsSearch(this.value)">
+        <span id="treats-search-clear" style="font-size:16px;color:var(--faint);cursor:pointer;display:none" onclick="clearTreatsSearch()">✕</span>
+      </div>
+
       <!-- ═══ TREATS & SIPS — beverages, ice cream, desserts (now the Home opener) ═══ -->
       <style>
       .tr-hero{position:relative;background:linear-gradient(120deg,#231205,#3d1f05 45%,#0a2e3d 100%);padding:20px 24px 24px;overflow:hidden}
@@ -1271,59 +1279,6 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
         50%      { opacity:.9; transform:scale(1.15); }
       }
       </style>
-
-      <!-- ═══ MENU SPOTLIGHT — order regular menu ═══ -->
-      <div onclick="showPage('explore')" style="margin:0 16px 20px;position:relative;border-radius:24px;overflow:hidden;cursor:pointer;background:linear-gradient(150deg,#2b0a35 0%,#6e0977 55%,#1a0820 100%)">
-
-        <!-- Ambient blobs -->
-        <div style="position:absolute;top:-40px;right:-30px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(249,200,255,.35),transparent 70%);filter:blur(18px);animation:hmBlob 9s ease-in-out infinite;pointer-events:none"></div>
-        <div style="position:absolute;bottom:-50px;left:-20px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(201,160,64,.28),transparent 70%);filter:blur(18px);animation:hmBlob 11s ease-in-out infinite 1.5s;pointer-events:none"></div>
-
-        <!-- Floating garnish -->
-        <div style="position:absolute;top:14%;right:14%;font-size:22px;opacity:.22;animation:hmFloat 5s ease-in-out infinite;pointer-events:none">🍫</div>
-        <div style="position:absolute;top:52%;right:26%;font-size:16px;opacity:.18;animation:hmFloat 6s ease-in-out infinite 1s;pointer-events:none">🎂</div>
-        <div style="position:absolute;top:30%;right:6%;font-size:14px;opacity:.16;animation:hmFloat 4.5s ease-in-out infinite .6s;pointer-events:none">🍪</div>
-
-        <!-- Content -->
-        <div style="position:relative;z-index:2;padding:20px 20px 0">
-          <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.1);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.18);border-radius:20px;padding:4px 11px;margin-bottom:12px">
-            <span style="width:5px;height:5px;border-radius:50%;background:#4ade80;display:inline-block;box-shadow:0 0 6px #4ade80;animation:hmPulse 1.5s infinite"></span>
-            <span style="font-size:9px;font-weight:700;color:rgba(255,255,255,.9);letter-spacing:2px;text-transform:uppercase">Fresh Batch Today</span>
-          </div>
-
-          <div style="font-family:'Cormorant Garamond',serif;font-size:27px;font-weight:600;color:#fff;line-height:1.08;letter-spacing:-.4px;margin-bottom:6px">
-            Your Favourite<br>
-            <span style="font-style:italic;background:linear-gradient(90deg,#f9c8ff,#ffd6b0,#c9a040);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Brownies Await</span>
-          </div>
-          <div style="font-size:11px;color:rgba(255,255,255,.65);letter-spacing:.3px;margin-bottom:16px">12+ flavours · Eggless &amp; egg options · Made to order</div>
-
-          <div style="position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.95);border-radius:22px;padding:9px 16px;margin-bottom:18px">
-            <div style="position:absolute;top:0;left:-100%;width:40%;height:100%;background:linear-gradient(105deg,transparent 30%,rgba(110,9,119,.18) 50%,transparent 70%);animation:hmShimmer 3s ease-in-out infinite"></div>
-            <span style="position:relative;font-size:12px;font-weight:800;color:#5c0872;letter-spacing:.3px">Explore Menu</span>
-            <div style="position:relative;width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#8b0f96,#5c0872);display:flex;align-items:center;justify-content:center">
-              <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3 2L7 5L3 8" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </div>
-          </div>
-        </div>
-
-        <!-- Stat bar -->
-        <div style="position:relative;z-index:2;display:flex;border-top:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.15)">
-          <div style="flex:1;text-align:center;padding:10px 4px">
-            <div style="font-size:13px;font-weight:700;color:#f9c8ff">★ 4.9</div>
-            <div style="font-size:8px;color:rgba(255,255,255,.5);letter-spacing:1px;text-transform:uppercase;margin-top:1px">Rating</div>
-          </div>
-          <div style="width:1px;background:rgba(255,255,255,.12)"></div>
-          <div style="flex:1;text-align:center;padding:10px 4px">
-            <div style="font-size:13px;font-weight:700;color:#ffd6b0">300+</div>
-            <div style="font-size:8px;color:rgba(255,255,255,.5);letter-spacing:1px;text-transform:uppercase;margin-top:1px">Orders</div>
-          </div>
-          <div style="width:1px;background:rgba(255,255,255,.12)"></div>
-          <div style="flex:1;text-align:center;padding:10px 4px">
-            <div style="font-size:13px;font-weight:700;color:#c9a040">4-5 Days</div>
-            <div style="font-size:8px;color:rgba(255,255,255,.5);letter-spacing:1px;text-transform:uppercase;margin-top:1px">Fresh</div>
-          </div>
-        </div>
-      </div>
 
       <!--
       <div class="hero-dots">
@@ -3883,6 +3838,20 @@ const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     detectSessionInUrl: true
   }
 });
+
+// Public store_menu catalog only — same pattern store.html's
+// getStoreMenuClient() uses. A separate, session-less client so
+// reading the Treats & Sips catalog never waits on (or is blocked by)
+// the signed-in db client's auth token refresh.
+var _treatsMenuClient = null;
+function getTreatsMenuClient() {
+  if (!_treatsMenuClient) {
+    _treatsMenuClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'cc-treats-menu' }
+    });
+  }
+  return _treatsMenuClient;
+}
 
 // NSDI WhatsApp number (receives order notifications)
 const NSDI_PHONE = '+91 89731 41898';
@@ -7188,15 +7157,17 @@ var _trSlideTimer = null;
 async function trLoadSlides() {
   _trActiveSlides = TR_DEFAULT_SLIDES;
   try {
-    var { data, error } = await db.from('home_banners')
-      .select('eyebrow,title_main,title_accent,tagline,cta_label,color_1,color_2,color_3,link_type,link_value')
+    var { data, error } = await getTreatsMenuClient().from('home_banners')
+      .select('eyebrow,title_main,title_accent,tagline,cta_label,color_1,color_2,color_3,image_url,link_type,link_value')
       .eq('is_active', true)
       .order('sort_order', { ascending: true });
     console.log('HOME BANNERS:', data, error);
+    if (error) throw error;
     if (data && data.length > 0) {
       _trActiveSlides = data.map(function(b) {
         return {
           bg: 'linear-gradient(120deg,' + b.color_1 + ' 0%,' + b.color_2 + ' 55%,' + b.color_3 + ' 100%)',
+          img: b.image_url || null,
           eyebrow: b.eyebrow,
           title: b.title_main + '<br><em>' + b.title_accent + '</em>',
           tagline: b.tagline,
@@ -7220,8 +7191,14 @@ function trRenderSlider() {
   if (!track || !dots) return;
 
   track.innerHTML = _trActiveSlides.map(function(s, i) {
-    return '<div class="tr-slide" style="background:' + s.bg + '" onclick="trSlideClick(' + i + ')">'
-      + '<svg class="tr-hero-deco" viewBox="0 0 180 180" fill="none"><circle cx="140" cy="40" r="80" stroke="#ffd9a0" stroke-width="0.5"/><circle cx="140" cy="40" r="60" stroke="#ffd9a0" stroke-width="0.5"/><circle cx="140" cy="40" r="40" stroke="#ffd9a0" stroke-width="0.5"/></svg>'
+    // A photo banner gets a dark gradient wash for text legibility, same
+    // treatment the app's original photo hero card used; no photo falls
+    // back to the plain colour gradient.
+    var bgStyle = s.img
+      ? "background:linear-gradient(to top,rgba(10,5,0,.75),rgba(10,5,0,.15) 55%,rgba(10,5,0,.55)),url('" + s.img + "') center/cover"
+      : 'background:' + s.bg;
+    return '<div class="tr-slide" style="' + bgStyle + '" onclick="trSlideClick(' + i + ')">'
+      + (s.img ? '' : '<svg class="tr-hero-deco" viewBox="0 0 180 180" fill="none"><circle cx="140" cy="40" r="80" stroke="#ffd9a0" stroke-width="0.5"/><circle cx="140" cy="40" r="60" stroke="#ffd9a0" stroke-width="0.5"/><circle cx="140" cy="40" r="40" stroke="#ffd9a0" stroke-width="0.5"/></svg>')
       + '<div class="tr-eyebrow"><div class="tr-eyebrow-line"></div><span class="tr-eyebrow-text">' + s.eyebrow + '</span></div>'
       + '<div class="tr-title">' + s.title + '</div>'
       + '<div class="tr-tagline">' + s.tagline + '</div>'
@@ -7310,13 +7287,14 @@ async function loadTreats() {
   if (!grid) return;
 
   try {
-    var { data: items, error } = await db.from('store_menu')
+    var { data: items, error } = await getTreatsMenuClient().from('store_menu')
       .select('id,name,price,tag,category')
       .eq('available', true)
       .in('category', Object.keys(TR_BUCKET))
       .order('sort_order', { ascending: true });
 
     console.log('TREATS & SIPS:', items, error);
+    if (error) throw error;
     if (!items || items.length === 0) {
       grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:50px 20px"><div style="font-size:40px;margin-bottom:12px">☕</div><div style="font-family:\'Cormorant Garamond\',serif;font-size:18px;font-style:italic;color:#b8590f">Coming Soon</div><div style="font-size:11px;color:#8a6248;margin-top:6px">Our café menu is being added — check back shortly</div></div>';
       return;
@@ -7352,7 +7330,7 @@ function trRenderGrid(items) {
     var name   = it.name || 'Item';
     var price  = it.price || 0;
 
-    return '<div class="tr-card" data-tr-cat="' + bucket + '">'
+    return '<div class="tr-card" data-tr-cat="' + bucket + '" data-name="' + name.replace(/"/g,'&quot;').toLowerCase() + '">'
       + '<div class="tr-img" style="background:' + bg + '">'
       + '<span class="tr-emoji">' + emoji + '</span>'
       + (it.tag ? '<div class="tr-tag">' + it.tag + '</div>' : '')
@@ -7369,13 +7347,39 @@ function trRenderGrid(items) {
   }).join('');
 }
 
+var _trActiveCat = 'all';
+
 function trFilter(el) {
   document.querySelectorAll('.tr-chip').forEach(function(c){ c.classList.remove('on'); });
   el.classList.add('on');
-  var cat = el.getAttribute('data-cat');
+  _trActiveCat = el.getAttribute('data-cat');
+  trApplyFilters();
+}
+
+// Combines the category chip with the search box — a card shows only
+// when it matches both (an empty search or "all" category always match).
+function trApplyFilters() {
+  var q = (document.getElementById('treats-search') || {}).value || '';
+  q = q.trim().toLowerCase();
   document.querySelectorAll('#tr-pgrid .tr-card[data-tr-cat]').forEach(function(card){
-    card.style.display = (cat === 'all' || card.getAttribute('data-tr-cat') === cat) ? '' : 'none';
+    var inCat = (_trActiveCat === 'all' || card.getAttribute('data-tr-cat') === _trActiveCat);
+    var inSearch = (!q || (card.getAttribute('data-name') || '').indexOf(q) !== -1);
+    card.style.display = (inCat && inSearch) ? '' : 'none';
   });
+}
+
+function treatsSearch(value) {
+  var clr = document.getElementById('treats-search-clear');
+  if (clr) clr.style.display = value ? 'inline' : 'none';
+  trApplyFilters();
+}
+
+function clearTreatsSearch() {
+  var inp = document.getElementById('treats-search');
+  if (inp) inp.value = '';
+  var clr = document.getElementById('treats-search-clear');
+  if (clr) clr.style.display = 'none';
+  trApplyFilters();
 }
 
 function trAddToCart(btn, name, price, itemId) {
