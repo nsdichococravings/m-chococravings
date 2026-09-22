@@ -73,6 +73,7 @@ function buildTablesBoardDOM() {
     +     'background:#f5eeff;border:1px solid #e0c8f0;display:flex;align-items:center;'
     +     'justify-content:center;cursor:pointer;font-size:14px;color:#6e0977">✕</div>'
     + '</div>'
+    + '<div style="padding:12px 20px;display:flex;gap:12px;align-items:center"><span id="ts-board-status" role="status" aria-live="polite" style="flex:1;font-size:12px;color:#73547d"></span><button type="button" onclick="loadTablesStatus()" style="padding:10px 16px;border:1px solid #e0c8f0;border-radius:10px;background:#fff;color:#6e0977">Refresh</button></div>'
     + '<div id="ts-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:18px 20px"></div>';
   document.body.appendChild(sheet);
 
@@ -149,28 +150,53 @@ function openTablesBoard() {
 }
 
 function closeTablesBoard() {
+  ++_tsBoardRead;
   document.getElementById('ts-board-overlay').style.display = 'none';
   document.getElementById('ts-board-sheet').style.display   = 'none';
   if (_tsBoardCh) { try { db.removeChannel(_tsBoardCh); } catch (e) {} _tsBoardCh = null; }
 }
 
+var _tsBoardRead = 0;
+var _tsBoardHasSnapshot = false;
+var _tsOrderRead = 0;
+var _tsOrderLoading = false;
+function tsOpenOrdersQuery(columns) {
+  // An order occupies a table until closed, irrespective of date/timezone.
+  return db.from('store_orders').select(columns).not('status', 'in', '("collected","cancelled")');
+}
 async function loadTablesStatus() {
-  var today = new Date().toISOString().slice(0, 10);
-  var res = await db.from('store_orders')
-    .select('id, table_code, items, total, status, staff_name, created_at')
-    .not('table_code', 'is', null)
-    .not('status', 'in', '("collected","cancelled")')
-    .gte('created_at', today + 'T00:00:00.000Z');
-
-  var map = {};
-  (res.data || []).forEach(function (o) { map[o.table_code] = o; });
-
-  var rankMap = {};
-  Object.keys(map)
-    .sort(function (a, b) { return new Date(map[a].created_at) - new Date(map[b].created_at); })
-    .forEach(function (code, idx) { rankMap[code] = idx + 1; });
-
-  renderTablesGrid(map, rankMap);
+  var serial=++_tsBoardRead,notice=document.getElementById('ts-board-status'),grid=document.getElementById('ts-grid');
+  if(notice)notice.textContent='Checking open orders…';
+  if(grid&&!_tsBoardHasSnapshot)grid.textContent='Loading table status…';
+  try {
+    var all=[],offset=0,pageSize=200;
+    while(true) {
+      var res=await tsOpenOrdersQuery('id, table_code, items, total, status, staff_name, created_at')
+        .in('table_code',TABLE_CODES).order('created_at',{ascending:false}).order('id',{ascending:false}).range(offset,offset+pageSize-1);
+      if(serial!==_tsBoardRead)return;
+      if(res.error)throw res.error;
+      if(!Array.isArray(res.data))throw new Error('Invalid table status response');
+      all=all.concat(res.data);
+      if(res.data.length<pageSize)break;
+      offset+=pageSize;
+    }
+    var map={},rankMap={};
+    all.forEach(function(o){
+      if(!map[o.table_code])map[o.table_code]=Object.assign({},o,{_tsOpenOrderCount:1});
+      else map[o.table_code]._tsOpenOrderCount++;
+    });
+    Object.keys(map).sort(function(a,b){return new Date(map[a].created_at)-new Date(map[b].created_at);})
+      .forEach(function(code,idx){rankMap[code]=idx+1;});
+    // Validate item payloads before replacing the previous successful snapshot.
+    Object.keys(map).forEach(function(code){if(!Array.isArray(tsParseItems(map[code].items)))throw new Error('Invalid order items');});
+    renderTablesGrid(map,rankMap);_tsBoardHasSnapshot=true;
+    if(notice)notice.textContent='Open orders checked '+new Date().toLocaleTimeString('en-IN')+' · Includes overnight orders';
+  } catch(error) {
+    if(serial!==_tsBoardRead)return;
+    if(notice)notice.textContent='Could not refresh tables. '+(_tsBoardHasSnapshot?'Showing the last successful check. ':'Status is unknown. ')+'Tap Refresh to retry.';
+    if(grid&&!_tsBoardHasSnapshot)grid.textContent='Table availability could not be loaded. No tables have been marked free.';
+    console.warn('Tables status:',error.message);
+  }
 }
 
 function renderTablesGrid(map, rankMap) {
@@ -208,6 +234,7 @@ function renderTablesGrid(map, rankMap) {
         + '<div style="font-size:10px;font-weight:700;color:#b87410;letter-spacing:1px;margin-top:2px">' + statusLbl.toUpperCase() + '</div>'
         + '<div style="font-size:12px;color:#8a6a3a;margin-top:6px">' + billLine + '</div>'
         + staffBadge
+        + (o._tsOpenOrderCount>1?'<div style="font-size:11px;color:#8a6a3a;margin-top:5px">'+o._tsOpenOrderCount+' open bills · newest shown</div>':'')
         + '</div>';
     }
     return '<div onclick="openTableOrderSheet(\'' + code + '\')" style="background:rgba(34,197,94,0.08);'
@@ -222,12 +249,17 @@ function subscribeTablesBoard() {
   if (_tsBoardCh) { try { db.removeChannel(_tsBoardCh); } catch (e) {} }
   _tsBoardCh = db.channel('tables-board-live')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'store_orders' }, function () {
-      loadTablesStatus();
+      if(document.getElementById('ts-board-sheet').style.display==='block')loadTablesStatus();
     })
-    .subscribe();
+    .subscribe(function(status){if(status==='SUBSCRIBED'&&document.getElementById('ts-board-sheet').style.display==='block')loadTablesStatus();});
 }
 
+window.addEventListener('online',function(){if(document.getElementById('ts-board-sheet')?.style.display==='block')loadTablesStatus();});
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&document.getElementById('ts-board-sheet')?.style.display==='block')loadTablesStatus();});
+
 function openTableOrderSheet(code) {
+  var serial=++_tsOrderRead;
+  _tsOrderLoading=true;
   _tsTableCode     = code;
   _tsExistingOrder = null;
   _tsItems         = [];
@@ -240,15 +272,20 @@ function openTableOrderSheet(code) {
   var billBtn = document.getElementById('ts-bill-btn');
   var undoBtn = document.getElementById('ts-undo-btn');
   var moveBtn = document.getElementById('ts-move-btn');
+  sendBtn.disabled=true;sendBtn.textContent='Loading table…';
+  billBtn.style.display='none';undoBtn.style.display='none';moveBtn.style.display='none';
+  document.getElementById('ts-items-list').textContent='Loading current order…';
+  document.getElementById('ts-cust-phone').value='';
 
-  db.from('store_orders')
-    .select('id, items, total, status, created_at, staff_name, customer_phone')
+  tsOpenOrdersQuery('id, items, total, status, created_at, staff_name, customer_phone')
     .eq('table_code', code)
-    .not('status', 'in', '("collected","cancelled")')
     .order('created_at', { ascending: false })
+    .order('id', { ascending: false })
     .limit(1)
     .maybeSingle()
     .then(function (res) {
+      if(serial!==_tsOrderRead)return;
+      if(res.error)throw res.error;
       var phoneInput = document.getElementById('ts-cust-phone');
       if (res.data) {
         _tsExistingOrder = res.data;
@@ -270,6 +307,12 @@ function openTableOrderSheet(code) {
       }
       tsRenderItems();
       tsCalcTotal();
+      _tsOrderLoading=false;sendBtn.disabled=false;
+    }).catch(function(error){
+      if(serial!==_tsOrderRead)return;
+      sendBtn.disabled=true;sendBtn.textContent='Reopen table to retry';
+      document.getElementById('ts-items-list').textContent='Could not load this table. Close and reopen to retry; no order has been created.';
+      showStoreToast('Could not load table: '+error.message);
     });
 
   document.getElementById('ts-board-overlay').style.display = 'none';
@@ -284,6 +327,8 @@ function openTableOrderSheet(code) {
 // existing order" branch as-is; only the opener and close behavior
 // differ from the normal Tables board flow.
 async function kOpenOrderEditFromKitchen(orderId) {
+  ++_tsOrderRead;
+  _tsOrderLoading=false;
   _tsOpenedFromKitchen = true;
   _tsExistingOrder = null;
   _tsItems = [];
@@ -307,6 +352,7 @@ async function kOpenOrderEditFromKitchen(orderId) {
   tsPopulateDropdown();
 
   document.getElementById('ts-send-btn').textContent = '➕ Add Items';
+  document.getElementById('ts-send-btn').disabled = false;
   document.getElementById('ts-cust-phone').value = (o.customer_phone || '').replace(/^\+?91/, '');
 
   // Quick-edit from Kitchen is purely for adding/modifying items — the
@@ -325,6 +371,8 @@ async function kOpenOrderEditFromKitchen(orderId) {
 }
 
 function closeTableOrderSheet() {
+  ++_tsOrderRead;
+  _tsOrderLoading=false;
   document.getElementById('ts-order-overlay').style.display = 'none';
   document.getElementById('ts-order-sheet').style.display   = 'none';
   if (_tsOpenedFromKitchen) {
@@ -479,6 +527,7 @@ function tsToggleComplimentary(idx) {
 }
 
 async function tsSubmit() {
+  if(_tsOrderLoading){showStoreToast('Wait for the current table order to load, or reopen it to retry.');return;}
   if (!_tsItems.length) { showStoreToast('Add at least one item'); return; }
   var btn = document.getElementById('ts-send-btn');
   var total = tsCalcTotal();
