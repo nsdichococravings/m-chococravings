@@ -326,6 +326,7 @@ async function lcIssue() {
 // the panel to any admin, and just surfaces the RPC's error if someone
 // without that flag tries to save or apply it.
 var _lcDefaultSchedule = null;
+var _lcCycRows = [];  // builder state: [{day, item}, ...] — freely mixed days/items, not a fixed interval
 
 function lcCycleSettingsHtml() {
   return '<details id="lc-cycle-details" style="margin:14px 0;border:1px solid #eadfeb;border-radius:12px;padding:0 14px" ontoggle="if(this.open) lcLoadCycleSettings()">'
@@ -340,12 +341,17 @@ async function lcLoadCycleSettings() {
   try {
     var res = await lcCommand('get_default_schedule', {});
     _lcDefaultSchedule = (res && res.schedule) || [];
+    _lcCycRows = _lcDefaultSchedule.map(function (s) { return { day: s.day, item: s.item }; });
     lcRenderCycleSettings();
   } catch (e) {
     body.innerHTML = '<p style="color:#a02929;font-size:13px">' + lcEsc(e.message) + '</p>';
   }
 }
 
+// Each milestone is added one at a time with its own day and item —
+// mix intervals and items however the business needs (e.g. Coffee at
+// day 10, then Brownie at day 25 — a 15-day gap — then Coffee again at
+// day 35, a 10-day gap). No fixed "every N days" generator.
 function lcRenderCycleSettings() {
   var body = document.getElementById('lc-cycle-body');
   if (!body) return;
@@ -357,16 +363,28 @@ function lcRenderCycleSettings() {
     ? _lcDefaultSchedule.map(function (s) { return 'Day ' + s.day + ' → ' + lcEsc(s.item); }).join(', ')
     : 'Not set yet — new cards start with stamps only, no rewards';
 
-  body.innerHTML = '<p style="font-size:12px;color:#79677e;margin:6px 0 12px">Current: ' + current + '</p>'
-    + '<div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:10px">'
-    +   '<label style="flex:1;font-size:13px">Reward every<select id="lc-cyc-interval" style="width:100%;padding:12px;border:1px solid #ddcce2;'
-    +     'border-radius:9px;font:inherit;min-height:44px;margin-top:4px"><option value="10">10 days</option><option value="15">15 days</option><option value="20">20 days</option><option value="25">25 days</option></select></label>'
+  var sortedRows = _lcCycRows.slice().sort(function (a, b) { return a.day - b.day; });
+  var rowsHtml = sortedRows.length
+    ? sortedRows.map(function (r) {
+        var origIdx = _lcCycRows.indexOf(r);
+        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0e8f4;font-size:13px">'
+          + '<span>Day ' + r.day + ' → ' + lcEsc(r.item) + '</span>'
+          + '<button type="button" onclick="lcCycRemove(' + origIdx + ')" style="cursor:pointer;border:0;background:transparent;color:#a02929;font-size:16px;line-height:1">✕</button>'
+          + '</div>';
+      }).join('')
+    : '<p style="font-size:12px;color:#a08b9f;margin:4px 0">No milestones added yet</p>';
+
+  body.innerHTML = '<p style="font-size:12px;color:#79677e;margin:6px 0 12px">Current default: ' + current + '</p>'
+    + '<div style="display:flex;gap:10px;align-items:flex-end;margin-bottom:6px">'
+    +   '<label style="width:100px;font-size:13px">Day (1–100)<input id="lc-cyc-day" type="number" min="1" max="100" '
+    +     'style="width:100%;padding:12px;border:1px solid #ddcce2;border-radius:9px;font:inherit;min-height:44px;margin-top:4px"></label>'
     +   '<label style="flex:1;font-size:13px">Complimentary item<select id="lc-cyc-item" style="width:100%;padding:12px;border:1px solid #ddcce2;'
     +     'border-radius:9px;font:inherit;min-height:44px;margin-top:4px">' + optHtml + '</select></label>'
+    +   '<button type="button" onclick="lcCycAddRow()" style="cursor:pointer;background:#790c88;color:#fff;border:0;border-radius:10px;'
+    +     'padding:12px 16px;min-height:44px;font:inherit;flex-shrink:0">Add</button>'
     + '</div>'
-    + '<button type="button" onclick="lcCycleBuild()" style="cursor:pointer;border:1px solid #e2cfe6;background:white;color:#790c88;'
-    +   'border-radius:10px;padding:11px 15px;min-height:44px;font:inherit">Build milestones (always ends at day 100)</button>'
-    + '<div id="lc-cyc-preview" style="margin-top:10px"></div>'
+    + '<p style="font-size:11px;color:#a08b9f;margin:4px 0 10px">Add each milestone one at a time — different days and items are fine, e.g. Coffee at day 10, Brownie at day 25, Coffee again at day 35.</p>'
+    + '<div id="lc-cyc-rows">' + rowsHtml + '</div>'
     + '<div style="display:flex;gap:10px;margin-top:14px">'
     +   '<button onclick="lcSaveDefaultSchedule()" style="cursor:pointer;background:#790c88;color:#fff;border:0;border-radius:10px;'
     +     'padding:11px 16px;min-height:44px;font:inherit;flex:1">Save as default</button>'
@@ -376,29 +394,31 @@ function lcRenderCycleSettings() {
     + '<p style="font-size:11px;color:#a08b9f;margin-top:10px">Only a super admin can change this or apply it to existing customers.</p>';
 }
 
-function lcCycleBuild() {
-  var interval = Number(document.getElementById('lc-cyc-interval').value);
+function lcCycAddRow() {
+  var dayInput = document.getElementById('lc-cyc-day');
+  var day = parseInt(dayInput.value, 10);
   var item = document.getElementById('lc-cyc-item').value;
-  var days = [];
-  for (var d = interval; d < 100; d += interval) days.push(d);
-  days.push(100);
-  var opts = Array.prototype.map.call(document.getElementById('lc-cyc-item').options, function (o) { return o.value; });
-  document.getElementById('lc-cyc-preview').innerHTML = days.map(function (d) {
-    return '<label style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px">Day ' + d
-      + '<select data-day="' + d + '" style="width:60%;padding:9px;border:1px solid #ddcce2;border-radius:9px;font:inherit">'
-      + opts.map(function (n) { return '<option ' + (n === item ? 'selected' : '') + '>' + lcEsc(n) + '</option>'; }).join('')
-      + '</select></label>';
-  }).join('');
+  if (!day || day < 1 || day > 100) { lcMsg('Enter a day from 1 to 100'); return; }
+  if (_lcCycRows.some(function (r) { return r.day === day; })) { lcMsg('Day ' + day + ' is already on the list — remove it first to change the item'); return; }
+  _lcCycRows.push({ day: day, item: item });
+  lcMsg('');
+  dayInput.value = '';
+  lcRenderCycleSettings();
+}
+
+function lcCycRemove(idx) {
+  _lcCycRows.splice(idx, 1);
+  lcRenderCycleSettings();
 }
 
 async function lcSaveDefaultSchedule() {
-  var els = document.querySelectorAll('#lc-cyc-preview [data-day]');
-  if (!els.length) { lcMsg('Build the milestones first'); return; }
-  var schedule = Array.prototype.map.call(els, function (s) { return { day: Number(s.dataset.day), item: s.value }; });
+  if (!_lcCycRows.length) { lcMsg('Add at least one milestone first'); return; }
+  var schedule = _lcCycRows.map(function (r) { return { day: r.day, item: r.item }; });
   lcBusy(true);
   try {
     var res = await lcCommand('set_default_schedule', { schedule: schedule });
     _lcDefaultSchedule = res.schedule || [];
+    _lcCycRows = _lcDefaultSchedule.map(function (s) { return { day: s.day, item: s.item }; });
     lcMsg('');
     lcRenderCycleSettings();
     showStoreToast('✅ Default reward schedule saved');

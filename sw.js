@@ -1,5 +1,5 @@
 // NSDI ChocoCravings — Service Worker
-const CACHE_NAME = 'chococravings-v28-loyalty-cycle-settings';
+const CACHE_NAME = 'chococravings-v29-loyalty-custom-milestones';
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache immediately on install
