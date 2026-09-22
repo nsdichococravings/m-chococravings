@@ -521,6 +521,23 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 
   <div id="mg-list" style="padding-bottom:100px"></div>
 </div>
+
+<!-- ═══ PAGE: HOME BANNERS (Admin/Staff) ═══════════════════════ -->
+<!-- Manages the sliding banner at the top of the customer app's Home
+     page (home_banners table). Reads/writes go through the
+     cc_home_banners_admin RPC, which enforces staff/admin access
+     server-side, so this page never needs its own separate guard. -->
+<div class="page" id="pg-banners">
+  <div class="status-hdr">
+    <div class="back-btn" onclick="goTo('pg-kitchen')">‹</div>
+    <div>
+      <div class="tit">Home Banners</div>
+      <div class="tok">The customer app's sliding banner</div>
+    </div>
+    <div onclick="bnOpenAdd()" style="margin-left:auto;width:36px;height:36px;border-radius:50%;background:#6e0977;display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;cursor:pointer;box-shadow:0 3px 12px rgba(110,9,119,0.4)">+</div>
+  </div>
+  <div id="bn-list" style="padding-bottom:100px"></div>
+</div>
 <!-- Admin quick actions — shown only to admin -->
 <!-- Admin floating action button -->
 <div id="admin-quick-actions" style="display:none">
@@ -581,6 +598,19 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
       </div>
     </div>
 
+    <div onclick="openBannerManage();closeAdminMenu()"
+      style="display:flex;align-items:center;gap:10px;padding:13px 16px;
+      cursor:pointer;transition:background .15s"
+      onmouseover="this.style.background='#f5eeff'"
+      onmouseout="this.style.background='transparent'">
+      <div style="width:32px;height:32px;border-radius:8px;background:rgba(110,9,119,0.1);
+        display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🎬</div>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:#1a0820">Home Banners</div>
+        <div style="font-size:11px;color:#9c0ca1;margin-top:1px">Customer app's sliding banner</div>
+      </div>
+    </div>
+
     <div id="store-status-toggle" onclick="toggleStoreOpenStatus();closeAdminMenu()"
       style="display:flex;align-items:center;gap:10px;padding:13px 16px;
       cursor:pointer;transition:background .15s;border-top:1px solid #f0e8f8"
@@ -634,6 +664,66 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     <input id="mf-tag" placeholder="e.g. creamy & sweet" style="width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);background:#fdf5e3;font-family:'Instrument Sans',sans-serif;font-size:13px;color:#120a1e;outline:none;margin-bottom:20px"/>
 
     <button id="mg-save-btn" onclick="mgSaveItem()" style="width:100%;padding:16px;border-radius:14px;background:#6e0977;color:#fff;font-family:'Fraunces',Georgia,serif;font-size:17px;font-weight:900;border:none;cursor:pointer;box-shadow:0 6px 24px rgba(110,9,119,0.4)">Save Item</button>
+  </div>
+</div>
+
+<!-- ═══ HOME BANNER ADD/EDIT SHEET ═══════════════════════════ -->
+<div id="bn-backdrop" onclick="bnCloseSheet()" style="display:none;position:fixed;inset:0;background:rgba(18,10,30,0.5);z-index:700"></div>
+<div id="bn-sheet" style="display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;max-height:88vh;overflow-y:auto;background:#fffbf2;border-radius:28px 28px 0 0;border-top:1.5px solid rgba(18,10,30,0.09);z-index:701;padding-bottom:env(safe-area-inset-bottom,20px);font-family:'Instrument Sans',sans-serif">
+  <div class="handle"><span></span></div>
+  <div style="padding:14px 22px 24px">
+    <div style="font-family:'Fraunces',Georgia,serif;font-size:24px;font-weight:900;color:#120a1e;margin-bottom:18px" id="bn-sheet-title">Add Banner</div>
+
+    <div style="font-size:10px;letter-spacing:3px;color:#9a8aaa;font-weight:700;margin-bottom:6px">EYEBROW LABEL</div>
+    <input id="bf-eyebrow" placeholder="e.g. Combo Offer · Limited Time" style="width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);background:#fdf5e3;font-family:'Instrument Sans',sans-serif;font-size:13px;color:#120a1e;outline:none;margin-bottom:14px"/>
+
+    <div style="display:flex;gap:10px;margin-bottom:14px">
+      <div style="flex:1">
+        <div style="font-size:10px;letter-spacing:3px;color:#9a8aaa;font-weight:700;margin-bottom:6px">TITLE LINE</div>
+        <input id="bf-title-main" placeholder="e.g. Coffee + Dessert" style="width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);background:#fdf5e3;font-family:'Fraunces',Georgia,serif;font-size:15px;font-weight:700;color:#120a1e;outline:none;box-sizing:border-box"/>
+      </div>
+      <div style="flex:1">
+        <div style="font-size:10px;letter-spacing:3px;color:#9a8aaa;font-weight:700;margin-bottom:6px">ACCENT LINE</div>
+        <input id="bf-title-accent" placeholder="e.g. Combo" style="width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);background:#fdf5e3;font-family:'Fraunces',Georgia,serif;font-size:15px;font-weight:700;font-style:italic;color:#120a1e;outline:none;box-sizing:border-box"/>
+      </div>
+    </div>
+
+    <div style="font-size:10px;letter-spacing:3px;color:#9a8aaa;font-weight:700;margin-bottom:6px">TAGLINE</div>
+    <input id="bf-tagline" placeholder="e.g. Save ₹20 when ordered together" style="width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);background:#fdf5e3;font-family:'Instrument Sans',sans-serif;font-size:13px;color:#120a1e;outline:none;margin-bottom:14px"/>
+
+    <div style="font-size:10px;letter-spacing:3px;color:#9a8aaa;font-weight:700;margin-bottom:6px">BUTTON LABEL <span style="opacity:0.5;font-size:9px;letter-spacing:1px">(BLANK = NO BUTTON)</span></div>
+    <input id="bf-cta" placeholder="e.g. Grab The Combo" style="width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);background:#fdf5e3;font-family:'Instrument Sans',sans-serif;font-size:13px;color:#120a1e;outline:none;margin-bottom:14px"/>
+
+    <div style="font-size:10px;letter-spacing:3px;color:#9a8aaa;font-weight:700;margin-bottom:8px">BANNER COLOURS</div>
+    <div style="display:flex;gap:10px;margin-bottom:6px">
+      <input id="bf-color1" type="color" value="#231205" oninput="bnPreviewUpdate()" style="flex:1;height:44px;border-radius:10px;border:1.5px solid rgba(18,10,30,0.12);cursor:pointer">
+      <input id="bf-color2" type="color" value="#3d1f05" oninput="bnPreviewUpdate()" style="flex:1;height:44px;border-radius:10px;border:1.5px solid rgba(18,10,30,0.12);cursor:pointer">
+      <input id="bf-color3" type="color" value="#0a2e3d" oninput="bnPreviewUpdate()" style="flex:1;height:44px;border-radius:10px;border:1.5px solid rgba(18,10,30,0.12);cursor:pointer">
+    </div>
+    <div id="bf-preview" style="height:56px;border-radius:12px;margin-bottom:16px;background:linear-gradient(120deg,#231205,#3d1f05 55%,#0a2e3d 100%)"></div>
+
+    <div style="font-size:10px;letter-spacing:3px;color:#9a8aaa;font-weight:700;margin-bottom:8px">WHEN TAPPED</div>
+    <select id="bf-link-type" onchange="bnUpdateLinkValueVisibility()" style="width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);background:#fdf5e3;font-family:'Instrument Sans',sans-serif;font-size:13px;color:#120a1e;outline:none;margin-bottom:10px">
+      <option value="grid">Scroll to Treats &amp; Sips grid</option>
+      <option value="category">Jump to a category</option>
+      <option value="explore">Open the brownies menu</option>
+      <option value="accessories">Open the Vibe Store</option>
+      <option value="none">No action (just a visual banner)</option>
+    </select>
+    <select id="bf-link-value" style="display:none;width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);background:#fdf5e3;font-family:'Instrument Sans',sans-serif;font-size:13px;color:#120a1e;outline:none;margin-bottom:14px">
+      <option value="beverages">Beverages</option>
+      <option value="ice_cream">Ice Cream</option>
+      <option value="desserts">Desserts</option>
+    </select>
+
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+      <div id="bf-active-toggle" onclick="bnToggleActiveField()" data-on="true" style="width:42px;height:24px;border-radius:12px;background:#6e0977;position:relative;cursor:pointer;flex-shrink:0">
+        <div style="position:absolute;top:3px;right:3px;width:18px;height:18px;border-radius:50%;background:#fff"></div>
+      </div>
+      <div style="font-size:13px;font-weight:600;color:#120a1e">Active on the Home page</div>
+    </div>
+
+    <button id="bn-save-btn" onclick="bnSave()" style="width:100%;padding:16px;border-radius:14px;background:#6e0977;color:#fff;font-family:'Fraunces',Georgia,serif;font-size:17px;font-weight:900;border:none;cursor:pointer;box-shadow:0 6px 24px rgba(110,9,119,0.4)">Save Banner</button>
   </div>
 </div>
 
@@ -1713,6 +1803,207 @@ async function mgSaveItem(){
     alert('Error: ' + e.message);
   }
   btn.textContent = 'Save Item'; btn.disabled = false;
+}
+
+// ── HOME BANNERS (customer app's Home carousel) ──────────────
+// All reads/writes go through cc_home_banners_admin, which enforces
+// staff/admin access and input validation server-side — this page
+// has no separate client-side guard, the RPC's own error covers it.
+var bnAllBanners = [];
+var bnEditId = null;
+
+async function openBannerManage(){
+  goTo('pg-banners');
+  await bnLoadList();
+}
+
+async function bnLoadList(){
+  var list = document.getElementById('bn-list');
+  list.innerHTML = '<div style="text-align:center;padding:40px 20px;font-family:Fraunces,serif;font-size:14px;color:#9a8aaa">Loading…</div>';
+  try {
+    var res = await db.rpc('cc_home_banners_admin', { p_action: 'list', p_payload: {} });
+    if (res.error) throw res.error;
+    bnAllBanners = res.data || [];
+    bnRenderList();
+  } catch(e) {
+    list.innerHTML = '<div style="text-align:center;padding:40px 20px;font-family:Fraunces,serif;font-size:14px;color:#c2607a">' + (e.message || 'Could not load banners') + '</div>';
+  }
+}
+
+function bnRenderList(){
+  var list = document.getElementById('bn-list');
+  if (!bnAllBanners.length) {
+    list.innerHTML = '<div style="text-align:center;padding:40px 20px;font-family:Fraunces,serif;font-size:16px;color:#9a8aaa">No banners yet — tap + to add one</div>';
+    return;
+  }
+  list.innerHTML = '';
+  bnAllBanners.forEach(function(b, idx){
+    var row = document.createElement('div');
+    var bg = b.is_active ? '#fdf5e3' : '#f5f0f5';
+    var swatch = 'linear-gradient(120deg,' + b.color_1 + ',' + b.color_2 + ' 55%,' + b.color_3 + ')';
+    row.style.cssText = 'display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid rgba(18,10,30,0.07);background:' + bg;
+    row.innerHTML = '<div style="width:46px;height:46px;border-radius:10px;background:' + swatch + ';flex-shrink:0"></div>'
+      + '<div style="flex:1;min-width:0">'
+      +   '<div style="font-family:Fraunces,Georgia,serif;font-size:15px;font-weight:700;color:#120a1e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + b.title_main + ' ' + b.title_accent + '</div>'
+      +   '<div style="font-size:11px;color:#9a8aaa;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + b.eyebrow + '</div>'
+      + '</div>'
+      + '<div style="display:flex;flex-direction:column;gap:2px">'
+      +   '<div class="bn-up" style="font-size:11px;padding:3px 6px;cursor:pointer;color:' + (idx===0?'#ccc':'#6e0977') + '">▲</div>'
+      +   '<div class="bn-down" style="font-size:11px;padding:3px 6px;cursor:pointer;color:' + (idx===bnAllBanners.length-1?'#ccc':'#6e0977') + '">▼</div>'
+      + '</div>'
+      + '<div class="bn-toggle" data-on="' + b.is_active + '" style="width:38px;height:22px;border-radius:11px;background:' + (b.is_active?'#6e0977':'rgba(18,10,30,0.12)') + ';position:relative;cursor:pointer;flex-shrink:0">'
+      +   '<div style="position:absolute;top:2px;' + (b.is_active?'right:2px':'left:2px') + ';width:18px;height:18px;border-radius:50%;background:#fff"></div>'
+      + '</div>'
+      + '<div class="bn-edit" style="width:30px;height:30px;border-radius:50%;background:rgba(18,10,30,0.06);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;flex-shrink:0">✏️</div>'
+      + '<div class="bn-del" style="width:30px;height:30px;border-radius:50%;background:rgba(220,38,38,0.08);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;flex-shrink:0">🗑</div>';
+    list.appendChild(row);
+    row.querySelector('.bn-up').addEventListener('click', function(){ if (idx>0) bnMove(idx, idx-1); });
+    row.querySelector('.bn-down').addEventListener('click', function(){ if (idx<bnAllBanners.length-1) bnMove(idx, idx+1); });
+    row.querySelector('.bn-toggle').addEventListener('click', function(){ bnToggleActive(b.id, b.is_active); });
+    row.querySelector('.bn-edit').addEventListener('click', function(){ bnOpenEdit(b.id); });
+    row.querySelector('.bn-del').addEventListener('click', function(){ bnDelete(b.id); });
+  });
+}
+
+async function bnToggleActive(id, current){
+  try {
+    await db.rpc('cc_home_banners_admin', { p_action:'update', p_payload:{ id:id, is_active: !current } });
+    await bnLoadList();
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+// Swaps sort_order between two adjacent rows in the already-sorted list.
+async function bnMove(fromIdx, toIdx){
+  var a = bnAllBanners[fromIdx], b = bnAllBanners[toIdx];
+  if (!a || !b) return;
+  try {
+    await db.rpc('cc_home_banners_admin', { p_action:'update', p_payload:{ id:a.id, sort_order:b.sort_order } });
+    await db.rpc('cc_home_banners_admin', { p_action:'update', p_payload:{ id:b.id, sort_order:a.sort_order } });
+    await bnLoadList();
+  } catch(e) { alert('Error: ' + e.message); }
+}
+
+function bnPreviewUpdate(){
+  var c1 = document.getElementById('bf-color1').value;
+  var c2 = document.getElementById('bf-color2').value;
+  var c3 = document.getElementById('bf-color3').value;
+  document.getElementById('bf-preview').style.background = 'linear-gradient(120deg,' + c1 + ',' + c2 + ' 55%,' + c3 + ' 100%)';
+}
+
+function bnUpdateLinkValueVisibility(){
+  var type = document.getElementById('bf-link-type').value;
+  document.getElementById('bf-link-value').style.display = (type === 'category') ? 'block' : 'none';
+}
+
+function bnSetActiveField(on){
+  var el = document.getElementById('bf-active-toggle');
+  el.setAttribute('data-on', on ? 'true' : 'false');
+  el.style.background = on ? '#6e0977' : 'rgba(18,10,30,0.12)';
+  el.firstElementChild.style.left = on ? '' : '3px';
+  el.firstElementChild.style.right = on ? '3px' : '';
+}
+
+function bnToggleActiveField(){
+  var on = document.getElementById('bf-active-toggle').getAttribute('data-on') === 'true';
+  bnSetActiveField(!on);
+}
+
+function bnOpenAdd(){
+  bnEditId = null;
+  document.getElementById('bn-sheet-title').textContent = 'Add Banner';
+  document.getElementById('bf-eyebrow').value = '';
+  document.getElementById('bf-title-main').value = '';
+  document.getElementById('bf-title-accent').value = '';
+  document.getElementById('bf-tagline').value = '';
+  document.getElementById('bf-cta').value = '';
+  document.getElementById('bf-color1').value = '#231205';
+  document.getElementById('bf-color2').value = '#3d1f05';
+  document.getElementById('bf-color3').value = '#0a2e3d';
+  document.getElementById('bf-link-type').value = 'grid';
+  document.getElementById('bf-link-value').value = 'beverages';
+  bnUpdateLinkValueVisibility();
+  bnSetActiveField(true);
+  bnPreviewUpdate();
+  document.getElementById('bn-backdrop').style.display = 'block';
+  var s = document.getElementById('bn-sheet');
+  s.style.display = 'block';
+  s.style.animation = 'slideUp .38s cubic-bezier(.16,1,.3,1) both';
+}
+
+function bnOpenEdit(id){
+  var b = bnAllBanners.find(function(x){ return x.id === id; });
+  if (!b) return;
+  bnEditId = id;
+  document.getElementById('bn-sheet-title').textContent = 'Edit Banner';
+  document.getElementById('bf-eyebrow').value = b.eyebrow;
+  document.getElementById('bf-title-main').value = b.title_main;
+  document.getElementById('bf-title-accent').value = b.title_accent;
+  document.getElementById('bf-tagline').value = b.tagline;
+  document.getElementById('bf-cta').value = b.cta_label || '';
+  document.getElementById('bf-color1').value = b.color_1;
+  document.getElementById('bf-color2').value = b.color_2;
+  document.getElementById('bf-color3').value = b.color_3;
+  document.getElementById('bf-link-type').value = b.link_type;
+  document.getElementById('bf-link-value').value = b.link_value || 'beverages';
+  bnUpdateLinkValueVisibility();
+  bnSetActiveField(b.is_active);
+  bnPreviewUpdate();
+  document.getElementById('bn-backdrop').style.display = 'block';
+  var s = document.getElementById('bn-sheet');
+  s.style.display = 'block';
+  s.style.animation = 'slideUp .38s cubic-bezier(.16,1,.3,1) both';
+}
+
+function bnCloseSheet(){
+  document.getElementById('bn-backdrop').style.display = 'none';
+  document.getElementById('bn-sheet').style.display = 'none';
+}
+
+async function bnSave(){
+  var eyebrow = document.getElementById('bf-eyebrow').value.trim();
+  var titleMain = document.getElementById('bf-title-main').value.trim();
+  var titleAccent = document.getElementById('bf-title-accent').value.trim();
+  var tagline = document.getElementById('bf-tagline').value.trim();
+  var cta = document.getElementById('bf-cta').value.trim();
+  var linkType = document.getElementById('bf-link-type').value;
+  var linkValue = linkType === 'category' ? document.getElementById('bf-link-value').value : '';
+  var isActive = document.getElementById('bf-active-toggle').getAttribute('data-on') === 'true';
+  if (!eyebrow || !titleMain || !titleAccent || !tagline) { alert('Eyebrow, title, and tagline are required'); return; }
+
+  var payload = {
+    eyebrow: eyebrow, title_main: titleMain, title_accent: titleAccent, tagline: tagline,
+    cta_label: cta, color_1: document.getElementById('bf-color1').value,
+    color_2: document.getElementById('bf-color2').value, color_3: document.getElementById('bf-color3').value,
+    link_type: linkType, link_value: linkValue, is_active: isActive
+  };
+
+  var btn = document.getElementById('bn-save-btn');
+  btn.textContent = 'Saving…'; btn.disabled = true;
+  try {
+    if (bnEditId) {
+      payload.id = bnEditId;
+      var res = await db.rpc('cc_home_banners_admin', { p_action:'update', p_payload: payload });
+      if (res.error) throw res.error;
+    } else {
+      payload.sort_order = bnAllBanners.length;
+      var res2 = await db.rpc('cc_home_banners_admin', { p_action:'create', p_payload: payload });
+      if (res2.error) throw res2.error;
+    }
+    bnCloseSheet();
+    await bnLoadList();
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+  btn.textContent = 'Save Banner'; btn.disabled = false;
+}
+
+async function bnDelete(id){
+  if (!confirm('Delete this banner?')) return;
+  try {
+    var res = await db.rpc('cc_home_banners_admin', { p_action:'delete', p_payload:{ id:id } });
+    if (res.error) throw res.error;
+    await bnLoadList();
+  } catch(e) { alert('Error: ' + e.message); }
 }
 
 // ── GO HOME WITH LOADING ─────────────────────────────────────
