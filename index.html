@@ -2862,6 +2862,9 @@ function renderLoyaltyCard(card) {
 
   var maxDay = schedule.length ? Math.max.apply(null, schedule.map(function(s) { return s.day; })) : 10;
   var gridSize = Math.min(100, Math.max(10, Math.ceil(maxDay / 10) * 10));
+  // Lifetime total across every card held so far, e.g. Card 1's 10-day
+  // cycle completed + 5 stamps so far on Card 2 = 15 total days.
+  var totalDays = (card.completed_days || 0) + stampCount;
 
   var stampsHtml = '';
   for (var d = 1; d <= gridSize; d++) {
@@ -2878,7 +2881,8 @@ function renderLoyaltyCard(card) {
     + '<div class="lc-sub">' + (nextReward ? nextReward.item + ' unlocks at day ' + nextReward.day : 'All rewards on this card redeemed!') + '</div>'
     + '<div class="lc-stampgrid">' + stampsHtml + '</div>'
     + '<div class="lc-foot">'
-    + '<div><div class="lc-foot-label">Cycle</div><div class="lc-foot-val">#' + (card.cycle || 1) + '</div></div>'
+    + '<div><div class="lc-foot-label">Card</div><div class="lc-foot-val">#' + (card.cycle || 1) + '</div></div>'
+    + '<div><div class="lc-foot-label">Total days</div><div class="lc-foot-val">' + totalDays + ' / 100</div></div>'
     + '<div style="text-align:right"><div class="lc-foot-label">Status</div><div class="lc-foot-val">' + (card.suspended ? 'Suspended' : 'Active') + '</div></div>'
     + '</div>'
     + '</div>';
