@@ -195,6 +195,10 @@ function lcMemberCard(m) {
   var cycleLen = (m.schedule || []).length
     ? Math.max.apply(null, m.schedule.map(function (s) { return s.day; }))
     : 100;
+  // Lifetime total across every card the customer has held, e.g. Card 1's
+  // 10-day cycle completed + 5 stamps so far on Card 2 = 15 total days —
+  // separate from Card 2's own "5 / 10" progress shown just above.
+  var totalDays = (m.completed_days || 0) + m.stamp_count;
 
   return '<div style="background:radial-gradient(ellipse at right top,#672477,transparent 70%),#29112f;'
     + 'border:1px solid #a37d47;border-radius:18px;padding:22px;color:#fff3df;margin-top:16px">'
@@ -204,7 +208,8 @@ function lcMemberCard(m) {
     + '<div style="font-size:12px;color:#dcc2df;margin-top:4px">' + lcMaskPhone(m.phone) + '</div>'
     + '<div style="display:flex;justify-content:space-between;margin-top:20px;font-size:12px">'
     + '<span style="font-size:20px;font-weight:700;letter-spacing:1px">' + lcEsc(m.card_code) + '</span>'
-    + '<span>Card ' + m.cycle + '</span></div></div>'
+    + '<span>Card ' + m.cycle + '</span></div>'
+    + '<div style="font-size:11px;color:#dabc84;margin-top:6px">Total since Card 1: ' + totalDays + ' / 100 days</div></div>'
     + lcProfileFields(m)
 
     + '<div style="margin:18px 0"><div style="display:flex;justify-content:space-between;align-items:center">'
