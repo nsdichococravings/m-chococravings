@@ -238,6 +238,19 @@ function lcMemberCard(m) {
 
     + (redeemed.length ? '<p style="font-size:12px;color:#79677e">Already given: ' + redeemed.map(function (s) { return lcEsc(s.item) + ' (day ' + s.day + ')'; }).join(', ') + '</p>' : '')
 
+    + '<details style="margin-top:14px;border-top:1px solid #eadfeb;padding-top:10px">'
+    +   '<summary style="cursor:pointer;font-size:12px;color:#79677e">Move to a different card</summary>'
+    +   '<p style="font-size:11px;color:#a08b9f;margin:8px 0">For a customer who already has physical progress on a different numbered card than shown above — sets their card number and stamp count directly, replacing what\'s here now. "Apply to customers on Card N" (Card Levels, above) only re-applies a schedule to customers already ON that card — it can\'t move someone onto it.</p>'
+    +   '<div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">'
+    +     '<label style="font-size:12px">Card #<input id="lc-move-cycle" type="number" min="1" value="' + (m.cycle + 1) + '" '
+    +       'style="display:block;width:70px;padding:10px;border:1px solid #ddcce2;border-radius:9px;font:inherit;margin-top:4px"></label>'
+    +     '<label style="font-size:12px">Stamp count<input id="lc-move-stamp" type="number" min="0" max="100" value="0" '
+    +       'style="display:block;width:80px;padding:10px;border:1px solid #ddcce2;border-radius:9px;font:inherit;margin-top:4px"></label>'
+    +     '<button type="button" onclick="lcSetCycle()" style="cursor:pointer;background:#790c88;color:#fff;border:0;border-radius:10px;'
+    +       'padding:10px 14px;min-height:44px;font:inherit">Move</button>'
+    +   '</div>'
+    + '</details>'
+
     + '<div style="display:flex;gap:10px;margin-top:14px">'
     + '<button onclick="lcSuspend(' + (!m.suspended) + ')" style="cursor:pointer;border:1px solid #e2cfe6;background:white;'
     +   'color:' + (m.suspended ? '#15803d' : '#a02929') + ';border-radius:10px;padding:10px 14px;font:inherit">'
@@ -270,6 +283,28 @@ async function lcCompleteCycle() {
     lcMsg('');
     lcRenderResults();
     showStoreToast('🎉 Card ' + _lcMember.cycle + ' started');
+  } catch (e) { lcMsg(e.message); } finally { lcBusy(false); }
+}
+
+// Directly places this one customer on a specific numbered card — for
+// a customer who already has physical progress on a card other than the
+// one shown, or who needs correcting outside the normal complete-cycle
+// flow. Unlike "Apply to customers on Card N" (Card Levels), which only
+// ever touches customers ALREADY on that card number, this moves the
+// selected customer onto it.
+async function lcSetCycle() {
+  var cycle = parseInt(document.getElementById('lc-move-cycle').value, 10);
+  var stamp = parseInt(document.getElementById('lc-move-stamp').value, 10);
+  if (!cycle || cycle < 1) { lcMsg('Enter a card number of 1 or more'); return; }
+  if (isNaN(stamp)) stamp = 0;
+  if (stamp < 0 || stamp > 100) { lcMsg('Enter a stamp count from 0 to 100'); return; }
+  if (!confirm('Move ' + _lcMember.name + ' directly to Card ' + cycle + ' with ' + stamp + ' stamps? This replaces their current card and progress.')) return;
+  lcBusy(true);
+  try {
+    _lcMember = await lcCommand('set_cycle', { member_id: _lcMember.id, cycle: cycle, stamp_count: stamp });
+    lcMsg('');
+    lcRenderResults();
+    showStoreToast('✅ Moved to Card ' + cycle);
   } catch (e) { lcMsg(e.message); } finally { lcBusy(false); }
 }
 
