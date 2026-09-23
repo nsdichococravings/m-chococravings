@@ -257,7 +257,12 @@ function lcMemberCard(m) {
     +   (m.suspended ? 'Reactivate membership' : 'Suspend membership') + '</button>'
     + '<button onclick="_lcMember=null;_lcMembers=null;lcRenderResults();" style="cursor:pointer;border:0;background:transparent;'
     +   'color:#79677e;padding:10px 14px;font:inherit">‹ New search</button>'
-    + '</div>';
+    + '</div>'
+
+    + ((typeof isAdmin !== 'undefined' && isAdmin)
+        ? '<button onclick="lcDeleteMember()" style="cursor:pointer;border:1px solid #f0d0d0;background:white;color:#a02929;'
+          + 'border-radius:10px;padding:10px 14px;font:inherit;margin-top:10px;width:100%">🗑️ Permanently delete this card (super admin only)</button>'
+        : '');
 }
 
 async function lcSetStamp() {
@@ -305,6 +310,27 @@ async function lcSetCycle() {
     lcMsg('');
     lcRenderResults();
     showStoreToast('✅ Moved to Card ' + cycle);
+  } catch (e) { lcMsg(e.message); } finally { lcBusy(false); }
+}
+
+// Permanently removes a customer's loyalty card and its whole stamp
+// history — for cleaning up a duplicate/stale record (e.g. an old row
+// left behind for a phone number that also has a newer, actively-used
+// card). Blocked server-side for anyone who isn't a super admin;
+// requires typing the exact card code first since this cannot be undone.
+async function lcDeleteMember() {
+  var typed = prompt('This PERMANENTLY deletes ' + _lcMember.name + '\'s loyalty card (' + _lcMember.card_code
+    + ') and its entire stamp history. This cannot be undone.\n\nType the card code to confirm:');
+  if (typed === null) return;
+  if (typed.trim().toUpperCase() !== _lcMember.card_code.toUpperCase()) { lcMsg('Card code did not match — nothing deleted'); return; }
+  lcBusy(true);
+  try {
+    var res = await lcCommand('delete_member', { member_id: _lcMember.id });
+    lcMsg('');
+    showStoreToast('🗑️ Deleted ' + res.card_code);
+    _lcMember = null;
+    _lcMembers = null;
+    lcRenderResults();
   } catch (e) { lcMsg(e.message); } finally { lcBusy(false); }
 }
 
