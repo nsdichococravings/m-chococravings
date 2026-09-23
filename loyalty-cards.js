@@ -359,9 +359,10 @@ async function lcSuspend(suspended) {
 }
 
 // ── Issue a new card ──
-// Reward milestones are no longer picked per card — every new card
-// starts on Card 1 and copies whatever Card 1's schedule (Card Levels,
-// below) currently is.
+// Reward milestones are picked up from whichever card number the card
+// starts on (Card Levels, below) — defaults to Card 1, but can start
+// further along for a customer who should begin partway through the
+// sequence (e.g. matching a physical card number they already hold).
 function lcIssueFormHtml() {
   var prefillPhone = document.getElementById('lc-query') ? (document.getElementById('lc-query').value || '').replace(/\D/g, '') : '';
 
@@ -370,10 +371,14 @@ function lcIssueFormHtml() {
     +   'style="width:100%;padding:12px;border:1px solid #ddcce2;border-radius:9px;font:inherit;min-height:44px;margin-top:4px"></label>'
     + '<label style="display:block;margin:10px 0 4px;font-size:13px">Mobile number<input id="lc-new-phone" type="tel" value="' + lcEsc(prefillPhone) + '" '
     +   'placeholder="9876543210" style="width:100%;padding:12px;border:1px solid #ddcce2;border-radius:9px;font:inherit;min-height:44px;margin-top:4px"></label>'
-    + '<label style="display:block;margin:10px 0 4px;font-size:13px">Already has a physical card? Starting stamp count'
-    +   '<input id="lc-new-starting" type="number" min="0" max="100" value="0" placeholder="0" '
+    + '<div style="display:flex;gap:10px">'
+    +   '<label style="flex:1;display:block;margin:10px 0 4px;font-size:13px">Starting card #<input id="lc-new-cycle" type="number" min="1" value="1" '
     +     'style="width:100%;padding:12px;border:1px solid #ddcce2;border-radius:9px;font:inherit;min-height:44px;margin-top:4px"></label>'
-    + '<p style="font-size:11px;color:#79677e;margin:10px 0">Reward milestones follow Card 1\'s schedule, set in Card Levels above.</p>'
+    +   '<label style="flex:1;display:block;margin:10px 0 4px;font-size:13px">Starting stamp count'
+    +     '<input id="lc-new-starting" type="number" min="0" max="100" value="0" placeholder="0" '
+    +       'style="width:100%;padding:12px;border:1px solid #ddcce2;border-radius:9px;font:inherit;min-height:44px;margin-top:4px"></label>'
+    + '</div>'
+    + '<p style="font-size:11px;color:#79677e;margin:10px 0">Defaults to Card 1. Reward milestones follow the starting card\'s own schedule, set in Card Levels above.</p>'
     + '<button onclick="lcIssue()" style="cursor:pointer;background:#790c88;color:#fff;border:0;border-radius:10px;'
     +   'padding:13px 16px;min-height:44px;font:inherit;margin-top:6px;width:100%">Issue card</button>'
     + '</div>';
@@ -383,16 +388,20 @@ async function lcIssue() {
   var name = (document.getElementById('lc-new-name').value || '').trim();
   var phoneRaw = (document.getElementById('lc-new-phone').value || '').replace(/\D/g, '');
   var phone = phoneRaw.length === 10 ? '+91' + phoneRaw : (phoneRaw.length ? phoneRaw : '');
+  var cycleEl = document.getElementById('lc-new-cycle');
+  var cycle = cycleEl ? parseInt(cycleEl.value, 10) : 1;
+  if (isNaN(cycle)) cycle = 1;
   var startingEl = document.getElementById('lc-new-starting');
   var startingStamps = startingEl ? parseInt(startingEl.value, 10) : 0;
   if (isNaN(startingStamps)) startingStamps = 0;
   if (!name) { lcMsg('Enter the customer\'s name'); return; }
   if (phoneRaw.length !== 10) { lcMsg('Enter a valid 10-digit mobile number'); return; }
+  if (cycle < 1) { lcMsg('Enter a card number of 1 or more'); return; }
   if (startingStamps < 0 || startingStamps > 100) { lcMsg('Starting stamp count must be from 0 to 100'); return; }
 
   lcBusy(true);
   try {
-    _lcMember = await lcCommand('issue', { name: name, phone: phone, starting_stamps: startingStamps });
+    _lcMember = await lcCommand('issue', { name: name, phone: phone, cycle: cycle, starting_stamps: startingStamps });
     _lcMembers = [_lcMember];
     lcMsg('');
     showStoreToast('✅ Card issued — ' + _lcMember.card_code);
