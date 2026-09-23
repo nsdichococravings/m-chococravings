@@ -259,10 +259,13 @@ function lcMemberCard(m) {
     +   'color:#79677e;padding:10px 14px;font:inherit">‹ New search</button>'
     + '</div>'
 
-    + ((typeof isAdmin !== 'undefined' && isAdmin)
-        ? '<button onclick="lcDeleteMember()" style="cursor:pointer;border:1px solid #f0d0d0;background:white;color:#a02929;'
-          + 'border-radius:10px;padding:10px 14px;font:inherit;margin-top:10px;width:100%">🗑️ Permanently delete this card (super admin only)</button>'
-        : '');
+    // Shown unconditionally, same as the Card Levels Save/Apply buttons —
+    // isAdmin here reflects customers.is_admin only, not is_super_user,
+    // so gating visibility on it would hide this from a super admin whose
+    // is_admin flag happens to be false. cc_is_super_user() server-side
+    // is the real, only gate; a non-super-admin just gets that error back.
+    + '<button onclick="lcDeleteMember()" style="cursor:pointer;border:1px solid #f0d0d0;background:white;color:#a02929;'
+    +   'border-radius:10px;padding:10px 14px;font:inherit;margin-top:10px;width:100%">🗑️ Permanently delete this card (super admin only)</button>';
 }
 
 async function lcSetStamp() {

@@ -1,5 +1,5 @@
 // NSDI ChocoCravings — Service Worker
-const CACHE_NAME = 'chococravings-v34-loyalty-delete-member';
+const CACHE_NAME = 'chococravings-v35-delete-btn-visible';
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache immediately on install
