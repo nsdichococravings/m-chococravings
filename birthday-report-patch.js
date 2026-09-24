@@ -138,7 +138,10 @@ function brCard(c, isToday) {
         + 'width:36px;height:36px;border-radius:50%;background:#e7fbee;font-size:15px">💬</a>' : '')
     + '</div>'
     + '</div>'
-    + '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid #f5eeff">'
+    + (!isToday && c.offer_code
+        ? '<div style="margin-top:10px;padding-top:10px;border-top:1px solid #f5eeff">' + brOfferBadge(c.offer_code) + '</div>'
+        : '')
+    + '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;' + (isToday || !c.offer_code ? 'padding-top:10px;border-top:1px solid #f5eeff' : '') + '">'
     +   brChip(c.id, 'wishes_sent', c.wishes_sent, 'Wishes sent')
     +   brChip(c.id, 'card_sent', c.card_sent, 'Card sent')
     +   '<button type="button" onclick="brOpenPoster(\'' + c.id + '\')" style="cursor:pointer;border:1px solid #e2cfe6;background:white;color:#790c88;'
@@ -152,6 +155,26 @@ function brChip(customerId, field, checked, label) {
     + 'border:1px solid ' + (checked ? '#86efac' : '#ddcce2') + ';background:' + (checked ? '#ecfdf3' : 'white') + ';'
     + 'color:' + (checked ? '#15803d' : '#79677e') + ';border-radius:20px;padding:5px 10px;font-size:10.5px;font-weight:600">'
     + (checked ? '✅' : '⬜') + ' ' + brEsc(label) + '</button>';
+}
+
+// The same code that's printed on the Advance Wishes poster — shown here
+// too so staff can check a customer's claimed code against the report
+// instead of just taking their word for it. Tap to copy for pasting into
+// the order/bill notes.
+function brOfferBadge(code) {
+  return '<button type="button" onclick="brCopyOfferCode(\'' + brEsc(code).replace(/'/g, "\\'") + '\')" title="Tap to copy" '
+    + 'style="cursor:pointer;border:1px dashed #f0c675;background:#fff8ea;color:#9a6b0f;'
+    + 'border-radius:10px;padding:6px 10px;font-size:11px;font-weight:700;letter-spacing:0.3px">'
+    + '🎟️ Offer code: ' + brEsc(code) + '</button>';
+}
+
+async function brCopyOfferCode(code) {
+  try {
+    await navigator.clipboard.writeText(code);
+    showStoreToast('Offer code copied: ' + code);
+  } catch (e) {
+    showStoreToast('Offer code: ' + code);
+  }
 }
 
 // Finds a customer's entry in the currently-loaded report (today or
@@ -338,6 +361,30 @@ async function brDrawPoster(canvas, c) {
       ctx.fillText(line, W / 2, msgY2);
       msgY2 += 32;
     });
+
+    // The same offer code shown in the Birthday Report — the whole point
+    // is staff can match what's printed here against that list, so it's
+    // called out as its own dashed badge rather than folded into a
+    // sentence.
+    if (c && c.offer_code) {
+      var codeText = 'OFFER CODE: ' + c.offer_code;
+      ctx.font = '700 30px "DM Sans", Arial, sans-serif';
+      var boxW = ctx.measureText(codeText).width + 64;
+      var boxH = 58;
+      var boxX = (W - boxW) / 2;
+      var boxY = msgY2 + 8;
+      ctx.save();
+      ctx.setLineDash([8, 6]);
+      ctx.strokeStyle = '#f5c430';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      if (ctx.roundRect) { ctx.roundRect(boxX, boxY, boxW, boxH, 14); } else { ctx.rect(boxX, boxY, boxW, boxH); }
+      ctx.stroke();
+      ctx.restore();
+      ctx.fillStyle = '#fff3df';
+      ctx.fillText(codeText, W / 2, boxY + boxH / 2 + 10);
+      msgY2 = boxY + boxH;
+    }
   }
 
   // Premium wordmark signature — NSDI set apart from the rest (bold,
