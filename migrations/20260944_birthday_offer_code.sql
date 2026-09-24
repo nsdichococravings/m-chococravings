@@ -2,12 +2,22 @@
 -- code instead of just words on a card. The SAME code that prints on the
 -- poster also shows on the customer's row in the Birthday Report, so when
 -- a customer turns up quoting a code, staff can look them up in the
--- report and confirm it matches before honouring it.
+-- report and confirm it matches before honouring it. It's also a real,
+-- redeemable promo code at checkout via index.html's existing applyPromo()
+-- flow (db.from('offers')...), same as every other code.
 --
--- Modelled as a small generic `offers` table (not a one-off column) so a
--- future offer can be added the same way -- just another row -- without
--- another migration. `kind` is how cc_birthday_report() finds the right
--- one; there's only one kind today ('birthday_advance').
+-- public.offers already exists in this database (created outside this
+-- repo's migrations, like customers) and already backs that checkout
+-- flow -- this file does NOT create or alter that table, only inserts
+-- one new row into it, matching its real columns/constraints. It also
+-- deliberately leaves the table's existing RLS/grants untouched, since
+-- applyPromo() already reads it directly as anon/authenticated and
+-- touching that could break it.
+--
+-- (First cut of this file assumed a table shape that doesn't match the
+-- real one and errored out mid-transaction -- nothing from it ever
+-- applied, confirmed via the exact error reported. Corrected in place
+-- rather than as a new file, same as 20260942's customers.id fix.)
 --
 -- Deliberately NOT attached to the actual-birthday-date card/report row
 -- -- that one stays exactly as it already is, per how it was asked for:
@@ -19,34 +29,23 @@ do $$ begin
  if not exists(select 1 from pg_proc where proname='cc_birthday_mark') then
   raise exception 'Run migrations/20260942_birthday_wishes_tracking.sql first.';
  end if;
+ if not exists(select 1 from information_schema.tables where table_schema='public' and table_name='offers') then
+  raise exception 'public.offers not found -- is this the right database?';
+ end if;
 end $$;
 
-create table if not exists public.offers (
- id uuid primary key default gen_random_uuid(),
- code text not null unique,
- kind text not null,
- title text not null,
- description text,
- discount_percent numeric,
- active boolean not null default true,
- created_at timestamptz not null default now()
-);
-alter table public.offers enable row level security;
-revoke all on public.offers from public,anon,authenticated;
--- No direct grants — read only via cc_birthday_report(), same pattern as
--- every other staff-facing table in this app.
-
-insert into public.offers (code, kind, title, description, discount_percent)
+insert into public.offers (code, name, description, type, discount_value, banner_text, emoji, show_on_home)
 values (
- 'NSDI-TREAT-5', 'birthday_advance', 'Advance Birthday Treat',
+ 'NSDI-TREAT-5', 'Advance Birthday Treat',
  'Free classic brownie or ice cream on their birthday, plus 5% off if they order today.',
- 5
+ 'percentage', 5.00,
+ 'Birthday coming up? Order today for 5% off — plus a free treat on the day!', '🎂',
+ false
 )
 on conflict (code) do nothing;
 
--- Adds the active birthday_advance offer's code to each UPCOMING row
--- only (jsonb -||- merge, no other output shape changes) — today's rows
--- are untouched.
+-- Adds the active advance-birthday offer's code to each UPCOMING row
+-- only -- today's rows are untouched (unchanged shape/values).
 create or replace function public.cc_birthday_report() returns jsonb
 language plpgsql security definer set search_path=pg_catalog,public as $$
 declare v_role text=public.cc_loyalty_role(); v_today date; v_year int; v_offer_code text; v_today_rows jsonb; v_upcoming_rows jsonb;
@@ -57,7 +56,10 @@ begin
  v_today=(now() at time zone 'Asia/Kolkata')::date;
  v_year=extract(year from v_today)::int;
 
- select code into v_offer_code from public.offers where kind='birthday_advance' and active limit 1;
+ select code into v_offer_code from public.offers
+  where code='NSDI-TREAT-5' and is_active
+   and (valid_from is null or valid_from<=now()) and (valid_until is null or valid_until>now())
+  limit 1;
 
  select coalesce(jsonb_agg(jsonb_build_object(
    'id',c.id,'name',c.name,'phone',c.phone,'email',c.email,'date_of_birth',c.date_of_birth,
