@@ -1,5 +1,5 @@
 // NSDI ChocoCravings — Service Worker
-const CACHE_NAME = 'chococravings-v38-kitchen-load-loyalty-fix';
+const CACHE_NAME = 'chococravings-v39-edit-btn-visible';
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache immediately on install
