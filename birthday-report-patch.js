@@ -17,11 +17,6 @@
 var _brDialog = null;
 var _brReport = null;
 
-function brMaskPhone(p) {
-  p = String(p || '');
-  return p.length > 4 ? ('••••••' + p.slice(-4)) : p;
-}
-
 function brEsc(s) {
   return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
     return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
@@ -129,7 +124,7 @@ function brCard(c, isToday) {
     + 'border:1px solid #eadfeb;background:white;border-radius:14px;padding:12px 14px;margin-bottom:8px">'
     + '<div style="min-width:0">'
     +   '<div style="font-weight:700;font-size:14px;color:#291830;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + brEsc(c.name || 'Unnamed') + '</div>'
-    +   '<div style="font-size:11px;color:#79677e;margin-top:2px">' + brEsc(whenLine) + (c.phone ? ' · ' + brMaskPhone(c.phone) : '') + '</div>'
+    +   '<div style="font-size:11px;color:#79677e;margin-top:2px">' + brEsc(whenLine) + (c.phone ? ' · ' + brEsc(c.phone) : '') + '</div>'
     + '</div>'
     + '<div style="display:flex;gap:6px;flex-shrink:0">'
     +   (telLink ? '<a href="' + telLink + '" style="text-decoration:none;display:flex;align-items:center;justify-content:center;'
