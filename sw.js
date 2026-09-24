@@ -1,5 +1,5 @@
 // NSDI ChocoCravings — Service Worker
-const CACHE_NAME = 'chococravings-v36-issue-at-level';
+const CACHE_NAME = 'chococravings-v37-reward-badge-visible';
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache immediately on install
