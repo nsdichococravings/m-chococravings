@@ -1420,12 +1420,23 @@ async function kitchenLoad(){
     if (!chk.data || !chk.data.is_admin) { goTo('pg-menu'); showKitchenDenied(); return; }
   } catch(e) { goTo('pg-menu'); showKitchenDenied(); return; }
 
-  var today=new Date().toISOString().slice(0,10);
-  var res=await db.from('store_orders').select('*')
-    .gte('created_at',today+'T00:00:00.000Z')
-    .in('status',['pending','preparing','ready'])
-    .order('created_at',{ascending:true});
-  renderKitchen(res.data||[]);
+  // table-service-patch.js's kitchenFetchOrders does this same query AND
+  // fetches the loyalty card map before rendering — calling it here (once
+  // it's loaded) instead of duplicating a bare fetch keeps every ticket's
+  // "NSDI card" row correct on first load. Without this, renderKitchen got
+  // called with no loyaltyMap at all every time this page loads/reloads —
+  // every card silently showed "No card found" until the in-app refresh
+  // button (which does go through kitchenFetchOrders) was tapped.
+  if (typeof kitchenFetchOrders === 'function') {
+    await kitchenFetchOrders(false);
+  } else {
+    var today=new Date().toISOString().slice(0,10);
+    var res=await db.from('store_orders').select('*')
+      .gte('created_at',today+'T00:00:00.000Z')
+      .in('status',['pending','preparing','ready'])
+      .order('created_at',{ascending:true});
+    renderKitchen(res.data||[]);
+  }
   subscribeKitchen();
 }
 
