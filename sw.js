@@ -1,5 +1,5 @@
 // NSDI ChocoCravings — Service Worker
-const CACHE_NAME = 'chococravings-v42-birthday-full-phone';
+const CACHE_NAME = 'chococravings-v43-wishes-and-poster';
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache immediately on install
