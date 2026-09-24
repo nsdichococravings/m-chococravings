@@ -1,5 +1,5 @@
 // NSDI ChocoCravings — Service Worker
-const CACHE_NAME = 'chococravings-v39-edit-btn-visible';
+const CACHE_NAME = 'chococravings-v40-history-loyalty-details';
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache immediately on install

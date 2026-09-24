@@ -2102,6 +2102,7 @@ function closeKitchenHistory() {
 }
 
 var _khCachedOrders = [];
+var _khCachedLoyaltyMap = {};
 
 async function loadKitchenHistory() {
   var list = document.getElementById('kh-list');
@@ -2115,10 +2116,25 @@ async function loadKitchenHistory() {
     .order('created_at', { ascending: false });
 
   _khCachedOrders = res.data || [];
-  renderKitchenHistory(_khCachedOrders);
+  _khCachedLoyaltyMap = typeof lcLoyaltyMapFor === 'function' ? await lcLoyaltyMapFor(_khCachedOrders) : {};
+  renderKitchenHistory(_khCachedOrders, _khCachedLoyaltyMap);
 }
 
-function renderKitchenHistory(orders) {
+// Every loyalty card tied to an order's customer/group phones — a table
+// of friends can each hold their own card, so this can be more than one.
+function khLoyaltyCardsFor(o, loyaltyMap) {
+  if (!loyaltyMap || loyaltyMap._unavailable || typeof lcOrderPhones !== 'function') return [];
+  var seen = {};
+  var cards = [];
+  lcOrderPhones(o).forEach(function (phone) {
+    var m = loyaltyMap[lcLast10(phone)];
+    if (m && !seen[m.id]) { seen[m.id] = true; cards.push(m); }
+  });
+  return cards;
+}
+
+function renderKitchenHistory(orders, loyaltyMap) {
+  loyaltyMap = loyaltyMap || _khCachedLoyaltyMap || {};
   var list = document.getElementById('kh-list');
   if (!orders.length) {
     list.innerHTML = '<div style="text-align:center;padding:30px;color:rgba(255,255,255,.35);font-size:13px;'
@@ -2141,6 +2157,29 @@ function renderKitchenHistory(orders) {
       ? '<span style="font-size:9px;font-weight:700;color:#f87171;background:rgba(239,68,68,0.12);padding:3px 9px;border-radius:20px">CANCELLED</span>'
       : '<span style="font-size:9px;font-weight:700;color:#4ade80;background:rgba(74,222,128,0.12);padding:3px 9px;border-radius:20px">✅ ' + pmLabel + '</span>';
 
+    var custBits = [];
+    if (o.customer_name) custBits.push('🙋 ' + lcEsc(o.customer_name));
+    if (o.customer_phone) custBits.push('📞 ' + lcEsc(o.customer_phone));
+    if (Array.isArray(o.customer_group_phones) && o.customer_group_phones.length) {
+      custBits.push('👥 +' + o.customer_group_phones.length + ' friend' + (o.customer_group_phones.length === 1 ? '' : 's'));
+    }
+    var custLine = custBits.length
+      ? '<div style="font-size:11px;color:rgba(245,234,220,.5);margin-top:4px">' + custBits.join('  ·  ') + '</div>'
+      : '';
+
+    // A group order can carry more than one loyalty card — one per
+    // friend on the table — so this shows every distinct card found,
+    // not just the primary customer's.
+    var loyaltyCards = khLoyaltyCardsFor(o, loyaltyMap);
+    var loyaltyChips = loyaltyCards.length
+      ? '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px">' + loyaltyCards.map(function (m) {
+          var cycleLen = (m.schedule || []).length ? Math.max.apply(null, m.schedule.map(function (s) { return s.day; })) : 100;
+          return '<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(192,132,252,0.14);'
+            + 'border:1px solid rgba(192,132,252,0.35);color:#e9d5ff;border-radius:20px;padding:4px 10px;'
+            + 'font-size:10px;font-weight:600;white-space:nowrap">💳 ' + lcEsc(m.card_code) + ' · Day ' + m.stamp_count + '/' + cycleLen + '</span>';
+        }).join('') + '</div>'
+      : '';
+
     var itemsDetail = expanded
       ? '<div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08)">'
         + items.map(function (i) {
@@ -2158,7 +2197,9 @@ function renderKitchenHistory(orders) {
       + '<span style="font-family:Fraunces,Georgia,serif;font-size:16px;font-weight:900;color:#fff">' + headline + '</span>'
       + '<span style="font-size:10px;color:rgba(255,255,255,.35)">' + time + '</span>'
       + '</div>'
-      + '<div style="display:flex;align-items:center;justify-content:space-between">'
+      + custLine
+      + loyaltyChips
+      + '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">'
       + statusBadge
       + '<span style="font-family:Fraunces,Georgia,serif;font-size:15px;font-weight:900;color:#f5c430">₹' + (o.total || 0) + '</span>'
       + '</div>'
@@ -2170,7 +2211,7 @@ function renderKitchenHistory(orders) {
 
 function toggleHistoryEntry(orderId) {
   _khExpandedId = _khExpandedId === orderId ? null : orderId;
-  renderKitchenHistory(_khCachedOrders); // re-render from cache, no need to re-fetch just to toggle
+  renderKitchenHistory(_khCachedOrders, _khCachedLoyaltyMap); // re-render from cache, no need to re-fetch just to toggle
 }
 
 // ══════════════════════════════════════════════════════════════
