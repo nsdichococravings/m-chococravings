@@ -199,6 +199,38 @@ function brWrapLines(ctx, text, maxWidth) {
   return lines;
 }
 
+function brLoadImage(src) {
+  return new Promise(function (resolve, reject) {
+    var img = new Image();
+    img.onload = function () { resolve(img); };
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+// The bundled logo (icons/icon-512.png) is the white-line version on a
+// solid black square — chroma-keys the black out to near-black pixels
+// so the mark drops cleanly onto the poster's own purple background
+// instead of carrying an ugly black box with it. Cached after first use.
+var _brLogoCanvas = null;
+async function brGetLogo() {
+  if (_brLogoCanvas) return _brLogoCanvas;
+  var img = await brLoadImage('/icons/icon-512.png');
+  var off = document.createElement('canvas');
+  off.width = img.width;
+  off.height = img.height;
+  var octx = off.getContext('2d');
+  octx.drawImage(img, 0, 0);
+  var frame = octx.getImageData(0, 0, off.width, off.height);
+  var d = frame.data;
+  for (var i = 0; i < d.length; i += 4) {
+    if ((d[i] + d[i + 1] + d[i + 2]) / 3 < 40) d[i + 3] = 0;
+  }
+  octx.putImageData(frame, 0, 0);
+  _brLogoCanvas = off;
+  return off;
+}
+
 async function brDrawPoster(canvas, name) {
   if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (e) {} }
   var ctx = canvas.getContext('2d');
@@ -218,12 +250,17 @@ async function brDrawPoster(canvas, name) {
 
   ctx.textAlign = 'center';
 
-  ctx.fillStyle = '#dabc84';
-  ctx.font = '600 26px Georgia, serif';
-  ctx.fillText('C H O C O C R A V I N G S', W / 2, 150);
-
-  ctx.font = '130px sans-serif';
-  ctx.fillText('🎉🎂🎉', W / 2, 340);
+  try {
+    var logo = await brGetLogo();
+    var logoSize = 320;
+    ctx.drawImage(logo, (W - logoSize) / 2, 55, logoSize, logoSize);
+  } catch (e) {
+    // Offline / logo failed to load — falls back to a plain text mark
+    // rather than leaving a blank gap at the top.
+    ctx.fillStyle = '#dabc84';
+    ctx.font = '600 26px Georgia, serif';
+    ctx.fillText('N S D I   C H O C O   C R A V I N G S', W / 2, 150);
+  }
 
   ctx.fillStyle = '#fff3df';
   ctx.font = '700 62px Georgia, serif';
@@ -241,15 +278,30 @@ async function brDrawPoster(canvas, name) {
   ctx.fillStyle = '#dcc2df';
   ctx.font = '30px "DM Sans", Arial, sans-serif';
   var msgLines = brWrapLines(ctx, 'Wishing you a day as sweet as our chocolates 🍫', W - 220);
-  var msgY = Math.max(nameY + 40, H - 190);
+  var msgY = Math.max(nameY + 40, H - 230);
   msgLines.forEach(function (line) {
     ctx.fillText(line, W / 2, msgY);
     msgY += 40;
   });
 
-  ctx.fillStyle = '#dabc84';
-  ctx.font = '600 26px Georgia, serif';
-  ctx.fillText('— With love, ChocoCravings', W / 2, H - 90);
+  // Premium wordmark signature — NSDI set apart from the rest (bold,
+  // gold, letter-spaced) the way a brand name gets treated on real
+  // packaging, "Choco Cravings" following underneath as the smaller,
+  // softer subtitle.
+  ctx.fillStyle = 'rgba(220,194,223,0.75)';
+  ctx.font = '22px "DM Sans", Arial, sans-serif';
+  ctx.fillText('with love from', W / 2, H - 150);
+
+  ctx.fillStyle = '#f5c430';
+  ctx.font = '900 50px Georgia, serif';
+  var hasLetterSpacing = 'letterSpacing' in ctx;
+  if (hasLetterSpacing) ctx.letterSpacing = '10px';
+  ctx.fillText(hasLetterSpacing ? 'NSDI' : 'N S D I', W / 2, H - 95);
+  if (hasLetterSpacing) ctx.letterSpacing = '0px';
+
+  ctx.fillStyle = '#fff3df';
+  ctx.font = 'italic 500 27px Georgia, serif';
+  ctx.fillText('Choco Cravings', W / 2, H - 55);
 }
 
 function brPosterInit() {
