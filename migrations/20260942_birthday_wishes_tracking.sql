@@ -15,7 +15,7 @@ end $$;
 
 create table if not exists public.cc_birthday_wishes (
  id uuid primary key default gen_random_uuid(),
- customer_id uuid not null references public.customers(id),
+ customer_id text not null references public.customers(id),
  occurrence_year int not null,
  wishes_sent boolean not null default false,
  wishes_sent_at timestamptz,
@@ -69,7 +69,7 @@ end $$;
 
 -- Toggles wishes_sent or card_sent for a customer's CURRENT year
 -- occurrence — creates the tracking row on first use (upsert).
-create or replace function public.cc_birthday_mark(p_customer_id uuid, p_field text, p_value boolean) returns jsonb
+create or replace function public.cc_birthday_mark(p_customer_id text, p_field text, p_value boolean) returns jsonb
 language plpgsql security definer set search_path=pg_catalog,public as $$
 declare v_role text=public.cc_loyalty_role(); v_year int; v_row public.cc_birthday_wishes;
 begin
@@ -104,8 +104,8 @@ end $$;
 
 revoke all on function public.cc_birthday_report() from public,anon,authenticated;
 grant execute on function public.cc_birthday_report() to authenticated;
-revoke all on function public.cc_birthday_mark(uuid,text,boolean) from public,anon,authenticated;
-grant execute on function public.cc_birthday_mark(uuid,text,boolean) to authenticated;
+revoke all on function public.cc_birthday_mark(text,text,boolean) from public,anon,authenticated;
+grant execute on function public.cc_birthday_mark(text,text,boolean) to authenticated;
 
 notify pgrst,'reload schema';
 commit;
