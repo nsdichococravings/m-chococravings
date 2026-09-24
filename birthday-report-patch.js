@@ -28,6 +28,11 @@ async function brLoad() {
     var res = await db.rpc('cc_birthday_report');
     if (res.error) throw res.error;
     _brReport = res.data;
+    // Tag each row so the poster knows which card to draw — today's
+    // customers get the plain "Happy Birthday!" card, upcoming ones get
+    // the "Advance Wishes" card (free treat + 5% offer).
+    (_brReport.today || []).forEach(function (c) { c._isToday = true; });
+    (_brReport.upcoming || []).forEach(function (c) { c._isToday = false; });
     brNotify();
     if (typeof ccUpdateBadge === 'function') ccUpdateBadge('birthday-report', (_brReport.today || []).length);
     if (_brDialog && _brDialog.open) brRender();
@@ -231,10 +236,12 @@ async function brGetLogo() {
   return off;
 }
 
-async function brDrawPoster(canvas, name) {
+async function brDrawPoster(canvas, c) {
   if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (e) {} }
   var ctx = canvas.getContext('2d');
   var W = canvas.width, H = canvas.height;
+  var name = c && c.name;
+  var isToday = !c || c._isToday !== false;
 
   ctx.fillStyle = '#29112f';
   ctx.fillRect(0, 0, W, H);
@@ -262,27 +269,76 @@ async function brDrawPoster(canvas, name) {
     ctx.fillText('N S D I   C H O C O   C R A V I N G S', W / 2, 150);
   }
 
-  ctx.fillStyle = '#fff3df';
-  ctx.font = '700 62px Georgia, serif';
-  ctx.fillText('Happy Birthday!', W / 2, 460);
+  if (isToday) {
+    // The actual-birthday-date card — exactly as it always was, unchanged.
+    ctx.fillStyle = '#fff3df';
+    ctx.font = '700 62px Georgia, serif';
+    ctx.fillText('Happy Birthday!', W / 2, 460);
 
-  ctx.fillStyle = '#f5c430';
-  ctx.font = 'italic 700 52px Georgia, serif';
-  var nameLines = brWrapLines(ctx, name || 'Friend', W - 200);
-  var nameY = 560;
-  nameLines.slice(0, 2).forEach(function (line) {
-    ctx.fillText(line, W / 2, nameY);
-    nameY += 62;
-  });
+    ctx.fillStyle = '#f5c430';
+    ctx.font = 'italic 700 52px Georgia, serif';
+    var nameLines = brWrapLines(ctx, name || 'Friend', W - 200);
+    var nameY = 560;
+    nameLines.slice(0, 2).forEach(function (line) {
+      ctx.fillText(line, W / 2, nameY);
+      nameY += 62;
+    });
 
-  ctx.fillStyle = '#dcc2df';
-  ctx.font = '30px "DM Sans", Arial, sans-serif';
-  var msgLines = brWrapLines(ctx, 'Wishing you a day as sweet as our chocolates 🍫', W - 220);
-  var msgY = Math.max(nameY + 40, H - 230);
-  msgLines.forEach(function (line) {
-    ctx.fillText(line, W / 2, msgY);
-    msgY += 40;
-  });
+    ctx.fillStyle = '#dcc2df';
+    ctx.font = '30px "DM Sans", Arial, sans-serif';
+    var msgLines = brWrapLines(ctx, 'Wishing you a day as sweet as our chocolates 🍫', W - 220);
+    var msgY = Math.max(nameY + 40, H - 230);
+    msgLines.forEach(function (line) {
+      ctx.fillText(line, W / 2, msgY);
+      msgY += 40;
+    });
+  } else {
+    // Advance Wishes card — sent while the birthday is still a few days
+    // away, teasing the free treat + today-only discount so it doubles
+    // as an early nudge to order now, not just a heads-up.
+    var days = c && c.days_until;
+    var daysLabel = days === 1 ? 'Just 1 day to go!' : (days || '') + ' days to go!';
+
+    ctx.fillStyle = '#fff3df';
+    ctx.font = '700 44px Georgia, serif';
+    var headLines = brWrapLines(ctx, 'Advance Birthday Wishes!', W - 160);
+    var headY = 410;
+    headLines.slice(0, 2).forEach(function (line) {
+      ctx.fillText(line, W / 2, headY);
+      headY += 50;
+    });
+
+    ctx.fillStyle = '#f5c430';
+    ctx.font = '600 24px "DM Sans", Arial, sans-serif';
+    ctx.fillText('🎈 ' + daysLabel, W / 2, headY + 16);
+
+    ctx.fillStyle = '#f5c430';
+    ctx.font = 'italic 700 46px Georgia, serif';
+    var advNameLines = brWrapLines(ctx, name || 'Friend', W - 200);
+    var nameY2 = headY + 84;
+    advNameLines.slice(0, 2).forEach(function (line) {
+      ctx.fillText(line, W / 2, nameY2);
+      nameY2 += 54;
+    });
+
+    ctx.fillStyle = '#dcc2df';
+    ctx.font = '26px "DM Sans", Arial, sans-serif';
+    var offer1 = brWrapLines(ctx, 'Enjoy a FREE Classic Brownie or Ice Cream on your birthday! 🍫🍦', W - 220);
+    var msgY2 = nameY2 + 26;
+    offer1.slice(0, 2).forEach(function (line) {
+      ctx.fillText(line, W / 2, msgY2);
+      msgY2 += 34;
+    });
+
+    ctx.fillStyle = '#f5c430';
+    ctx.font = '600 24px "DM Sans", Arial, sans-serif';
+    var offer2 = brWrapLines(ctx, 'Order today & get 5% OFF as our early birthday treat! 🎁', W - 220);
+    msgY2 += 10;
+    offer2.slice(0, 2).forEach(function (line) {
+      ctx.fillText(line, W / 2, msgY2);
+      msgY2 += 32;
+    });
+  }
 
   // Premium wordmark signature — NSDI set apart from the rest (bold,
   // gold, letter-spaced) the way a brand name gets treated on real
@@ -332,7 +388,7 @@ async function brOpenPoster(customerId) {
   if (!_brPosterDialog.open) _brPosterDialog.showModal();
 
   var canvas = document.getElementById('br-poster-canvas');
-  await brDrawPoster(canvas, c.name);
+  await brDrawPoster(canvas, c);
 
   var actions = document.getElementById('br-poster-actions');
   var canShare = typeof navigator.share === 'function';
