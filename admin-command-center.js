@@ -18,6 +18,20 @@
 var CC_CATEGORIES = ['Daily Operations', 'Financial', 'Staff & HR', 'Growth & Insights'];
 var _ccTools = { 'Daily Operations': [], 'Financial': [], 'Staff & HR': [], 'Growth & Insights': [] };
 var _ccOpen = false;
+var _ccAccessGranted = false;
+function ccSetAccess(allowed) {
+  _ccAccessGranted = allowed === true;
+  if (!_ccAccessGranted) {
+    ccSlideClosed();
+    _ccCallbacks = [];
+    var body=document.getElementById('acc-body'); if(body) body.innerHTML='';
+  }
+  var tab=document.getElementById('acc-tab'), sheet=document.getElementById('acc-sheet');
+  if(tab) tab.style.display=_ccAccessGranted?'flex':'none';
+  if(sheet) sheet.style.display=_ccAccessGranted?'block':'none';
+  var pill=document.getElementById('admin-fab-pill'); if(pill) pill.style.display='none';
+}
+window.ccSetAccess=ccSetAccess;
 
 // Called by other admin patch files instead of touching the FAB menu DOM
 // directly. opts: { icon, title, subtitle, onClick, badgeId, superAdminOnly }
@@ -30,6 +44,7 @@ window.registerAdminTool = function (category, opts) {
 function _ccInit() {
   buildCommandCenterUI();
   replaceFabMenuBehavior();
+  ccSetAccess(_ccAccessGranted);
 }
 if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', _ccInit); } else { _ccInit(); }
 
@@ -42,7 +57,7 @@ function replaceFabMenuBehavior() {
     var pill = document.getElementById('admin-fab-pill');
     if (pill) {
       clearInterval(poll);
-      pill.style.display = 'none'; // replaced entirely by the panel's own always-visible edge tab below
+      pill.style.display = 'none'; // replaced entirely by the panel's access-controlled edge tab below
 
       window.openAdminMenu = function () { ccSlideOpen(); };
       window.closeAdminMenu = function () { ccSlideClosed(); };
@@ -61,6 +76,7 @@ var CC_OPEN_TRANSFORM = 'translateX(0)';
 var CC_CLOSED_TRANSFORM = 'translateX(-100%)';
 
 function ccSlideOpen() {
+  if (!_ccAccessGranted) return;
   document.getElementById('acc-overlay').style.display = 'block';
   document.getElementById('acc-sheet').style.transform = CC_OPEN_TRANSFORM;
   document.getElementById('acc-tab').style.left = '360px';
@@ -68,9 +84,9 @@ function ccSlideOpen() {
   renderCommandCenter();
 }
 function ccSlideClosed() {
-  document.getElementById('acc-overlay').style.display = 'none';
-  document.getElementById('acc-sheet').style.transform = CC_CLOSED_TRANSFORM;
-  document.getElementById('acc-tab').style.left = '0px';
+  var overlay=document.getElementById('acc-overlay'); if(overlay) overlay.style.display = 'none';
+  var sheet=document.getElementById('acc-sheet'); if(sheet) sheet.style.transform = CC_CLOSED_TRANSFORM;
+  var tab=document.getElementById('acc-tab'); if(tab) tab.style.left = '0px';
   _ccOpen = false;
 }
 function ccToggleSlide() {
@@ -87,7 +103,7 @@ function buildCommandCenterUI() {
 
   var sheet = document.createElement('div');
   sheet.id = 'acc-sheet';
-  sheet.style.cssText = 'position:fixed;top:0;left:0;bottom:0;width:360px;max-width:88vw;'
+  sheet.style.cssText = 'display:none;position:fixed;top:0;left:0;bottom:0;width:360px;max-width:88vw;'
     + 'background:linear-gradient(165deg,#fffbf2,#fdf5e3);z-index:499;'
     + 'transform:translateX(-100%);transition:transform .32s cubic-bezier(.4,0,.2,1);'
     + 'font-family:\'Instrument Sans\',sans-serif;overflow-y:auto;box-shadow:12px 0 40px rgba(18,10,30,0.25)';
@@ -104,7 +120,7 @@ function buildCommandCenterUI() {
     + '<div id="acc-body" style="padding:6px 20px 28px"></div>';
   document.body.appendChild(sheet);
 
-  // Standalone, always-visible tab — replaces the old floating pill
+  // Standalone, access-controlled tab — replaces the old floating pill
   // entirely. Its own `left` position is synced (in ccSlideOpen/Closed)
   // to sit at the panel's edge whether open or closed, so it reads as
   // one attached handle even though it's a separate fixed element —
@@ -116,13 +132,14 @@ function buildCommandCenterUI() {
   tab.style.cssText = 'position:fixed;top:50%;left:0px;transform:translateY(-50%);'
     + 'width:40px;height:88px;background:linear-gradient(135deg,#6e0977,#9c0ca1);'
     + 'border-radius:0 16px 16px 0;z-index:500;cursor:pointer;'
-    + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;'
+    + 'display:none;flex-direction:column;align-items:center;justify-content:center;gap:4px;'
     + 'box-shadow:4px 0 16px rgba(110,9,119,0.4);transition:left .32s cubic-bezier(.4,0,.2,1)';
   tab.innerHTML = '<span style="font-size:16px">⚙️</span>';
   document.body.appendChild(tab);
 }
 
 function renderCommandCenter() {
+  if (!_ccAccessGranted) return;
   var body = document.getElementById('acc-body');
   if (!body) return;
 
@@ -173,6 +190,7 @@ function ccRegisterCallback(tool) {
   return _ccCallbacks.length - 1;
 }
 function ccInvoke(el) {
+  if (!_ccAccessGranted) return;
   var idx = parseInt(el.getAttribute('data-onclick-ref'));
   var tool = _ccCallbacks[idx];
   if (!tool || !tool.onClick) return;
