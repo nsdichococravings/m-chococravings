@@ -19,20 +19,42 @@
  *   <script src="checkadminbadge-override.js"></script>
  */
 
+var _adminCheckGeneration=0, _adminAuthListener=null, _adminToolsRegistered=false;
+function resetAdminVisibility() {
+  isAdmin=false;
+  if(typeof ccSetAccess==='function') ccSetAccess(false);
+  ['admin-quick-actions','kitchen-fab','print-invoice-btn','admin-fab-pill','admin-fab-menu','admin-fab-backdrop'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
+}
 async function checkAdminBadge(){
+  var generation=++_adminCheckGeneration;
+  resetAdminVisibility();
   try {
     if(!db) return;
 
-    var s = await getStoreVerifiedUser(); var user = s.data.user;
+    if(!_adminAuthListener && db.auth.onAuthStateChange) {
+      _adminAuthListener=db.auth.onAuthStateChange(function(event) {
+        if(event==='SIGNED_OUT' || event==='SIGNED_IN' || event==='USER_UPDATED' || event==='TOKEN_REFRESHED') {
+          ++_adminCheckGeneration; resetAdminVisibility();
+          if(event!=='SIGNED_OUT') setTimeout(function(){checkAdminBadge();},0);
+        }
+      });
+    }
+    var s = await db.auth.getUser();
+    if(generation!==_adminCheckGeneration) return;
+    if(s.error) throw s.error;
+    var user = s.data && s.data.user;
     if(!user) return;
 
     // Both flags in one query — avoids a second DB round-trip.
     var chk = await db.from('customers').select('is_admin, is_employee').eq('email', user.email).single();
+    if(generation!==_adminCheckGeneration) return;
+    if(chk.error) throw chk.error;
     var admin = !!(chk.data && chk.data.is_admin);
     var employee = !!(chk.data && chk.data.is_employee);
 
     if (admin) {
       isAdmin = true;
+      if(typeof ccSetAccess==='function') ccSetAccess(true);
 
       // Show admin-only UI elements
       var adminActions = document.getElementById('admin-quick-actions');
@@ -47,7 +69,8 @@ async function checkAdminBadge(){
       // These three were previously hardcoded static HTML inside the old
       // #admin-fab-menu dropdown — now registered through the Command
       // Center like every other tool, instead of living as separate markup.
-      if (typeof registerAdminTool === 'function') {
+      if (!_adminToolsRegistered && typeof registerAdminTool === 'function') {
+        _adminToolsRegistered=true;
         registerAdminTool('Daily Operations', {
           icon: '👤', iconBg: 'rgba(110,9,119,0.1)',
           title: 'Place Order', subtitle: 'On behalf of customer',
@@ -95,6 +118,7 @@ async function checkAdminBadge(){
 // parser-inserted <script> tags give you, just triggered later.
 function loadScriptsSequentially(srcList) {
   srcList.forEach(function (src) {
+    if(Array.prototype.some.call(document.scripts,function(el){return el.getAttribute('src')===src;})) return;
     var s = document.createElement('script');
     s.src = src;
     s.async = false;
