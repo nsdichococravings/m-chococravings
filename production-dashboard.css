@@ -84,3 +84,11 @@
 
 /* A deletion request keeps the recipe visible until admin review. */
 #production-workspace .pd-delete-pending { background:#eee; color:#666; padding:12px; border-radius:8px; }
+
+/* Recent collections owns its controls; do not rely on ready-panel styles. */
+.pd-kitchen-history .pdk-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.pd-kitchen-history .pdk-top .pdk-eyebrow{margin-bottom:0;color:#d8c5df}
+.pd-kitchen-history .pdk-history-close,.pd-kitchen-sidebar .pdk-history-reopen{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:8px 12px;border:1px solid #8f719c;border-radius:10px;background:#302038;color:#fff;font:600 12px/1.2 'Instrument Sans',system-ui,sans-serif;cursor:pointer;flex-shrink:0}
+.pd-kitchen-history .pdk-history-close span{font-size:22px;line-height:1}
+.pd-kitchen-history .pdk-history-close:hover,.pd-kitchen-sidebar .pdk-history-reopen:hover{background:#52315f;border-color:#d7abe8}
+.pd-kitchen-history .pdk-history-close:focus-visible,.pd-kitchen-sidebar .pdk-history-reopen:focus-visible{outline:2px solid #f5c430;outline-offset:3px}
