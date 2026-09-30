@@ -1604,6 +1604,18 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
           <div class="mtxt"><div class="mtitle">Delivery Addresses</div><div class="msub" id="prof-addr-sub">Loading...</div></div>
           <span class="marrow">›</span>
         </div>
+        <div class="mitem" id="prof-push-item" onclick="togglePushNotifications()" style="display:none">
+          <div class="mtxt"><div class="mtitle">🔔 Order Notifications</div><div class="msub" id="prof-push-sub">Off — tap to turn on</div></div>
+          <span class="marrow">›</span>
+        </div>
+        <div class="mitem" id="prof-refer-item" onclick="shareReferral()" style="display:none">
+          <div class="mtxt">
+            <div class="mtitle">🎁 Refer a Friend</div>
+            <div class="msub" id="prof-refer-sub">Share your code — you both get bonus points</div>
+          </div>
+          <span class="mbadge" id="prof-refer-code"></span>
+          <span class="marrow">›</span>
+        </div>
         <div class="mgrp">Preferences</div>
         <div class="mitem" id="egg-pref-item" style="cursor:not-allowed;opacity:0.6;">
           <div class="mtxt">
@@ -1870,6 +1882,13 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
       </div>
 
       <div style="padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+
+        <!-- PUSH OPT-IN (shown by pushRefreshUI when available and not yet on) -->
+        <div id="succ-push" style="display:none;background:rgba(107,47,206,.12);border:1px solid rgba(107,47,206,.3);border-radius:16px;padding:14px 16px">
+          <div style="font-size:13px;font-weight:700;color:var(--white);margin-bottom:4px">🔔 Get order updates on this phone</div>
+          <div style="font-size:12px;color:var(--dim);margin-bottom:10px">We'll let you know when it's baking, out for delivery and delivered.</div>
+          <button onclick="enablePushNotifications()" style="width:100%;padding:11px;border:0;border-radius:12px;background:var(--p);color:#fff;font-weight:700;font-size:13px;cursor:pointer">Turn on notifications</button>
+        </div>
 
         <!-- ORDER DETAILS CARD -->
         <div style="background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:14px 16px">
@@ -2813,6 +2832,106 @@ function updateProfileUI() {
     greetEl.innerHTML = 'What\'s your <em>craving</em> today, <em>' + firstName + '</em>?';
     }
     loadLoyaltyCard();
+    pushRefreshUI(true);
+    openFromLink();
+}
+
+// Notification taps open index.html?open=orders — show My Orders once signed in.
+var _openFromLinkDone = false;
+function openFromLink() {
+  if (_openFromLinkDone) return;
+  _openFromLinkDone = true;
+  try {
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('open') === 'orders' && currentUser && currentUser.db_id) {
+      history.replaceState(null, '', window.location.pathname);
+      setTimeout(loadAndShowOrders, 300);
+    }
+  } catch(e) {}
+}
+
+// ── PUSH NOTIFICATIONS ──
+// Order status pushes come from the send-push Edge Function
+// (migrations/20260950_push_notifications.sql). Hidden until the shop sets
+// app_settings.vapid_public_key, and on browsers without Web Push.
+var _vapidKey = null;
+function pushSupported() {
+  return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+}
+async function getVapidKey() {
+  if (_vapidKey !== null) return _vapidKey;
+  try {
+    var res = await db.from('app_settings').select('value').eq('key', 'vapid_public_key').maybeSingle();
+    _vapidKey = (res.data && res.data.value) || '';
+  } catch(e) { _vapidKey = ''; }
+  return _vapidKey;
+}
+function urlB64ToUint8Array(b64) {
+  var pad = '='.repeat((4 - b64.length % 4) % 4);
+  var raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  var out = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+async function savePushSubscription(sub) {
+  var j = sub.toJSON();
+  var res = await db.rpc('cc_push_subscribe', {
+    p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth, p_user_agent: navigator.userAgent
+  });
+  if (res.error) throw res.error;
+}
+async function currentPushSubscription() {
+  var reg = await navigator.serviceWorker.ready;
+  return reg.pushManager.getSubscription();
+}
+
+// Shows/hides the opt-in card and Profile row. With resync=true, re-saves an
+// existing subscription so it stays linked to whoever is signed in now.
+async function pushRefreshUI(resync) {
+  var card = document.getElementById('succ-push'), item = document.getElementById('prof-push-item'), sub = document.getElementById('prof-push-sub');
+  if (!pushSupported() || !currentUser || !currentUser.db_id || !(await getVapidKey())) {
+    if (card) card.style.display = 'none';
+    if (item) item.style.display = 'none';
+    return;
+  }
+  var on = false;
+  try {
+    var existing = Notification.permission === 'granted' ? await currentPushSubscription() : null;
+    if (existing) { on = true; if (resync) savePushSubscription(existing).catch(function(){}); }
+  } catch(e) {}
+  var blocked = Notification.permission === 'denied';
+  if (card) card.style.display = on || blocked ? 'none' : '';
+  if (item) item.style.display = '';
+  if (sub) sub.textContent = on ? 'On — tap to turn off' : blocked ? 'Blocked — allow notifications in your phone settings' : 'Off — tap to turn on';
+}
+
+async function enablePushNotifications() {
+  try {
+    var key = await getVapidKey();
+    if (!pushSupported() || !key) { showToast('Notifications are not available on this device'); return; }
+    var perm = await Notification.requestPermission();
+    if (perm !== 'granted') { showToast('Notifications not allowed'); pushRefreshUI(); return; }
+    var reg = await navigator.serviceWorker.ready;
+    var sub = await reg.pushManager.getSubscription()
+      || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8Array(key) });
+    await savePushSubscription(sub);
+    showToast('🔔 Order updates turned on');
+  } catch(e) {
+    console.warn('push enable:', e);
+    showToast('Could not turn on notifications');
+  }
+  pushRefreshUI();
+}
+
+async function togglePushNotifications() {
+  try {
+    var sub = Notification.permission === 'granted' ? await currentPushSubscription() : null;
+    if (!sub) { if (Notification.permission === 'denied') showToast('Allow notifications for this app in your phone settings'); else await enablePushNotifications(); return; }
+    await db.rpc('cc_push_unsubscribe', { p_endpoint: sub.endpoint });
+    await sub.unsubscribe();
+    showToast('Order notifications turned off');
+  } catch(e) { console.warn('push toggle:', e); }
+  pushRefreshUI();
 }
 
 // ── LOYALTY CARD (Home) ──
@@ -2888,6 +3007,57 @@ function renderLoyaltyCard(card) {
     + '</div>';
 }
 
+// Real product ratings from delivered-order ratings (cc_product_ratings).
+// Products without ratings show nothing — never a made-up score.
+var _productRatings = {};
+var _productRatingsReady = null;
+function loadProductRatings() {
+  if (!_productRatingsReady) _productRatingsReady = (async function() {
+    try {
+      var res = await db.rpc('cc_product_ratings');
+      if (res.error || !res.data) return;
+      res.data.forEach(function(r) { _productRatings[r.product_id] = { avg: Number(r.avg_stars), count: r.rating_count }; });
+    } catch(e) {}
+  })();
+  return _productRatingsReady;
+}
+function productRatingLabel(productId, long) {
+  var r = _productRatings[productId];
+  if (!r || !r.count) return '';
+  return '★ ' + r.avg.toFixed(1) + (long ? ' · ' + r.count + ' rating' + (r.count === 1 ? '' : 's') : ' (' + r.count + ')');
+}
+
+var _referral = null;
+// Refer a Friend row on Profile. Referral code = the customer's own customer_code.
+// Falls back to just the code if the referral migration isn't installed yet.
+async function loadReferralSummary(code) {
+  var item = document.getElementById('prof-refer-item');
+  if (!item) return;
+  _referral = code ? { code: code, joined: 0, rewarded: 0, points_earned: 0, reward_points: 100 } : null;
+  try {
+    var res = await db.rpc('cc_referral_my_summary');
+    if (!res.error && res.data && res.data.code) _referral = res.data;
+  } catch(e) {}
+  if (!_referral) { item.style.display = 'none'; return; }
+  item.style.display = '';
+  document.getElementById('prof-refer-code').textContent = _referral.code;
+  document.getElementById('prof-refer-sub').textContent = _referral.joined > 0
+    ? _referral.joined + ' friend' + (_referral.joined === 1 ? '' : 's') + ' joined · ' + _referral.points_earned + ' pts earned'
+    : 'You both get ' + _referral.reward_points + ' points on their first order';
+}
+
+async function shareReferral() {
+  if (!_referral) return;
+  var link = new URL('auth.html?ref=' + encodeURIComponent(_referral.code), window.location.href).href;
+  var text = 'I love NSDI ChocoCravings brownies! 🍫 Sign up with my code ' + _referral.code
+    + ' and we both get ' + _referral.reward_points + ' loyalty points when your first order is delivered.';
+  if (navigator.share) {
+    try { await navigator.share({ title: 'ChocoCravings', text: text, url: link }); return; }
+    catch(e) { if (e && e.name === 'AbortError') return; }
+  }
+  window.open('https://wa.me/?text=' + encodeURIComponent(text + '\n' + link), '_blank');
+}
+
 var _profileLoading = false;
 async function loadProfileData() {
   if (!currentUser || !currentUser.db_id) return;
@@ -2911,6 +3081,7 @@ async function loadProfileData() {
     // Stats
     var pts          = cust.loyalty_points  || 0; // redeemable balance
     var lifetimePts  = cust.lifetime_points || pts; // for tier calculation
+    loadReferralSummary(cust.customer_code);
     // Count actual orders from orders table instead of cached value
     var { data: allOrders } = await db.from('orders')
       .select('id', { count: 'exact' })
@@ -3064,6 +3235,8 @@ async function loadAndShowOrders() {
     return;
   }
 
+  await loadMyOrderRatings();
+
   var statusColors = {
     pending:'rgba(255,180,0,.15)', confirmed:'rgba(107,47,206,.15)',
     baking:'rgba(255,140,0,.15)', packed:'rgba(34,197,94,.15)',
@@ -3113,8 +3286,118 @@ return '<div style="background:var(--card);border:1px solid var(--bdr);border-ra
       + '<div style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;background:' + statusBg + ';color:var(--white)">' + statusLbl + '</div>'
       + '</div>'
       + customBtn
+      + orderRatingRow(o)
       + '</div>';
   }).join('');
+}
+
+// ── ORDER RATINGS ──
+// Customers rate delivered orders; these feed the real product stars on the menu.
+var _myOrderRatings = {};
+var _googleReviewUrl = null;
+async function loadMyOrderRatings() {
+  try {
+    var res = await db.rpc('cc_my_order_ratings');
+    if (res.error) { _myOrderRatings = null; return; } // ratings not installed — hide the feature
+    _myOrderRatings = {};
+    (res.data || []).forEach(function(r) { _myOrderRatings[r.order_id] = r; });
+  } catch(e) { _myOrderRatings = null; }
+}
+
+function orderRatingRow(o) {
+  if (o.status !== 'delivered' || !_myOrderRatings) return '';
+  var r = _myOrderRatings[o.id];
+  var stars = '';
+  for (var n = 1; n <= 5; n++) {
+    var on = r && n <= r.stars;
+    stars += '<span onclick="openRateOrder(\'' + o.id + '\',' + n + ')" style="cursor:pointer;font-size:20px;padding:0 2px;color:'
+      + (on ? 'var(--gold)' : 'rgba(255,255,255,.25)') + '">★</span>';
+  }
+  return '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;gap:8px">'
+    + '<div style="font-size:11px;color:var(--dim)">' + (r ? 'Your rating · tap to change' : 'How was it? Rate your order') + '</div>'
+    + '<div style="white-space:nowrap">' + stars + '</div></div>';
+}
+
+function openRateOrder(orderId, stars) {
+  var sheet = document.getElementById('rate-sheet');
+  if (!sheet) {
+    sheet = document.createElement('div');
+    sheet.id = 'rate-sheet';
+    sheet.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center';
+    sheet.onclick = function(e) { if (e.target === sheet) closeRateOrder(); };
+    sheet.innerHTML = '<div style="width:100%;max-width:480px;background:var(--d2,#1a0f24);border-radius:22px 22px 0 0;padding:20px 22px 26px;border-top:1px solid var(--bdr)">'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:700;color:var(--white);margin-bottom:4px">Rate your order</div>'
+      + '<div style="font-size:12px;color:var(--dim);margin-bottom:14px">Your rating helps other customers and our kitchen.</div>'
+      + '<div id="rate-stars" style="display:flex;gap:8px;justify-content:center;margin-bottom:14px"></div>'
+      + '<textarea id="rate-comment" maxlength="500" rows="3" placeholder="Tell us more (optional)" '
+      + 'style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--bdr);border-radius:12px;padding:10px;color:var(--white);font:inherit;font-size:13px;resize:none"></textarea>'
+      + '<div id="rate-google" style="display:none;margin-top:12px"></div>'
+      + '<button id="rate-submit" onclick="submitRateOrder()" style="margin-top:14px;width:100%;padding:13px;border:0;border-radius:14px;background:var(--p,#6b2fce);color:#fff;font-weight:700;font-size:14px;cursor:pointer">Submit rating</button>'
+      + '</div>';
+    document.body.appendChild(sheet);
+  }
+  var existing = _myOrderRatings && _myOrderRatings[orderId];
+  sheet.dataset.orderId = orderId;
+  document.getElementById('rate-comment').value = (existing && existing.comment) || '';
+  document.getElementById('rate-google').style.display = 'none';
+  var btn = document.getElementById('rate-submit');
+  btn.disabled = false; btn.textContent = 'Submit rating'; btn.style.display = '';
+  setRateStars(stars);
+  sheet.style.display = 'flex';
+}
+
+function setRateStars(n) {
+  var sheet = document.getElementById('rate-sheet');
+  sheet.dataset.stars = n;
+  var html = '';
+  for (var i = 1; i <= 5; i++) {
+    html += '<span onclick="setRateStars(' + i + ')" style="cursor:pointer;font-size:34px;color:'
+      + (i <= n ? 'var(--gold)' : 'rgba(255,255,255,.25)') + '">★</span>';
+  }
+  document.getElementById('rate-stars').innerHTML = html;
+}
+
+function closeRateOrder() {
+  var sheet = document.getElementById('rate-sheet');
+  if (sheet) sheet.style.display = 'none';
+}
+
+async function submitRateOrder() {
+  var sheet = document.getElementById('rate-sheet');
+  var orderId = sheet.dataset.orderId, stars = Number(sheet.dataset.stars);
+  var comment = document.getElementById('rate-comment').value.trim();
+  var btn = document.getElementById('rate-submit');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  var res = await db.rpc('cc_rate_order', { p_order_id: orderId, p_stars: stars, p_comment: comment || null });
+  if (res.error) {
+    showToast(res.error.message || 'Could not save rating');
+    btn.disabled = false; btn.textContent = 'Submit rating';
+    return;
+  }
+  if (_myOrderRatings) _myOrderRatings[orderId] = { order_id: orderId, stars: stars, comment: comment || null };
+  _productRatingsReady = null; // refresh menu stars next time products load
+  loadAndShowOrders();
+
+  // Happy customers: offer a Google review if the shop has set its link.
+  if (stars >= 4) {
+    if (_googleReviewUrl === null) {
+      try {
+        var gs = await db.from('app_settings').select('value').eq('key', 'google_review_url').maybeSingle();
+        _googleReviewUrl = (gs.data && gs.data.value) || '';
+      } catch(e) { _googleReviewUrl = ''; }
+    }
+    if (/^https:\/\//.test(_googleReviewUrl)) {
+      var g = document.getElementById('rate-google');
+      g.innerHTML = '<div style="font-size:13px;color:var(--white);text-align:center;margin-bottom:10px">Thank you! 💜 Would you share it on Google too?</div>'
+        + '<button onclick="window.open(_googleReviewUrl,\'_blank\');closeRateOrder()" style="width:100%;padding:12px;border:1px solid var(--gold);border-radius:14px;background:transparent;color:var(--gold);font-weight:700;font-size:14px;cursor:pointer">⭐ Review us on Google</button>'
+        + '<div onclick="closeRateOrder()" style="text-align:center;font-size:12px;color:var(--dim);margin-top:10px;cursor:pointer">Maybe later</div>';
+      g.style.display = '';
+      btn.style.display = 'none';
+      return;
+    }
+  }
+  showToast(stars >= 4 ? 'Thank you for your rating! 💜' : 'Thanks — we\'re sorry it wasn\'t perfect. Our team will look into it.');
+  closeRateOrder();
 }
 
 function toggleHamburgerMenu() {
@@ -5457,6 +5740,7 @@ currentOrderTotal = 0;
 try { localStorage.removeItem('cc_cart'); } catch(e) {}
 renderCart();
 showPage('success');
+pushRefreshUI();
 try { sessionStorage.removeItem('cc_ck_cache'); } catch(e) {}
 window._ckFormCache = null;
 insertNotification(data.id, 'order_placed', 'Order Placed! 🛒', 'Your order ' + orderNum + ' has been placed. We\'ll confirm it shortly.');
@@ -5976,6 +6260,7 @@ async function loadProducts() {
       }
 
       var { data: products, error } = await query;
+      await Promise.race([loadProductRatings(), new Promise(function(r){ setTimeout(r, 1500); })]);
 
       if (error || !products) {
       console.warn('Products load error:', error);
@@ -6153,7 +6438,7 @@ function renderFeaturedGrid(products) {
     var userPref = getUserEggPref();
     var eggLabel = (userPref || p.egg_type) === 'eggless' ? '💚 Eggless' : '❤️ With Egg';
     var imgUrl   = getProductImage(p.sku);
-    var rating   = p.rating || 4.9;
+    var rating   = productRatingLabel(p.id, false);
     var isBestSeller = i === 0;
     var isNew        = i >= featured.length - 2;
 
@@ -6201,7 +6486,7 @@ function renderFeaturedGrid(products) {
       + '<div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:3px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + p.name + '</div>'
       + '<div style="font-size:9px;color:var(--green);font-weight:600;margin-bottom:5px">' + eggLabel + ' · ' + (p.tier === 'couverture' ? '🌟 Couverture' : 'Premium') + '</div>'
       + '<div style="display:flex;align-items:center;justify-content:space-between">'
-      + '<div style="font-size:10px;color:var(--gold)">★ ' + rating + '</div>'
+      + '<div style="font-size:10px;color:var(--gold)">' + rating + '</div>'
       + '<button class="abtn" onclick="event.stopPropagation();quickAddCart(this)" '
       + 'style="width:26px;height:26px;border-radius:8px;font-size:16px">+</button>'
       + '</div>'
@@ -6242,8 +6527,7 @@ function renderExploreList(products) {
     var userPref = getUserEggPref();
     var eggLabel = p.egg_type === 'eggless' ? '💚 Eggless' : '❤️ With Egg';
     var tierLabel = p.tier === 'couverture' ? 'Couverture' : 'Premium';
-    var rating = p.rating || 4.9;
-    var reviews = p.review_count || 0;
+    var rating = productRatingLabel(p.id, true);
     var sortedVariants = (p.product_variants || []).slice().sort(function(a,b){ return (a.price||0) - (b.price||0); });
     var pack = sortedVariants.length > 0 ? sortedVariants[0].pack_label : '4pcs';
     var varIdx = getVariantIndex(p.sku);
@@ -6269,7 +6553,7 @@ function renderExploreList(products) {
       + '<div class="plname">' + p.name + '</div>'
       + '<div class="pltag">' + eggLabel + ' · ' + tierLabel + '</div>'
       + '<div class="pldesc">' + (p.description || '') + '</div>'
-      + '<div class="plrat">★★★★★ ' + rating + (reviews ? ' · ' + reviews + ' reviews' : '') + '</div>'
+      + (rating ? '<div class="plrat">' + rating + '</div>' : '')
       + '</div>'
       + '<div class="plfoot">'
       + '<span class="plprice">from ₹' + price + '</span>'
