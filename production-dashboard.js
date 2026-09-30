@@ -523,12 +523,12 @@
     history.style.display = kitchenHistoryClosed ? 'none' : '';
     let reopen = sidebar.querySelector('[data-action="show-collections"]');
     if (!reopen) {
-      reopen = document.createElement('button'); reopen.type = 'button'; reopen.className = 'pdk-link';
+      reopen = document.createElement('button'); reopen.type = 'button'; reopen.className = 'pdk-history-reopen';
       reopen.dataset.action = 'show-collections'; reopen.textContent = 'Show recent collections';
       sidebar.appendChild(reopen);
     }
     reopen.style.display = kitchenHistoryClosed ? '' : 'none';
-    history.innerHTML = '<div class="pdk-top"><div class="pdk-eyebrow">Recent collections</div><button type="button" class="pdk-link" data-action="hide-collections" aria-label="Close recent collections" title="Close recent collections" style="min-width:44px;min-height:44px;font-size:24px">×</button></div>' + (collectionHistory.length
+    history.innerHTML = '<div class="pdk-top"><div class="pdk-eyebrow">Recent collections</div><button type="button" class="pdk-history-close" data-action="hide-collections" aria-label="Close recent collections" title="Close recent collections"><span aria-hidden="true">×</span> Close</button></div>' + (collectionHistory.length
       ? collectionHistory.map(h => '<div class="pdk-hist-row"><div class="pdk-hist-name">' + esc(h.item_name) + '<span>' + num(h.quantity) + ' pcs</span></div><div class="pdk-hist-meta">' + esc(h.collected_by || 'Unrecorded') + ' · ' + histTime(h.created_at) + '</div></div>').join('')
       : '<div class="pdk-hist-empty">No collections recorded yet.</div>');
   }
