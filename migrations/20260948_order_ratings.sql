@@ -19,6 +19,10 @@
 -- functions and grants. Access to cc_order_ratings is only through the
 -- functions below (RLS on, no direct policies).
 --
+-- orders.id is TEXT in the live database (not uuid), so order ids are
+-- text here and order/product/customer ids are compared as text. (First
+-- version used uuid and failed on the foreign key; nothing applied.)
+--
 -- Run this ENTIRE file as database owner. Safe to re-run.
 begin;
 do $$ begin
@@ -34,7 +38,7 @@ do $$ begin
 end $$;
 
 create table if not exists public.cc_order_ratings(
- order_id uuid primary key references public.orders(id) on delete cascade,
+ order_id text primary key references public.orders(id) on delete cascade,
  customer_id uuid not null references public.customers(id) on delete cascade,
  stars smallint not null check (stars between 1 and 5),
  comment text check (char_length(comment) <= 500),
@@ -46,7 +50,8 @@ alter table public.cc_order_ratings enable row level security;
 revoke all on public.cc_order_ratings from public, anon, authenticated;
 
 -- Customer rates (or re-rates) one of their own delivered orders.
-create or replace function public.cc_rate_order(p_order_id uuid, p_stars int, p_comment text default null) returns jsonb
+drop function if exists public.cc_rate_order(uuid,int,text);
+create or replace function public.cc_rate_order(p_order_id text, p_stars int, p_comment text default null) returns jsonb
 language plpgsql security definer set search_path=pg_catalog,public as $$
 declare v_customer uuid; v_order public.orders%rowtype; v_comment text=nullif(btrim(coalesce(p_comment,'')),'');
 begin
@@ -54,8 +59,8 @@ begin
  if p_stars is null or p_stars not between 1 and 5 then raise exception 'Choose 1 to 5 stars'; end if;
  if char_length(v_comment) > 500 then raise exception 'Comment is too long (500 characters max)'; end if;
  select id into v_customer from public.customers where auth_id=auth.uid() limit 1;
- select * into v_order from public.orders where id=p_order_id;
- if v_order.id is null or v_customer is null or v_order.customer_id is distinct from v_customer then
+ select * into v_order from public.orders where id::text=p_order_id;
+ if v_order.id is null or v_customer is null or v_order.customer_id::text is distinct from v_customer::text then
   raise exception 'Order not found';
  end if;
  if v_order.status is distinct from 'delivered' then raise exception 'You can rate an order once it is delivered'; end if;
@@ -66,7 +71,8 @@ begin
 end $$;
 
 -- The signed-in customer's own ratings, for My Orders.
-create or replace function public.cc_my_order_ratings() returns table(order_id uuid, stars smallint, comment text)
+drop function if exists public.cc_my_order_ratings();
+create or replace function public.cc_my_order_ratings() returns table(order_id text, stars smallint, comment text)
 language sql stable security definer set search_path=pg_catalog,public as $$
  select r.order_id, r.stars, r.comment from public.cc_order_ratings r
  join public.customers c on c.id=r.customer_id
@@ -74,13 +80,14 @@ language sql stable security definer set search_path=pg_catalog,public as $$
 $$;
 
 -- Public per-product averages for the menu (only products with ratings).
-create or replace function public.cc_product_ratings() returns table(product_id uuid, avg_stars numeric, rating_count int)
+drop function if exists public.cc_product_ratings();
+create or replace function public.cc_product_ratings() returns table(product_id text, avg_stars numeric, rating_count int)
 language sql stable security definer set search_path=pg_catalog,public as $$
- select oi.product_id, round(avg(r.stars)::numeric,1), count(distinct r.order_id)::int
+ select oi.product_id::text, round(avg(r.stars)::numeric,1), count(distinct r.order_id)::int
  from public.cc_order_ratings r
- join public.order_items oi on oi.order_id=r.order_id
+ join public.order_items oi on oi.order_id::text=r.order_id
  where oi.product_id is not null
- group by oi.product_id
+ group by oi.product_id::text
 $$;
 
 -- Staff/admin report.
@@ -100,7 +107,7 @@ begin
   'low_7d', (select count(*) from public.cc_order_ratings where stars<=2 and updated_at>=now()-interval '7 days'),
   'products', (select coalesce(jsonb_agg(p order by p->>'avg', p->>'name'),'[]'::jsonb) from (
      select jsonb_build_object('name', min(oi.product_name), 'avg', round(avg(r.stars)::numeric,1), 'count', count(distinct r.order_id)) p
-     from public.cc_order_ratings r join public.order_items oi on oi.order_id=r.order_id
+     from public.cc_order_ratings r join public.order_items oi on oi.order_id::text=r.order_id
      where r.updated_at>=v_since
      group by coalesce(oi.product_id::text, oi.product_name)) y),
   'recent', (select coalesce(jsonb_agg(x order by x->>'at' desc),'[]'::jsonb) from (
@@ -108,9 +115,9 @@ begin
        'order_number', coalesce(o.order_number, left(o.id::text,8)),
        'name', c.name, 'phone', c.phone,
        'stars', r.stars, 'comment', r.comment, 'at', r.updated_at,
-       'items', (select string_agg(oi.product_name || coalesce(' · '||oi.pack_label,''), ', ') from public.order_items oi where oi.order_id=r.order_id)) x
+       'items', (select string_agg(oi.product_name || coalesce(' · '||oi.pack_label,''), ', ') from public.order_items oi where oi.order_id::text=r.order_id)) x
      from public.cc_order_ratings r
-     join public.orders o on o.id=r.order_id
+     join public.orders o on o.id::text=r.order_id
      join public.customers c on c.id=r.customer_id
      where r.updated_at>=v_since
      order by r.updated_at desc limit 100) z)
@@ -127,10 +134,10 @@ exception when others then
  raise notice 'Could not add google_review_url to app_settings (%). Add it by hand if you want the Google button.', sqlerrm;
 end $$;
 
-revoke all on function public.cc_rate_order(uuid,int,text) from public, anon;
+revoke all on function public.cc_rate_order(text,int,text) from public, anon;
 revoke all on function public.cc_my_order_ratings() from public, anon;
 revoke all on function public.cc_ratings_report(int) from public, anon;
-grant execute on function public.cc_rate_order(uuid,int,text) to authenticated;
+grant execute on function public.cc_rate_order(text,int,text) to authenticated;
 grant execute on function public.cc_my_order_ratings() to authenticated;
 grant execute on function public.cc_ratings_report(int) to authenticated;
 grant execute on function public.cc_product_ratings() to anon, authenticated;

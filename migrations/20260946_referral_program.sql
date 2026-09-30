@@ -21,6 +21,12 @@
 -- adds functions + one trigger on orders; it does not change existing
 -- columns, RLS policies or grants on those tables.
 --
+-- orders.id is TEXT in the live database (not uuid), and orders.customer_id
+-- may be either, so order ids are handled as text and ids are compared as
+-- text throughout. (First version passed orders.id as uuid, which would
+-- have made marking a referred customer's first order Delivered fail.
+-- Fixed in place; re-running this file replaces those functions.)
+--
 -- To change the reward, edit cc_referral_reward_points() below and re-run
 -- just that function.
 --
@@ -79,7 +85,7 @@ begin
   if v_me.referred_by=v_ref.id then return jsonb_build_object('ok',true,'referrer_name',split_part(v_ref.name,' ',1)); end if;
   raise exception 'A referral code is already applied to this account';
  end if;
- if exists(select 1 from public.orders where customer_id=v_me.id) then
+ if exists(select 1 from public.orders where customer_id::text=v_me.id::text) then
   raise exception 'Referral codes can only be used before your first order';
  end if;
  update public.customers set referred_by=v_ref.id where id=v_me.id;
@@ -106,7 +112,8 @@ end $$;
 -- Adds points to one customer and logs it. Logging is best-effort: the
 -- live points_transactions table may restrict "type", and a failed log
 -- line must never undo the reward or the delivery update.
-create or replace function public.cc_referral_credit(p_customer uuid, p_order uuid, p_desc text) returns void
+drop function if exists public.cc_referral_credit(uuid,uuid,text);
+create or replace function public.cc_referral_credit(p_customer uuid, p_order text, p_desc text) returns void
 language plpgsql security definer set search_path=pg_catalog,public as $$
 declare v_pts int=public.cc_referral_reward_points(); v_bal int;
 begin
@@ -122,7 +129,12 @@ begin
   begin
    insert into public.points_transactions(customer_id,order_id,type,points,balance_after,description)
    values(p_customer,p_order,'earned',v_pts,v_bal,p_desc);
-  exception when others then null;
+  exception when others then
+   begin
+    insert into public.points_transactions(customer_id,type,points,balance_after,description)
+    values(p_customer,'earned',v_pts,v_bal,p_desc);
+   exception when others then null;
+   end;
   end;
  end;
 end $$;
@@ -130,19 +142,19 @@ end $$;
 -- Pays both sides once, on the referred customer's first delivered order.
 create or replace function public.cc_referral_on_order_delivered() returns trigger
 language plpgsql security definer set search_path=pg_catalog,public as $$
-declare v_referrer uuid; v_name text;
+declare v_referrer uuid; v_name text; v_customer text=new.customer_id::text;
 begin
  if new.status is distinct from 'delivered' or new.customer_id is null then return new; end if;
  if tg_op='UPDATE' and old.status is not distinct from 'delivered' then return new; end if;
  -- Only the FIRST delivered order counts.
- if exists(select 1 from public.orders where customer_id=new.customer_id and status='delivered' and id<>new.id) then return new; end if;
+ if exists(select 1 from public.orders where customer_id::text=v_customer and status='delivered' and id::text<>new.id::text) then return new; end if;
  -- Claim the reward atomically so two deliveries at once can't pay twice.
  update public.customers set referral_rewarded_at=now()
-  where id=new.customer_id and referred_by is not null and referred_by<>id and referral_rewarded_at is null
+  where id::text=v_customer and referred_by is not null and referred_by<>id and referral_rewarded_at is null
   returning referred_by, split_part(name,' ',1) into v_referrer, v_name;
  if v_referrer is null then return new; end if;
- perform public.cc_referral_credit(new.customer_id, new.id, 'Referral welcome bonus');
- perform public.cc_referral_credit(v_referrer, new.id, 'Referral reward: ' || coalesce(v_name,'a friend') || ' placed their first order');
+ perform public.cc_referral_credit(v_customer::uuid, new.id::text, 'Referral welcome bonus');
+ perform public.cc_referral_credit(v_referrer, new.id::text, 'Referral reward: ' || coalesce(v_name,'a friend') || ' placed their first order');
  return new;
 end $$;
 
@@ -151,7 +163,7 @@ create trigger cc_referral_order_delivered
  after insert or update of status on public.orders
  for each row execute function public.cc_referral_on_order_delivered();
 
-revoke all on function public.cc_referral_credit(uuid,uuid,text) from public, anon, authenticated;
+revoke all on function public.cc_referral_credit(uuid,text,text) from public, anon, authenticated;
 revoke all on function public.cc_referral_on_order_delivered() from public, anon, authenticated;
 revoke all on function public.cc_referral_apply(text) from public, anon;
 revoke all on function public.cc_referral_my_summary() from public, anon;

@@ -109,7 +109,7 @@ declare v_url text; v_secret text;
 begin
  if new.customer_id is null or new.status is not distinct from old.status then return new; end if;
  if new.status not in ('confirmed','baking','packed','shipped','out_for_delivery','delivered','cancelled') then return new; end if;
- if not exists(select 1 from public.cc_push_subscriptions where customer_id=new.customer_id) then return new; end if;
+ if not exists(select 1 from public.cc_push_subscriptions where customer_id::text=new.customer_id::text) then return new; end if;
  select value into v_url from public.cc_push_config where key='function_url';
  select value into v_secret from public.cc_push_config where key='webhook_secret';
  if coalesce(v_url,'')='' then return new; end if;

@@ -6,11 +6,14 @@ const db=new PGlite();await db.exec(`create role anon;create role authenticated;
 create table auth.me(id uuid);insert into auth.me values(null);
 create function auth.uid() returns uuid language sql as $$select id from auth.me$$;
 create table customers(id uuid primary key default gen_random_uuid(),auth_id uuid,customer_code text unique,name text,is_active bool default true,loyalty_points int default 50);
-create table orders(id uuid primary key default gen_random_uuid(),customer_id uuid references customers(id),status text default 'pending');
-create table points_transactions(id serial,customer_id uuid,order_id uuid,type text check(type in('earned','redeemed')),points int,balance_after int,description text);
+create table orders(id text primary key default gen_random_uuid()::text,customer_id uuid references customers(id),status text default 'pending');
+create table points_transactions(id serial,customer_id uuid,order_id text,type text check(type in('earned','redeemed')),points int,balance_after int,description text);
 insert into customers(auth_id,customer_code,name) values('${A}','CC-111111','Asha Kumar'),('${B}','CC-222222','Bala R'),('${C}','CC-333333','Chitra');`);
+// The live DB already has the first (uuid order id) version applied; the fix must replace it cleanly.
+await db.exec(require('child_process').execSync('git show 8cb7d7c:migrations/20260946_referral_program.sql').toString());
 const sql=fs.readFileSync('migrations/20260946_referral_program.sql','utf8');
 await db.exec(sql);await db.exec(sql); // re-runnable
+assert.deepEqual((await db.query("select pg_get_function_identity_arguments(oid) a from pg_proc where proname='cc_referral_credit'")).rows,[{a:'p_customer uuid, p_order text, p_desc text'}]);
 const as=id=>db.query('update auth.me set id=$1',[id]);
 const one=async(q,p)=>(await db.query(q,p)).rows[0];
 const cust=code=>one('select * from customers where customer_code=$1',[code]);

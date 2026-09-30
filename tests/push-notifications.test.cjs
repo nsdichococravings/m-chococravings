@@ -6,7 +6,7 @@ const db=new PGlite();await db.exec(`create role anon;create role authenticated;
 create table auth.me(id uuid);insert into auth.me values(null);
 create function auth.uid() returns uuid language sql as $$select id from auth.me$$;
 create table customers(id uuid primary key default gen_random_uuid(),auth_id uuid,name text);
-create table orders(id uuid primary key default gen_random_uuid(),customer_id uuid references customers(id),status text default 'pending');
+create table orders(id text primary key default gen_random_uuid()::text,customer_id uuid references customers(id),status text default 'pending');
 create table app_settings(key text primary key,value text);
 insert into customers(auth_id,name) values('${A}','Asha'),('${B}','Bala');`);
 const sql=fs.readFileSync('migrations/20260950_push_notifications.sql','utf8');
