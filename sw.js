@@ -1,5 +1,5 @@
 // NSDI ChocoCravings — Service Worker
-const CACHE_NAME = 'chococravings-v31-ratings';
+const CACHE_NAME = 'chococravings-v32-push';
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache immediately on install
@@ -108,24 +108,36 @@ self.addEventListener('fetch', function(event) {
   );
 });
 
-// ── PUSH NOTIFICATIONS (future use) ──
+// ── PUSH NOTIFICATIONS ──
+// Sent by the send-push Edge Function (order status updates, admin offers).
 self.addEventListener('push', function(event) {
   if (!event.data) return;
-  const data = event.data.json();
+  var data = {};
+  try { data = event.data.json(); } catch (e) { data = { body: event.data.text() }; }
   event.waitUntil(
     self.registration.showNotification(data.title || 'ChocoCravings 🍫', {
-      body:    data.body    || 'You have a new update!',
-      icon:    '/icons/maskable_icon_x72.png',
-      badge:   '/icons/maskable_icon_x48.png',
-      vibrate: [200, 100, 200],
-      data:    { url: data.url || '/' }
+      body:     data.body    || 'You have a new update!',
+      icon:     '/icons/maskable_icon_x72.png',
+      badge:    '/icons/maskable_icon_x48.png',
+      vibrate:  [200, 100, 200],
+      tag:      data.tag || undefined,
+      renotify: !!data.tag,
+      data:     { url: data.url || '/' }
     })
   );
 });
 
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
+  var url = new URL((event.notification.data && event.notification.data.url) || '/', self.location.origin).href;
   event.waitUntil(
-    clients.openWindow(event.notification.data.url || '/')
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(list) {
+      for (var i = 0; i < list.length; i++) {
+        if (new URL(list[i].url).origin === self.location.origin && 'navigate' in list[i]) {
+          return list[i].focus().then(function(c) { return c.navigate(url); });
+        }
+      }
+      return clients.openWindow(url);
+    })
   );
 });

@@ -1604,6 +1604,10 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
           <div class="mtxt"><div class="mtitle">Delivery Addresses</div><div class="msub" id="prof-addr-sub">Loading...</div></div>
           <span class="marrow">›</span>
         </div>
+        <div class="mitem" id="prof-push-item" onclick="togglePushNotifications()" style="display:none">
+          <div class="mtxt"><div class="mtitle">🔔 Order Notifications</div><div class="msub" id="prof-push-sub">Off — tap to turn on</div></div>
+          <span class="marrow">›</span>
+        </div>
         <div class="mitem" id="prof-refer-item" onclick="shareReferral()" style="display:none">
           <div class="mtxt">
             <div class="mtitle">🎁 Refer a Friend</div>
@@ -1878,6 +1882,13 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
       </div>
 
       <div style="padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+
+        <!-- PUSH OPT-IN (shown by pushRefreshUI when available and not yet on) -->
+        <div id="succ-push" style="display:none;background:rgba(107,47,206,.12);border:1px solid rgba(107,47,206,.3);border-radius:16px;padding:14px 16px">
+          <div style="font-size:13px;font-weight:700;color:var(--white);margin-bottom:4px">🔔 Get order updates on this phone</div>
+          <div style="font-size:12px;color:var(--dim);margin-bottom:10px">We'll let you know when it's baking, out for delivery and delivered.</div>
+          <button onclick="enablePushNotifications()" style="width:100%;padding:11px;border:0;border-radius:12px;background:var(--p);color:#fff;font-weight:700;font-size:13px;cursor:pointer">Turn on notifications</button>
+        </div>
 
         <!-- ORDER DETAILS CARD -->
         <div style="background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:14px 16px">
@@ -2821,6 +2832,106 @@ function updateProfileUI() {
     greetEl.innerHTML = 'What\'s your <em>craving</em> today, <em>' + firstName + '</em>?';
     }
     loadLoyaltyCard();
+    pushRefreshUI(true);
+    openFromLink();
+}
+
+// Notification taps open index.html?open=orders — show My Orders once signed in.
+var _openFromLinkDone = false;
+function openFromLink() {
+  if (_openFromLinkDone) return;
+  _openFromLinkDone = true;
+  try {
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('open') === 'orders' && currentUser && currentUser.db_id) {
+      history.replaceState(null, '', window.location.pathname);
+      setTimeout(loadAndShowOrders, 300);
+    }
+  } catch(e) {}
+}
+
+// ── PUSH NOTIFICATIONS ──
+// Order status pushes come from the send-push Edge Function
+// (migrations/20260950_push_notifications.sql). Hidden until the shop sets
+// app_settings.vapid_public_key, and on browsers without Web Push.
+var _vapidKey = null;
+function pushSupported() {
+  return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+}
+async function getVapidKey() {
+  if (_vapidKey !== null) return _vapidKey;
+  try {
+    var res = await db.from('app_settings').select('value').eq('key', 'vapid_public_key').maybeSingle();
+    _vapidKey = (res.data && res.data.value) || '';
+  } catch(e) { _vapidKey = ''; }
+  return _vapidKey;
+}
+function urlB64ToUint8Array(b64) {
+  var pad = '='.repeat((4 - b64.length % 4) % 4);
+  var raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  var out = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+async function savePushSubscription(sub) {
+  var j = sub.toJSON();
+  var res = await db.rpc('cc_push_subscribe', {
+    p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth, p_user_agent: navigator.userAgent
+  });
+  if (res.error) throw res.error;
+}
+async function currentPushSubscription() {
+  var reg = await navigator.serviceWorker.ready;
+  return reg.pushManager.getSubscription();
+}
+
+// Shows/hides the opt-in card and Profile row. With resync=true, re-saves an
+// existing subscription so it stays linked to whoever is signed in now.
+async function pushRefreshUI(resync) {
+  var card = document.getElementById('succ-push'), item = document.getElementById('prof-push-item'), sub = document.getElementById('prof-push-sub');
+  if (!pushSupported() || !currentUser || !currentUser.db_id || !(await getVapidKey())) {
+    if (card) card.style.display = 'none';
+    if (item) item.style.display = 'none';
+    return;
+  }
+  var on = false;
+  try {
+    var existing = Notification.permission === 'granted' ? await currentPushSubscription() : null;
+    if (existing) { on = true; if (resync) savePushSubscription(existing).catch(function(){}); }
+  } catch(e) {}
+  var blocked = Notification.permission === 'denied';
+  if (card) card.style.display = on || blocked ? 'none' : '';
+  if (item) item.style.display = '';
+  if (sub) sub.textContent = on ? 'On — tap to turn off' : blocked ? 'Blocked — allow notifications in your phone settings' : 'Off — tap to turn on';
+}
+
+async function enablePushNotifications() {
+  try {
+    var key = await getVapidKey();
+    if (!pushSupported() || !key) { showToast('Notifications are not available on this device'); return; }
+    var perm = await Notification.requestPermission();
+    if (perm !== 'granted') { showToast('Notifications not allowed'); pushRefreshUI(); return; }
+    var reg = await navigator.serviceWorker.ready;
+    var sub = await reg.pushManager.getSubscription()
+      || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8Array(key) });
+    await savePushSubscription(sub);
+    showToast('🔔 Order updates turned on');
+  } catch(e) {
+    console.warn('push enable:', e);
+    showToast('Could not turn on notifications');
+  }
+  pushRefreshUI();
+}
+
+async function togglePushNotifications() {
+  try {
+    var sub = Notification.permission === 'granted' ? await currentPushSubscription() : null;
+    if (!sub) { if (Notification.permission === 'denied') showToast('Allow notifications for this app in your phone settings'); else await enablePushNotifications(); return; }
+    await db.rpc('cc_push_unsubscribe', { p_endpoint: sub.endpoint });
+    await sub.unsubscribe();
+    showToast('Order notifications turned off');
+  } catch(e) { console.warn('push toggle:', e); }
+  pushRefreshUI();
 }
 
 // ── LOYALTY CARD (Home) ──
@@ -5629,6 +5740,7 @@ currentOrderTotal = 0;
 try { localStorage.removeItem('cc_cart'); } catch(e) {}
 renderCart();
 showPage('success');
+pushRefreshUI();
 try { sessionStorage.removeItem('cc_ck_cache'); } catch(e) {}
 window._ckFormCache = null;
 insertNotification(data.id, 'order_placed', 'Order Placed! 🛒', 'Your order ' + orderNum + ' has been placed. We\'ll confirm it shortly.');
