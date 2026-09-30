@@ -886,6 +886,14 @@ async function doSignup() {
   if (pw.length < 8)       { toast('Password must be 8+ characters', true); return; }
   if (!termsAccepted)      { toast('Please accept Terms & Conditions', true); return; }
 
+  // Referral code: check it before creating the account so a typo can be fixed.
+  // If the check itself fails (e.g. referral migration not run yet), sign-up still goes ahead.
+  const refCode = (document.getElementById('su-ref')?.value || '').trim();
+  if (refCode) {
+    const { data: refOk, error: refErr } = await db.rpc('cc_referral_check', { p_code: refCode });
+    if (!refErr && refOk === false) { toast('Referral code not found. Check it or leave it blank.', true); return; }
+  }
+
     const { data: phoneExists } = await db.rpc('check_phone_exists', { 
     p_phone: '+91' + phone 
   });
@@ -963,6 +971,17 @@ async function doSignup() {
       toast('Account created! Profile setup issue: ' + custErr.message, true);
     }
 
+    // Link the referrer. Rewards are paid when this customer's first order is delivered.
+    let refMsg = '';
+    if (refCode && !custErr) {
+      const { data: refRes, error: refApplyErr } = await db.rpc('cc_referral_apply', { p_code: refCode });
+      if (refApplyErr) console.warn('Referral not applied:', refApplyErr.message);
+      else if (refRes && refRes.ok) {
+        refMsg = ' 🎁 Referral from ' + refRes.referrer_name + ' applied — you both get '
+          + (refRes.reward_points || 100) + ' points when your first order is delivered.';
+      }
+    }
+
     // STEP 4: Save to localStorage
     localStorage.setItem('cc_user', JSON.stringify({
       name, phone: phone_fmt, email, city,
@@ -984,10 +1003,10 @@ async function doSignup() {
     setEl('dash-id-display',   displayCode);
     setEl('dash-city-display', '📍 ' + city);
 
-    toast('✓ Welcome to ChocoCravings, ' + name + '! 🍫');
+    toast('✓ Welcome to ChocoCravings, ' + name + '! 🍫' + refMsg);
 
-    // Redirect to app after short delay
-    setTimeout(() => window.location.href = 'index.html', 1200);
+    // Redirect to app after short delay (longer when there's a referral message to read)
+    setTimeout(() => window.location.href = 'index.html', refMsg ? 3500 : 1200);
 
   } catch(err) {
     toast(err.message || 'Signup failed', true);
@@ -1224,6 +1243,18 @@ db.auth.onAuthStateChange(function(event, session) {
     showPage('pg-reset');
   }
 });
+
+// ── REFERRAL LINK ──
+// auth.html?ref=CC-123456 (shared from a friend's Profile) opens sign-up with the code filled in.
+(function() {
+  try {
+    const ref = new URLSearchParams(window.location.search).get('ref');
+    if (!ref) return;
+    const input = document.getElementById('su-ref');
+    if (input) input.value = ref.trim().toUpperCase().slice(0, 12);
+    showPage('pg-signup');
+  } catch(e) {}
+})();
 
 // ── SESSION RESTORE ──
 (async function() {

@@ -1604,6 +1604,14 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
           <div class="mtxt"><div class="mtitle">Delivery Addresses</div><div class="msub" id="prof-addr-sub">Loading...</div></div>
           <span class="marrow">›</span>
         </div>
+        <div class="mitem" id="prof-refer-item" onclick="shareReferral()" style="display:none">
+          <div class="mtxt">
+            <div class="mtitle">🎁 Refer a Friend</div>
+            <div class="msub" id="prof-refer-sub">Share your code — you both get bonus points</div>
+          </div>
+          <span class="mbadge" id="prof-refer-code"></span>
+          <span class="marrow">›</span>
+        </div>
         <div class="mgrp">Preferences</div>
         <div class="mitem" id="egg-pref-item" style="cursor:not-allowed;opacity:0.6;">
           <div class="mtxt">
@@ -2888,6 +2896,37 @@ function renderLoyaltyCard(card) {
     + '</div>';
 }
 
+var _referral = null;
+// Refer a Friend row on Profile. Referral code = the customer's own customer_code.
+// Falls back to just the code if the referral migration isn't installed yet.
+async function loadReferralSummary(code) {
+  var item = document.getElementById('prof-refer-item');
+  if (!item) return;
+  _referral = code ? { code: code, joined: 0, rewarded: 0, points_earned: 0, reward_points: 100 } : null;
+  try {
+    var res = await db.rpc('cc_referral_my_summary');
+    if (!res.error && res.data && res.data.code) _referral = res.data;
+  } catch(e) {}
+  if (!_referral) { item.style.display = 'none'; return; }
+  item.style.display = '';
+  document.getElementById('prof-refer-code').textContent = _referral.code;
+  document.getElementById('prof-refer-sub').textContent = _referral.joined > 0
+    ? _referral.joined + ' friend' + (_referral.joined === 1 ? '' : 's') + ' joined · ' + _referral.points_earned + ' pts earned'
+    : 'You both get ' + _referral.reward_points + ' points on their first order';
+}
+
+async function shareReferral() {
+  if (!_referral) return;
+  var link = new URL('auth.html?ref=' + encodeURIComponent(_referral.code), window.location.href).href;
+  var text = 'I love NSDI ChocoCravings brownies! 🍫 Sign up with my code ' + _referral.code
+    + ' and we both get ' + _referral.reward_points + ' loyalty points when your first order is delivered.';
+  if (navigator.share) {
+    try { await navigator.share({ title: 'ChocoCravings', text: text, url: link }); return; }
+    catch(e) { if (e && e.name === 'AbortError') return; }
+  }
+  window.open('https://wa.me/?text=' + encodeURIComponent(text + '\n' + link), '_blank');
+}
+
 var _profileLoading = false;
 async function loadProfileData() {
   if (!currentUser || !currentUser.db_id) return;
@@ -2911,6 +2950,7 @@ async function loadProfileData() {
     // Stats
     var pts          = cust.loyalty_points  || 0; // redeemable balance
     var lifetimePts  = cust.lifetime_points || pts; // for tier calculation
+    loadReferralSummary(cust.customer_code);
     // Count actual orders from orders table instead of cached value
     var { data: allOrders } = await db.from('orders')
       .select('id', { count: 'exact' })
