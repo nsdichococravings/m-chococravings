@@ -1,12 +1,12 @@
 const fs=require('fs'),assert=require('node:assert/strict');
 const {PGlite}=require('../.production-test-runtime/node_modules/@electric-sql/pglite');
 const A='aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',B='bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
-(async()=>{
+const run=async(ID)=>{
 const db=new PGlite();await db.exec(`create role anon;create role authenticated;create schema auth;
 create table auth.me(id uuid);insert into auth.me values(null);
 create function auth.uid() returns uuid language sql as $$select id from auth.me$$;
-create table customers(id uuid primary key default gen_random_uuid(),auth_id uuid,name text);
-create table orders(id text primary key default gen_random_uuid()::text,customer_id uuid references customers(id),status text default 'pending');
+create table customers(id ${ID} primary key default gen_random_uuid()::${ID},auth_id uuid,name text);
+create table orders(id text primary key default gen_random_uuid()::text,customer_id ${ID} references customers(id),status text default 'pending');
 create table app_settings(key text primary key,value text);
 insert into customers(auth_id,name) values('${A}','Asha'),('${B}','Bala');`);
 const sql=fs.readFileSync('migrations/20260950_push_notifications.sql','utf8');
@@ -48,5 +48,6 @@ assert.equal((await db.query('select count(*)::int n from cc_push_subscriptions'
 await as(A);await db.query("select cc_push_unsubscribe('https://push/a1')");
 assert.equal((await db.query('select count(*)::int n from cc_push_subscriptions')).rows[0].n,0);
 await db.exec('set role authenticated');await assert.rejects(db.query('select * from cc_push_config'),/permission denied/);await db.exec('reset role');
-await db.close();console.log('PASS push notifications: installs without pg_net, subscribe/refresh, status trigger filtering, secret header, failure isolation, unsubscribe scope, private config.');
-})().catch(e=>{console.error(e);process.exit(1);});
+await db.close();console.log('PASS ('+ID+' ids) push notifications: installs without pg_net, subscribe/refresh, status trigger filtering, secret header, failure isolation, unsubscribe scope, private config.');
+};
+(async()=>{for(const t of ['uuid','text']) await run(t);})().catch(e=>{console.error(e);process.exit(1);});

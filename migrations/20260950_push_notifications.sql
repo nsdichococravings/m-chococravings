@@ -26,6 +26,10 @@
 --  and until step 4 the trigger's calls just fail quietly -- order
 --  updates are never blocked by push.
 --
+-- customers.id and orders.id are TEXT in the live database, so ids are
+-- stored/compared as text with no foreign keys (a deleted customer's
+-- devices just stop receiving; expired devices are cleaned up on send).
+--
 -- orders, customers and app_settings already exist (created outside this
 -- repo's migrations). Safe to re-run.
 begin;
@@ -46,7 +50,7 @@ end $$;
 
 create table if not exists public.cc_push_subscriptions(
  endpoint text primary key,
- customer_id uuid not null references public.customers(id) on delete cascade,
+ customer_id text not null,
  p256dh text not null,
  auth text not null,
  user_agent text,
@@ -78,10 +82,10 @@ end $$;
 
 create or replace function public.cc_push_subscribe(p_endpoint text, p_p256dh text, p_auth text, p_user_agent text default null) returns jsonb
 language plpgsql security definer set search_path=pg_catalog,public as $$
-declare v_customer uuid;
+declare v_customer text;
 begin
  if auth.uid() is null then raise exception 'Sign in to turn on notifications'; end if;
- select id into v_customer from public.customers where auth_id=auth.uid() limit 1;
+ select id::text into v_customer from public.customers where auth_id::text=auth.uid()::text limit 1;
  if v_customer is null then raise exception 'Customer profile not found'; end if;
  if coalesce(p_endpoint,'') !~ '^https://' or coalesce(p_p256dh,'')='' or coalesce(p_auth,'')='' then
   raise exception 'Invalid push subscription';
@@ -98,7 +102,7 @@ language plpgsql security definer set search_path=pg_catalog,public as $$
 begin
  if auth.uid() is null then raise exception 'Sign in first'; end if;
  delete from public.cc_push_subscriptions s using public.customers c
-  where s.endpoint=p_endpoint and c.id=s.customer_id and c.auth_id=auth.uid();
+  where s.endpoint=p_endpoint and c.id::text=s.customer_id and c.auth_id::text=auth.uid()::text;
  return jsonb_build_object('ok',true);
 end $$;
 
@@ -109,7 +113,7 @@ declare v_url text; v_secret text;
 begin
  if new.customer_id is null or new.status is not distinct from old.status then return new; end if;
  if new.status not in ('confirmed','baking','packed','shipped','out_for_delivery','delivered','cancelled') then return new; end if;
- if not exists(select 1 from public.cc_push_subscriptions where customer_id::text=new.customer_id::text) then return new; end if;
+ if not exists(select 1 from public.cc_push_subscriptions where customer_id=new.customer_id::text) then return new; end if;
  select value into v_url from public.cc_push_config where key='function_url';
  select value into v_secret from public.cc_push_config where key='webhook_secret';
  if coalesce(v_url,'')='' then return new; end if;

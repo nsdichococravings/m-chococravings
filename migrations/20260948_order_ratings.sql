@@ -19,9 +19,10 @@
 -- functions and grants. Access to cc_order_ratings is only through the
 -- functions below (RLS on, no direct policies).
 --
--- orders.id is TEXT in the live database (not uuid), so order ids are
--- text here and order/product/customer ids are compared as text. (First
--- version used uuid and failed on the foreign key; nothing applied.)
+-- In the live database orders.id and customers.id are TEXT (not uuid), so
+-- ids are stored and compared as text here, with no foreign keys (earlier
+-- versions failed on them; nothing applied). A rating whose order is later
+-- deleted simply stops showing (every read joins back to orders).
 --
 -- Run this ENTIRE file as database owner. Safe to re-run.
 begin;
@@ -38,8 +39,8 @@ do $$ begin
 end $$;
 
 create table if not exists public.cc_order_ratings(
- order_id text primary key references public.orders(id) on delete cascade,
- customer_id uuid not null references public.customers(id) on delete cascade,
+ order_id text primary key,
+ customer_id text not null,
  stars smallint not null check (stars between 1 and 5),
  comment text check (char_length(comment) <= 500),
  created_at timestamptz not null default now(),
@@ -53,14 +54,14 @@ revoke all on public.cc_order_ratings from public, anon, authenticated;
 drop function if exists public.cc_rate_order(uuid,int,text);
 create or replace function public.cc_rate_order(p_order_id text, p_stars int, p_comment text default null) returns jsonb
 language plpgsql security definer set search_path=pg_catalog,public as $$
-declare v_customer uuid; v_order public.orders%rowtype; v_comment text=nullif(btrim(coalesce(p_comment,'')),'');
+declare v_customer text; v_order public.orders%rowtype; v_comment text=nullif(btrim(coalesce(p_comment,'')),'');
 begin
  if auth.uid() is null then raise exception 'Sign in to rate your order'; end if;
  if p_stars is null or p_stars not between 1 and 5 then raise exception 'Choose 1 to 5 stars'; end if;
  if char_length(v_comment) > 500 then raise exception 'Comment is too long (500 characters max)'; end if;
- select id into v_customer from public.customers where auth_id=auth.uid() limit 1;
+ select id::text into v_customer from public.customers where auth_id::text=auth.uid()::text limit 1;
  select * into v_order from public.orders where id::text=p_order_id;
- if v_order.id is null or v_customer is null or v_order.customer_id::text is distinct from v_customer::text then
+ if v_order.id is null or v_customer is null or v_order.customer_id::text is distinct from v_customer then
   raise exception 'Order not found';
  end if;
  if v_order.status is distinct from 'delivered' then raise exception 'You can rate an order once it is delivered'; end if;
@@ -75,8 +76,9 @@ drop function if exists public.cc_my_order_ratings();
 create or replace function public.cc_my_order_ratings() returns table(order_id text, stars smallint, comment text)
 language sql stable security definer set search_path=pg_catalog,public as $$
  select r.order_id, r.stars, r.comment from public.cc_order_ratings r
- join public.customers c on c.id=r.customer_id
- where c.auth_id=auth.uid()
+ join public.customers c on c.id::text=r.customer_id
+ join public.orders o on o.id::text=r.order_id
+ where c.auth_id::text=auth.uid()::text
 $$;
 
 -- Public per-product averages for the menu (only products with ratings).
@@ -85,6 +87,7 @@ create or replace function public.cc_product_ratings() returns table(product_id 
 language sql stable security definer set search_path=pg_catalog,public as $$
  select oi.product_id::text, round(avg(r.stars)::numeric,1), count(distinct r.order_id)::int
  from public.cc_order_ratings r
+ join public.orders o on o.id::text=r.order_id
  join public.order_items oi on oi.order_id::text=r.order_id
  where oi.product_id is not null
  group by oi.product_id::text
@@ -118,7 +121,7 @@ begin
        'items', (select string_agg(oi.product_name || coalesce(' · '||oi.pack_label,''), ', ') from public.order_items oi where oi.order_id::text=r.order_id)) x
      from public.cc_order_ratings r
      join public.orders o on o.id::text=r.order_id
-     join public.customers c on c.id=r.customer_id
+     join public.customers c on c.id::text=r.customer_id
      where r.updated_at>=v_since
      order by r.updated_at desc limit 100) z)
  );

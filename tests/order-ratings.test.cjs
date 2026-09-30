@@ -1,13 +1,13 @@
 const fs=require('fs'),assert=require('node:assert/strict');
 const {PGlite}=require('../.production-test-runtime/node_modules/@electric-sql/pglite');
 const A='aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',B='bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',S='55555555-5555-5555-5555-555555555555';
-(async()=>{
+const run=async(ID)=>{
 const db=new PGlite();await db.exec(`create role anon;create role authenticated;create schema auth;
 create table auth.me(id uuid);insert into auth.me values(null);
 create function auth.uid() returns uuid language sql as $$select id from auth.me$$;
 create function cc_loyalty_role() returns text language sql as $$select case when auth.uid()='${S}' then 'staff' else 'customer' end$$;
-create table customers(id uuid primary key default gen_random_uuid(),auth_id uuid,name text,phone text);
-create table orders(id text primary key default gen_random_uuid()::text,order_number text,customer_id uuid references customers(id),status text default 'pending');
+create table customers(id ${ID} primary key default gen_random_uuid()::${ID},auth_id uuid,name text,phone text);
+create table orders(id text primary key default gen_random_uuid()::text,order_number text,customer_id ${ID} references customers(id),status text default 'pending');
 create table order_items(id serial,order_id text references orders(id),product_id uuid,product_name text,pack_label text);
 create table app_settings(key text primary key,value text);
 insert into customers(auth_id,name,phone) values('${A}','Asha','+919000000001'),('${B}','Bala','+919000000002');`);
@@ -45,5 +45,6 @@ assert.equal(r.recent.length,2);assert.ok(r.recent.some(x=>x.name==='Asha'&&x.it
 assert.deepEqual(r.products.map(p=>[p.name,Number(p.avg),p.count]),[['Classic',4,2],['Nutella',5,1]]);
 // direct table access is closed
 await db.exec('set role authenticated');await assert.rejects(db.query('select * from cc_order_ratings'),/permission denied/);await db.exec('reset role');
-await db.close();console.log('PASS order ratings: delivered-only, own orders, validation, re-rate, product averages, staff report, access control.');
-})().catch(e=>{console.error(e);process.exit(1);});
+await db.close();console.log('PASS ('+ID+' ids) order ratings: delivered-only, own orders, validation, re-rate, product averages, staff report, access control.');
+};
+(async()=>{for(const t of ['uuid','text']) await run(t);})().catch(e=>{console.error(e);process.exit(1);});
