@@ -2896,6 +2896,26 @@ function renderLoyaltyCard(card) {
     + '</div>';
 }
 
+// Real product ratings from delivered-order ratings (cc_product_ratings).
+// Products without ratings show nothing — never a made-up score.
+var _productRatings = {};
+var _productRatingsReady = null;
+function loadProductRatings() {
+  if (!_productRatingsReady) _productRatingsReady = (async function() {
+    try {
+      var res = await db.rpc('cc_product_ratings');
+      if (res.error || !res.data) return;
+      res.data.forEach(function(r) { _productRatings[r.product_id] = { avg: Number(r.avg_stars), count: r.rating_count }; });
+    } catch(e) {}
+  })();
+  return _productRatingsReady;
+}
+function productRatingLabel(productId, long) {
+  var r = _productRatings[productId];
+  if (!r || !r.count) return '';
+  return '★ ' + r.avg.toFixed(1) + (long ? ' · ' + r.count + ' rating' + (r.count === 1 ? '' : 's') : ' (' + r.count + ')');
+}
+
 var _referral = null;
 // Refer a Friend row on Profile. Referral code = the customer's own customer_code.
 // Falls back to just the code if the referral migration isn't installed yet.
@@ -3104,6 +3124,8 @@ async function loadAndShowOrders() {
     return;
   }
 
+  await loadMyOrderRatings();
+
   var statusColors = {
     pending:'rgba(255,180,0,.15)', confirmed:'rgba(107,47,206,.15)',
     baking:'rgba(255,140,0,.15)', packed:'rgba(34,197,94,.15)',
@@ -3153,8 +3175,118 @@ return '<div style="background:var(--card);border:1px solid var(--bdr);border-ra
       + '<div style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;background:' + statusBg + ';color:var(--white)">' + statusLbl + '</div>'
       + '</div>'
       + customBtn
+      + orderRatingRow(o)
       + '</div>';
   }).join('');
+}
+
+// ── ORDER RATINGS ──
+// Customers rate delivered orders; these feed the real product stars on the menu.
+var _myOrderRatings = {};
+var _googleReviewUrl = null;
+async function loadMyOrderRatings() {
+  try {
+    var res = await db.rpc('cc_my_order_ratings');
+    if (res.error) { _myOrderRatings = null; return; } // ratings not installed — hide the feature
+    _myOrderRatings = {};
+    (res.data || []).forEach(function(r) { _myOrderRatings[r.order_id] = r; });
+  } catch(e) { _myOrderRatings = null; }
+}
+
+function orderRatingRow(o) {
+  if (o.status !== 'delivered' || !_myOrderRatings) return '';
+  var r = _myOrderRatings[o.id];
+  var stars = '';
+  for (var n = 1; n <= 5; n++) {
+    var on = r && n <= r.stars;
+    stars += '<span onclick="openRateOrder(\'' + o.id + '\',' + n + ')" style="cursor:pointer;font-size:20px;padding:0 2px;color:'
+      + (on ? 'var(--gold)' : 'rgba(255,255,255,.25)') + '">★</span>';
+  }
+  return '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;gap:8px">'
+    + '<div style="font-size:11px;color:var(--dim)">' + (r ? 'Your rating · tap to change' : 'How was it? Rate your order') + '</div>'
+    + '<div style="white-space:nowrap">' + stars + '</div></div>';
+}
+
+function openRateOrder(orderId, stars) {
+  var sheet = document.getElementById('rate-sheet');
+  if (!sheet) {
+    sheet = document.createElement('div');
+    sheet.id = 'rate-sheet';
+    sheet.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center';
+    sheet.onclick = function(e) { if (e.target === sheet) closeRateOrder(); };
+    sheet.innerHTML = '<div style="width:100%;max-width:480px;background:var(--d2,#1a0f24);border-radius:22px 22px 0 0;padding:20px 22px 26px;border-top:1px solid var(--bdr)">'
+      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:700;color:var(--white);margin-bottom:4px">Rate your order</div>'
+      + '<div style="font-size:12px;color:var(--dim);margin-bottom:14px">Your rating helps other customers and our kitchen.</div>'
+      + '<div id="rate-stars" style="display:flex;gap:8px;justify-content:center;margin-bottom:14px"></div>'
+      + '<textarea id="rate-comment" maxlength="500" rows="3" placeholder="Tell us more (optional)" '
+      + 'style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--bdr);border-radius:12px;padding:10px;color:var(--white);font:inherit;font-size:13px;resize:none"></textarea>'
+      + '<div id="rate-google" style="display:none;margin-top:12px"></div>'
+      + '<button id="rate-submit" onclick="submitRateOrder()" style="margin-top:14px;width:100%;padding:13px;border:0;border-radius:14px;background:var(--p,#6b2fce);color:#fff;font-weight:700;font-size:14px;cursor:pointer">Submit rating</button>'
+      + '</div>';
+    document.body.appendChild(sheet);
+  }
+  var existing = _myOrderRatings && _myOrderRatings[orderId];
+  sheet.dataset.orderId = orderId;
+  document.getElementById('rate-comment').value = (existing && existing.comment) || '';
+  document.getElementById('rate-google').style.display = 'none';
+  var btn = document.getElementById('rate-submit');
+  btn.disabled = false; btn.textContent = 'Submit rating'; btn.style.display = '';
+  setRateStars(stars);
+  sheet.style.display = 'flex';
+}
+
+function setRateStars(n) {
+  var sheet = document.getElementById('rate-sheet');
+  sheet.dataset.stars = n;
+  var html = '';
+  for (var i = 1; i <= 5; i++) {
+    html += '<span onclick="setRateStars(' + i + ')" style="cursor:pointer;font-size:34px;color:'
+      + (i <= n ? 'var(--gold)' : 'rgba(255,255,255,.25)') + '">★</span>';
+  }
+  document.getElementById('rate-stars').innerHTML = html;
+}
+
+function closeRateOrder() {
+  var sheet = document.getElementById('rate-sheet');
+  if (sheet) sheet.style.display = 'none';
+}
+
+async function submitRateOrder() {
+  var sheet = document.getElementById('rate-sheet');
+  var orderId = sheet.dataset.orderId, stars = Number(sheet.dataset.stars);
+  var comment = document.getElementById('rate-comment').value.trim();
+  var btn = document.getElementById('rate-submit');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  var res = await db.rpc('cc_rate_order', { p_order_id: orderId, p_stars: stars, p_comment: comment || null });
+  if (res.error) {
+    showToast(res.error.message || 'Could not save rating');
+    btn.disabled = false; btn.textContent = 'Submit rating';
+    return;
+  }
+  if (_myOrderRatings) _myOrderRatings[orderId] = { order_id: orderId, stars: stars, comment: comment || null };
+  _productRatingsReady = null; // refresh menu stars next time products load
+  loadAndShowOrders();
+
+  // Happy customers: offer a Google review if the shop has set its link.
+  if (stars >= 4) {
+    if (_googleReviewUrl === null) {
+      try {
+        var gs = await db.from('app_settings').select('value').eq('key', 'google_review_url').maybeSingle();
+        _googleReviewUrl = (gs.data && gs.data.value) || '';
+      } catch(e) { _googleReviewUrl = ''; }
+    }
+    if (/^https:\/\//.test(_googleReviewUrl)) {
+      var g = document.getElementById('rate-google');
+      g.innerHTML = '<div style="font-size:13px;color:var(--white);text-align:center;margin-bottom:10px">Thank you! 💜 Would you share it on Google too?</div>'
+        + '<button onclick="window.open(_googleReviewUrl,\'_blank\');closeRateOrder()" style="width:100%;padding:12px;border:1px solid var(--gold);border-radius:14px;background:transparent;color:var(--gold);font-weight:700;font-size:14px;cursor:pointer">⭐ Review us on Google</button>'
+        + '<div onclick="closeRateOrder()" style="text-align:center;font-size:12px;color:var(--dim);margin-top:10px;cursor:pointer">Maybe later</div>';
+      g.style.display = '';
+      btn.style.display = 'none';
+      return;
+    }
+  }
+  showToast(stars >= 4 ? 'Thank you for your rating! 💜' : 'Thanks — we\'re sorry it wasn\'t perfect. Our team will look into it.');
+  closeRateOrder();
 }
 
 function toggleHamburgerMenu() {
@@ -6016,6 +6148,7 @@ async function loadProducts() {
       }
 
       var { data: products, error } = await query;
+      await Promise.race([loadProductRatings(), new Promise(function(r){ setTimeout(r, 1500); })]);
 
       if (error || !products) {
       console.warn('Products load error:', error);
@@ -6193,7 +6326,7 @@ function renderFeaturedGrid(products) {
     var userPref = getUserEggPref();
     var eggLabel = (userPref || p.egg_type) === 'eggless' ? '💚 Eggless' : '❤️ With Egg';
     var imgUrl   = getProductImage(p.sku);
-    var rating   = p.rating || 4.9;
+    var rating   = productRatingLabel(p.id, false);
     var isBestSeller = i === 0;
     var isNew        = i >= featured.length - 2;
 
@@ -6241,7 +6374,7 @@ function renderFeaturedGrid(products) {
       + '<div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:3px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + p.name + '</div>'
       + '<div style="font-size:9px;color:var(--green);font-weight:600;margin-bottom:5px">' + eggLabel + ' · ' + (p.tier === 'couverture' ? '🌟 Couverture' : 'Premium') + '</div>'
       + '<div style="display:flex;align-items:center;justify-content:space-between">'
-      + '<div style="font-size:10px;color:var(--gold)">★ ' + rating + '</div>'
+      + '<div style="font-size:10px;color:var(--gold)">' + rating + '</div>'
       + '<button class="abtn" onclick="event.stopPropagation();quickAddCart(this)" '
       + 'style="width:26px;height:26px;border-radius:8px;font-size:16px">+</button>'
       + '</div>'
@@ -6282,8 +6415,7 @@ function renderExploreList(products) {
     var userPref = getUserEggPref();
     var eggLabel = p.egg_type === 'eggless' ? '💚 Eggless' : '❤️ With Egg';
     var tierLabel = p.tier === 'couverture' ? 'Couverture' : 'Premium';
-    var rating = p.rating || 4.9;
-    var reviews = p.review_count || 0;
+    var rating = productRatingLabel(p.id, true);
     var sortedVariants = (p.product_variants || []).slice().sort(function(a,b){ return (a.price||0) - (b.price||0); });
     var pack = sortedVariants.length > 0 ? sortedVariants[0].pack_label : '4pcs';
     var varIdx = getVariantIndex(p.sku);
@@ -6309,7 +6441,7 @@ function renderExploreList(products) {
       + '<div class="plname">' + p.name + '</div>'
       + '<div class="pltag">' + eggLabel + ' · ' + tierLabel + '</div>'
       + '<div class="pldesc">' + (p.description || '') + '</div>'
-      + '<div class="plrat">★★★★★ ' + rating + (reviews ? ' · ' + reviews + ' reviews' : '') + '</div>'
+      + (rating ? '<div class="plrat">' + rating + '</div>' : '')
       + '</div>'
       + '<div class="plfoot">'
       + '<span class="plprice">from ₹' + price + '</span>'
