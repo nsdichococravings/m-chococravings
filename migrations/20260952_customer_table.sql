@@ -1,0 +1,15 @@
+-- Customers ordering from their phone (store.html) now say where they're
+-- sitting -- a table code (T1, T2, T3, BS, SL, SR, SC, DC) or TAKEAWAY --
+-- so staff know where to bring the order. The kitchen ticket shows it next
+-- to the token.
+--
+-- Stored in its own column, NOT table_code: table_code marks a staff-run
+-- table bill on the Tables board (item-level payments, "Mark Bill
+-- Collected"), and a customer's prepaid self-order must not be treated as
+-- an unpaid table bill.
+--
+-- Until this runs, store.html still takes orders (it retries without the
+-- column); the table just isn't saved.
+--
+-- Run as database owner. Safe to re-run.
+alter table public.store_orders add column if not exists customer_table text;
