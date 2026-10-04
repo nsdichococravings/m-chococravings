@@ -666,6 +666,11 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
           style="flex:1;padding:13px 0;border:none;background:transparent;font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:700;color:#120a1e;outline:none"/>
       </div>
     </div>
+    <div style="margin-bottom:16px">
+      <div style="font-size:10px;letter-spacing:3px;color:#9a8aaa;font-weight:700;margin-bottom:8px">WHERE ARE YOU SEATED?</div>
+      <div id="seat-opts" style="display:grid;grid-template-columns:repeat(5,1fr);gap:7px"></div>
+      <div id="seat-err" style="display:none;font-size:11px;color:#dc2626;font-weight:700;margin-top:6px">Please choose your table so we can bring your order.</div>
+    </div>
     <div class="pay-lbl">PAY VIA</div>
     <div class="pay-opts">
       <div class="pay-opt on" id="pay-upi"  onclick="selPay('upi')">📱  UPI</div>
@@ -997,6 +1002,7 @@ function openSheet(){
   }).join('');
   document.getElementById('sheet-total').textContent='₹'+cartTotal();
   setTimeout(autoFillPhone, 100);
+  renderSeatOpts();
   selPay(payMethod);
   document.getElementById('backdrop').style.display='block';
   var s=document.getElementById('sheet');
@@ -1121,6 +1127,7 @@ function stopScanner(){
 }
 
 async function confirmQRPay(){
+  if (!requireSeat()) return;
   var btn = document.getElementById('qr-paid-btn');
   btn.textContent = 'Placing order…'; btn.disabled = true;
   try {
@@ -1137,13 +1144,54 @@ async function confirmQRPay(){
 
 // ── PLACE ORDER ───────────────────────────────────────────────
 // ── INSERT ORDER TO DB (called after cash or after Razorpay success) ──
+// ── CUSTOMER TABLE ─────────────────────────────────────────────
+// Customers ordering from their phone say where they're sitting, so staff
+// know where to bring the order (shown on the kitchen ticket). Same codes as
+// the staff Tables board. A QR on each table can link to store.html?table=T2
+// to pre-select it. Saved to store_orders.customer_table — deliberately NOT
+// table_code, which belongs to staff-run table bills.
+var SEAT_CODES = ['T1', 'T2', 'T3', 'BS', 'SL', 'SR', 'SC', 'DC', 'TAKEAWAY'];
+var custTable = (function(){
+  try {
+    var q = (new URLSearchParams(location.search).get('table') || '').toUpperCase();
+    if (SEAT_CODES.indexOf(q) >= 0) { sessionStorage.setItem('cc_cust_table', q); return q; }
+    var saved = sessionStorage.getItem('cc_cust_table');
+    return SEAT_CODES.indexOf(saved) >= 0 ? saved : null;
+  } catch(e) { return null; }
+})();
+function seatLabel(code){ return code === 'TAKEAWAY' ? '🥡 Takeaway' : code; }
+function renderSeatOpts(){
+  var box = document.getElementById('seat-opts');
+  if (!box) return;
+  box.innerHTML = SEAT_CODES.map(function(c){
+    var on = c === custTable;
+    return '<div onclick="pickSeat(\''+c+'\')" style="'+(c==='TAKEAWAY'?'grid-column:span 2;':'')
+      +'padding:10px 4px;text-align:center;border-radius:10px;cursor:pointer;font-weight:800;font-size:13px;'
+      +'border:1.5px solid '+(on?'#6e0977':'rgba(18,10,30,0.12)')+';background:'+(on?'#6e0977':'#fdf5e3')+';color:'+(on?'#fff':'#120a1e')+'">'
+      +seatLabel(c)+'</div>';
+  }).join('');
+  document.getElementById('seat-err').style.display = 'none';
+}
+function pickSeat(code){
+  custTable = code;
+  try { sessionStorage.setItem('cc_cust_table', code); } catch(e) {}
+  renderSeatOpts();
+}
+// Called before any payment starts — nothing is charged without a table.
+function requireSeat(){
+  if (custTable) return true;
+  var err = document.getElementById('seat-err');
+  if (err) { err.style.display = 'block'; err.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+  return false;
+}
+
 async function insertStoreOrder(token, paymentId, pmMethod, pmStatus) {
   var entries = cartEntries();
   var items   = entries.map(function(i){ return {name:i.name, qty:i.qty, price:i.price}; });
   var total   = cartTotal();
   var user    = null;
   try { var s = await db.auth.getUser(); user = s.data.user; } catch(e) {}
-  var res = await db.from('store_orders').insert({
+  var row = {
     token:          token,
     customer_id:    user ? user.id : null,
     customer_name:  user ? (user.user_metadata && user.user_metadata.full_name) || null : null,
@@ -1160,7 +1208,14 @@ async function insertStoreOrder(token, paymentId, pmMethod, pmStatus) {
     payment_status: pmStatus || 'paid',
     razorpay_payment_id: paymentId || null,
     status:         'pending',
-  }).select().single();
+  };
+  if (custTable) row.customer_table = custTable;
+  var res = await db.from('store_orders').insert(row).select().single();
+  // customer_table column not added yet (migration 20260952 not run): still take the order.
+  if (res.error && row.customer_table && /customer_table/.test(res.error.message || '')) {
+    delete row.customer_table;
+    res = await db.from('store_orders').insert(row).select().single();
+  }
   if (res.error) throw res.error;
   return res.data;
 }
@@ -1171,6 +1226,7 @@ async function insertStoreOrder(token, paymentId, pmMethod, pmStatus) {
 async function placeOrder(){
   var btn = document.getElementById('place-btn');
   if (!db) { alert('Add your Supabase anon key to store.html first.'); return; }
+  if (!requireSeat()) return;
   if (payMethod === 'upi') { openRazorpay(); return; }
 
   // Cash flow
@@ -1311,7 +1367,7 @@ async function getToken(){
 // ── CONFIRM ───────────────────────────────────────────────────
 function showConfirm(token,entries,total){
   document.getElementById('tok-num').textContent=token;
-  document.getElementById('st-tok').textContent='TOKEN '+token;
+  document.getElementById('st-tok').textContent='TOKEN '+token+(custTable ? ' · '+(custTable==='TAKEAWAY'?'TAKEAWAY':'TABLE '+custTable) : '');
   var html=entries.map(function(i){
     return '<div class="ti-row"><span>'+i.name+' <span class="ti-qty">×'+i.qty+'</span></span><span class="ti-price">₹'+(i.price*i.qty)+'</span></div>';
   }).join('');
@@ -1455,7 +1511,7 @@ function renderKitchen(orders){
     var startTxt=o.status==='preparing'?'⏳ Making…':'▶ Start';
     var readyTxt=o.status==='ready'?'✓ Ready!':'✓ Mark Ready';
     return '<div class="k-ticket" id="kt-'+o.id+'" data-s="'+o.status+'">'
-      +'<div class="k-top"><div class="k-tok">'+o.token+'</div>'
+      +'<div class="k-top"><div class="k-tok">'+o.token+(o.customer_table?' · '+(o.customer_table==='TAKEAWAY'?'🥡':'🪑 '+o.customer_table):'')+'</div>'
       +'<div class="k-badge">'+o.status.toUpperCase()+'</div>'
       +'<div class="k-age">'+age+'</div></div>'
       +'<div class="k-items">'+items+'</div>'
@@ -2808,7 +2864,7 @@ async function toggleStoreOpenStatus() {
 <script src="admin-command-center.js?v=20260928-admin-access"></script>
 <script src="store-patch.js?v=20260921-premium-email"></script>
 <script src="menu-search-patch.js?v=20260920-search-v3"></script>
-<script src="remember-phone-patch.js"></script>
+<script src="remember-phone-patch.js?v=20260952-table"></script>
 <script src="checkadminbadge-override.js?v=20260928-admin-access"></script>
 <script src="production-purchases-patch.js"></script>
 <link rel="stylesheet" href="production-dashboard.css?v=20260928-collections-close">

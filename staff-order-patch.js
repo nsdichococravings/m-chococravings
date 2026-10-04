@@ -102,7 +102,10 @@ function buildStaffLoginUI() {
 
   var tablesFab = document.createElement('div');
   tablesFab.id = 'staff-tables-fab';
-  tablesFab.onclick = function () { if (typeof openTablesBoard === 'function') openTablesBoard(); };
+  tablesFab.onclick = function () {
+    // Staff open Tables first thing — make sure they've clocked in before taking orders.
+    ensureClockedIn('tables', function () { if (typeof openTablesBoard === 'function') openTablesBoard(); });
+  };
   // Sits higher than the admin-only kitchen-fab (bottom:24px) as a safety
   // net — the two shouldn't both be visible at once (see showStaffLoggedInUI),
   // but this keeps them from visually overlapping even if that check races.
@@ -213,6 +216,7 @@ async function staffAttemptLogin() {
     closeStaffLoginSheet();
     showStaffLoggedInUI();
     if (typeof showStoreToast === 'function') showStoreToast('✅ Welcome, ' + _staffSession.name + '!');
+    refreshStaffShift(true);
   } catch (e) {
     errEl.textContent = 'Something went wrong. Try again.';
   } finally {
@@ -222,6 +226,8 @@ async function staffAttemptLogin() {
 
 async function staffLogout() {
   if (!confirm('Sign out of staff mode?')) return;
+  if (_staffShift && confirm('Also clock out for today, ' + _staffSession.name + '?')) await staffClockOut();
+  _staffShift = null;
   sessionStorage.removeItem(STAFF_SESSION_KEY);
   _staffSession = null;
   document.getElementById('staff-logged-badge').style.display = 'none';
@@ -235,6 +241,7 @@ function restoreStaffSession() {
   try {
     _staffSession = JSON.parse(saved);
     showStaffLoggedInUI();
+    refreshStaffShift(true);
   } catch (e) {}
 }
 
@@ -242,9 +249,7 @@ function showStaffLoggedInUI() {
   document.getElementById('staff-login-btn').style.display = 'none';
 
   var badge = document.getElementById('staff-logged-badge');
-  badge.innerHTML = '<span style="font-size:13px">👤</span>'
-    + '<span style="font-size:11px;font-weight:700;color:#15803d">' + _staffSession.name + '</span>'
-    + '<span style="font-size:10px;color:#9a8aaa">· Sign out</span>';
+  renderStaffBadge();
   badge.style.display = 'flex';
 
   // If this device is ALSO an admin session, the admin's own kitchen-fab
@@ -270,6 +275,141 @@ function showStaffLoggedInUI() {
     }
     if (attempts >= 10) clearInterval(poll); // give up polling after ~3s
   }, 300);
+}
+
+function renderStaffBadge() {
+  var badge = document.getElementById('staff-logged-badge');
+  if (!badge || !_staffSession) return;
+  // Shift chip has its own tap target: clock in if not on shift. Rest of the badge = sign out.
+  var shift = _staffShift === undefined ? ''
+    : _staffShift
+      ? '<span style="font-size:10px;font-weight:700;color:#15803d;background:rgba(34,197,94,0.12);border-radius:10px;padding:2px 7px">🟢 On shift</span>'
+      : '<span onclick="event.stopPropagation();openShiftSheet(\'badge\')" style="font-size:10px;font-weight:700;color:#b91c1c;background:rgba(239,68,68,0.12);border-radius:10px;padding:2px 7px">🔴 Clock in</span>';
+  badge.innerHTML = '<span style="font-size:13px">👤</span>'
+    + '<span style="font-size:11px;font-weight:700;color:#15803d">' + _staffSession.name + '</span>'
+    + shift
+    + '<span style="font-size:10px;color:#9a8aaa">· Sign out</span>';
+  badge.style.borderColor = _staffShift === null ? 'rgba(239,68,68,0.45)' : 'rgba(34,197,94,0.3)';
+}
+
+// ══════════════════════════════════════════════════════════════
+// PART 1b — Attendance: clock in from the order app
+// Staff open this app to take orders and forget the separate attendance
+// page. Same store_staff name + staff_attendance table as attendance.html,
+// so clocking in here shows up there (and in payroll) exactly the same.
+// ══════════════════════════════════════════════════════════════
+
+var _staffShift;          // undefined = not checked yet, null = not clocked in, row = on shift
+var _shiftAfter = null;   // what to do after the sheet closes (e.g. open Tables)
+
+// Same date convention as attendance.html so both pages see the same rows.
+function shiftToday() { return new Date().toISOString().slice(0, 10); }
+function shiftSkipKey() { return 'cc_shift_skip_' + (_staffSession ? _staffSession.name : '') + '_' + shiftToday(); }
+function shiftSkipped() { try { return localStorage.getItem(shiftSkipKey()) === '1'; } catch (e) { return false; } }
+
+async function refreshStaffShift(promptIfOut) {
+  if (!_staffSession) return;
+  try {
+    var res = await db.from('staff_attendance').select('*')
+      .eq('staff_name', _staffSession.name).eq('work_date', shiftToday()).is('clock_out', null)
+      .order('clock_in', { ascending: false }).limit(1);
+    if (res.error) throw res.error;
+    _staffShift = (res.data && res.data[0]) || null;
+  } catch (e) {
+    console.warn('shift status:', e.message);
+    _staffShift = undefined; // unknown — never nag on a failed check
+  }
+  renderStaffBadge();
+  if (promptIfOut && _staffShift === null && !shiftSkipped()) openShiftSheet('login');
+}
+
+// Runs `then` right away if on shift (or the person said they're not working
+// today); otherwise asks them to clock in first.
+function ensureClockedIn(reason, then) {
+  if (!_staffSession || _staffShift || _staffShift === undefined || shiftSkipped()) { then(); return; }
+  _shiftAfter = then;
+  openShiftSheet(reason);
+}
+
+function buildShiftSheet() {
+  if (document.getElementById('shift-sheet')) return;
+  var overlay = document.createElement('div');
+  overlay.id = 'shift-overlay';
+  overlay.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:3500;backdrop-filter:blur(4px)';
+  document.body.appendChild(overlay);
+  var sheet = document.createElement('div');
+  sheet.id = 'shift-sheet';
+  sheet.style.cssText = 'display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;'
+    + 'border-radius:22px 22px 0 0;border-top:1px solid #e8d0f0;z-index:3501;'
+    + 'padding:22px 20px 28px;font-family:\'DM Sans\',sans-serif;text-align:center';
+  sheet.innerHTML =
+      '<div style="font-size:40px;margin-bottom:6px">⏰</div>'
+    + '<div id="shift-title" style="font-size:19px;font-weight:700;color:#1a0820"></div>'
+    + '<div id="shift-sub" style="font-size:13px;color:#7a6a8a;margin:6px 0 18px"></div>'
+    + '<button id="shift-in-btn" onclick="staffClockIn()" style="width:100%;padding:16px;border:0;border-radius:16px;'
+    +   'background:linear-gradient(135deg,#22c55e,#15803d);color:#fff;font-size:16px;font-weight:700;cursor:pointer;'
+    +   'box-shadow:0 8px 22px rgba(21,128,61,0.3)">🟢 Clock in now</button>'
+    + '<div onclick="skipShiftToday()" style="margin-top:14px;font-size:12px;color:#9a8aaa;cursor:pointer;text-decoration:underline">'
+    +   'I\'m not working a shift today</div>';
+  document.body.appendChild(sheet);
+}
+
+function openShiftSheet(reason) {
+  if (!_staffSession) return;
+  buildShiftSheet();
+  var now = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  document.getElementById('shift-title').textContent = 'Hi ' + _staffSession.name + ', you haven\'t clocked in today';
+  document.getElementById('shift-sub').textContent = reason === 'tables'
+    ? 'Clock in before taking orders so your hours count. It\'s ' + now + '.'
+    : 'Tap below to start your shift — it\'s ' + now + '.';
+  var btn = document.getElementById('shift-in-btn');
+  btn.disabled = false; btn.textContent = '🟢 Clock in now';
+  document.getElementById('shift-overlay').style.display = 'block';
+  document.getElementById('shift-sheet').style.display = 'block';
+}
+
+function closeShiftSheet() {
+  var o = document.getElementById('shift-overlay'), s = document.getElementById('shift-sheet');
+  if (o) o.style.display = 'none';
+  if (s) s.style.display = 'none';
+  var then = _shiftAfter; _shiftAfter = null;
+  if (then) then();
+}
+
+async function staffClockIn() {
+  var btn = document.getElementById('shift-in-btn');
+  btn.disabled = true; btn.textContent = 'Clocking in…';
+  try {
+    // Re-check first so a double tap or a clock-in from attendance.html can't create a second open row.
+    await refreshStaffShift(false);
+    if (!_staffShift) {
+      var res = await db.from('staff_attendance').insert([{ staff_name: _staffSession.name, work_date: shiftToday() }]).select('*').single();
+      if (res.error) throw res.error;
+      _staffShift = res.data;
+    }
+    renderStaffBadge();
+    if (typeof showStoreToast === 'function') showStoreToast('🟢 Clocked in — have a great shift, ' + _staffSession.name + '!');
+    closeShiftSheet();
+  } catch (e) {
+    btn.disabled = false; btn.textContent = '🟢 Clock in now';
+    if (typeof showStoreToast === 'function') showStoreToast('Could not clock in: ' + e.message);
+  }
+}
+
+function skipShiftToday() {
+  try { localStorage.setItem(shiftSkipKey(), '1'); } catch (e) {}
+  closeShiftSheet();
+}
+
+async function staffClockOut() {
+  if (!_staffShift) return;
+  try {
+    var res = await db.from('staff_attendance').update({ clock_out: new Date().toISOString() }).eq('id', _staffShift.id);
+    if (res.error) throw res.error;
+    if (typeof showStoreToast === 'function') showStoreToast('🔴 Clocked out — see you next time!');
+  } catch (e) {
+    if (typeof showStoreToast === 'function') showStoreToast('Could not clock out: ' + e.message);
+  }
 }
 
 // ══════════════════════════════════════════════════════════════

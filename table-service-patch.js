@@ -655,6 +655,20 @@ async function tsBillAndClose() {
 }
 
 // ── 5. Kitchen display — show table code instead of token ──────
+// Where a self-ordering customer said they're sitting (store_orders.customer_table,
+// from store.html's seat picker). Staff-run table bills use table_code instead.
+function kSeatLabel(o) {
+  if (!o || !o.customer_table) return '';
+  return o.customer_table === 'TAKEAWAY' ? '🥡 Takeaway' : '🪑 Table ' + o.customer_table;
+}
+
+// Paid online by UPI/Razorpay before reaching the kitchen — highlighted green
+// so nobody asks the customer to pay again.
+function kPaidOnline(o) {
+  var m = (o.payment_method || '').toLowerCase();
+  return o.payment_status === 'paid' && ['upi', 'upi_qr', 'razorpay', 'gpay', 'phonepe'].indexOf(m) >= 0;
+}
+
 function renderKitchen(orders, loyaltyMap) {
   loyaltyMap = loyaltyMap || {};
   updateKitchenOrderCountBadge(orders.length);
@@ -664,9 +678,11 @@ function renderKitchen(orders, loyaltyMap) {
     var rawItems = o.items;
     var itemsArr = Array.isArray(rawItems) ? rawItems : (typeof rawItems === 'string' ? JSON.parse(rawItems) : []);
     var age = ageStr(o.created_at);
+    var seat = kSeatLabel(o);
+    var paidOnline = kPaidOnline(o);
     var headline = o.table_code
       ? '🍽️ ' + o.table_code
-      : ('#' + o.token);
+      : ('#' + o.token + (seat ? ' <span style="font-size:.8em;color:#f5c430">· ' + seat + '</span>' : ''));
 
     var metaLine;
     if (o.table_code) {
@@ -693,6 +709,8 @@ function renderKitchen(orders, loyaltyMap) {
       pay = { label: '✅ Paid · ' + pmLabel, bg: 'rgba(74,222,128,0.12)', color: '#4ade80', border: 'rgba(74,222,128,0.3)' };
     } else if (o.payment_status === 'complimentary') {
       pay = { label: '🎁 Complimentary', bg: 'rgba(192,132,252,0.12)', color: '#c084fc', border: 'rgba(192,132,252,0.3)' };
+    } else if ((o.payment_method || '').toLowerCase() === 'upi_qr') {
+      pay = { label: '📷 UPI QR · Check payment received', bg: 'rgba(245,158,11,0.12)', color: '#fb923c', border: 'rgba(245,158,11,0.3)' };
     } else if ((o.payment_method || '').toLowerCase() === 'cash') {
       pay = { label: '💵 COD · Pay at counter', bg: 'rgba(245,158,11,0.12)', color: '#fb923c', border: 'rgba(245,158,11,0.3)' };
     } else {
@@ -821,10 +839,18 @@ function renderKitchen(orders, loyaltyMap) {
         + '<span style="font-family:Fraunces,Georgia,serif;font-size:26px;font-weight:900;color:#f5c430">₹' + (o.total || 0) + '</span>'
         + '</div>';
 
-    return '<div class="k-ticket" id="kt-' + o.id + '" data-s="' + o.status + '">'
+    var paidStyle = paidOnline
+      ? ' style="background:rgba(34,197,94,0.18);border:2px solid #22c55e;border-left:8px solid #22c55e;box-shadow:0 0 0 1px rgba(34,197,94,0.25)"'
+      : '';
+    var paidBanner = paidOnline
+      ? '<div style="background:#16a34a;color:#fff;font-size:12px;font-weight:800;letter-spacing:.5px;border-radius:9px;'
+        + 'padding:7px 10px;margin-bottom:9px;text-align:center">✅ PAID ONLINE · ' + pmLabel.toUpperCase() + ' · ₹' + (o.total || 0) + ' — do not collect</div>'
+      : '';
+    return '<div class="k-ticket" id="kt-' + o.id + '" data-s="' + o.status + '"' + paidStyle + '>'
       + '<div class="k-top"><div class="k-tok">' + headline + '</div>'
       + '<div class="k-badge">' + o.status.toUpperCase() + '</div>'
       + '<div class="k-age">' + age + '</div></div>'
+      + paidBanner
       + '<div style="font-size:11.5px;color:rgba(245,234,220,.65);margin-bottom:9px;font-weight:600">' + metaLine + payBadge + '</div>'
       + loyaltyBox
       + '<div style="background:rgba(0,0,0,0.22);border-radius:10px;padding:9px 12px;margin-bottom:10px">' + itemsHtml + '</div>'
@@ -2145,7 +2171,7 @@ function renderKitchenHistory(orders, loyaltyMap) {
   list.innerHTML = orders.map(function (o) {
     var rawItems = o.items;
     var items = Array.isArray(rawItems) ? rawItems : (typeof rawItems === 'string' ? JSON.parse(rawItems || '[]') : []);
-    var headline = o.table_code ? '🍽️ ' + o.table_code : '#' + o.token;
+    var headline = o.table_code ? '🍽️ ' + o.table_code : '#' + o.token + (kSeatLabel(o) ? ' · ' + kSeatLabel(o) : '');
     var time = new Date(o.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
     var isCancelled = o.status === 'cancelled';
     var expanded = _khExpandedId === o.id;
@@ -2258,7 +2284,8 @@ function subscribeNewOrderAlerts() {
 }
 
 function showNewOrderToast(o) {
-  var headline = o.table_code ? '🍽️ Table ' + o.table_code : '🙋 New order #' + o.token;
+  var headline = o.table_code ? '🍽️ Table ' + o.table_code
+    : '🙋 New order #' + o.token + (kSeatLabel(o) ? ' · ' + kSeatLabel(o) : '') + (kPaidOnline(o) ? ' · ✅ Paid' : '');
   if (typeof showStoreToast === 'function') {
     showStoreToast('🔔 ' + headline + ' — ₹' + (o.total || 0));
   }
