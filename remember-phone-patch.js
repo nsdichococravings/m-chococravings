@@ -57,7 +57,7 @@ async function insertStoreOrder(token, paymentId, pmMethod, pmStatus) {
     } catch (e) {}
   }
 
-  var res = await db.from('store_orders').insert({
+  var row = {
     token:          token,
     customer_id:    user ? user.id : null,
     customer_name:  resolvedName,
@@ -68,7 +68,15 @@ async function insertStoreOrder(token, paymentId, pmMethod, pmStatus) {
     payment_status: pmStatus || 'paid',
     razorpay_payment_id: paymentId || null,
     status:         'pending',
-  }).select().single();
+  };
+  // Where the customer is seated (store.html's seat picker) — shown on the kitchen ticket.
+  if (typeof custTable !== 'undefined' && custTable) row.customer_table = custTable;
+  var res = await db.from('store_orders').insert(row).select().single();
+  // customer_table column not added yet (migration 20260952 not run): still take the order.
+  if (res.error && row.customer_table && /customer_table/.test(res.error.message || '')) {
+    delete row.customer_table;
+    res = await db.from('store_orders').insert(row).select().single();
+  }
 
   if (res.error) throw res.error;
 
