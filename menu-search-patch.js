@@ -77,6 +77,19 @@ function clearMenuSearch(focus) {
   renderItems();
 }
 
+// Photo cards come from store.html's menuCardHtml(); falls back to the plain
+// row if this script ever runs with an older (cached) store.html.
+function menuItemHtml(item, i) {
+  if (typeof menuCardHtml === 'function') return menuCardHtml(item, i);
+  var c = catOf(item.id), q = cart[item.id] || 0;
+  var esc = function (v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (ch) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]; }); };
+  return '<div class="item fade-up-item' + (q > 0 ? ' q-' + c.cls : '') + '" id="row-' + item.id + '">'
+    + '<div class="item-info"><div class="item-name">' + esc(item.name) + '</div><div class="item-tag">' + esc(item.tag) + '</div></div>'
+    + '<div class="item-price" id="ip-' + item.id + '">₹' + item.price + '</div>'
+    + '<div class="ctrl">' + (q > 0 ? '<div class="btn-rem" onclick="rem(\'' + item.id + '\')">−</div><div class="qty qty-' + c.cls + '">' + q + '</div>' : '')
+    + '<div class="btn-add add-' + c.cls + '" onclick="add(\'' + item.id + '\')">+</div></div></div>';
+}
+
 // ── Override: renderItems() — search-aware ─────────────────────
 function renderItems() {
   var searchEl = document.getElementById('menu-search');
@@ -93,17 +106,7 @@ function renderItems() {
   document.getElementById('sec-name').textContent = tab.toUpperCase();
   document.getElementById('sec-cnt').textContent = c.items.length + ' items';
 
-  document.getElementById('items-list').innerHTML = c.items.map(function (item, i) {
-    var q = cart[item.id] || 0;
-    var cls = 'item fade-up-item' + (q > 0 ? ' q-' + c.cls : '');
-    var remBtn = q > 0 ? '<div class="btn-rem" onclick="rem(\'' + item.id + '\')">−</div>' : '';
-    var qtyLbl = q > 0 ? '<div class="qty qty-' + c.cls + '">' + q + '</div>' : '';
-    return '<div class="' + cls + '" style="animation-delay:' + (i * 0.07).toFixed(2) + 's" id="row-' + item.id + '">'
-      + '<div class="item-info"><div class="item-name">' + item.name + '</div><div class="item-tag">' + item.tag + '</div></div>'
-      + '<div class="item-price" id="ip-' + item.id + '">₹' + item.price + '</div>'
-      + '<div class="ctrl">' + remBtn + qtyLbl + '<div class="btn-add add-' + c.cls + '" onclick="add(\'' + item.id + '\')">+</div></div>'
-      + '</div>';
-  }).join('');
+  document.getElementById('items-list').innerHTML = c.items.map(menuItemHtml).join('');
   updateBar();
 }
 
@@ -117,18 +120,7 @@ function renderMenuSearchResults(query) {
   document.getElementById('sec-cnt').textContent = matches.length + (matches.length === 1 ? ' item' : ' items');
 
   document.getElementById('items-list').innerHTML = matches.length
-    ? matches.map(function (item, i) {
-        var c = catOf(item.id);
-        var qcount = cart[item.id] || 0;
-        var cls = 'item fade-up-item' + (qcount > 0 ? ' q-' + c.cls : '');
-        var remBtn = qcount > 0 ? '<div class="btn-rem" onclick="rem(\'' + item.id + '\')">−</div>' : '';
-        var qtyLbl = qcount > 0 ? '<div class="qty qty-' + c.cls + '">' + qcount + '</div>' : '';
-        return '<div class="' + cls + '" style="animation-delay:' + (i * 0.05).toFixed(2) + 's" id="row-' + item.id + '">'
-          + '<div class="item-info"><div class="item-name">' + item.name + '</div><div class="item-tag">' + item.tag + '</div></div>'
-          + '<div class="item-price" id="ip-' + item.id + '">₹' + item.price + '</div>'
-          + '<div class="ctrl">' + remBtn + qtyLbl + '<div class="btn-add add-' + c.cls + '" onclick="add(\'' + item.id + '\')">+</div></div>'
-          + '</div>';
-      }).join('')
+    ? matches.map(menuItemHtml).join('')
     : '<div style="text-align:center;padding:40px 20px;font-family:Fraunces,serif;font-size:15px;color:#9a8aaa">No items match "' + query.replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }) + '"</div>';
 
   updateBar();

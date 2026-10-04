@@ -325,6 +325,38 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
   #cart-bar { max-width: 560px; }
 }
 
+
+/* ── PHOTO MENU CARDS (menuCardHtml) ─────────────────────────── */
+#items-list.menu-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:6px 16px 120px;max-width:1140px;margin:0 auto}
+@media (min-width:640px){#items-list.menu-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (min-width:900px){#items-list.menu-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;padding:6px 48px 120px}}
+#items-list.menu-grid > :not(.mcard){grid-column:1/-1}
+.mcard{background:#fff;border-radius:22px;overflow:hidden;position:relative;display:flex;flex-direction:column;
+  box-shadow:0 1px 0 rgba(18,10,30,.04),0 10px 26px -14px rgba(110,9,119,.30);transition:transform .2s,box-shadow .2s}
+.mcard.in-cart{box-shadow:0 0 0 2px var(--mc-accent),0 10px 26px -12px rgba(110,9,119,.35)}
+@media (hover:hover){.mcard:hover{transform:translateY(-3px)}}
+.mc-ph{aspect-ratio:1/1;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:58px;cursor:pointer}
+.mc-ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.mc-ph::after{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 58%,rgba(18,6,24,.38));pointer-events:none}
+.mc-rate{position:absolute;left:9px;bottom:9px;z-index:1;background:rgba(255,255,255,.93);border-radius:20px;padding:4px 9px;font-size:11.5px;font-weight:700;color:#120a1e;display:flex;gap:4px;align-items:center}
+.mc-rate em{font-style:normal;color:#e0a526}.mc-rate small{color:#8a7a92;font-weight:500}
+.mc-badge{position:absolute;top:9px;left:9px;z-index:1;font-size:9.5px;font-weight:800;letter-spacing:.6px;padding:4px 9px;border-radius:20px}
+.mc-best{background:#1d0f24;color:#ffd98a}.mc-new{background:#fff;color:#6e0977}
+.mc-egg{position:absolute;top:9px;right:9px;z-index:1;width:18px;height:18px;border:2px solid;border-radius:4px;background:#fff;display:flex;align-items:center;justify-content:center}
+.mc-egg::before{content:'';width:8px;height:8px;border-radius:50%;background:currentColor}
+.mc-egg.eggless{color:#16a34a;border-color:#16a34a}.mc-egg.egg{color:#b91c1c;border-color:#b91c1c}
+.mc-egg.egg::before{border-radius:0;width:0;height:0;background:none;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:8px solid currentColor}
+.mc-body{padding:11px 12px 12px;display:flex;flex-direction:column;flex:1}
+.mc-name{font-family:'Fraunces',Georgia,serif;font-weight:800;font-size:16px;line-height:1.15;color:var(--ink)}
+.mc-tag{font-size:11.5px;color:var(--muted);margin:3px 0 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mc-row{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:auto}
+.mc-price{font-family:'Fraunces',Georgia,serif;font-weight:900;font-size:18px;color:var(--mc-accent)}
+.mc-add{border:0;border-radius:13px;background:var(--mc-accent);color:#fff;font-weight:800;font-size:12.5px;padding:8px 13px;cursor:pointer;
+  box-shadow:0 6px 14px -6px var(--mc-accent);font-family:inherit;white-space:nowrap}
+.mc-add:active,.mc-step span:active{transform:scale(.9)}
+.mc-step{display:flex;align-items:center;gap:4px;background:#1d0f24;color:#fff;border-radius:13px;padding:3px;font-weight:800;font-size:14px}
+.mc-step span{width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:10px;font-size:16px}
+.mc-step b{min-width:16px;text-align:center}
 </style>
 </head>
 <body>
@@ -364,7 +396,7 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     <div class="sec-line"></div>
     <div class="sec-cnt"  id="sec-cnt"></div>
   </div>
-  <div id="items-list" style="padding-bottom:100px"></div>
+  <div id="items-list" class="menu-grid" style="padding-bottom:100px"></div>
   <div id="cart-bar" class="hidden" onclick="openSheet()">
     <div class="cart-inner">
       <div class="cart-cnt" id="cart-cnt-lbl"></div>
@@ -462,6 +494,13 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
         <div class="step-det" id="sd-2">Come collect at the counter 🎉</div>
       </div>
     </div>
+  </div>
+  <!-- Rating card (shown by updateStatusUI once the order is ready/collected) -->
+  <div id="st-rate" style="display:none;margin:18px 20px 30px;background:#fff;border-radius:20px;padding:18px;text-align:center;box-shadow:0 10px 26px -14px rgba(110,9,119,.35)">
+    <div style="font-family:'Fraunces',Georgia,serif;font-size:20px;font-weight:800;color:#120a1e">How was it?</div>
+    <div style="font-size:12px;color:#9a8aaa;margin:4px 0 10px">Your rating shows on our menu for other customers</div>
+    <div id="st-rate-stars" style="display:flex;justify-content:center;gap:6px"></div>
+    <div id="st-rate-thanks" style="display:none;font-size:13px;color:#15803d;font-weight:700;margin-top:10px"></div>
   </div>
 </div>
 
@@ -633,7 +672,26 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     <input id="mf-price" type="number" placeholder="e.g. 120" style="width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);background:#fdf5e3;font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:700;color:#120a1e;outline:none;margin-bottom:14px"/>
 
     <div style="font-size:10px;letter-spacing:3px;color:#9a8aaa;font-weight:700;margin-bottom:6px">SHORT DESCRIPTION</div>
-    <input id="mf-tag" placeholder="e.g. creamy & sweet" style="width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);background:#fdf5e3;font-family:'Instrument Sans',sans-serif;font-size:13px;color:#120a1e;outline:none;margin-bottom:20px"/>
+    <input id="mf-tag" placeholder="e.g. creamy & sweet" style="width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);background:#fdf5e3;font-family:'Instrument Sans',sans-serif;font-size:13px;color:#120a1e;outline:none;margin-bottom:16px"/>
+
+    <div style="font-size:10px;letter-spacing:3px;color:#9a8aaa;font-weight:700;margin-bottom:8px">PHOTO</div>
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px">
+      <div id="mf-photo-preview" style="width:76px;height:76px;border-radius:16px;background:#f1e6f2 center/cover no-repeat;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">📷</div>
+      <div style="display:flex;flex-direction:column;gap:8px;flex:1">
+        <label style="padding:10px 12px;border-radius:12px;background:#6e0977;color:#fff;font-weight:700;font-size:13px;text-align:center;cursor:pointer">
+          📸 Take / choose photo<input id="mf-photo" type="file" accept="image/*" onchange="mgPickPhoto(this)" style="display:none"/>
+        </label>
+        <div id="mf-photo-remove" onclick="mgRemovePhoto()" style="display:none;font-size:12px;color:#b91c1c;font-weight:700;text-align:center;cursor:pointer">Remove photo</div>
+      </div>
+    </div>
+
+    <div style="font-size:10px;letter-spacing:3px;color:#9a8aaa;font-weight:700;margin-bottom:8px">EGG</div>
+    <div id="mf-egg" style="display:flex;gap:8px;margin-bottom:16px"></div>
+
+    <div onclick="mgToggleNew()" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:12px;background:#fdf5e3;border:1.5px solid rgba(18,10,30,0.12);margin-bottom:20px;cursor:pointer">
+      <div><div style="font-weight:700;font-size:14px;color:#120a1e">Show "NEW" badge</div><div style="font-size:11px;color:#9a8aaa">Highlight a newly added item</div></div>
+      <div id="mf-new" style="width:42px;height:24px;border-radius:12px;position:relative;flex-shrink:0"></div>
+    </div>
 
     <button id="mg-save-btn" onclick="mgSaveItem()" style="width:100%;padding:16px;border-radius:14px;background:#6e0977;color:#fff;font-family:'Fraunces',Georgia,serif;font-size:17px;font-weight:900;border:none;cursor:pointer;box-shadow:0 6px 24px rgba(110,9,119,0.4)">Save Item</button>
   </div>
@@ -866,8 +924,9 @@ async function loadMenu(){
   var timeoutTimer;
   var controller = new AbortController();
   try {
+    // '*' so photo / egg_type / is_new come through once migration 20260954 has run.
     var request = getStoreMenuClient().from('store_menu')
-      .select('id,name,price,tag,category')
+      .select('*')
       .eq('available', true)
       .order('sort_order', {ascending:true})
       .abortSignal(controller.signal);
@@ -882,10 +941,12 @@ async function loadMenu(){
     Object.keys(MENU).forEach(function(k){ MENU[k].items = []; });
     (res.data||[]).forEach(function(row){
       if(MENU[row.category]){
-        MENU[row.category].items.push({id:row.id, name:row.name, price:row.price, tag:row.tag});
+        MENU[row.category].items.push({id:row.id, name:row.name, price:row.price, tag:row.tag,
+          image_url:row.image_url||null, egg_type:row.egg_type||null, is_new:!!row.is_new});
       }
     });
     renderItems();
+    loadMenuStats();
     // Show tabs dynamically based on which categories have items
     ['Brownies','Cakes','Cookies','IceCream','Others','Milkshake','Chocolate','Spicy','Combo','Blondie','Cupcake'].forEach(function(cat) {
       var tabEl = document.getElementById('tab-' + cat);
@@ -947,6 +1008,52 @@ function setTab(t){
   renderItems();
 }
 
+// ── PHOTO MENU CARDS ──────────────────────────────────────────
+// Real ratings + 30-day sales per item name from cc_store_menu_stats()
+// (migration 20260954). Nothing is shown until real data exists.
+var MENU_ICONS = { Coffee:'☕', Tea:'🫖', Desserts:'🍫', Brownies:'🟫', Cakes:'🎂', Cookies:'🍪', IceCream:'🍦',
+  Others:'🧃', Milkshake:'🥤', Chocolate:'🍫', Spicy:'🌶️', Combo:'🎁', Blondie:'🟨', Cupcake:'🧁' };
+var menuStats = {};
+async function loadMenuStats(){
+  try {
+    var res = await getStoreMenuClient().rpc('cc_store_menu_stats');
+    if (res.error || !res.data) return;
+    var m = {};
+    res.data.forEach(function(r){ m[String(r.name||'').trim().toLowerCase()] = { avg: r.avg_stars === null ? null : Number(r.avg_stars), count: r.rating_count || 0, sold: r.sold_30d || 0 }; });
+    menuStats = m;
+    renderItems();
+  } catch(e) {}
+}
+function itemStats(item){ return menuStats[String(item.name||'').trim().toLowerCase()] || null; }
+// Bestseller = the top seller of its category over 30 days (needs 5+ sold).
+function isBestseller(item){
+  var st = itemStats(item); if (!st || st.sold < 5) return false;
+  var cat = catOf(item.id); if (!cat) return false;
+  return cat.items.every(function(o){ var s2 = itemStats(o); return o.id === item.id || !s2 || s2.sold < st.sold; });
+}
+function escHtml(v){ return String(v == null ? '' : v).replace(/[&<>"']/g, function(ch){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]; }); }
+function menuCardHtml(item, i){
+  var c = catOf(item.id) || MENU[tab];
+  var catName = Object.keys(MENU).find(function(k){ return MENU[k] === c; }) || tab;
+  var q = cart[item.id] || 0, st = itemStats(item);
+  var photo = item.image_url
+    ? '<img src="'+escHtml(item.image_url)+'" alt="'+escHtml(item.name)+'" loading="lazy" onerror="this.remove()">'
+    : '';
+  var badge = isBestseller(item) ? '<span class="mc-badge mc-best">★ BESTSELLER</span>'
+    : item.is_new ? '<span class="mc-badge mc-new">NEW</span>' : '';
+  var egg = item.egg_type ? '<span class="mc-egg '+item.egg_type+'" title="'+(item.egg_type==='egg'?'Contains egg':'Eggless')+'"></span>' : '';
+  var rate = st && st.count ? '<span class="mc-rate"><em>★</em>'+st.avg.toFixed(1)+' <small>('+st.count+')</small></span>' : '';
+  var ctrl = q > 0
+    ? '<div class="mc-step"><span onclick="rem(\''+item.id+'\')">−</span><b>'+q+'</b><span onclick="add(\''+item.id+'\')">+</span></div>'
+    : '<button class="mc-add" onclick="add(\''+item.id+'\')">ADD +</button>';
+  var anim = i >= 0 ? ' fade-up-item' : ''; // i < 0: single-card refresh, no animation
+  return '<div class="mcard'+anim+(q>0?' in-cart':'')+'" id="row-'+item.id+'" style="--mc-accent:'+c.accent+';animation-delay:'+((i>0?i:0)*0.05).toFixed(2)+'s">'
+    + '<div class="mc-ph" onclick="add(\''+item.id+'\')" style="background:radial-gradient(circle at 30% 25%,'+c.dot+'55,'+c.accent+')">'
+    +   (MENU_ICONS[catName]||'🍽️') + photo + badge + egg + rate + '</div>'
+    + '<div class="mc-body"><div class="mc-name">'+escHtml(item.name)+'</div><div class="mc-tag">'+escHtml(item.tag||'')+'</div>'
+    + '<div class="mc-row"><div class="mc-price" id="ip-'+item.id+'">₹'+item.price+'</div>'+ctrl+'</div></div></div>';
+}
+
 function renderItems(){
   var c=MENU[tab];
   document.getElementById('sec-dot').style.background=c.dot;
@@ -955,22 +1062,19 @@ function renderItems(){
   document.getElementById('sec-cnt').textContent=c.items.length+' items';
 
 
-  document.getElementById('items-list').innerHTML=c.items.map(function(item,i){
-    var q=cart[item.id]||0;
-    var cls='item fade-up-item'+(q>0?' q-'+c.cls:'');
-    var remBtn=q>0?'<div class="btn-rem" onclick="rem(\''+item.id+'\')">−</div>':'';
-    var qtyLbl=q>0?'<div class="qty qty-'+c.cls+'">'+q+'</div>':'';
-    return '<div class="'+cls+'" style="animation-delay:'+(i*0.07).toFixed(2)+'s" id="row-'+item.id+'">'
-      +'<div class="item-info"><div class="item-name">'+item.name+'</div><div class="item-tag">'+item.tag+'</div></div>'
-      +'<div class="item-price" id="ip-'+item.id+'">₹'+item.price+'</div>'
-      +'<div class="ctrl">'+remBtn+qtyLbl+'<div class="btn-add add-'+c.cls+'" onclick="add(\''+item.id+'\')">+</div></div>'
-      +'</div>';
-  }).join('');
+  document.getElementById('items-list').innerHTML=c.items.map(menuCardHtml).join('');
   updateBar();
 }
 
-function add(id){ cart[id]=(cart[id]||0)+1; renderItems(); }
-function rem(id){ if(!cart[id])return; cart[id]=Math.max(cart[id]-1,0); renderItems(); }
+// Tapping + / − redraws only that card, so the menu doesn't re-animate.
+function refreshCard(id){
+  var el = document.getElementById('row-'+id), item = findItem(id);
+  if (!el || !item || !el.classList.contains('mcard')) { renderItems(); return; }
+  el.outerHTML = menuCardHtml(item, -1);
+  updateBar();
+}
+function add(id){ cart[id]=(cart[id]||0)+1; refreshCard(id); }
+function rem(id){ if(!cart[id])return; cart[id]=Math.max(cart[id]-1,0); refreshCard(id); }
 
 function updateBar(){
   var n=cartCount();
@@ -1542,6 +1646,50 @@ function updateStatusUI(status){
     if(lbl)  lbl.classList.toggle('done',i<=idx);
     if(det)  det.classList.toggle('show',i===idx);
   }
+  showRateCard(status);
+}
+
+// ── RATE THIS ORDER (token screen) ─────────────────────────────
+// Feeds the real stars on the menu cards (cc_rate_store_order).
+var rateShownFor = null, rateStars = 0;
+async function showRateCard(status){
+  var box = document.getElementById('st-rate');
+  if (!box) return;
+  var ok = orderId && ['ready','collected','delivered'].indexOf(status) >= 0;
+  box.style.display = ok ? 'block' : 'none';
+  if (!ok || rateShownFor === orderId) return;
+  rateShownFor = orderId; rateStars = 0;
+  document.getElementById('st-rate-thanks').style.display = 'none';
+  drawRateStars();
+  try {
+    var r = await db.rpc('cc_store_order_rating', { p_order_id: String(orderId) });
+    if (r.error) { if (/function|schema cache/i.test(r.error.message||'')) box.style.display = 'none'; return; } // migration not run
+    if (r.data && r.data.stars) { rateStars = r.data.stars; drawRateStars(); rateThanks(); }
+  } catch(e) {}
+}
+function drawRateStars(){
+  var el = document.getElementById('st-rate-stars');
+  el.innerHTML = [1,2,3,4,5].map(function(n){
+    return '<span onclick="rateOrder('+n+')" style="font-size:36px;cursor:pointer;line-height:1;color:'+(n<=rateStars?'#e0a526':'#e6dbe8')+'">★</span>';
+  }).join('');
+}
+function rateThanks(){
+  var t = document.getElementById('st-rate-thanks');
+  t.textContent = rateStars >= 4 ? 'Thank you! 💜 Tap a star to change it.' : 'Thanks — sorry it wasn\'t perfect. We\'ll do better!';
+  t.style.display = 'block';
+}
+async function rateOrder(n){
+  if (!orderId) return;
+  var prev = rateStars; rateStars = n; drawRateStars();
+  try {
+    var r = await db.rpc('cc_rate_store_order', { p_order_id: String(orderId), p_stars: n, p_comment: null });
+    if (r.error) throw r.error;
+    rateThanks();
+    loadMenuStats();
+  } catch(e) {
+    rateStars = prev; drawRateStars();
+    alert(e.message || 'Could not save rating');
+  }
 }
 
 // ── KITCHEN ───────────────────────────────────────────────────
@@ -1748,8 +1896,11 @@ function mgRender(){
     var knobPos = item.available ? 'right:3px' : 'left:3px';
     var row = document.createElement('div');
     row.style.cssText = 'display:flex;align-items:center;padding:14px 20px;border-bottom:1px solid rgba(18,10,30,0.07);background:'+bg+';border-left:4px solid '+border;
-    row.innerHTML = '<div style="flex:1">'
-      + '<div style="font-family:Fraunces,Georgia,serif;font-size:17px;font-weight:700;color:'+nameClr+'">'+item.name+'</div>'
+    row.innerHTML = '<div style="width:44px;height:44px;border-radius:12px;margin-right:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;'
+      + 'background:'+(item.image_url?'center/cover no-repeat url(&quot;'+escHtml(item.image_url)+'&quot;)':'#f1e6f2')+'">'+(item.image_url?'':'📷')+'</div>'
+      + '<div style="flex:1">'
+      + '<div style="font-family:Fraunces,Georgia,serif;font-size:17px;font-weight:700;color:'+nameClr+'">'+item.name
+      + (item.egg_type?' <span style="font-size:11px">'+(item.egg_type==='egg'?'🔺':'🟢')+'</span>':'')+(item.is_new?' <span style="font-size:9px;font-weight:800;color:#6e0977">NEW</span>':'')+'</div>'
       + '<div style="font-size:11px;color:#9a8aaa;margin-top:2px">'+item.tag+'</div>'
       + '</div>'
       + '<div style="font-family:Fraunces,Georgia,serif;font-size:17px;font-weight:900;color:'+priceClr+';margin-right:14px">₹'+item.price+'</div>'
@@ -1787,6 +1938,7 @@ function openAddItem(){
   document.getElementById('mf-name').value  = '';
   document.getElementById('mf-price').value = '';
   document.getElementById('mf-tag').value   = '';
+  mgSetExtras(null);
   mgSelCat(mgTab);
   document.getElementById('mg-backdrop').style.display = 'block';
   var s = document.getElementById('mg-sheet');
@@ -1802,11 +1954,65 @@ function openEditItem(id){
   document.getElementById('mf-name').value  = item.name;
   document.getElementById('mf-price').value = item.price;
   document.getElementById('mf-tag').value   = item.tag;
+  mgSetExtras(item);
   mgSelCat(item.category);
   document.getElementById('mg-backdrop').style.display = 'block';
   var s = document.getElementById('mg-sheet');
   s.style.display = 'block';
   s.style.animation = 'slideUp .38s cubic-bezier(.16,1,.3,1) both';
+}
+
+// ── Photo / egg / NEW fields (migration 20260954) ──
+var mgPhotoFile = null, mgPhotoUrl = null, mgEgg = null, mgNew = false;
+function mgSetExtras(item){
+  mgPhotoFile = null;
+  mgPhotoUrl = item ? (item.image_url || null) : null;
+  mgEgg = item ? (item.egg_type || null) : null;
+  mgNew = item ? !!item.is_new : false;
+  var inp = document.getElementById('mf-photo'); if (inp) inp.value = '';
+  mgRenderExtras();
+}
+function mgRenderExtras(){
+  var pv = document.getElementById('mf-photo-preview');
+  var src = mgPhotoFile ? URL.createObjectURL(mgPhotoFile) : mgPhotoUrl;
+  pv.style.backgroundImage = src ? 'url("'+src+'")' : 'none';
+  pv.textContent = src ? '' : '📷';
+  document.getElementById('mf-photo-remove').style.display = src ? 'block' : 'none';
+  document.getElementById('mf-egg').innerHTML = [['eggless','🟢 Eggless','#16a34a'],['egg','🔺 With egg','#b91c1c']].map(function(o){
+    var on = mgEgg === o[0];
+    return '<div onclick="mgSetEgg(\''+o[0]+'\')" style="flex:1;padding:11px;text-align:center;border-radius:12px;cursor:pointer;font-weight:700;font-size:13px;'
+      +'border:1.5px solid '+(on?o[2]:'rgba(18,10,30,0.12)')+';background:'+(on?o[2]:'#fdf5e3')+';color:'+(on?'#fff':'#120a1e')+'">'+o[1]+'</div>';
+  }).join('');
+  var t = document.getElementById('mf-new');
+  t.style.background = mgNew ? '#6e0977' : 'rgba(18,10,30,0.12)';
+  t.innerHTML = '<div style="position:absolute;top:3px;'+(mgNew?'right:3px':'left:3px')+';width:18px;height:18px;border-radius:50%;background:#fff"></div>';
+}
+function mgSetEgg(v){ mgEgg = mgEgg === v ? null : v; mgRenderExtras(); }
+function mgToggleNew(){ mgNew = !mgNew; mgRenderExtras(); }
+function mgPickPhoto(input){ if (input.files && input.files[0]) { mgPhotoFile = input.files[0]; mgRenderExtras(); } }
+function mgRemovePhoto(){ mgPhotoFile = null; mgPhotoUrl = null; var inp = document.getElementById('mf-photo'); if (inp) inp.value = ''; mgRenderExtras(); }
+
+// Shrinks a phone photo to an 800×800 centre crop JPEG (~100 KB) before upload.
+function mgResizePhoto(file){
+  return new Promise(function(resolve, reject){
+    var img = new Image();
+    img.onload = function(){
+      var size = 800, side = Math.min(img.width, img.height);
+      var cv = document.createElement('canvas'); cv.width = size; cv.height = size;
+      cv.getContext('2d').drawImage(img, (img.width-side)/2, (img.height-side)/2, side, side, 0, 0, size, size);
+      URL.revokeObjectURL(img.src);
+      cv.toBlob(function(b){ b ? resolve(b) : reject(new Error('Could not read photo')); }, 'image/jpeg', 0.82);
+    };
+    img.onerror = function(){ reject(new Error('Could not read photo')); };
+    img.src = URL.createObjectURL(file);
+  });
+}
+async function mgUploadPhoto(itemId){
+  var blob = await mgResizePhoto(mgPhotoFile);
+  var path = itemId + '-' + Date.now() + '.jpg';
+  var up = await db.storage.from('menu-photos').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+  if (up.error) throw new Error('Photo upload failed: ' + up.error.message);
+  return db.storage.from('menu-photos').getPublicUrl(path).data.publicUrl;
 }
 
 function mgSelCat(cat){
@@ -1848,12 +2054,21 @@ async function mgSaveItem(){
   btn.textContent = 'Saving…'; btn.disabled = true;
 
   try {
+    var itemId = mgEditId;
     if(mgEditId){
-      await db.from('store_menu').update({name:name, price:price, tag:tag, category:mgSelCatVal}).eq('id', mgEditId);
+      var u = await db.from('store_menu').update({name:name, price:price, tag:tag, category:mgSelCatVal}).eq('id', mgEditId);
+      if (u.error) throw u.error;
     } else {
       var maxOrder = mgAllItems.filter(function(i){ return i.category===mgSelCatVal; }).length + 1;
-      await db.from('store_menu').insert({name:name, price:price, tag:tag, category:mgSelCatVal, sort_order:maxOrder, available:true});
+      var ins = await db.from('store_menu').insert({name:name, price:price, tag:tag, category:mgSelCatVal, sort_order:maxOrder, available:true}).select('id').single();
+      if (ins.error) throw ins.error;
+      itemId = ins.data.id;
     }
+    // Photo / egg / NEW are saved separately so the basic fields still save
+    // if migration 20260954 hasn't been run yet.
+    if (mgPhotoFile) { btn.textContent = 'Uploading photo…'; mgPhotoUrl = await mgUploadPhoto(itemId); }
+    var ex = await db.from('store_menu').update({ image_url: mgPhotoUrl, egg_type: mgEgg, is_new: mgNew }).eq('id', itemId);
+    if (ex.error && (mgPhotoUrl || mgEgg || mgNew)) throw new Error('Saved name and price, but not photo/egg/NEW — run migration 20260954 first. (' + ex.error.message + ')');
     closeMgSheet();
     await mgLoadItems();
     await loadMenu();
@@ -2941,7 +3156,7 @@ async function toggleStoreOpenStatus() {
 <!-- END QUICK ADD MENU ITEM SHEET -->
 <script src="admin-command-center.js?v=20260928-admin-access"></script>
 <script src="store-patch.js?v=20260921-premium-email"></script>
-<script src="menu-search-patch.js?v=20260920-search-v3"></script>
+<script src="menu-search-patch.js?v=20260954-photo-cards"></script>
 <script src="remember-phone-patch.js?v=20260952-table"></script>
 <script src="checkadminbadge-override.js?v=20260928-admin-access"></script>
 <script src="production-purchases-patch.js"></script>
