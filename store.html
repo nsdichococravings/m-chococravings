@@ -1036,8 +1036,11 @@ function menuCardHtml(item, i){
   var c = catOf(item.id) || MENU[tab];
   var catName = Object.keys(MENU).find(function(k){ return MENU[k] === c; }) || tab;
   var q = cart[item.id] || 0, st = itemStats(item);
-  var photo = item.image_url
-    ? '<img src="'+escHtml(item.image_url)+'" alt="'+escHtml(item.name)+'" loading="lazy" onerror="this.remove()">'
+  // Real photo if uploaded; otherwise (or if it fails to load) the matching drawing from menu-art.js.
+  var art = typeof menuArt === 'function' ? menuArt(item, catName) : '';
+  var src = item.image_url || art;
+  var photo = src
+    ? '<img src="'+escHtml(src)+'" alt="'+escHtml(item.name)+'" loading="lazy" data-art="'+escHtml(art)+'" onerror="if(this.dataset.art&&this.src!==this.dataset.art){this.src=this.dataset.art}else{this.remove()}">'
     : '';
   var badge = isBestseller(item) ? '<span class="mc-badge mc-best">★ BESTSELLER</span>'
     : item.is_new ? '<span class="mc-badge mc-new">NEW</span>' : '';
@@ -1049,7 +1052,7 @@ function menuCardHtml(item, i){
   var anim = i >= 0 ? ' fade-up-item' : ''; // i < 0: single-card refresh, no animation
   return '<div class="mcard'+anim+(q>0?' in-cart':'')+'" id="row-'+item.id+'" style="--mc-accent:'+c.accent+';animation-delay:'+((i>0?i:0)*0.05).toFixed(2)+'s">'
     + '<div class="mc-ph" onclick="add(\''+item.id+'\')" style="background:radial-gradient(circle at 30% 25%,'+c.dot+'55,'+c.accent+')">'
-    +   (MENU_ICONS[catName]||'🍽️') + photo + badge + egg + rate + '</div>'
+    +   (photo ? '' : (MENU_ICONS[catName]||'🍽️')) + photo + badge + egg + rate + '</div>'
     + '<div class="mc-body"><div class="mc-name">'+escHtml(item.name)+'</div><div class="mc-tag">'+escHtml(item.tag||'')+'</div>'
     + '<div class="mc-row"><div class="mc-price" id="ip-'+item.id+'">₹'+item.price+'</div>'+ctrl+'</div></div></div>';
 }
@@ -1896,8 +1899,9 @@ function mgRender(){
     var knobPos = item.available ? 'right:3px' : 'left:3px';
     var row = document.createElement('div');
     row.style.cssText = 'display:flex;align-items:center;padding:14px 20px;border-bottom:1px solid rgba(18,10,30,0.07);background:'+bg+';border-left:4px solid '+border;
-    row.innerHTML = '<div style="width:44px;height:44px;border-radius:12px;margin-right:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;'
-      + 'background:'+(item.image_url?'center/cover no-repeat url(&quot;'+escHtml(item.image_url)+'&quot;)':'#f1e6f2')+'">'+(item.image_url?'':'📷')+'</div>'
+    var thumb = item.image_url || (typeof menuArt === 'function' ? menuArt(item, item.category) : '');
+    row.innerHTML = '<div title="'+(item.image_url?'Photo':'Drawing — add a photo to replace it')+'" style="width:44px;height:44px;border-radius:12px;margin-right:12px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;'
+      + 'background:'+(thumb?'center/cover no-repeat url(&quot;'+escHtml(thumb)+'&quot;)':'#f1e6f2')+'">'+(thumb?'':'📷')+'</div>'
       + '<div style="flex:1">'
       + '<div style="font-family:Fraunces,Georgia,serif;font-size:17px;font-weight:700;color:'+nameClr+'">'+item.name
       + (item.egg_type?' <span style="font-size:11px">'+(item.egg_type==='egg'?'🔺':'🟢')+'</span>':'')+(item.is_new?' <span style="font-size:9px;font-weight:800;color:#6e0977">NEW</span>':'')+'</div>'
@@ -3156,6 +3160,7 @@ async function toggleStoreOpenStatus() {
 <!-- END QUICK ADD MENU ITEM SHEET -->
 <script src="admin-command-center.js?v=20260928-admin-access"></script>
 <script src="store-patch.js?v=20260921-premium-email"></script>
+<script src="menu-art.js?v=20260956"></script>
 <script src="menu-search-patch.js?v=20260954-photo-cards"></script>
 <script src="remember-phone-patch.js?v=20260952-table"></script>
 <script src="checkadminbadge-override.js?v=20260928-admin-access"></script>
