@@ -1002,7 +1002,7 @@ function openSheet(){
   }).join('');
   document.getElementById('sheet-total').textContent='₹'+cartTotal();
   setTimeout(autoFillPhone, 100);
-  renderSeatOpts();
+  refreshSeatOpts();
   selPay(payMethod);
   document.getElementById('backdrop').style.display='block';
   var s=document.getElementById('sheet');
@@ -1127,7 +1127,7 @@ function stopScanner(){
 }
 
 async function confirmQRPay(){
-  if (!requireSeat()) return;
+  if (!(await requireSeat())) return;
   var btn = document.getElementById('qr-paid-btn');
   btn.textContent = 'Placing order…'; btn.disabled = true;
   try {
@@ -1160,29 +1160,106 @@ var custTable = (function(){
   } catch(e) { return null; }
 })();
 function seatLabel(code){ return code === 'TAKEAWAY' ? '🥡 Takeaway' : code; }
+
+// ── Occupied tables ──
+// A table is taken while it has an open order (not collected/cancelled):
+// a staff table bill (table_code, held until closed — same rule as the
+// Tables board) or another customer's self-order (customer_table, held for
+// SEAT_HOLD_HOURS in case staff forget to mark it collected). This phone's
+// own orders never block it, so a customer can order again at their table.
+var SEAT_HOLD_HOURS = 4;
+var seatTaken = {};       // code -> true
+var seatCheckFailed = false;
+function myOrderIds(){
+  try { return JSON.parse(localStorage.getItem('cc_my_store_orders') || '[]'); } catch(e) { return []; }
+}
+function rememberMyOrder(id){
+  if (!id) return;
+  try {
+    var ids = myOrderIds().filter(function(x){ return x !== id; });
+    ids.unshift(id);
+    localStorage.setItem('cc_my_store_orders', JSON.stringify(ids.slice(0, 20)));
+  } catch(e) {}
+}
+async function loadSeatOccupancy(){
+  if (!db) return seatTaken;
+  var mine = myOrderIds(), taken = {};
+  var since = new Date(Date.now() - SEAT_HOLD_HOURS * 3600000).toISOString();
+  try {
+    var res = await db.from('store_orders').select('id,table_code,customer_table,created_at')
+      .not('status', 'in', '("collected","cancelled")')
+      .or('table_code.not.is.null,customer_table.not.is.null');
+    if (res.error) {
+      // customer_table column not added yet — staff table bills only.
+      res = await db.from('store_orders').select('id,table_code,created_at')
+        .not('status', 'in', '("collected","cancelled")').not('table_code', 'is', null);
+    }
+    if (res.error) throw res.error;
+    (res.data || []).forEach(function(o){
+      if (mine.indexOf(o.id) >= 0) return;
+      if (o.table_code) taken[String(o.table_code).toUpperCase()] = true;
+      if (o.customer_table && o.customer_table !== 'TAKEAWAY' && o.created_at >= since) taken[o.customer_table] = true;
+    });
+    seatTaken = taken; seatCheckFailed = false;
+  } catch(e) {
+    console.warn('table occupancy:', e.message || e);
+    seatCheckFailed = true; // never lock customers out because the check failed
+  }
+  return seatTaken;
+}
+function seatMsg(text){
+  var err = document.getElementById('seat-err');
+  if (!err) return;
+  err.textContent = text;
+  err.style.display = 'block';
+  err.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 function renderSeatOpts(){
   var box = document.getElementById('seat-opts');
   if (!box) return;
   box.innerHTML = SEAT_CODES.map(function(c){
-    var on = c === custTable;
+    var on = c === custTable, busy = !!seatTaken[c];
+    var style = busy
+      ? 'border:1.5px dashed rgba(18,10,30,0.15);background:#efe9ef;color:#b3a8b8;cursor:not-allowed'
+      : 'border:1.5px solid '+(on?'#6e0977':'rgba(18,10,30,0.12)')+';background:'+(on?'#6e0977':'#fdf5e3')+';color:'+(on?'#fff':'#120a1e')+';cursor:pointer';
     return '<div onclick="pickSeat(\''+c+'\')" style="'+(c==='TAKEAWAY'?'grid-column:span 2;':'')
-      +'padding:10px 4px;text-align:center;border-radius:10px;cursor:pointer;font-weight:800;font-size:13px;'
-      +'border:1.5px solid '+(on?'#6e0977':'rgba(18,10,30,0.12)')+';background:'+(on?'#6e0977':'#fdf5e3')+';color:'+(on?'#fff':'#120a1e')+'">'
-      +seatLabel(c)+'</div>';
+      +'padding:8px 4px;text-align:center;border-radius:10px;font-weight:800;font-size:13px;line-height:1.2;'+style+'">'
+      +seatLabel(c)+(busy?'<div style="font-size:9px;font-weight:700;letter-spacing:.5px">OCCUPIED</div>':'')+'</div>';
   }).join('');
   document.getElementById('seat-err').style.display = 'none';
 }
+// Opening checkout: draw immediately, then refresh occupancy. A pre-selected
+// table (e.g. from a ?table= QR) that turns out to be taken is cleared.
+async function refreshSeatOpts(){
+  renderSeatOpts();
+  await loadSeatOccupancy();
+  var cleared = custTable && seatTaken[custTable] ? custTable : null;
+  if (cleared) { custTable = null; try { sessionStorage.removeItem('cc_cust_table'); } catch(e) {} }
+  renderSeatOpts();
+  if (cleared) seatMsg('Table ' + cleared + ' already has an order. Please choose another table, or ask our staff.');
+}
 function pickSeat(code){
+  if (seatTaken[code]) { seatMsg('Table ' + code + ' already has an order. Please choose another table, or ask our staff.'); return; }
   custTable = code;
   try { sessionStorage.setItem('cc_cust_table', code); } catch(e) {}
   renderSeatOpts();
 }
-// Called before any payment starts — nothing is charged without a table.
-function requireSeat(){
-  if (custTable) return true;
-  var err = document.getElementById('seat-err');
-  if (err) { err.style.display = 'block'; err.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-  return false;
+// Called before any payment starts — nothing is charged without a free table.
+// Re-checks occupancy so two people can't grab the same table at once.
+async function requireSeat(){
+  if (!custTable) { seatMsg('Please choose your table so we can bring your order.'); return false; }
+  if (custTable === 'TAKEAWAY') return true;
+  await loadSeatOccupancy();
+  if (seatTaken[custTable]) {
+    var code = custTable;
+    custTable = null;
+    try { sessionStorage.removeItem('cc_cust_table'); } catch(e) {}
+    renderSeatOpts();
+    seatMsg('Sorry, table ' + code + ' was just taken. Please choose another table.');
+    return false;
+  }
+  return true;
 }
 
 async function insertStoreOrder(token, paymentId, pmMethod, pmStatus) {
@@ -1226,7 +1303,7 @@ async function insertStoreOrder(token, paymentId, pmMethod, pmStatus) {
 async function placeOrder(){
   var btn = document.getElementById('place-btn');
   if (!db) { alert('Add your Supabase anon key to store.html first.'); return; }
-  if (!requireSeat()) return;
+  if (!(await requireSeat())) return;
   if (payMethod === 'upi') { openRazorpay(); return; }
 
   // Cash flow
@@ -1366,6 +1443,7 @@ async function getToken(){
 
 // ── CONFIRM ───────────────────────────────────────────────────
 function showConfirm(token,entries,total){
+  rememberMyOrder(orderId);
   document.getElementById('tok-num').textContent=token;
   document.getElementById('st-tok').textContent='TOKEN '+token+(custTable ? ' · '+(custTable==='TAKEAWAY'?'TAKEAWAY':'TABLE '+custTable) : '');
   var html=entries.map(function(i){
