@@ -211,9 +211,10 @@ function buildAddItemUI() {
     +     '<select id="invtry-item-unit" style="flex:1;padding:12px 10px;border-radius:12px;'
     +       'border:1.5px solid rgba(18,10,30,0.12);font-family:inherit;font-size:14px;outline:none;'
     +       'background:#fff;cursor:pointer">'
+    // Same units as Production stock-in / recipes (kg, g, l, ml, pcs) — see migration 20260958.
     +       '<option value="kg">kg</option><option value="g">g</option>'
-    +       '<option value="liter">liter</option><option value="ml">ml</option>'
-    +       '<option value="pieces">pieces</option><option value="dozen">dozen</option>'
+    +       '<option value="l">litre (l)</option><option value="ml">ml</option>'
+    +       '<option value="pcs">pieces (pcs)</option>'
     +     '</select>'
     +     '<input id="invtry-item-stock" type="number" step="any" placeholder="Current stock" style="flex:1;'
     +       'padding:12px 14px;border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);font-family:inherit;'
