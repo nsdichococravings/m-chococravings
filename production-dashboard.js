@@ -206,22 +206,35 @@
   // Set cost / Delete for one material or packaging row (cc_material_admin, migration 20260960).
   const materialActions = (kind, r) => '<button type="button" data-action="set-cost" data-kind="' + kind + '" data-name="' + esc(r.name) + '" data-unit="' + esc(r.unit) + '" data-cost="' + esc(r.cost_per_unit == null ? '' : r.cost_per_unit) + '"' + (state.ready ? '' : ' disabled') + '>Set cost</button> '
     + '<button type="button" data-action="delete-material" data-kind="' + kind + '" data-name="' + esc(r.name) + '" data-stock="' + esc(r.current_stock) + '" data-unit="' + esc(r.unit) + '"' + (state.ready ? '' : ' disabled') + '>Delete</button>';
+  // Shows the outcome in a pop-up: the status strip at the top is easy to miss when scrolled down.
   async function materialAdmin(action, kind, name, value) {
     const result = await dbClient().rpc('cc_material_admin', { p_action: action, p_kind: kind, p_name: name, p_value: value == null ? null : value });
-    if (result.error) throw result.error;
+    if (result.error) {
+      const msg = String(result.error.message || result.error);
+      const text = /cc_material_admin|schema cache|function/i.test(msg) && !/Used in recipe|point to|not found|Only admin/i.test(msg)
+        ? 'Could not ' + (action === 'delete' ? 'delete ' : 'update ') + name + ': the database update is missing.\nRun migrations/20260960_material_admin.sql in Supabase, then try again.'
+        : 'Could not ' + (action === 'delete' ? 'delete ' : 'update ') + name + ':\n' + msg;
+      announce(text.replace(/\n/g, ' ')); window.alert(text);
+      return false;
+    }
     invalidateReads(); await refresh();
+    return true;
   }
   async function setMaterialCost(d) {
     const input = window.prompt('Unit cost of ' + d.name + ' in ₹ per ' + d.unit + '\n(e.g. a 1 kg pack for ₹650 → per kg: 650, per g: 0.65)', d.cost || '');
     if (input == null) return;
     const cost = Number(input);
     if (!Number.isFinite(cost) || cost < 0) { announce('Enter a cost of 0 or more.'); return; }
-    await materialAdmin('set_cost', d.kind, d.name, cost); announce('Unit cost saved for ' + d.name + '.');
+    if (await materialAdmin('set_cost', d.kind, d.name, cost)) { announce('Unit cost saved for ' + d.name + '.'); window.alert('Unit cost saved: ' + d.name + ' = ₹' + cost + ' per ' + d.unit); }
   }
   async function deleteMaterial(d) {
     const warn = num(d.stock) > 0 ? '\n\n' + d.stock + ' ' + d.unit + ' is still in stock and will be removed.' : '';
     if (!window.confirm('Delete ' + d.name + '?' + warn + '\nPurchase history is kept.')) return;
-    await materialAdmin('delete', d.kind, d.name); announce(d.name + ' deleted.');
+    if (await materialAdmin('delete', d.kind, d.name)) {
+      const still = rows(d.kind === 'raw' ? 'materials' : 'packaging').some(r => r.name === d.name);
+      announce(still ? d.name + ' is still listed — refresh to check.' : d.name + ' deleted.');
+      window.alert(still ? d.name + ' is still listed. Tap Refresh; if it is still there, send a screenshot.' : '✅ ' + d.name + ' deleted.');
+    }
   }
   function requestSource(r) {
     if (r.source === 'auto') return '<br>' + badge('Auto · low stock') + (r.notes ? '<br><span class="pd-muted">' + esc(r.notes) + '</span>' : '');

@@ -1,5 +1,5 @@
 // NSDI ChocoCravings — Service Worker
-const CACHE_NAME = 'chococravings-v40-material-admin';
+const CACHE_NAME = 'chococravings-v41-delete-popup';
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache immediately on install
