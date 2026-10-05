@@ -102,7 +102,7 @@ async function checkAdminBadge(){
     }
     if (admin) {
       loadScriptsSequentially([
-        'inventory-patch.js?v=20260958-units', 'display-stock-patch.js', 'daily-expenses-patch.js',
+        'inventory-patch.js?v=20260960', 'display-stock-patch.js', 'daily-expenses-patch.js',
         'day-close-patch.js', 'sales-reports-patch.js', 'reports-hub-patch.js',
         'cash-counter-patch.js', 'custom-bookings-patch.js?v=20260956-kitchen', 'executive-dashboard-patch.js',
         'push-broadcast-patch.js?v=20260950'
