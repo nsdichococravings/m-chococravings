@@ -356,6 +356,13 @@ function openBookingForm() {
     + '<input id="cbf-theme" placeholder="e.g. Superhero, Floral, Unicorn" class="cbf-input" style="margin-bottom:12px">'
     + cbLabel('PARTICULARS / NOTES')
     + '<textarea id="cbf-particulars" rows="2" placeholder="Flavor, size, special requests..." class="cbf-input" style="margin-bottom:12px;resize:none"></textarea>'
+    // Sends a production request to the kitchen, due on the booking date (migration 20260956).
+    + cbLabel('CAKE FOR THE KITCHEN (OPTIONAL)')
+    + '<div style="display:flex;gap:8px;margin-bottom:4px">'
+    +   '<input id="cbf-product" list="cbf-product-list" placeholder="e.g. Vanilla Cake 1kg" class="cbf-input" style="flex:1">'
+    +   '<input id="cbf-qty" type="number" min="1" step="1" value="1" class="cbf-input" style="width:72px;text-align:center">'
+    + '</div><datalist id="cbf-product-list"></datalist>'
+    + '<div style="font-size:11px;color:#9a8aaa;margin-bottom:12px">Pick the menu item to bake — the kitchen gets a request due on the booking date.</div>'
     + '<div style="display:flex;gap:10px;margin-bottom:12px">'
     + '<div style="flex:1">' + cbLabel('TOTAL AMOUNT') + '<input id="cbf-total" type="number" placeholder="₹0" class="cbf-input"></div>'
     + '<div style="flex:1">' + cbLabel('ADVANCE PAID') + '<input id="cbf-advance" type="number" placeholder="₹0" class="cbf-input"></div>'
@@ -376,8 +383,23 @@ function openBookingForm() {
     + '.cbf-pay-on{background:#6e0977;border-color:#6e0977;color:#fff}</style>';
 
   document.getElementById('cbf-overlay').style.display = 'flex';
+  cbLoadProductOptions();
   _cbPayType = 'advance';
   _cbDeliveryType = 'outlet';
+}
+
+// Menu items (cakes first) for the "Cake for the kitchen" field.
+async function cbLoadProductOptions() {
+  try {
+    var res = await db.from('store_menu').select('name, category').order('name');
+    var list = (res.data || []).slice().sort(function (a, b) {
+      var ca = /cake/i.test(a.category || '') ? 0 : 1, cb = /cake/i.test(b.category || '') ? 0 : 1;
+      return ca - cb || String(a.name).localeCompare(String(b.name));
+    });
+    var dl = document.getElementById('cbf-product-list');
+    if (dl) dl.innerHTML = list.map(function (r) { return '<option value="' + String(r.name).replace(/"/g, '&quot;') + '">'; }).join('');
+    window._cbMenuNames = list.map(function (r) { return r.name; });
+  } catch (e) {}
 }
 
 function cbLabel(text) {
@@ -414,6 +436,14 @@ async function saveBooking() {
   var total = parseFloat(document.getElementById('cbf-total').value) || 0;
   var advance = parseFloat(document.getElementById('cbf-advance').value) || 0;
   var address = document.getElementById('cbf-address').value.trim();
+  var product = (document.getElementById('cbf-product') || {}).value || '';
+  product = product.trim();
+  var productQty = Math.max(1, parseInt((document.getElementById('cbf-qty') || {}).value, 10) || 1);
+  if (product && window._cbMenuNames && window._cbMenuNames.indexOf(product) < 0) {
+    var match = window._cbMenuNames.find(function (n) { return n.toLowerCase() === product.toLowerCase(); });
+    if (!match) { showStoreToast('Pick the kitchen cake from the list (it must match a menu item)'); return; }
+    product = match;
+  }
 
   if (!date) { showStoreToast('Pick a booking date'); return; }
   if (!name) { showStoreToast('Enter customer name'); return; }
@@ -437,15 +467,24 @@ async function saveBooking() {
   }
 
   try {
-    await db.from('custom_bookings').insert([{
+    var row = {
       customer_name: name, customer_phone: phoneDigits, booking_date: date,
       delivery_time: timeDisplay, delivery_type: _cbDeliveryType,
       delivery_address: _cbDeliveryType === 'doorstep' ? address : null,
       cake_name_text: cakeName || null, theme: theme || null, particulars: particulars || null,
       total_amount: total, advance_paid: _cbPayType === 'full' ? total : advance,
       payment_type: _cbPayType, status: 'booked', created_by: staffName
-    }]);
-    showStoreToast('✅ Booking saved for ' + name);
+    };
+    if (product) { row.production_product = product; row.production_qty = productQty; }
+    var ins = await db.from('custom_bookings').insert([row]);
+    // production_* columns not added yet (migration 20260956 not run): still save the booking.
+    if (ins.error && product && /production_/.test(ins.error.message || '')) {
+      delete row.production_product; delete row.production_qty;
+      ins = await db.from('custom_bookings').insert([row]);
+      if (!ins.error) showStoreToast('Booking saved, but the kitchen request needs the latest database update');
+    }
+    if (ins.error) throw ins.error;
+    showStoreToast('✅ Booking saved for ' + name + (product ? ' · kitchen request sent' : ''));
     closeBookingForm();
     loadBookingsCalendar();
     refreshReminderBadge();
@@ -495,6 +534,7 @@ async function openBookingDetail(id) {
     + cbDetailRow('🎂 Name on Cake', b.cake_name_text || '—')
     + cbDetailRow('🎨 Theme', b.theme || '—')
     + cbDetailRow('📝 Particulars', b.particulars || '—')
+    + (b.production_product ? cbDetailRow('🍳 Kitchen', b.production_product + ' × ' + (b.production_qty || 1)) : '')
     + '<div style="background:#fff8e6;border:1.5px solid rgba(245,196,48,0.35);border-radius:14px;padding:14px;margin-top:14px">'
     + cbAmountRow('Total Amount', b.total_amount)
     + cbAmountRow('Advance Paid', b.advance_paid)
