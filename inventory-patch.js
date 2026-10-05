@@ -309,7 +309,13 @@ async function saveInvItem() {
 async function deleteInvItem() {
   if (!_invEditId) return;
   if (!confirm('Delete this ingredient? Its movement history will also be removed.')) return;
-  await db.from('inventory_items').delete().eq('id', _invEditId);
+  // Direct deletes are blocked since the Production workspace locked material
+  // writes — report that instead of claiming success. Use Production › Materials › Delete.
+  var del = await db.from('inventory_items').delete().eq('id', _invEditId).select('id');
+  if (del.error || !del.data || !del.data.length) {
+    showStoreToast('Not deleted — use Production › Materials › Delete');
+    return;
+  }
   showStoreToast('Ingredient removed');
   closeInvItemSheet();
   loadInventoryItems();
