@@ -1,0 +1,35 @@
+const fs=require('fs'),assert=require('node:assert/strict');
+const {PGlite}=require('../.production-test-runtime/node_modules/@electric-sql/pglite');
+const OWNER='11111111-1111-1111-1111-111111111111',STAFF='22222222-2222-2222-2222-222222222222';
+(async()=>{
+const db=new PGlite();await db.exec(`create role anon;create role authenticated;create schema auth;
+create table auth.users(id uuid primary key,email text,email_confirmed_at timestamptz);
+insert into auth.users values('${OWNER}','owner@x',now()),('${STAFF}','staff@x',now());
+create table auth.me(id uuid);insert into auth.me values('${OWNER}');
+create function auth.uid() returns uuid language sql as $$select id from auth.me$$;
+create table customers(email text,is_super_user bool);insert into customers values('owner@x',true),('staff@x',false);
+create function cc_can_review_approvals() returns bool language sql as $$select false$$;
+create table cc_production_requests(id uuid primary key default gen_random_uuid(),product_name text,quantity integer,due_date date,status text default 'pending',review_note text);
+create function cc_guard_sales_approval() returns trigger language plpgsql as $$begin if coalesce(current_setting('cc.system_write',true),'')='on' then return new; end if; if old.status='pending' and new.status in ('approved','cancelled') and not cc_can_review_approvals() then raise exception 'Only admin or super admin can approve or reject sales requests'; end if; return new; end$$;
+create trigger g before update on cc_production_requests for each row execute function cc_guard_sales_approval();
+create table cc_production_recipes(id uuid primary key default gen_random_uuid(),product_name text,yield_qty integer,yield_kg numeric);
+insert into cc_production_requests(product_name,quantity,due_date,status) values('Vanilla Cake 1kg',1,'2026-10-12','approved'),('Brownie',10,'2026-10-07','pending'),('Cookie',5,'2026-10-07','baking');
+insert into cc_production_recipes(product_name,yield_qty,yield_kg) values('Vanilla Cake 1kg',10,1);`);
+const sql=fs.readFileSync('migrations/20260964_super_user_overrides.sql','utf8');await db.exec(sql);await db.exec(sql);
+const id=async n=>(await db.query('select id from cc_production_requests where product_name=$1',[n])).rows[0].id;
+const call=(a,p)=>db.query('select cc_super_production($1,$2::jsonb)',[a,JSON.stringify(p)]);
+const rid=(await db.query('select id from cc_production_recipes')).rows[0].id;
+await call('fix_recipe_yield',{id:rid,yield_qty:1,yield_kg:1,note:'1 cake = 1 kg'});
+assert.deepEqual((await db.query('select yield_qty,yield_kg::float k from cc_production_recipes')).rows[0],{yield_qty:1,k:1});
+await call('edit_request',{id:await id('Vanilla Cake 1kg'),quantity:2,due_date:'2026-10-13'});
+let r=(await db.query("select quantity,due_date::text d,status,review_note from cc_production_requests where product_name='Vanilla Cake 1kg'")).rows[0];
+assert.deepEqual([r.quantity,r.d,r.status],[2,'2026-10-13','approved']);assert.match(r.review_note,/Edited by super user: 1→2/);
+await call('cancel_request',{id:await id('Brownie'),note:'not needed'}); // pending -> cancelled passes the guard
+assert.equal((await db.query("select status from cc_production_requests where product_name='Brownie'")).rows[0].status,'cancelled');
+await assert.rejects(call('edit_request',{id:await id('Cookie'),quantity:6}),/Baking has already started/);
+await assert.rejects(call('edit_request',{id:await id('Vanilla Cake 1kg'),quantity:1.5}),/whole number/);
+await assert.rejects(call('fix_recipe_yield',{id:rid,yield_qty:0,yield_kg:1}),/whole number/);
+assert.equal((await db.query('select count(*)::int n from cc_super_overrides')).rows[0].n,3);
+await db.exec(`update auth.me set id='${STAFF}'`);await assert.rejects(call('edit_request',{id:await id('Vanilla Cake 1kg'),quantity:3}),/Only a super user/);
+await db.close();console.log('PASS super overrides: fix recipe yield, edit approved request, cancel pending (guard bypass), blocked once baking, validation, audit rows, non-super refused.');
+})().catch(e=>{console.error(e);process.exit(1);});
