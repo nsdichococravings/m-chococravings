@@ -67,7 +67,7 @@ begin
  end if;
  create temp table if not exists cc_tmp_cust(phone text primary key, name text, first_at timestamptz, last_at timestamptz,
    visits int, recent_visits int, spent numeric, fav text) on commit drop;
- delete from cc_tmp_cust;
+ delete from cc_tmp_cust where true; -- Supabase safeupdate refuses a DELETE without WHERE
  insert into cc_tmp_cust
  select v.phone,
   (array_agg(v.name order by v.visit_at desc) filter (where v.name is not null))[1],
