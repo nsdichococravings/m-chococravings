@@ -43,6 +43,7 @@ await db.exec(`insert into inventory_items(name,unit,current_stock,cost_per_unit
  insert into cc_production_recipes(product_name,yield_qty,yield_kg,ingredients,packaging) values('Cream Shake',1,0.3,'[{"name":"Fresh cream","quantity":0.1,"unit":"liter"},{"name":"Eggs","quantity":0.5,"unit":"dozen"}]','[{"name":"Box","quantity":1,"unit":"pieces"}]');`);
 const sql=fs.readFileSync('migrations/20260958_stock_units_fix.sql','utf8');
 await db.exec(sql);await db.exec(sql); // re-runnable
+await db.exec(fs.readFileSync('migrations/20260972_safeupdate_fix.sql','utf8')); // sales usage below runs on the safeupdate-safe version
 const item=async n=>(await db.query('select unit,current_stock::float s,low_stock_threshold::float l,cost_per_unit::float c from inventory_items where name=$1 union all select unit,current_stock::float,low_stock_threshold::float,cost_per_unit::float from packaging_materials where name=$1',[n])).rows[0];
 assert.deepEqual(await item('Fresh cream'),{unit:'l',s:2,l:1,c:220});
 assert.deepEqual(await item('Eggs'),{unit:'pcs',s:36,l:12,c:5});
