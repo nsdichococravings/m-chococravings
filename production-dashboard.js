@@ -2,11 +2,11 @@
 (function () {
   'use strict';
   const tabs = ['Dashboard', 'Production', 'Materials', 'Recipes', 'Outlet', 'Profit report', 'Approvals'];
-  const sources = { corrections: 'cc_cost_corrections', deletions: 'cc_recipe_delete_requests', materials: 'inventory_items', packaging: 'packaging_materials', purchases: 'material_purchases', menu: 'store_menu', outlet: 'display_stock', requests: 'cc_production_requests', recipes: 'cc_production_recipes', batches: 'cc_production_batches', orders: 'store_orders' };
+  const sources = { corrections: 'cc_cost_corrections', deletions: 'cc_recipe_delete_requests', materials: 'inventory_items', packaging: 'packaging_materials', purchases: 'material_purchases', menu: 'store_menu', outlet: 'display_stock', requests: 'cc_production_requests', recipes: 'cc_production_recipes', batches: 'cc_production_batches', orders: 'store_orders', making: 'cc_making_costs' };
   const screenSources = {
     Dashboard: ['materials','packaging','outlet','requests','batches'], Production: ['requests','batches'],
-    Materials: ['materials','packaging','purchases'], Recipes: ['recipes','menu','materials','packaging','deletions'],
-    Outlet: ['outlet','batches'], 'Profit report': ['orders','batches','recipes','materials','packaging','corrections'],
+    Materials: ['materials','packaging','purchases'], Recipes: ['recipes','menu','materials','packaging','deletions','making'],
+    Outlet: ['outlet','batches'], 'Profit report': ['orders','batches','recipes','materials','packaging','corrections','making'],
     Approvals: ['requests','recipes','deletions','corrections']
   };
   const columns = {
@@ -19,7 +19,8 @@
     cc_production_requests: '*', // includes source / booking_id / notes (20260956)
     cc_production_recipes: 'id,product_name,yield_qty,yield_kg,ingredients,packaging,created_at,approved_by,deleted_at',
     cc_production_batches: 'id,product_name,outlet_name,status,planned_qty,planned_kg,actual_qty,collected_qty,material_cost,packaging_cost,labor_cost,overhead_cost,total_cost,unit_cost,completed_at',
-    store_orders: 'id,items,status,payment_status,created_at'
+    store_orders: 'id,items,status,payment_status,created_at',
+    cc_making_costs: '*' // labour + other per piece (20260962)
   };
   const state = { tab: 'Dashboard', data: {}, errors: [], ready: false, loading: false, busy: false, refreshed: null };
   let root, channel, refreshTimer, previousFocus, loadId = 0, previousOverflow = '', authListener, stockTimer, stockLoading = false, pendingRequest = null;
@@ -244,6 +245,29 @@
   function productionTable() {
     return table(['Product / outlet', 'Requested', 'Status', 'Approved by', 'Action'], rows('requests').map(r => [esc(r.product_name) + '<br><span class="pd-muted">' + esc(r.outlet_name) + '</span>' + requestSource(r), esc(r.quantity) + ' pcs', badge(r.status), approvedBy(r), r.status === 'pending' ? 'Pending admin approval' : r.status === 'approved' ? button('start', 'Plan & start baking', r.id, !state.ready) : '—']));
   }
+  function makingCell(name) {
+    const m = rows('making').find(x => x.product_name === name);
+    return (m ? cash(m.labor_cost) + ' labour<br>' + cash(m.overhead_cost) + ' other' : '<span class="pd-muted">Not set</span>')
+      + '<br><button type="button" data-action="set-making" data-name="' + esc(name) + '" data-labor="' + esc(m ? m.labor_cost : '') + '" data-overhead="' + esc(m ? m.overhead_cost : '') + '"' + (state.ready ? '' : ' disabled') + '>Set</button>';
+  }
+  async function setMakingCost(d) {
+    const labor = window.prompt('Labour cost per piece for ' + d.name + ' (₹)\nStaff time for one piece. Enter 0 if you do not want to count it.', d.labor || '0');
+    if (labor == null) return;
+    const overhead = window.prompt('Other making cost per piece for ' + d.name + ' (₹)\nElectricity, gas, water… Enter 0 if none.', d.overhead || '0');
+    if (overhead == null) return;
+    const l = Number(labor), o = Number(overhead);
+    if (!Number.isFinite(l) || l < 0 || !Number.isFinite(o) || o < 0) { window.alert('Enter amounts of 0 or more.'); return; }
+    const result = await dbClient().rpc('cc_set_making_cost', { p_product: d.name, p_labor: l, p_overhead: o });
+    if (result.error) {
+      const msg = String(result.error.message || result.error);
+      window.alert(/cc_set_making_cost|schema cache/i.test(msg) && !/Only admin|not found/i.test(msg)
+        ? 'The database update is missing. Run migrations/20260962_making_costs.sql in Supabase, then try again.'
+        : 'Could not save: ' + msg);
+      return;
+    }
+    invalidateReads(); await refresh();
+    window.alert('Saved: ' + d.name + ' — labour ₹' + l + ' + other ₹' + o + ' per piece.');
+  }
   function recipeRows() {
     return rows('recipes').filter(r => !r.deleted_at).map(r => {
       const pending = rows('deletions').find(d => d.recipe_id === r.id && d.status === 'pending');
@@ -251,7 +275,7 @@
         (canReviewDeletion ? '<p>Review in the Approvals tab.</p>' : '') :
         button('edit-recipe','Edit recipe',r.id,!state.ready) + ' ' + button('delete-recipe','Request deletion',r.id,!state.ready || !state.data.deletions);
       const cells = [esc(r.product_name) + '<br><span class="pd-muted">' + date(r.created_at) + ' · ' + esc(r.id.slice(0,8)) + '</span><div class="pd-line">' + controls + '</div>',
-        esc(r.yield_qty) + ' pcs / ' + esc(r.yield_kg) + ' kg', (r.ingredients || []).map(recipeLineLabel).join('<br>'), (r.packaging || []).map(recipeLineLabel).join('<br>') || 'None'];
+        esc(r.yield_qty) + ' pcs / ' + esc(r.yield_kg) + ' kg', (r.ingredients || []).map(recipeLineLabel).join('<br>'), (r.packaging || []).map(recipeLineLabel).join('<br>') || 'None', makingCell(r.product_name)];
       return pending ? cells.map(c => '<div class="pd-delete-pending">' + c + '</div>') : cells;
     });
   }
@@ -284,6 +308,12 @@
         if(kind==='ingredients') material+=cost; else packaging+=cost;
       }
     }
+    // Labour + other per piece set on the recipe (cc_making_costs) completes the cost.
+    const making=rows('making').find(m=>m.product_name===name);
+    if (making) {
+      const labor=num(making.labor_cost), overhead=num(making.overhead_cost);
+      return {cost:material+packaging+labor+overhead,material,packaging,labor,overhead,extra:labor+overhead,complete:true,basis:'Recipe ingredients + packaging, plus labour & other per piece'};
+    }
     return {cost:material+packaging,material,packaging,extra:0,complete:false,basis:'Recipe ingredients and packaging only'};
   }
   function profitRows() {
@@ -310,7 +340,7 @@
           '<br>Labor + electricity / other making costs: '+(r.complete?cash(r.extra/r.quantity):'Not fully recorded')+'</p>'+
           '<p>'+ (full?'Making cost':'Recorded cost only')+': '+cash(r.cost/r.quantity)+' per piece × '+esc(r.quantity)+' pieces = '+cash(r.cost)+'</p>'+
           (full?'<p>Estimated profit: '+cash(r.gross)+' sales − '+cash(r.cost)+' making cost = <strong>'+cash(r.gross-r.cost)+'</strong></p>':
-          '<p>Request a cost correction below with all four making costs, or record a completed production batch. A correction changes this report only after admin approval.</p>'):
+          '<p>Set labour & other cost per piece (no approval needed), request a cost correction with all four making costs, or record a completed production batch.</p><p><button type="button" data-action="set-making" data-name="'+esc(name)+'"'+(state.ready?'':' disabled')+'>Set labour & other cost</button></p>'):
           '<p>'+esc([...r.missing].join('; '))+'</p>')+
         '<p class="pd-muted">'+esc([...r.bases].join('; '))+'</p>'+
         (pending?'<p class="pd-notice">Cost correction pending admin approval. Current costs remain in use.</p>':button('cost-correction','Request cost correction',name,!state.data.corrections))+'</details>';
@@ -404,7 +434,7 @@
     if (state.tab === 'Dashboard') html += cards([['Raw material value', cash(totalValue), 'Current recorded unit costs'], ['Ready at kitchen', readyQty + ' pcs', 'Awaiting collection'], ['Outlet stock', rows('outlet').reduce((s, r) => s + num(r.current_stock), 0) + ' pcs', 'Current display stock'], ['Active requests', rows('requests').filter(r => !['fulfilled', 'cancelled'].includes(r.status)).length, 'Sales demand']]) + '<div class="pd-grid"><div class="pd-stack"><section class="pd-card"><div class="pd-row"><h3>Production requests</h3>' + button('request', 'New sales request', null, !state.ready) + '</div>' + productionTable() + '</section>' + toBuyCard() + '</div>' + readyPanel() + '</div>';
     if (state.tab === 'Production') html += '<div class="pd-grid"><div class="pd-stack"><section class="pd-card"><div class="pd-row"><h3>Sales requests</h3>' + button('request', 'New sales request', null, !state.ready) + '</div>' + productionTable() + '</section><section class="pd-card"><h3>Batches</h3>' + table(['Product', 'Planned', 'Actual', 'Cost', 'Status / action'], rows('batches').map(b => [esc(b.product_name), esc(b.planned_qty) + ' pcs / ' + esc(b.planned_kg) + ' kg', b.actual_qty == null ? '—' : esc(b.actual_qty) + ' pcs', cash(b.total_cost), badge(b.status) + ' ' + (b.status === 'baking' ? button('complete', 'Submit baked batch', b.id, !state.ready) : '')])) + '</section></div>' + readyPanel() + '</div>';
     if (state.tab === 'Materials') html += '<div class="pd-stack">' + toBuyCard() + '<section class="pd-card"><div class="pd-row"><h3>Raw materials</h3>' + button('purchase', 'Record stock-in', null, !state.ready) + '</div>' + table(['Material', 'Available', 'Reorder level', 'Unit cost', 'Stock value', ''], raw.map(r => [esc(r.name), esc(r.current_stock) + ' ' + esc(r.unit), reorderCell('raw', r, 'name'), cash(r.cost_per_unit) + ' <span class="pd-muted">/ ' + esc(r.unit) + '</span>', r.cost_per_unit == null ? 'Cost unavailable' : cash(num(r.current_stock) * num(r.cost_per_unit)), materialActions('raw', r)])) + '</section><section class="pd-card"><h3>Packaging by category</h3>' + table(['Packaging', 'Category', 'Available', 'Reorder level', 'Unit cost', ''], rows('packaging').map(r => [esc(r.name), esc(r.category || 'Uncategorized'), esc(r.current_stock) + ' ' + esc(r.unit), reorderCell('packaging', r, 'name'), cash(r.cost_per_unit) + ' <span class="pd-muted">/ ' + esc(r.unit) + '</span>', materialActions('packaging', r)])) + '</section><section class="pd-card"><h3>Stock-in history</h3>' + table(['Date', 'Material', 'Quantity', 'Total cost'], rows('purchases').slice().sort((a,b) => String(b.purchase_date).localeCompare(String(a.purchase_date))).slice(0,100).map(r => [date(r.purchase_date), esc(r.item_name), esc(r.quantity) + ' ' + esc(r.unit), cash(r.cost_total)])) + '</section></div>';
-    if (state.tab === 'Recipes') html += '<section class="pd-card"><div class="pd-row"><h3>Production recipes</h3>' + button('recipe', 'Add recipe version', null, !state.ready) + '</div>' + table(['Product / revision', 'Base yield', 'Ingredients', 'Packaging'], recipeRows()) + '</section>';
+    if (state.tab === 'Recipes') html += '<section class="pd-card"><div class="pd-row"><h3>Production recipes</h3>' + button('recipe', 'Add recipe version', null, !state.ready) + '</div>' + table(['Product / revision', 'Base yield', 'Ingredients', 'Packaging', 'Labour + other / piece'], recipeRows()) + '</section>';
     if (state.tab === 'Outlet') html += '<div class="pd-grid"><section class="pd-card"><h3>Main outlet stock</h3>' + table(['Product', 'Available', 'Reorder level', 'Auto kitchen request'], rows('outlet').map(r => [esc(r.item_name), esc(r.current_stock) + ' pcs', reorderCell('outlet', r, 'item_name'), r.auto_restock === false ? 'Off (made to order) <button type="button" data-action="auto-restock" data-name="' + esc(r.item_name) + '" data-level="' + esc(r.low_stock_threshold) + '" data-on="1">Turn on</button>' : 'On <button type="button" data-action="auto-restock" data-name="' + esc(r.item_name) + '" data-level="' + esc(r.low_stock_threshold) + '" data-on="0">Turn off</button>'])) + '<p class="pd-muted">Sales reduce this stock automatically. At or below the reorder level a sales request is created by itself (Auto · low stock). Booked cakes are made to order, so auto is off for them.</p></section>' + readyPanel() + '</div>';
     if (state.tab === 'Approvals' && canReviewDeletion) html += approvalsPanel();
     if (state.tab === 'Profit report') {
@@ -727,6 +757,7 @@
         else if (action === 'export') exportCosts();
         else if (action === 'share-to-buy') shareToBuy();
         else if (action === 'set-cost') await setMaterialCost(target.dataset);
+        else if (action === 'set-making') await setMakingCost(target.dataset);
         else if (action === 'delete-material') await deleteMaterial(target.dataset);
         else if (action === 'reorder') await editReorderLevel(target.dataset.kind, target.dataset.name, target.dataset.level);
         else if (action === 'auto-restock') { const r = await dbClient().rpc('cc_set_reorder_level', { p_kind: 'outlet', p_name: target.dataset.name, p_level: num(target.dataset.level), p_auto: target.dataset.on === '1' }); if (r.error) throw r.error; invalidateReads(); await refresh(); }
