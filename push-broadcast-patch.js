@@ -35,6 +35,7 @@ function pbInit() {
     +       '<option value="/index.html">Home</option>'
     +       '<option value="/index.html?open=orders">My Orders</option>'
     +     '</select></label>'
+    +   '<div id="pb-reach" style="font-size:12px;color:#4b2a55;background:#f4ecf7;border-radius:10px;padding:9px 11px"></div>'
     +   '<div id="pb-status" style="font-size:12px;color:#79677e;min-height:16px"></div>'
     +   '<button type="button" id="pb-send" onclick="pbSend()" style="padding:13px;border:0;border-radius:14px;background:#6e0977;color:#fff;font-weight:700;font-size:14px;cursor:pointer">Send to all customers</button>'
     + '</div>';
@@ -47,6 +48,24 @@ function pbOpen() {
   pbInit();
   document.getElementById('pb-status').textContent = '';
   if (!_pbDialog.open) _pbDialog.showModal();
+  pbLoadReach();
+}
+
+// "Reaches N customers" line (cc_push_reach, migrations/20260974_push_reach.sql).
+async function pbLoadReach() {
+  var el = document.getElementById('pb-reach'); if (!el) return;
+  el.textContent = 'Checking how many customers this reaches…';
+  try {
+    var res = await db.rpc('cc_push_reach');
+    if (res.error) throw res.error;
+    var r = res.data || {};
+    el.innerHTML = r.customers
+      ? '📱 Reaches <b>' + r.customers + ' customer' + (r.customers === 1 ? '' : 's') + '</b> on ' + r.devices + ' device' + (r.devices === 1 ? '' : 's')
+        + (r.new_7d ? ' · +' + r.new_7d + ' this week' : '')
+      : '📱 <b>No customer has turned on notifications yet.</b> Customers turn them on in the customer app (after ordering, or Profile → Order Notifications). Use WhatsApp for offers until more join.';
+  } catch (e) {
+    el.textContent = /cc_push_reach|schema cache/i.test(String(e.message || e)) ? 'Run migrations/20260974_push_reach.sql to see how many customers this reaches.' : '';
+  }
 }
 
 function pbClose() {
@@ -66,8 +85,10 @@ async function pbSend() {
     var res = await db.functions.invoke('send-push', { body: { type: 'broadcast', title: title, body: body, url: url } });
     if (res.error) throw res.error;
     var r = res.data || {};
-    status.textContent = '✅ Sent to ' + (r.sent || 0) + ' device' + (r.sent === 1 ? '' : 's')
-      + (r.removed ? ' (' + r.removed + ' expired removed)' : '') + '.';
+    status.textContent = r.sent
+      ? '✅ Sent to ' + r.sent + ' device' + (r.sent === 1 ? '' : 's') + (r.removed ? ' (' + r.removed + ' expired removed)' : '') + '.'
+      : 'Sent to 0 devices — no customer phone has notifications on yet' + (r.removed ? ' (' + r.removed + ' expired removed)' : '') + '.';
+    pbLoadReach();
     document.getElementById('pb-title').value = '';
     document.getElementById('pb-body').value = '';
   } catch (e) {

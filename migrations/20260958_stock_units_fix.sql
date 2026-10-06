@@ -81,7 +81,7 @@ language plpgsql security definer set search_path=pg_catalog,public as $$
 declare r record; v_unit text; v_stock numeric; v_move numeric;
 begin
  create temp table if not exists cc_tmp_usage(kind text, name text, unit text, quantity numeric) on commit drop;
- delete from cc_tmp_usage;
+ delete from cc_tmp_usage where true; -- Supabase safeupdate refuses a DELETE without WHERE
  if coalesce(p_status,'') <> 'cancelled' then
   insert into cc_tmp_usage(kind,name,unit,quantity)
   select l.kind, l.name, l.unit, sum(l.qty)

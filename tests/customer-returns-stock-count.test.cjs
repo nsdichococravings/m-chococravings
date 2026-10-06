@@ -34,6 +34,7 @@ await db.exec([ins('+919876543210','Priya',120,[{name:'Brownie',qty:2}]),ins('+9
  ins('+919555555555','Gone',10,[],'cancelled')].join(''));
 await db.exec(`insert into orders(customer_id,total,status,created_at) values('c2',300,'delivered',${ago(35)}),('c2',300,'delivered',${ago(50)})`);
 const sql=fs.readFileSync('migrations/20260970_customer_returns_stock_count.sql','utf8');await db.exec(sql);await db.exec(sql);
+const fix=fs.readFileSync('migrations/20260972_safeupdate_fix.sql','utf8');await db.exec(fix);await db.exec(fix); // report keeps working after the safeupdate fix
 const r=(await db.query('select cc_customer_returns(30) r')).rows[0].r;
 assert.deepEqual(r.summary,{days:30,active:2,new:1,returning:1,total_known:6}); // Meena + New in the last 30 days
 assert.deepEqual(r.missing.map(m=>[m.phone,m.visits,m.has_app,m.fav]),[['9876543210',4,true,'Brownie'],['9111111111',3,false,'Cookie']]);
