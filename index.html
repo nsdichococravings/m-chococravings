@@ -1605,7 +1605,7 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
           <span class="marrow">›</span>
         </div>
         <div class="mitem" id="prof-push-item" onclick="togglePushNotifications()" style="display:none">
-          <div class="mtxt"><div class="mtitle">🔔 Order Notifications</div><div class="msub" id="prof-push-sub">Off — tap to turn on</div></div>
+          <div class="mtxt"><div class="mtitle">🔔 Order Notifications & Offers</div><div class="msub" id="prof-push-sub">Off — tap to turn on</div></div>
           <span class="marrow">›</span>
         </div>
         <div class="mitem" id="prof-refer-item" onclick="shareReferral()" style="display:none">
@@ -1883,11 +1883,12 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 
       <div style="padding:18px 22px;display:flex;flex-direction:column;gap:14px">
 
-        <!-- PUSH OPT-IN (shown by pushRefreshUI when available and not yet on) -->
-        <div id="succ-push" style="display:none;background:rgba(107,47,206,.12);border:1px solid rgba(107,47,206,.3);border-radius:16px;padding:14px 16px">
-          <div style="font-size:13px;font-weight:700;color:var(--white);margin-bottom:4px">🔔 Get order updates on this phone</div>
-          <div style="font-size:12px;color:var(--dim);margin-bottom:10px">We'll let you know when it's baking, out for delivery and delivered.</div>
-          <button onclick="enablePushNotifications()" style="width:100%;padding:11px;border:0;border-radius:12px;background:var(--p);color:#fff;font-weight:700;font-size:13px;cursor:pointer">Turn on notifications</button>
+        <!-- PUSH OPT-IN (shown by pushRefreshUI until notifications are on) -->
+        <div id="succ-push" style="display:none;background:linear-gradient(135deg,rgba(107,47,206,.22),rgba(107,47,206,.08));border:1px solid rgba(107,47,206,.4);border-radius:16px;padding:14px 16px">
+          <div style="font-size:14px;font-weight:800;color:var(--white);margin-bottom:4px">🔔 Know the moment it's ready</div>
+          <div id="succ-push-hint" style="font-size:12px;color:var(--dim);margin-bottom:10px">We'll tell you when it's baking, ready and delivered — plus members-only offers.</div>
+          <button id="succ-push-btn" onclick="enablePushNotifications()" style="width:100%;padding:11px;border:0;border-radius:12px;background:var(--p);color:#fff;font-weight:700;font-size:13px;cursor:pointer">🔔 Turn on notifications</button>
+          <button onclick="pushLater()" style="width:100%;margin-top:6px;padding:6px;border:0;background:transparent;color:var(--dim);font-size:11px;cursor:pointer">Not now</button>
         </div>
 
         <!-- ORDER DETAILS CARD -->
@@ -2885,53 +2886,148 @@ async function currentPushSubscription() {
   return reg.pushManager.getSubscription();
 }
 
+// Where this phone stands for notifications, so we can show the right help:
+//  'ios-browser' iPhone/iPad in Safari: must Add to Home Screen first
+//  'inapp'       opened inside WhatsApp / Instagram / Facebook / Gmail
+//  'unsupported' browser without Web Push
+//  'denied'      the person (or the phone) blocked notifications
+//  'ask'         can ask now;  'on' already receiving
+function pushIsIOS() { return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+function pushIsStandalone() { return !!(window.navigator.standalone || (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)); }
+function pushIsInApp() { return /FBAN|FBAV|Instagram|WhatsApp|Line\/|GSA\/|; wv\)/i.test(navigator.userAgent); }
+async function pushState() {
+  if (pushIsInApp()) return 'inapp';
+  if (pushIsIOS() && !pushIsStandalone()) return 'ios-browser';
+  if (!pushSupported()) return 'unsupported';
+  if (Notification.permission === 'denied') return 'denied';
+  if (Notification.permission === 'granted') {
+    try { if (await currentPushSubscription()) return 'on'; } catch(e) {}
+  }
+  return 'ask';
+}
+
 // Shows/hides the opt-in card and Profile row. With resync=true, re-saves an
 // existing subscription so it stays linked to whoever is signed in now.
+// If the phone already allows notifications but isn't registered yet, it is
+// registered quietly (no prompt is needed for that).
 async function pushRefreshUI(resync) {
   var card = document.getElementById('succ-push'), item = document.getElementById('prof-push-item'), sub = document.getElementById('prof-push-sub');
-  if (!pushSupported() || !currentUser || !currentUser.db_id || !(await getVapidKey())) {
+  if (!currentUser || !currentUser.db_id || !(await getVapidKey())) {
     if (card) card.style.display = 'none';
     if (item) item.style.display = 'none';
     return;
   }
-  var on = false;
-  try {
-    var existing = Notification.permission === 'granted' ? await currentPushSubscription() : null;
-    if (existing) { on = true; if (resync) savePushSubscription(existing).catch(function(){}); }
-  } catch(e) {}
-  var blocked = Notification.permission === 'denied';
-  if (card) card.style.display = on || blocked ? 'none' : '';
+  var state = await pushState();
+  if (state === 'on' && resync) { try { savePushSubscription(await currentPushSubscription()).catch(function(){}); } catch(e) {} }
+  if (state === 'ask' && Notification.permission === 'granted') {
+    try { if (await pushSubscribeNow()) state = 'on'; } catch(e) {}
+  }
+  var text = {
+    on: 'On — tap to turn off',
+    ask: 'Off — tap to turn on',
+    denied: 'Blocked on this phone — tap for the 1-minute fix',
+    'ios-browser': 'Add the app to your Home Screen first — tap to see how',
+    inapp: 'Open in Chrome to turn on — tap to see how',
+    unsupported: 'Not supported in this browser — tap for help'
+  }[state];
   if (item) item.style.display = '';
-  if (sub) sub.textContent = on ? 'On — tap to turn off' : blocked ? 'Blocked — allow notifications in your phone settings' : 'Off — tap to turn on';
+  if (sub) sub.textContent = text;
+  if (card) {
+    var dismissed = false; try { dismissed = sessionStorage.getItem('cc_push_later') === '1'; } catch(e) {}
+    card.style.display = state === 'on' || dismissed ? 'none' : '';
+    var btn = document.getElementById('succ-push-btn'), hint = document.getElementById('succ-push-hint');
+    if (btn) btn.textContent = state === 'ask' ? '🔔 Turn on notifications' : state === 'denied' ? 'Unblock notifications (1 minute)' : state === 'ios-browser' ? 'How to add to Home Screen' : state === 'inapp' ? 'How to open in Chrome' : 'See how';
+    if (hint) hint.textContent = state === 'denied' ? 'Notifications are blocked on this phone, so you will miss order updates and offers.'
+      : state === 'ios-browser' ? 'On iPhone, notifications work once ChocoCravings is on your Home Screen.'
+      : state === 'inapp' ? 'This page is open inside another app, which cannot show notifications.'
+      : "We'll tell you when it's baking, ready and delivered — plus members-only offers.";
+  }
 }
 
+async function pushSubscribeNow() {
+  var key = await getVapidKey(); if (!key) return false;
+  var reg = await navigator.serviceWorker.ready;
+  var sub = await reg.pushManager.getSubscription()
+    || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8Array(key) });
+  await savePushSubscription(sub);
+  return true;
+}
+
+// One button for every case: asks when it can, otherwise shows the steps
+// for this exact phone (blocked, iPhone in Safari, inside WhatsApp…).
 async function enablePushNotifications() {
+  var state = await pushState();
+  if (state === 'on') { showToast('🔔 Notifications are already on'); return pushRefreshUI(); }
+  if (state !== 'ask') return showPushHelp(state);
   try {
-    var key = await getVapidKey();
-    if (!pushSupported() || !key) { showToast('Notifications are not available on this device'); return; }
     var perm = await Notification.requestPermission();
-    if (perm !== 'granted') { showToast('Notifications not allowed'); pushRefreshUI(); return; }
-    var reg = await navigator.serviceWorker.ready;
-    var sub = await reg.pushManager.getSubscription()
-      || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64ToUint8Array(key) });
-    await savePushSubscription(sub);
-    showToast('🔔 Order updates turned on');
+    if (perm !== 'granted') { pushRefreshUI(); if (perm === 'denied') showPushHelp('denied'); else showToast('You can turn them on any time from Profile'); return; }
+    await pushSubscribeNow();
+    showToast('🔔 Notifications turned on');
   } catch(e) {
     console.warn('push enable:', e);
-    showToast('Could not turn on notifications');
+    var msg = String((e && e.message) || e || '');
+    showToast(/profile not found/i.test(msg) ? 'Please complete your profile, then try again' : 'Could not turn on notifications' + (msg ? ': ' + msg.slice(0, 60) : ''));
   }
   pushRefreshUI();
 }
+function pushLater() {
+  try { sessionStorage.setItem('cc_push_later', '1'); } catch(e) {}
+  var card = document.getElementById('succ-push'); if (card) card.style.display = 'none';
+}
 
 async function togglePushNotifications() {
+  var state = await pushState();
+  if (state !== 'on') return enablePushNotifications();
   try {
-    var sub = Notification.permission === 'granted' ? await currentPushSubscription() : null;
-    if (!sub) { if (Notification.permission === 'denied') showToast('Allow notifications for this app in your phone settings'); else await enablePushNotifications(); return; }
+    var sub = await currentPushSubscription();
     await db.rpc('cc_push_unsubscribe', { p_endpoint: sub.endpoint });
     await sub.unsubscribe();
-    showToast('Order notifications turned off');
+    showToast('Notifications turned off');
   } catch(e) { console.warn('push toggle:', e); }
   pushRefreshUI();
+}
+
+// Step-by-step help for the phone in hand.
+function showPushHelp(state) {
+  var android = /Android/i.test(navigator.userAgent), installed = pushIsStandalone();
+  var site = location.host;
+  var steps, title;
+  if (state === 'ios-browser') {
+    title = 'Add ChocoCravings to your Home Screen';
+    steps = ['Tap the <b>Share</b> button <span style="font-size:15px">⬆️</span> at the bottom of Safari.', 'Scroll and tap <b>Add to Home Screen</b>, then <b>Add</b>.', 'Open ChocoCravings from the new <b>Home Screen icon</b> and sign in.', 'Go to <b>Profile → Order Notifications</b> and tap <b>Allow</b>.'];
+  } else if (state === 'inapp') {
+    title = 'Open in Chrome';
+    steps = ['Tap <b>⋮</b> (or <b>…</b>) at the top right of this screen.', 'Choose <b>Open in Chrome</b> / <b>Open in browser</b>.', 'Sign in, then go to <b>Profile → Order Notifications</b> and tap <b>Allow</b>.'];
+  } else if (state === 'denied' && pushIsIOS()) {
+    title = 'Unblock notifications on iPhone';
+    steps = ['Open the iPhone <b>Settings</b> app.', 'Tap <b>Notifications</b> → <b>ChocoCravings</b>.', 'Turn on <b>Allow Notifications</b>.', 'Come back here and tap <b>Check again</b>.'];
+  } else if (state === 'denied' && android && installed) {
+    title = 'Unblock notifications';
+    steps = ['Go to your Home Screen and <b>long-press</b> the ChocoCravings icon.', 'Tap <b>App info</b> (ⓘ) → <b>Notifications</b> → turn <b>On</b>.', 'Come back here and tap <b>Check again</b>.'];
+  } else if (state === 'denied') {
+    title = 'Unblock notifications';
+    steps = ['Tap the <b>icon left of the web address</b> (🔒 or ⚙︎) at the top of Chrome.', 'Tap <b>Permissions</b> → <b>Notifications</b> → <b>Allow</b>.' + '<br><span style="opacity:.7">(Or Chrome ⋮ → Settings → Site settings → Notifications → ' + site + ' → Allow)</span>',
+      'If still blocked: phone <b>Settings → Apps → Chrome → Notifications → On</b>.', 'Tap <b>Check again</b> below.'];
+  } else {
+    title = 'Notifications on this browser';
+    steps = ['Open ChocoCravings in <b>Chrome</b> (Android) or from the <b>Home Screen</b> (iPhone).', 'Sign in and go to <b>Profile → Order Notifications</b>.'];
+  }
+  var old = document.getElementById('push-help'); if (old) old.remove();
+  var wrap = document.createElement('div');
+  wrap.id = 'push-help';
+  wrap.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(10,0,20,.6);display:flex;align-items:flex-end;justify-content:center';
+  wrap.innerHTML = '<div role="dialog" aria-modal="true" aria-label="' + title + '" style="width:100%;max-width:480px;background:var(--card,#1d1226);color:var(--white,#fff);border-radius:22px 22px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom,0px));box-shadow:0 -10px 40px rgba(0,0,0,.4)">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px"><div style="font-size:17px;font-weight:800">🔔 ' + title + '</div>'
+    + '<button type="button" onclick="document.getElementById(\'push-help\').remove()" aria-label="Close" style="width:34px;height:34px;border-radius:50%;border:0;background:rgba(255,255,255,.08);color:inherit;font-size:16px;cursor:pointer">✕</button></div>'
+    + '<div style="font-size:12px;color:var(--dim,#bbb);margin-bottom:12px">Get order updates and members-only offers. It only takes a minute, once.</div>'
+    + '<ol style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px">'
+    + steps.map(function (t, i) { return '<li style="display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.45"><span style="flex-shrink:0;width:24px;height:24px;border-radius:50%;background:var(--p,#6b2fce);color:#fff;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center">' + (i + 1) + '</span><span>' + t + '</span></li>'; }).join('')
+    + '</ol>'
+    + (state === 'denied' ? '<button type="button" onclick="location.reload()" style="margin-top:16px;width:100%;padding:12px;border:0;border-radius:12px;background:var(--p,#6b2fce);color:#fff;font-weight:700;font-size:13px;cursor:pointer">Check again</button>' : '')
+    + '</div>';
+  wrap.addEventListener('click', function (e) { if (e.target === wrap) wrap.remove(); });
+  document.body.appendChild(wrap);
 }
 
 // ── LOYALTY CARD (Home) ──
