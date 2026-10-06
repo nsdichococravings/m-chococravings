@@ -1,0 +1,21 @@
+const fs=require('fs'),assert=require('node:assert/strict');
+const {PGlite}=require('../.production-test-runtime/node_modules/@electric-sql/pglite');
+(async()=>{
+const db=new PGlite();await db.exec(`create role anon;create role authenticated;create schema auth;
+create table auth.me(role text);insert into auth.me values('production');
+create function auth.uid() returns uuid language sql as $$select case when (select role from auth.me) is null then null else '11111111-1111-1111-1111-111111111111'::uuid end$$;
+create function cc_production_role() returns text language sql as $$select role from auth.me$$;
+create function cc_production_access() returns bool language sql as $$select (select role from auth.me) is not null$$;
+create table store_menu(name text);insert into store_menu values('Instant Coffee');
+create table cc_production_recipes(product_name text);insert into cc_production_recipes values('Brownie base');`);
+const sql=fs.readFileSync('migrations/20260962_making_costs.sql','utf8');await db.exec(sql);await db.exec(sql);
+const set=(p,l,o)=>db.query('select cc_set_making_cost($1,$2,$3)',[p,l,o]);
+await set(' Instant Coffee ',2,0.5);await set('Instant Coffee',2.5,1);await set('Brownie base',0,0);
+await assert.rejects(set('Nope',1,1),/Product not found/);
+await assert.rejects(set('Instant Coffee',-1,1),/0 or more/);
+await assert.rejects(set('Instant Coffee',null,1),/0 or more/);
+assert.deepEqual((await db.query('select product_name,labor_cost::float l,overhead_cost::float o from cc_making_costs order by 1')).rows,[{product_name:'Brownie base',l:0,o:0},{product_name:'Instant Coffee',l:2.5,o:1}]);
+await db.exec("update auth.me set role='sales'");await assert.rejects(set('Instant Coffee',1,1),/Only admin or production/);
+await db.exec('set role anon');await assert.rejects(db.query('select * from cc_making_costs'),/permission denied/);await db.exec('reset role');
+await db.close();console.log('PASS making costs: upsert per product, trims name, validation, role check, private to anon.');
+})().catch(e=>{console.error(e);process.exit(1);});
