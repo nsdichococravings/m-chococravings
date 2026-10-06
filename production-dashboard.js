@@ -113,6 +113,7 @@
       let query = dbClient().from(tableName).select(columns[tableName]);
       if (tableName === 'material_purchases') query = query.order('purchase_date', { ascending: false }).order('id').limit(100);
       else if (tableName === 'store_orders') query = query.gte('created_at', new Date(Date.now() - 30 * 86400000).toISOString()).eq('status','collected').eq('payment_status','paid').order('created_at').order('id');
+      else if (tableName === 'cc_making_costs') query = query.order('product_name'); // keyed by product, no id column
       else query = query.order('id');
       const response = await query.range(from, tableName === 'material_purchases' ? 99 : from + 499);
       if (response.error) throw response.error;
