@@ -2848,6 +2848,10 @@ function openFromLink() {
       history.replaceState(null, '', window.location.pathname);
       setTimeout(loadAndShowOrders, 300);
     }
+    if (params.get('open') === 'updates' && currentUser && currentUser.db_id) {
+      history.replaceState(null, '', window.location.pathname);
+      setTimeout(openNotificationSheet, 300);
+    }
   } catch(e) {}
 }
 
@@ -7883,6 +7887,70 @@ var NOTIF_COLORS = {
   custom_order:      '#9c0ca1'
 };
 
+// ── OFFERS (Send Notification) ──
+// Saved by the send-push Edge Function in cc_broadcasts (migrations/20260976).
+// A notification tap opens index.html?offer=<id>; offers also appear under
+// the 🔔 bell. Read state is kept on this phone.
+function offerEsc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function offerReadSet() { try { return JSON.parse(localStorage.getItem('cc_offers_read') || '[]'); } catch (e) { return []; } }
+function offerMarkRead(id, quiet) {
+  var set = offerReadSet(); if (set.indexOf(id) < 0) { set.push(id); try { localStorage.setItem('cc_offers_read', JSON.stringify(set.slice(-100))); } catch (e) {} }
+  if (quiet) return;
+  var now = new Date().toISOString();
+  _notifData = _notifData.map(function (n) { return n.id === 'offer-' + id ? Object.assign({}, n, { read_at: n.read_at || now }) : n; });
+  if (typeof renderNotifList === 'function') renderNotifList();
+  updateNotifBadge();
+}
+async function loadOfferItems() {
+  try {
+    var res = await db.from('cc_broadcasts').select('id,title,body,created_at').order('created_at', { ascending: false }).limit(20);
+    if (res.error || !res.data) return [];
+    var read = offerReadSet();
+    return res.data.map(function (b) {
+      return { id: 'offer-' + b.id, subject: offerEsc(b.title), message: offerEsc(b.body), template_name: 'promo', sent_at: b.created_at, read_at: read.indexOf(b.id) >= 0 ? b.created_at : null };
+    });
+  } catch (e) { return []; }
+}
+async function showOffer(id) {
+  var res = await db.from('cc_broadcasts').select('id,title,body,target,created_at').eq('id', id).maybeSingle();
+  var b = res && res.data;
+  if (!b) { showToast('This offer has ended'); return; }
+  offerMarkRead(b.id, true);
+  var old = document.getElementById('offer-view'); if (old) old.remove();
+  var when = new Date(b.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  var wrap = document.createElement('div');
+  wrap.id = 'offer-view';
+  wrap.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(10,0,20,.6);display:flex;align-items:center;justify-content:center;padding:20px';
+  wrap.innerHTML = '<div role="dialog" aria-modal="true" aria-labelledby="offer-view-title" style="width:100%;max-width:400px;border-radius:24px;overflow:hidden;background:#fffaf3;color:#1a0820;box-shadow:0 20px 60px rgba(0,0,0,.45)">'
+    + '<div style="position:relative;padding:26px 22px 20px;background:linear-gradient(140deg,#3b1a08,#6e0977 60%,#9c0ca1);color:#fff">'
+    +   '<button type="button" onclick="document.getElementById(\'offer-view\').remove()" aria-label="Close" style="position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;border:0;background:rgba(255,255,255,.16);color:#fff;font-size:16px;cursor:pointer">✕</button>'
+    +   '<div style="font-size:10px;font-weight:700;letter-spacing:2.5px;opacity:.75">🏷️ CHOCOCRAVINGS OFFER · ' + offerEsc(when) + '</div>'
+    +   '<div id="offer-view-title" style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:28px;font-weight:700;line-height:1.15;margin-top:8px">' + offerEsc(b.title) + '</div>'
+    + '</div>'
+    + '<div style="padding:20px 22px 22px">'
+    +   '<div style="font-size:15px;line-height:1.6;white-space:pre-wrap">' + offerEsc(b.body) + '</div>'
+    +   '<div style="font-size:11px;color:#8c647f;margin-top:12px">Show this screen at the counter, or order in the app.</div>'
+    +   '<button type="button" id="offer-view-go" style="margin-top:16px;width:100%;padding:13px;border:0;border-radius:14px;background:#6e0977;color:#fff;font-weight:700;font-size:14px;cursor:pointer">' + (/open=orders/.test(b.target || '') ? 'View my orders' : '🛍️ Order now') + '</button>'
+    + '</div></div>';
+  wrap.addEventListener('click', function (e) { if (e.target === wrap) wrap.remove(); });
+  document.body.appendChild(wrap);
+  document.getElementById('offer-view-go').onclick = function () {
+    wrap.remove();
+    if (/open=orders/.test(b.target || '') && currentUser && currentUser.db_id) loadAndShowOrders();
+    else { try { setNav('home'); } catch (e) {} showPage('home'); }
+  };
+}
+// Notification tap: index.html?offer=<id> — works signed in or not.
+window.addEventListener('load', function () {
+  var id = null; try { id = new URLSearchParams(location.search).get('offer'); } catch (e) {}
+  if (!id) return;
+  history.replaceState(null, '', location.pathname);
+  var tries = 0, t = setInterval(function () {
+    if (typeof db !== 'undefined' && db) { clearInterval(t); showOffer(id); }
+    else if (++tries > 40) clearInterval(t);
+  }, 250);
+});
+
 async function loadNotifications() {
   if (!currentUser || !currentUser.db_id) return;
   try {
@@ -7893,7 +7961,8 @@ async function loadNotifications() {
       .order('sent_at', { ascending: false })
       .limit(50);
     if (error || !data) return;
-    _notifData = data;
+    _notifData = data.concat(await loadOfferItems())
+      .sort(function (a, b) { return String(b.sent_at).localeCompare(String(a.sent_at)); });
     updateNotifBadge();
   } catch(e) { console.warn('loadNotifications:', e.message); }
 }
@@ -8040,6 +8109,7 @@ function renderNotifList() {
 
 async function markNotifRead(notifId) {
   if (!notifId) return;
+  if (String(notifId).indexOf('offer-') === 0) { offerMarkRead(notifId.slice(6)); return showOffer(notifId.slice(6)); }
   var now = new Date().toISOString();
   _notifData = _notifData.map(function(n) {
     return n.id === notifId ? Object.assign({}, n, { read_at: now }) : n;
@@ -8053,6 +8123,7 @@ async function markNotifRead(notifId) {
 
 async function markAllNotifsRead() {
   var now = new Date().toISOString();
+  _notifData.forEach(function (n) { if (String(n.id).indexOf('offer-') === 0) offerMarkRead(n.id.slice(6), true); });
   _notifData = _notifData.map(function(n){
     return Object.assign({}, n, { read_at: n.read_at || now });
   });

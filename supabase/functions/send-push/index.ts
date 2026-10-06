@@ -55,6 +55,7 @@ Deno.serve(async (req) => {
   try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
 
   let payload: { title: string; body: string; url: string; tag?: string };
+  let broadcastId: string | null = null;
   let subsQuery = admin.from("cc_push_subscriptions").select("endpoint,p256dh,auth");
 
   if (body.type === "order_status") {
@@ -90,7 +91,13 @@ Deno.serve(async (req) => {
       const title = String(m.title || "").trim().slice(0, 80), text = String(m.body || "").trim().slice(0, 300);
       if (!title || !m.customer_id) continue;
       const { data: subs } = await admin.from("cc_push_subscriptions").select("endpoint,p256dh,auth").eq("customer_id", String(m.customer_id));
-      const r = await deliver(admin, subs || [], { title, body: text, url: "/index.html", tag: "winback" });
+      // Also into their "Your Updates" list, so the message can be read after tapping.
+      await admin.from("notifications").insert({
+        customer_id: String(m.customer_id), type: "whatsapp", direction: "inbound", recipient: "",
+        subject: title, message: text, status: "delivered", template_name: "promo",
+        sent_at: new Date().toISOString(), delivered_at: new Date().toISOString(),
+      }).then(() => {}, () => {});
+      const r = await deliver(admin, subs || [], { title, body: text, url: "/index.html?open=updates", tag: "winback" });
       sent += r.sent; removed += r.removed;
     }
     return json({ sent, removed, customers: messages.length });
@@ -104,7 +111,11 @@ Deno.serve(async (req) => {
     const title = String(body.title || "").trim().slice(0, 60);
     const text = String(body.body || "").trim().slice(0, 180);
     if (!title || !text) return json({ error: "Title and message are required" }, 400);
-    const url = typeof body.url === "string" && body.url.startsWith("/") ? body.url : "/index.html";
+    const target = typeof body.url === "string" && body.url.startsWith("/") ? body.url : "/index.html";
+    // Save the offer so a tap opens it in full in the app (migrations/20260976).
+    const { data: saved } = await admin.from("cc_broadcasts").insert({ title, body: text, target, sent_by: email }).select("id").maybeSingle();
+    broadcastId = saved?.id ?? null;
+    const url = broadcastId ? "/index.html?offer=" + broadcastId : target;
     payload = { title, body: text, url, tag: "broadcast" };
   } else {
     return json({ error: "Unknown type" }, 400);
@@ -113,6 +124,7 @@ Deno.serve(async (req) => {
   const { data: subs, error } = await subsQuery;
   if (error) return json({ error: error.message }, 500);
   const r = await deliver(admin, subs || [], payload);
+  if (broadcastId) await admin.from("cc_broadcasts").update({ sent: r.sent }).eq("id", broadcastId);
   return json({ ...r, total: (subs || []).length });
 });
 
