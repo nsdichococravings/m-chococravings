@@ -29,6 +29,7 @@ function setup(authorized = true, reviewer = true) {
     from(name) { reads.push(name); return { select(){return this;}, order(){return this;}, gte(){return this;}, eq(){return this;}, limit(){return this;}, async range(a,b){return {data:(data[name]||[]).slice(a,b+1),error:null};} }; },
     async rpc(name,args) {
       if(name==='cc_can_review_approvals') return {data:reviewer};
+      if(name==='cc_prod_is_super') return {data:false}; // read-only role check (20260964)
       if(name==='cc_production_role') return {data:'admin'};
       if(name==='cc_request_cost_correction') { calls.push({name,args});data.cc_cost_corrections.push({id:'cost',...args.p_payload,status:'pending',requested_by:'admin'});return {data:'cost'}; }
       if(name==='cc_review_cost_correction') {calls.push({name,args});Object.assign(data.cc_cost_corrections.find(c=>c.id===args.p_id),{status:args.p_approve?'approved':'rejected',reviewed_at:new Date().toISOString()});return {data:null};}

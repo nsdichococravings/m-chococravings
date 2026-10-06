@@ -24,7 +24,7 @@
   };
   const state = { tab: 'Dashboard', data: {}, errors: [], ready: false, loading: false, busy: false, refreshed: null };
   let root, channel, refreshTimer, previousFocus, loadId = 0, previousOverflow = '', authListener, stockTimer, stockLoading = false, pendingRequest = null;
-  let approverNames = {}, stockUpdated = null, canReviewDeletion = false;
+  let approverNames = {}, stockUpdated = null, canReviewDeletion = false, isSuper = false;
   let collectionHistory = [], historyLoading = false;
   const readCache = new Map(), pendingReads = new Map();
   let cacheEpoch = 0, accessCheckedAt = 0, accessPending = null, historyCheckedAt = 0;
@@ -138,6 +138,7 @@
     }
     canReviewDeletion = false;
     try { const review = await dbClient().rpc('cc_can_review_approvals'); canReviewDeletion = !review.error && review.data === true; } catch (_) {}
+    try { const sup = await dbClient().rpc('cc_prod_is_super'); isSuper = !sup.error && sup.data === true; } catch (_) { isSuper = false; }
     if (generation !== loadId) return;
     if (state.tab === 'Approvals' && !canReviewDeletion) { state.tab='Dashboard'; await refresh(true); return; }
     const entries = keys.map(key => [key, sources[key]]);
@@ -243,8 +244,40 @@
     if (r.source === 'booking') return '<br>' + badge('🎂 Booking · due ' + date(r.due_date)) + (r.notes ? '<br><span class="pd-muted">' + esc(r.notes) + '</span>' : '');
     return '';
   }
+  // ── Super-user overrides (cc_super_production, migration 20260964) ──
+  function superRequestButtons(r) {
+    if (!isSuper || !['pending','approved'].includes(r.status)) return '';
+    return '<div class="pd-line">' + '<button type="button" data-action="super-edit-request" data-id="' + esc(r.id) + '" data-qty="' + esc(r.quantity) + '" data-due="' + esc(r.due_date || '') + '" data-name="' + esc(r.product_name) + '">✏️ Edit (super user)</button> '
+      + '<button type="button" data-action="super-cancel-request" data-id="' + esc(r.id) + '" data-name="' + esc(r.product_name) + '">Cancel</button></div>';
+  }
+  async function superCommand(action, payload, done) {
+    const result = await dbClient().rpc('cc_super_production', { p_action: action, p_payload: payload });
+    if (result.error) {
+      const msg = String(result.error.message || result.error);
+      window.alert(/cc_super_production|schema cache/i.test(msg) && !/super user|not found|Baking|whole|kg/i.test(msg)
+        ? 'The database update is missing. Run migrations/20260964_super_user_overrides.sql in Supabase, then try again.' : 'Not changed: ' + msg);
+      return;
+    }
+    invalidateReads(); await refresh(); window.alert('✅ ' + done);
+  }
+  async function superEditRequest(d) {
+    const qty = window.prompt('Pieces for ' + d.name + ' (currently ' + d.qty + ')', d.qty); if (qty == null) return;
+    const due = window.prompt('Due date (YYYY-MM-DD)', d.due || today()); if (due == null) return;
+    const note = window.prompt('Reason (optional)', '') || '';
+    await superCommand('edit_request', { id: d.id, quantity: qty, due_date: due, note }, d.name + ' request updated.');
+  }
+  async function superCancelRequest(d) {
+    if (!window.confirm('Cancel the ' + d.name + ' request? This works even after approval, as long as baking has not started.')) return;
+    const note = window.prompt('Reason (optional)', '') || '';
+    await superCommand('cancel_request', { id: d.id, note }, d.name + ' request cancelled.');
+  }
+  async function superFixYield(d) {
+    const q = window.prompt('Base yield in pieces for ' + d.name + ' (currently ' + d.qty + ')\nA 1 kg cake recipe = 1 piece.', d.qty); if (q == null) return;
+    const kg = window.prompt('Base output kg (currently ' + d.kg + ')', d.kg); if (kg == null) return;
+    await superCommand('fix_recipe_yield', { id: d.id, yield_qty: q, yield_kg: kg, note: 'Fixed in place by super user' }, d.name + ' recipe yield is now ' + q + ' pcs / ' + kg + ' kg.');
+  }
   function productionTable() {
-    return table(['Product / outlet', 'Requested', 'Status', 'Approved by', 'Action'], rows('requests').map(r => [esc(r.product_name) + '<br><span class="pd-muted">' + esc(r.outlet_name) + '</span>' + requestSource(r), esc(r.quantity) + ' pcs', badge(r.status), approvedBy(r), r.status === 'pending' ? 'Pending admin approval' : r.status === 'approved' ? button('start', 'Plan & start baking', r.id, !state.ready) : '—']));
+    return table(['Product / outlet', 'Requested', 'Status', 'Approved by', 'Action'], rows('requests').map(r => [esc(r.product_name) + '<br><span class="pd-muted">' + esc(r.outlet_name) + '</span>' + requestSource(r), esc(r.quantity) + ' pcs', badge(r.status), approvedBy(r), (r.status === 'pending' ? 'Pending admin approval' : r.status === 'approved' ? button('start', 'Plan & start baking', r.id, !state.ready) : '—') + superRequestButtons(r)]));
   }
   function makingCell(name) {
     const m = rows('making').find(x => x.product_name === name);
@@ -274,7 +307,8 @@
       const pending = rows('deletions').find(d => d.recipe_id === r.id && d.status === 'pending');
       const controls = pending ? badge('Pending admin approval') + '<p>' + esc(pending.reason) + '</p>' +
         (canReviewDeletion ? '<p>Review in the Approvals tab.</p>' : '') :
-        button('edit-recipe','Edit recipe',r.id,!state.ready) + ' ' + button('delete-recipe','Request deletion',r.id,!state.ready || !state.data.deletions);
+        button('edit-recipe','Edit recipe',r.id,!state.ready) + ' ' + button('delete-recipe','Request deletion',r.id,!state.ready || !state.data.deletions)
+        + (isSuper ? ' <button type="button" data-action="super-fix-yield" data-id="' + esc(r.id) + '" data-name="' + esc(r.product_name) + '" data-qty="' + esc(r.yield_qty) + '" data-kg="' + esc(r.yield_kg) + '">✏️ Fix yield (super user)</button>' : '');
       const cells = [esc(r.product_name) + '<br><span class="pd-muted">' + date(r.created_at) + ' · ' + esc(r.id.slice(0,8)) + '</span><div class="pd-line">' + controls + '</div>',
         esc(r.yield_qty) + ' pcs / ' + esc(r.yield_kg) + ' kg', (r.ingredients || []).map(recipeLineLabel).join('<br>'), (r.packaging || []).map(recipeLineLabel).join('<br>') || 'None', makingCell(r.product_name)];
       return pending ? cells.map(c => '<div class="pd-delete-pending">' + c + '</div>') : cells;
@@ -495,7 +529,7 @@
       dialog.showModal(); return;
     }
     if (action === 'request') { title = 'Sales production request'; html = select('product_name', 'Product', options(rows('menu'), 'name', 'name')) + '<div class="pd-fields">' + field('quantity', 'Required pieces', 'number', '', 'min="1" step="1"') + field('due_date', 'Required date', 'date', today()) + '</div><p class="pd-muted">Destination: Main outlet. A sales-authorized account must approve this request before baking.</p>'; }
-    if (action === 'start') { title = 'Plan & start: ' + request.product_name; html = '<label>Approved recipe version<select name="recipe_id" required>' + matchingRecipes.map((r,index) => '<option value="' + esc(r.id) + '"' + (index === 0 ? ' selected' : '') + '>Version ' + (matchingRecipes.length-index) + ' · ' + esc(date(r.created_at)) + ' · ' + esc(r.yield_qty) + ' pcs / ' + esc(r.yield_kg) + ' kg · ' + esc(r.id.slice(0,8)) + '</option>').join('') + '</select></label><div class="pd-fields">' + field('planned_qty', 'Planned pieces', 'number', request.quantity, 'min="1" step="1" readonly') + field('planned_kg', 'Planned kg (from recipe)', 'number', Number((num(request.quantity)*num(matchingRecipes[0].yield_kg)/num(matchingRecipes[0].yield_qty)).toFixed(6)), 'min="0.000001" step="any" readonly') + '</div><p class="pd-muted">Recipe ingredients are scaled by pieces and deducted atomically when you start baking.</p>'; }
+    if (action === 'start') { title = 'Plan & start: ' + request.product_name; html = '<label>Approved recipe version<select name="recipe_id" required>' + matchingRecipes.map((r,index) => '<option value="' + esc(r.id) + '"' + (index === 0 ? ' selected' : '') + '>Version ' + (matchingRecipes.length-index) + ' · ' + esc(date(r.created_at)) + ' · ' + esc(r.yield_qty) + ' pcs / ' + esc(r.yield_kg) + ' kg · ' + esc(r.id.slice(0,8)) + '</option>').join('') + '</select></label><div class="pd-fields">' + field('planned_qty', 'Planned pieces', 'number', request.quantity, 'min="1" step="1" readonly') + field('planned_kg', 'Planned kg (from recipe)', 'number', Number((num(request.quantity)*num(matchingRecipes[0].yield_kg)/num(matchingRecipes[0].yield_qty)).toFixed(6)), 'min="0.000001" step="any" readonly') + '</div><p class="pd-muted">Recipe ingredients are scaled by pieces and deducted atomically when you start baking.</p><p class="pd-muted">Planned kg = pieces × recipe kg ÷ recipe pieces (this recipe: ' + esc(matchingRecipes[0].yield_qty) + ' pcs / ' + esc(matchingRecipes[0].yield_kg) + ' kg). Wrong? Fix the recipe yield' + (isSuper ? ' (Recipes › Fix yield) or edit the request (Edit, super user).' : ' with Recipes › Edit recipe.') + '</p>'; }
     if (action === 'complete') { title = 'Submit baked batch'; html = '<div class="pd-fields">' + field('actual_qty', 'Actual good pieces', 'number', batch.planned_qty, 'min="1" step="1"') + field('actual_kg', 'Actual output kg', 'number', batch.planned_kg, 'min="0.001" step="any"') + field('labor_cost', 'Labor for this whole batch ₹', 'number', '', 'min="0" step="0.01"') + field('overhead_cost', 'Electricity / other costs for this batch ₹', 'number', '', 'min="0" step="0.01"') + '</div><p class="pd-muted">Enter the total labor and other making costs for this batch, not per piece. Enter 0 only if there is genuinely no cost. Packaging scales to actual output. Ingredient usage is the frozen recipe quantity issued at start. Record exceptional usage through a reviewed stock correction before closing this batch.</p>'; }
     if (action === 'collect') { title = 'Confirm outlet collection'; html = '<p>' + esc(batch.product_name) + ' · ' + (num(batch.actual_qty) - num(batch.collected_qty)) + ' pieces available</p>' + field('quantity', 'Pieces received by Main outlet', 'number', num(batch.actual_qty) - num(batch.collected_qty), 'min="1" step="1" max="' + (num(batch.actual_qty) - num(batch.collected_qty)) + '"') + field('collected_by', 'Collected by', 'text', '', 'maxlength="120"') + '<p class="pd-muted">Only confirm quantities physically received. This adds them to outlet stock once.</p>'; }
     if (action === 'purchase') { title = 'Record material or packaging stock-in'; html = '<div class="pd-fields">' + select('kind', 'Type', '<option value="raw">Raw material</option><option value="packaging">Packaging</option>') + field('name', 'Material name') + select('unit', 'Stock unit', ['kg','g','l','ml','pcs'].map(u => '<option>' + u + '</option>').join('')) + field('category', 'Category', 'text', 'General') + field('quantity', 'Received quantity', 'number', '', 'min="0.000001" step="any"') + field('total_cost', 'Total purchase cost ₹', 'number', '', 'min="0.01" step="0.01"') + field('purchase_date', 'Stock-in date', 'date', today()) + '</div><p class="pd-muted">Use an existing material’s exact name and unit to replenish it.</p>'; }
@@ -759,6 +793,9 @@
         else if (action === 'share-to-buy') shareToBuy();
         else if (action === 'set-cost') await setMaterialCost(target.dataset);
         else if (action === 'set-making') await setMakingCost(target.dataset);
+        else if (action === 'super-edit-request') await superEditRequest(target.dataset);
+        else if (action === 'super-cancel-request') await superCancelRequest(target.dataset);
+        else if (action === 'super-fix-yield') await superFixYield(target.dataset);
         else if (action === 'delete-material') await deleteMaterial(target.dataset);
         else if (action === 'reorder') await editReorderLevel(target.dataset.kind, target.dataset.name, target.dataset.level);
         else if (action === 'auto-restock') { const r = await dbClient().rpc('cc_set_reorder_level', { p_kind: 'outlet', p_name: target.dataset.name, p_level: num(target.dataset.level), p_auto: target.dataset.on === '1' }); if (r.error) throw r.error; invalidateReads(); await refresh(); }
