@@ -129,6 +129,7 @@ function renderReportsHubCards() {
   // card exist at all, not even greyed out.
   if (_rhIsSuperUser) {
     html += reportCard('🌙', 'Daily Summary', 'Sales, top items, wastage & to-buy · 10 pm on your phone', "rhOpen('daily-summary')");
+    html += reportCard('👥', 'Customer Returns', 'New vs returning, missing regulars & win-back messages', "rhOpen('customer-returns')");
     html += reportCard('📊', 'Sales Reports', 'Dashboards, trends, busy-hours heat-map & PDF export', "rhOpen('sales-reports')");
   }
 
@@ -155,6 +156,9 @@ function rhOpen(which) {
   } else if (which === 'daily-summary') {
     if (typeof openDailySummary === 'function') openDailySummary();
     else alert('Daily Summary module not loaded — check that daily-summary-patch.js is included.');
+  } else if (which === 'customer-returns') {
+    if (typeof openCustomerReturns === 'function') openCustomerReturns();
+    else alert('Customer Returns module not loaded — check that customer-returns-patch.js is included.');
   } else if (which === 'sales-reports') {
     if (typeof openReports === 'function') openReports();
     else alert('Sales Reports module not loaded — check that sales-reports-patch.js is included.');

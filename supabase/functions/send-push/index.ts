@@ -8,6 +8,9 @@
 //     and cc_send_daily_summary (migrations/20260968_daily_summary.sql), same header:
 //       { type: 'daily_summary', title, body }
 //     -> the 10 pm summary to the owner's (customers.is_super_user) devices.
+//     and cc_winback_send (migrations/20260970), same header:
+//       { type: 'winback', messages: [{ customer_id, title, body }] }
+//     -> one personal "we miss you" message per customer.
 //  2. An admin in the app (Command Center > Send Notification), with their
 //     normal sign-in token:
 //       { type: 'broadcast', title, body, url? }
@@ -77,6 +80,20 @@ Deno.serve(async (req) => {
     if (!title) return json({ error: "Title is required" }, 400);
     payload = { title, body: text, url: "/store.html?open=daily-summary", tag: "daily-summary" };
     subsQuery = subsQuery.in("customer_id", ids);
+  } else if (body.type === "winback") {
+    // Personal "we miss you" messages from cc_winback_send (migrations/20260970), via pg_net.
+    const secret = env("PUSH_WEBHOOK_SECRET");
+    if (!secret || req.headers.get("x-cc-push-secret") !== secret) return json({ error: "Forbidden" }, 403);
+    const messages = Array.isArray(body.messages) ? (body.messages as Record<string, unknown>[]).slice(0, 200) : [];
+    let sent = 0, removed = 0;
+    for (const m of messages) {
+      const title = String(m.title || "").trim().slice(0, 80), text = String(m.body || "").trim().slice(0, 300);
+      if (!title || !m.customer_id) continue;
+      const { data: subs } = await admin.from("cc_push_subscriptions").select("endpoint,p256dh,auth").eq("customer_id", String(m.customer_id));
+      const r = await deliver(admin, subs || [], { title, body: text, url: "/index.html", tag: "winback" });
+      sent += r.sent; removed += r.removed;
+    }
+    return json({ sent, removed, customers: messages.length });
   } else if (body.type === "broadcast") {
     const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
     const { data: userData } = await admin.auth.getUser(token);
@@ -95,10 +112,16 @@ Deno.serve(async (req) => {
 
   const { data: subs, error } = await subsQuery;
   if (error) return json({ error: error.message }, 500);
+  const r = await deliver(admin, subs || [], payload);
+  return json({ ...r, total: (subs || []).length });
+});
 
+type Sub = { endpoint: string; p256dh: string; auth: string };
+// Sends one payload to each device; forgets devices that unsubscribed or expired.
+async function deliver(admin: ReturnType<typeof createClient>, subs: Sub[], payload: unknown) {
   let sent = 0;
   const gone: string[] = [];
-  await Promise.all((subs || []).map(async (s) => {
+  await Promise.all(subs.map(async (s) => {
     try {
       await webpush.sendNotification(
         { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
@@ -113,6 +136,5 @@ Deno.serve(async (req) => {
     }
   }));
   if (gone.length) await admin.from("cc_push_subscriptions").delete().in("endpoint", gone);
-
-  return json({ sent, removed: gone.length, total: (subs || []).length });
-});
+  return { sent, removed: gone.length };
+}
