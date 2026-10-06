@@ -15,6 +15,8 @@
 -- If pg_cron is not enabled, enable it under Database > Extensions and run
 -- this file again. Safe to re-run.
 begin;
+-- Wait at most 10 s for a busy table instead of deadlocking with the live app.
+set local lock_timeout = '10s';
 do $$ begin
  if not exists(select 1 from pg_proc where proname='cc_prod_is_super') then raise exception 'Run migrations/20260964_super_user_overrides.sql first.'; end if;
  if not exists(select 1 from pg_proc where proname='cc_store_items') then raise exception 'Run migrations/20260954_store_menu_photos_ratings.sql first.'; end if;
