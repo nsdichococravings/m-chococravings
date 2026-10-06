@@ -670,14 +670,20 @@
     if (!history) { history = document.createElement('aside'); history.className = 'pd-kitchen-history'; }
     sidebar.appendChild(history);
     history.style.display = kitchenHistoryClosed ? 'none' : '';
-    let reopen = sidebar.querySelector('[data-action="show-collections"]');
+    // Closed: the sidebar gives its space back to the tickets and a small
+    // pill in the kitchen header brings the list back.
+    sidebar.classList.toggle('pdk-min', kitchenHistoryClosed && !ready.length);
+    let reopen = kitchen.querySelector('[data-action="show-collections"]');
     if (!reopen) {
       reopen = document.createElement('button'); reopen.type = 'button'; reopen.className = 'pdk-history-reopen';
-      reopen.dataset.action = 'show-collections'; reopen.textContent = 'Show recent collections';
-      sidebar.appendChild(reopen);
+      reopen.dataset.action = 'show-collections'; reopen.title = 'Show recent collections';
+      reopen.setAttribute('aria-label', 'Show recent collections');
+      reopen.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Collections</span>';
+      const actions = kitchen.querySelector('#k-hdr-actions');
+      if (actions) actions.prepend(reopen); else sidebar.appendChild(reopen);
     }
     reopen.style.display = kitchenHistoryClosed ? '' : 'none';
-    history.innerHTML = '<div class="pdk-top"><div class="pdk-eyebrow">Recent collections</div><button type="button" class="pdk-history-close" data-action="hide-collections" aria-label="Close recent collections" title="Close recent collections"><span aria-hidden="true">×</span> Close</button></div>' + (collectionHistory.length
+    history.innerHTML = '<div class="pdk-top"><div class="pdk-eyebrow">Recent collections</div><button type="button" class="pdk-history-close" data-action="hide-collections" aria-label="Close recent collections" title="Close"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg></button></div>' + (collectionHistory.length
       ? collectionHistory.map(h => '<div class="pdk-hist-row"><div class="pdk-hist-name">' + esc(h.item_name) + '<span>' + num(h.quantity) + ' pcs</span></div><div class="pdk-hist-meta">' + esc(h.collected_by || 'Unrecorded') + ' · ' + histTime(h.created_at) + '</div></div>').join('')
       : '<div class="pdk-hist-empty">No collections recorded yet.</div>');
   }
@@ -851,6 +857,7 @@
       document.querySelector('.pd-kitchen-ready')?.remove();
       document.querySelector('.pd-kitchen-history')?.remove();
       document.querySelector('.pd-kitchen-sidebar')?.remove();
+      document.querySelector('.pdk-history-reopen')?.remove();
       if (channel) { dbClient().removeChannel(channel); channel = null; }
     });
   };
