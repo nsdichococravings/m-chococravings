@@ -354,6 +354,8 @@ function renderReport(period, periodKey, orders, prevOrders, expensesTotal, repe
   var bestDayIdx = dayTotals.indexOf(Math.max.apply(null, dayTotals));
   var bestDayLabel = dayNames[bestDayIdx];
 
+  var heatHtml = srBusyHeatmap(orders);
+
   var content = document.getElementById('sr-report-content');
   var compareLabel = periodKey === 'custom' ? 'previous period' : ('previous ' + period.label.toLowerCase().replace('ly', ''));
   var changeHtml = revenueChange === null
@@ -397,6 +399,8 @@ function renderReport(period, periodKey, orders, prevOrders, expensesTotal, repe
     + '<div style="font-size:11px;letter-spacing:2px;color:#c084fc;font-weight:700;margin-bottom:14px">BEST DAYS OF WEEK</div>'
     + '<canvas id="sr-days-chart" height="180"></canvas></div>'
     + '</div>'
+
+    + heatHtml
 
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">'
     + '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:20px">'
@@ -516,6 +520,53 @@ function renderReport(period, periodKey, orders, prevOrders, expensesTotal, repe
     },
     options: { plugins: { legend: { position: 'bottom', labels: { color: '#fff', font: { size: 10 }, padding: 12 } } } }
   });
+}
+
+// ── Busy hours heat-map: orders by weekday × hour (device time = IST).
+// One hue, light → dark = fewer → more orders; exact numbers on hover/tap.
+function srBusyHeatmap(orders) {
+  if (!orders.length) return '';
+  var days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  var grid = days.map(function () { return new Array(24).fill(0); });
+  var money = days.map(function () { return new Array(24).fill(0); });
+  var minH = 23, maxH = 0;
+  orders.forEach(function (o) {
+    var d = new Date(o.created_at), h = d.getHours(), r = (d.getDay() + 6) % 7;
+    grid[r][h]++; money[r][h] += o.total || 0;
+    if (h < minH) minH = h; if (h > maxH) maxH = h;
+  });
+  if (maxH - minH < 7) { minH = Math.max(0, Math.min(minH, 23 - 7)); maxH = Math.min(23, minH + 7); }
+  var max = 0, best = null;
+  grid.forEach(function (row, r) { for (var h = minH; h <= maxH; h++) if (row[h] > max) { max = row[h]; best = [r, h]; } });
+  var hl = function (h) { return h === 0 ? '12a' : h < 12 ? h + 'a' : h === 12 ? '12p' : (h - 12) + 'p'; };
+  var full = function (h) { return h === 0 ? '12 am' : h < 12 ? h + ' am' : h === 12 ? '12 pm' : (h - 12) + ' pm'; };
+  var cols = maxH - minH + 1;
+  var cell = function (n) {
+    if (!n) return 'rgba(255,255,255,.04)';
+    var t = n / max; // 5 steps of one hue
+    var a = t > .8 ? 1 : t > .6 ? .78 : t > .4 ? .58 : t > .2 ? .4 : .24;
+    return 'rgba(192,132,252,' + a + ')';
+  };
+  var html = '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:20px;margin-bottom:16px">'
+    + '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px">'
+    + '<div style="font-size:11px;letter-spacing:2px;color:#c084fc;font-weight:700">BUSY HOURS · ORDERS BY DAY & HOUR</div>'
+    + (best ? '<div style="font-size:12px;color:rgba(255,255,255,.75)">Busiest: <b style="color:#fff">' + days[best[0]] + ' ' + full(best[1]) + '–' + full((best[1] + 1) % 24) + '</b> (' + max + ' orders)</div>' : '')
+    + '</div><div style="overflow-x:auto"><div role="table" aria-label="Orders by weekday and hour" style="display:grid;grid-template-columns:34px repeat(' + cols + ',minmax(22px,1fr));gap:3px;min-width:' + (34 + cols * 25) + 'px">'
+    + '<div></div>';
+  for (var h = minH; h <= maxH; h++) html += '<div style="font-size:9px;color:rgba(255,255,255,.45);text-align:center">' + hl(h) + '</div>';
+  days.forEach(function (dn, r) {
+    html += '<div role="rowheader" style="font-size:10px;color:rgba(255,255,255,.6);display:flex;align-items:center">' + dn + '</div>';
+    for (var h = minH; h <= maxH; h++) {
+      var n = grid[r][h];
+      var tip = dn + ' ' + full(h) + ' · ' + n + ' order' + (n === 1 ? '' : 's') + (n ? ' · ₹' + Math.round(money[r][h]).toLocaleString('en-IN') : '');
+      html += '<div role="cell" title="' + tip + '" aria-label="' + tip + '" onclick="if(window.showStoreToast)showStoreToast(this.title)" style="cursor:pointer;height:24px;border-radius:4px;background:' + cell(n) + '"></div>';
+    }
+  });
+  html += '</div></div><div style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:10px;color:rgba(255,255,255,.5)">Fewer'
+    + [.04, .24, .4, .58, .78, 1].map(function (a, i) { return '<span style="width:16px;height:10px;border-radius:2px;background:' + (i ? 'rgba(192,132,252,' + a + ')' : 'rgba(255,255,255,.04)') + '"></span>'; }).join('')
+    + 'More orders · tap a square for the number</div>'
+    + '<div style="font-size:11px;color:rgba(255,255,255,.45);margin-top:6px">Use it to plan staff shifts and to bake so items are fresh just before the brightest squares.</div></div>';
+  return html;
 }
 
 function srRepeatStatCard(label, revenue, count, color) {

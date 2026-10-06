@@ -5,6 +5,9 @@
 //     via pg_net, with header x-cc-push-secret:
 //       { type: 'order_status', order_id, status }
 //     -> tells that order's customer what's happening with their order.
+//     and cc_send_daily_summary (migrations/20260968_daily_summary.sql), same header:
+//       { type: 'daily_summary', title, body }
+//     -> the 10 pm summary to the owner's (customers.is_super_user) devices.
 //  2. An admin in the app (Command Center > Send Notification), with their
 //     normal sign-in token:
 //       { type: 'broadcast', title, body, url? }
@@ -62,6 +65,18 @@ Deno.serve(async (req) => {
     const n = order.order_number || "";
     payload = { title: text[0], body: text[1].replace("{n}", n).replace(/\s+/g, " "), url: "/index.html?open=orders", tag: "order-" + order.id };
     subsQuery = subsQuery.eq("customer_id", order.customer_id);
+  } else if (body.type === "daily_summary") {
+    // 10 pm owner summary from cc_send_daily_summary (migrations/20260968), via pg_net.
+    const secret = env("PUSH_WEBHOOK_SECRET");
+    if (!secret || req.headers.get("x-cc-push-secret") !== secret) return json({ error: "Forbidden" }, 403);
+    const { data: owners } = await admin.from("customers").select("id").eq("is_super_user", true);
+    const ids = (owners || []).map((o) => String(o.id));
+    if (!ids.length) return json({ sent: 0, reason: "no owner account" });
+    const title = String(body.title || "").trim().slice(0, 80);
+    const text = String(body.body || "").trim().slice(0, 300);
+    if (!title) return json({ error: "Title is required" }, 400);
+    payload = { title, body: text, url: "/store.html?open=daily-summary", tag: "daily-summary" };
+    subsQuery = subsQuery.in("customer_id", ids);
   } else if (body.type === "broadcast") {
     const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
     const { data: userData } = await admin.auth.getUser(token);
