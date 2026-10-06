@@ -20,6 +20,8 @@
 --
 -- Run as database owner after 20260964_super_user_overrides.sql. Safe to re-run.
 begin;
+-- Wait at most 10 s for a busy table instead of deadlocking with the live app.
+set local lock_timeout = '10s';
 do $$ begin
  if not exists(select 1 from pg_proc where proname='cc_prod_is_super') then
   raise exception 'Run migrations/20260964_super_user_overrides.sql first.';
@@ -80,8 +82,8 @@ begin
  end if;
  return new;
 end $$;
-drop trigger if exists cc_menu_rename_follow on public.store_menu;
-create trigger cc_menu_rename_follow after update of name on public.store_menu
+-- create or replace: lighter lock than drop + create, so menu reads keep working.
+create or replace trigger cc_menu_rename_follow after update of name on public.store_menu
  for each row execute function public.cc_menu_rename_follow();
 
 create or replace function public.cc_super_relink_product(p_from text, p_to text) returns jsonb

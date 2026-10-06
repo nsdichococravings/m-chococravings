@@ -6,7 +6,7 @@
   const screenSources = {
     Dashboard: ['materials','packaging','outlet','requests','batches'], Production: ['requests','batches'],
     Materials: ['materials','packaging','purchases'], Recipes: ['recipes','menu','materials','packaging','deletions','making'],
-    Outlet: ['outlet','batches','wastage'], 'Profit report': ['orders','batches','recipes','materials','packaging','corrections','making'],
+    Outlet: ['outlet','batches','wastage'], 'Profit report': ['orders','batches','recipes','materials','packaging','corrections','making','wastage'],
     'Setup check': ['menu','recipes','materials','packaging','making','outlet','requests','batches'],
     Approvals: ['requests','recipes','deletions','corrections']
   };
@@ -411,6 +411,59 @@
       finally { state.busy = false; const b = dialog.querySelector('[type=submit]'); if (b) b.disabled = false; }
     });
   }
+  // ── Menu performance: pieces sold × profit per piece (last 30 days) ──
+  const MENU_GROUPS = {
+    star: ['⭐ Stars', 'Sell a lot and earn well. Keep them fresh, in stock and up front.'],
+    puzzle: ['🧩 Hidden gems', 'Good profit, but few sell. Promote them: counter display, combos, staff suggestions.'],
+    horse: ['🐎 Workhorses', 'Sell a lot, small profit each. Try a small price rise or a cheaper recipe / pack.'],
+    dog: ['🔁 Rethink', 'Few sell and little profit. Rework the recipe or price, or take off the menu.']
+  };
+  function menuPerformance() {
+    const wasted = {};
+    rows('wastage').forEach(w => { wasted[w.item_name] = (wasted[w.item_name] || 0) + num(w.quantity); });
+    const all = [...itemSales()];
+    const items = all.filter(([, r]) => r.quantity > 0 && !r.missing.size && r.complete)
+      .map(([name, r]) => ({ name, qty: r.quantity, each: (r.gross - r.cost) / r.quantity, total: r.gross - r.cost, wasted: wasted[name] || 0 }));
+    const left = all.length - items.length;
+    const head = '<section class="pd-card"><h3>Menu performance · last 30 days</h3>';
+    if (items.length < 3) return head + empty('Needs at least 3 items with complete costs. ' + (left ? left + ' sold item' + (left === 1 ? ' has' : 's have') + ' incomplete costs — see Setup check.' : '')) + '</section>';
+    const totQty = items.reduce((t, i) => t + i.qty, 0);
+    const avgQty = totQty / items.length, avgEach = items.reduce((t, i) => t + i.total, 0) / totQty;
+    items.forEach(i => { i.group = i.qty >= avgQty ? (i.each >= avgEach ? 'star' : 'horse') : (i.each >= avgEach ? 'puzzle' : 'dog'); });
+    // Chart: x = pieces sold, y = profit per piece; dashed lines at the averages.
+    const W = 640, H = 340, L = 56, R = 16, T = 16, B = 40;
+    const maxX = Math.max(...items.map(i => i.qty)) * 1.08 || 1;
+    const lowY = Math.min(0, ...items.map(i => i.each)), maxY = Math.max(...items.map(i => i.each)) * 1.12 || 1;
+    const minY = lowY - (maxY - lowY) * 0.12; // room under the lowest line for the bottom quadrant names
+    const x = v => L + (v / maxX) * (W - L - R), y = v => T + (1 - (v - minY) / (maxY - minY || 1)) * (H - T - B);
+    const fmt = v => '₹' + Math.round(v).toLocaleString('en-IN');
+    const ticksY = [lowY, (lowY + maxY) / 2, maxY].map(v => '<text x="' + (L - 8) + '" y="' + (y(v) + 4) + '" text-anchor="end" class="pd-ax">' + fmt(v) + '</text><line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(v) + '" y2="' + y(v) + '" class="pd-grid-line"/>').join('');
+    const ticksX = [0, maxX / 2, maxX].map(v => '<text x="' + x(v) + '" y="' + (H - B + 18) + '" text-anchor="middle" class="pd-ax">' + Math.round(v) + '</text>').join('');
+    const labelled = new Set();
+    Object.keys(MENU_GROUPS).forEach(g => { const top = items.filter(i => i.group === g).sort((a, b) => b.qty - a.qty)[0]; if (top) labelled.add(top.name); });
+    const dots = items.map(i => {
+      const cx = x(i.qty), cy = y(i.each), tip = i.name + ': ' + i.qty + ' sold · ' + fmt(i.each) + ' profit each · ' + fmt(i.total) + ' total';
+      const flip = cx > W - 150;
+      return '<g class="pd-dot" tabindex="0" role="img" aria-label="' + esc(tip) + '"><title>' + esc(tip) + '</title><circle cx="' + cx + '" cy="' + cy + '" r="12" fill="transparent"/><circle cx="' + cx + '" cy="' + cy + '" r="5.5" class="pd-dot-mark"/>'
+        + (labelled.has(i.name) ? '<text x="' + (cx + (flip ? -9 : 9)) + '" y="' + (cy - 8) + '" text-anchor="' + (flip ? 'end' : 'start') + '" class="pd-dot-label">' + esc(i.name.length > 22 ? i.name.slice(0, 21) + '…' : i.name) + '</text>' : '') + '</g>';
+    }).join('');
+    const corner = (g, cx, cy, anchor) => '<text x="' + cx + '" y="' + cy + '" text-anchor="' + anchor + '" class="pd-quad">' + MENU_GROUPS[g][0] + '</text>';
+    const svg = '<figure class="pd-menu-chart"><div class="pd-menu-scroll"><svg viewBox="0 0 ' + W + ' ' + H + '" role="group" aria-label="Menu items by pieces sold and profit per piece">'
+      + ticksY + ticksX
+      + '<line x1="' + x(avgQty) + '" x2="' + x(avgQty) + '" y1="' + T + '" y2="' + (H - B) + '" class="pd-avg-line"/><line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(avgEach) + '" y2="' + y(avgEach) + '" class="pd-avg-line"/>'
+      + corner('star', W - R - 4, T + 14, 'end') + corner('puzzle', L + 6, T + 14, 'start') + corner('horse', W - R - 4, H - B - 6, 'end') + corner('dog', L + 6, H - B - 6, 'start')
+      + dots
+      + '<text x="' + ((L + W - R) / 2) + '" y="' + (H - 4) + '" text-anchor="middle" class="pd-ax-title">Pieces sold →</text>'
+      + '<text transform="translate(12 ' + ((T + H - B) / 2) + ') rotate(-90)" text-anchor="middle" class="pd-ax-title">Profit per piece →</text>'
+      + '</svg></div><figcaption class="pd-muted">Dashed lines = average pieces sold (' + Math.round(avgQty) + ') and average profit per piece (' + fmt(avgEach) + '). Hover or tap a dot for its numbers.</figcaption></figure>';
+    const groups = Object.keys(MENU_GROUPS).map(g => {
+      const list = items.filter(i => i.group === g).sort((a, b) => b.total - a.total);
+      return '<div class="pd-menu-group pd-menu-' + g + '"><h4>' + MENU_GROUPS[g][0] + ' <span class="pd-muted">(' + list.length + ')</span></h4><p class="pd-muted">' + esc(MENU_GROUPS[g][1]) + '</p>'
+        + (list.length ? '<ul>' + list.map(i => '<li><span>' + esc(i.name) + '</span><span>' + i.qty + ' sold · ' + fmt(i.each) + '/pc' + (i.wasted ? ' · <em>' + i.wasted + ' wasted</em>' : '') + '</span></li>').join('') + '</ul>' : '<p class="pd-muted">None</p>') + '</div>';
+    }).join('');
+    return head + svg + '<div class="pd-menu-groups">' + groups + '</div>'
+      + (left ? '<p class="pd-muted">' + left + ' sold item' + (left === 1 ? ' is' : 's are') + ' not shown because costs are incomplete — see Setup check.</p>' : '') + '</section>';
+  }
   function productionTable() {
     return table(['Product / outlet', 'Requested', 'Status', 'Approved by', 'Action'], rows('requests').map(r => [esc(r.product_name) + '<br><span class="pd-muted">' + esc(r.outlet_name) + '</span>' + requestSource(r), esc(r.quantity) + ' pcs', badge(r.status), approvedBy(r), (r.status === 'pending' ? 'Pending admin approval' : r.status === 'approved' ? button('start', 'Plan & start baking', r.id, !state.ready) : '—') + superRequestButtons(r)]));
   }
@@ -486,7 +539,7 @@
     }
     return {cost:material+packaging,material,packaging,extra:0,complete:false,basis:'Recipe ingredients and packaging only'};
   }
-  function profitRows() {
+  function itemSales() {
     const sales=new Map();
     rows('orders').filter(o=>o.status==='collected' && o.payment_status==='paid').forEach(o=>{
       let items=o.items;
@@ -501,7 +554,10 @@
         sales.set(i.name,r);
       });
     });
-    return [...sales].map(([name,r])=>{
+    return sales;
+  }
+  function profitRows() {
+    return [...itemSales()].map(([name,r])=>{
       const known=!r.missing.size, full=known && r.complete;
       const pending=rows('corrections').find(c=>c.product_name===name && c.status==='pending');
       const details='<details class="pd-cost-details"><summary>How this is calculated</summary>'+
@@ -609,7 +665,7 @@
     if (state.tab === 'Setup check') html += setupCheck();
     if (state.tab === 'Approvals' && canReviewDeletion) html += approvalsPanel();
     if (state.tab === 'Profit report') {
-      html += '<div class="pd-stack"><section class="pd-card"><h3>Paid, collected item sales · Last 30 days</h3>' + '<p class="pd-notice">Making cost per piece = (ingredients + packaging + labor + other making costs) ÷ good pieces produced. Estimated profit = sales − making cost of the pieces sold.</p>' + table(['Item', 'Pieces sold', 'Selling price / piece', 'Making cost / piece', 'Estimated profit · all sold pieces', 'Cost details'], profitRows()) + '<p class="pd-muted">Line prices before order-level discounts and refunds. Only paid orders marked collected are included.</p></section><section class="pd-card"><div class="pd-row"><h3>Production cost by batch</h3>' + button('export', 'Export batch costs') + '</div>' + table(['Product', 'Baked', 'Collected', 'Ingredients', 'Packaging', 'Labor / overhead', 'Cost / piece'], rows('batches').filter(b => b.status === 'completed').map(b => [esc(b.product_name), esc(b.actual_qty), esc(b.collected_qty), cash(b.material_cost), cash(b.packaging_cost), cash(num(b.labor_cost) + num(b.overhead_cost)), cash(b.unit_cost)])) + '<div class="pd-notice pd-line">Approved cost corrections take priority within their selected dates. Otherwise, batch estimates use the latest completed batch before the sale. Recipe-only costs use current material prices and do not include all making costs, so profit stays “Not ready.” All profits shown are estimates before discounts, refunds, tax and other business expenses. Recorded zero batch costs are treated as entered; review them if costs were omitted.</div></section></div>';
+      html += '<div class="pd-stack"><section class="pd-card"><h3>Paid, collected item sales · Last 30 days</h3>' + '<p class="pd-notice">Making cost per piece = (ingredients + packaging + labor + other making costs) ÷ good pieces produced. Estimated profit = sales − making cost of the pieces sold.</p>' + table(['Item', 'Pieces sold', 'Selling price / piece', 'Making cost / piece', 'Estimated profit · all sold pieces', 'Cost details'], profitRows()) + '<p class="pd-muted">Line prices before order-level discounts and refunds. Only paid orders marked collected are included.</p></section>' + menuPerformance() + '<section class="pd-card"><div class="pd-row"><h3>Production cost by batch</h3>' + button('export', 'Export batch costs') + '</div>' + table(['Product', 'Baked', 'Collected', 'Ingredients', 'Packaging', 'Labor / overhead', 'Cost / piece'], rows('batches').filter(b => b.status === 'completed').map(b => [esc(b.product_name), esc(b.actual_qty), esc(b.collected_qty), cash(b.material_cost), cash(b.packaging_cost), cash(num(b.labor_cost) + num(b.overhead_cost)), cash(b.unit_cost)])) + '<div class="pd-notice pd-line">Approved cost corrections take priority within their selected dates. Otherwise, batch estimates use the latest completed batch before the sale. Recipe-only costs use current material prices and do not include all making costs, so profit stays “Not ready.” All profits shown are estimates before discounts, refunds, tax and other business expenses. Recorded zero batch costs are treated as entered; review them if costs were omitted.</div></section></div>';
     }
     content.innerHTML = html;
     announce(stockVisible() && stockUpdated ? 'Outlet stock checked ' + stockUpdated.toLocaleTimeString('en-IN') + ' · Auto-check every 3 hours while visible' : state.refreshed ? 'Updated ' + state.refreshed.toLocaleTimeString('en-IN') : '');
@@ -913,6 +969,8 @@
     root.innerHTML = '<header class="pd-header"><div><div class="pd-brand">ChocoCravings · Production</div><div class="pd-muted">Stock, baking & outlet operations</div></div>' + button('close','Back to store') + '</header><nav aria-label="Production pages"></nav><div class="pd-status" role="status" aria-live="polite"></div><main></main><dialog></dialog>';
     document.body.appendChild(root);
     root.addEventListener('click', async event => {
+      const dot = event.target.closest && event.target.closest('.pd-dot');
+      if (dot) { const cap = dot.closest('figure') && dot.closest('figure').querySelector('figcaption'); if (cap) cap.textContent = dot.getAttribute('aria-label'); return; }
       const target = event.target.closest('button'); if (!target || target.disabled) return;
       const action = target.dataset.action;
       try {
