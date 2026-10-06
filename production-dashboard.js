@@ -1,12 +1,13 @@
 /* Production workspace: real Supabase data only. Stock writes use transactional RPCs. */
 (function () {
   'use strict';
-  const tabs = ['Dashboard', 'Production', 'Materials', 'Recipes', 'Outlet', 'Profit report', 'Approvals'];
-  const sources = { corrections: 'cc_cost_corrections', deletions: 'cc_recipe_delete_requests', materials: 'inventory_items', packaging: 'packaging_materials', purchases: 'material_purchases', menu: 'store_menu', outlet: 'display_stock', requests: 'cc_production_requests', recipes: 'cc_production_recipes', batches: 'cc_production_batches', orders: 'store_orders', making: 'cc_making_costs' };
+  const tabs = ['Dashboard', 'Production', 'Materials', 'Recipes', 'Outlet', 'Profit report', 'Setup check', 'Approvals'];
+  const sources = { corrections: 'cc_cost_corrections', deletions: 'cc_recipe_delete_requests', materials: 'inventory_items', packaging: 'packaging_materials', purchases: 'material_purchases', menu: 'store_menu', outlet: 'display_stock', requests: 'cc_production_requests', recipes: 'cc_production_recipes', batches: 'cc_production_batches', orders: 'store_orders', making: 'cc_making_costs', wastage: 'cc_wastage' };
   const screenSources = {
     Dashboard: ['materials','packaging','outlet','requests','batches'], Production: ['requests','batches'],
     Materials: ['materials','packaging','purchases'], Recipes: ['recipes','menu','materials','packaging','deletions','making'],
-    Outlet: ['outlet','batches'], 'Profit report': ['orders','batches','recipes','materials','packaging','corrections','making'],
+    Outlet: ['outlet','batches','wastage'], 'Profit report': ['orders','batches','recipes','materials','packaging','corrections','making'],
+    'Setup check': ['menu','recipes','materials','packaging','making','outlet','requests','batches'],
     Approvals: ['requests','recipes','deletions','corrections']
   };
   const columns = {
@@ -20,7 +21,8 @@
     cc_production_recipes: 'id,product_name,yield_qty,yield_kg,ingredients,packaging,created_at,approved_by,deleted_at',
     cc_production_batches: 'id,product_name,outlet_name,status,planned_qty,planned_kg,actual_qty,collected_qty,material_cost,packaging_cost,labor_cost,overhead_cost,total_cost,unit_cost,completed_at',
     store_orders: 'id,items,status,payment_status,created_at',
-    cc_making_costs: '*' // labour + other per piece (20260962)
+    cc_making_costs: '*', // labour + other per piece (20260962)
+    cc_wastage: '*' // thrown-away outlet pieces (20260966)
   };
   const state = { tab: 'Dashboard', data: {}, errors: [], ready: false, loading: false, busy: false, refreshed: null };
   let root, channel, refreshTimer, previousFocus, loadId = 0, previousOverflow = '', authListener, stockTimer, stockLoading = false, pendingRequest = null;
@@ -114,6 +116,7 @@
       if (tableName === 'material_purchases') query = query.order('purchase_date', { ascending: false }).order('id').limit(100);
       else if (tableName === 'store_orders') query = query.gte('created_at', new Date(Date.now() - 30 * 86400000).toISOString()).eq('status','collected').eq('payment_status','paid').order('created_at').order('id');
       else if (tableName === 'cc_making_costs') query = query.order('product_name'); // keyed by product, no id column
+      else if (tableName === 'cc_wastage') query = query.gte('created_at', new Date(Date.now() - 30 * 86400000).toISOString()).order('created_at', { ascending: false }).order('id');
       else query = query.order('id');
       const response = await query.range(from, tableName === 'material_purchases' ? 99 : from + 499);
       if (response.error) throw response.error;
@@ -275,6 +278,138 @@
     const q = window.prompt('Base yield in pieces for ' + d.name + ' (currently ' + d.qty + ')\nA 1 kg cake recipe = 1 piece.', d.qty); if (q == null) return;
     const kg = window.prompt('Base output kg (currently ' + d.kg + ')', d.kg); if (kg == null) return;
     await superCommand('fix_recipe_yield', { id: d.id, yield_qty: q, yield_kg: kg, note: 'Fixed in place by super user' }, d.name + ' recipe yield is now ' + q + ' pcs / ' + kg + ' kg.');
+  }
+  // ── Wastage (cc_record_wastage, migration 20260966) ──
+  const WASTE_REASONS = { stale: 'Stale / expired', damaged: 'Damaged / dropped', sample: 'Tasting sample', other: 'Other' };
+  const wasteButton = r => '<button type="button" data-action="waste" data-name="' + esc(r.item_name) + '" data-stock="' + esc(r.current_stock) + '"' + (state.ready && num(r.current_stock) > 0 ? '' : ' disabled') + '>🗑 Thrown away</button>';
+  function wastageCard() {
+    if (!state.data.wastage) return '<section class="pd-card pd-waste"><h3>Wastage · last 30 days</h3><p class="pd-muted">Not available yet. Run migrations/20260966_setup_tools.sql in Supabase.</p></section>';
+    const list = rows('wastage');
+    const pcs = list.reduce((s, w) => s + num(w.quantity), 0);
+    const known = list.filter(w => w.unit_cost != null);
+    const cost = known.reduce((s, w) => s + num(w.quantity) * num(w.unit_cost), 0);
+    const byItem = {};
+    list.forEach(w => { const b = byItem[w.item_name] || (byItem[w.item_name] = { pcs: 0, cost: 0, known: false, reasons: {} }); b.pcs += num(w.quantity); if (w.unit_cost != null) { b.known = true; b.cost += num(w.quantity) * num(w.unit_cost); } b.reasons[w.reason] = (b.reasons[w.reason] || 0) + num(w.quantity); });
+    const items = Object.keys(byItem).sort((a, b) => byItem[b].pcs - byItem[a].pcs);
+    const topReason = r => { const k = Object.keys(r).sort((a, b) => r[b] - r[a])[0]; return WASTE_REASONS[k] || k; };
+    const plural = (n, one, many) => n + ' ' + (n === 1 ? one : many);
+    return '<section class="pd-card pd-waste"><h3>Wastage · last 30 days</h3>'
+      + cards([['Pieces thrown away', pcs + ' pcs', plural(list.length, 'entry', 'entries')], ['Cost of waste', cash(cost), known.length < list.length ? plural(list.length - known.length, 'entry', 'entries') + ' without a batch cost' : 'From batch cost per piece']])
+      + (items.length ? '<h4>By item</h4>' + table(['Item', 'Pieces', 'Cost', 'Main reason'], items.map(n => [esc(n), byItem[n].pcs + ' pcs', byItem[n].known ? cash(byItem[n].cost) : '<span class="pd-muted">No batch cost</span>', esc(topReason(byItem[n].reasons))]))
+        + '<h4>Recent</h4>' + table(['When', 'Item', 'Pieces', 'Reason', 'By'], list.slice(0, 30).map(w => [esc(new Date(w.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })), esc(w.item_name), esc(w.quantity), esc(WASTE_REASONS[w.reason] || w.reason) + (w.note ? '<br><span class="pd-muted">' + esc(w.note) + '</span>' : ''), esc(w.recorded_by_name || '—')]))
+        : empty('Nothing recorded as thrown away in the last 30 days.'))
+      + '<p class="pd-muted">Record pieces as they are thrown away (🗑 Thrown away above, or Live Stock in Display Stock). They come off the counter stock straight away.</p></section>';
+  }
+  function wasteForm(d) {
+    const dialog = root.querySelector('dialog');
+    dialog.innerHTML = '<form><h3>Thrown away: ' + esc(d.name) + '</h3><p class="pd-muted">' + esc(d.stock) + ' pcs on the counter now.</p><div class="pd-error" role="alert"></div><div class="pd-fields">'
+      + field('quantity', 'Pieces thrown away', 'number', '1', 'min="1" max="' + esc(d.stock) + '" step="1"')
+      + select('reason', 'Reason', Object.keys(WASTE_REASONS).map(k => '<option value="' + k + '">' + esc(WASTE_REASONS[k]) + '</option>').join('')) + '</div>'
+      + '<label>Note (optional)<input name="note" maxlength="200"></label><div class="pd-line pd-row">' + button('cancel', 'Cancel') + '<button type="submit">Take off stock</button></div></form>';
+    dialog.showModal();
+    dialog.querySelector('form').addEventListener('submit', async e => {
+      e.preventDefault(); if (state.busy) return; state.busy = true; dialog.querySelector('[type=submit]').disabled = true;
+      try {
+        const f = e.target;
+        const by = typeof window.currentLogName === 'function' ? window.currentLogName() : '';
+        const result = await dbClient().rpc('cc_record_wastage', { p_item: d.name, p_qty: Math.round(num(f.quantity.value)), p_reason: f.reason.value, p_note: f.note.value, p_by: by || null });
+        if (result.error) throw new Error(/cc_record_wastage|schema cache/i.test(result.error.message || '') ? 'The database update is missing. Run migrations/20260966_setup_tools.sql in Supabase.' : result.error.message);
+        invalidateReads(); dialog.close(); await refresh(); announce('Recorded: ' + f.quantity.value + ' × ' + d.name + ' thrown away.');
+      } catch (error) { dialog.querySelector('[role=alert]').textContent = error.message; }
+      finally { state.busy = false; const b = dialog.querySelector('[type=submit]'); if (b) b.disabled = false; }
+    });
+  }
+  // ── Setup check: data problems that block production or profit ──
+  const normName = n => String(n || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  function nameWeightKg(name) {
+    const m = normName(name).match(/(\d+(?:\.\d+)?\s*\/\s*\d+|\d+(?:\.\d+)?|½|half)\s*(kg|kgs|g|gm|gms|grams?)\b/);
+    if (!m) return null;
+    let v = m[1] === '½' || m[1] === 'half' ? 0.5 : m[1].includes('/') ? m[1].split('/').map(Number).reduce((a, b) => a / b) : Number(m[1]);
+    if (!/^k/.test(m[2])) v = v / 1000;
+    return v > 0 && Number.isFinite(v) ? v : null;
+  }
+  function closestMenuName(name) {
+    const menu = rows('menu').map(m => m.name);
+    const same = menu.find(m => normName(m) === normName(name)); if (same) return same;
+    const words = new Set(normName(name).split(/[^a-z0-9/½]+/).filter(Boolean));
+    let best = null, bestScore = 0;
+    menu.forEach(m => { const w = normName(m).split(/[^a-z0-9/½]+/).filter(Boolean); const hit = w.filter(x => words.has(x)).length; const score = hit / Math.max(words.size, w.length); if (score > bestScore) { bestScore = score; best = m; } });
+    return bestScore >= 0.5 ? best : null;
+  }
+  function setupIssues() {
+    const menu = new Set(rows('menu').map(m => m.name));
+    const issues = [];
+    const latest = {};
+    rows('recipes').filter(r => !r.deleted_at).forEach(r => { if (!latest[r.product_name] || String(r.created_at) > String(latest[r.product_name].created_at)) latest[r.product_name] = r; });
+    // 1. Names that are not on the menu (collect / auto stock cannot find them).
+    const orphans = {};
+    const add = (name, where) => { if (name && !menu.has(name)) (orphans[name] = orphans[name] || new Set()).add(where); };
+    Object.keys(latest).forEach(n => add(n, 'recipe'));
+    rows('requests').filter(r => !['fulfilled', 'cancelled'].includes(r.status)).forEach(r => add(r.product_name, 'open request'));
+    rows('batches').filter(b => b.status !== 'completed' || num(b.actual_qty) > num(b.collected_qty)).forEach(b => add(b.product_name, 'batch waiting'));
+    rows('outlet').filter(o => num(o.current_stock) > 0).forEach(o => add(o.item_name, 'outlet stock'));
+    Object.keys(orphans).sort().forEach(n => {
+      const guess = closestMenuName(n);
+      issues.push({ level: 'fix', title: '“' + n + '” is not on the menu', detail: 'Used by: ' + [...orphans[n]].join(', ') + '. Collection and automatic stock need the exact menu name.' + (guess ? ' Closest menu item: “' + guess + '”.' : ''),
+        action: isSuper ? '<button type="button" data-action="relink" data-name="' + esc(n) + '" data-guess="' + esc(guess || '') + '">Relink to menu item</button>' : '<span class="pd-muted">Ask the owner (super user) to relink it, or rename the menu item to match.</span>' });
+    });
+    // 2. Yields that do not match the weight in the name (e.g. 10 pcs / 1 kg for a 1 kg cake).
+    Object.values(latest).forEach(r => {
+      const w = nameWeightKg(r.product_name), q = num(r.yield_qty), kg = num(r.yield_kg);
+      if (!w || !q || !kg) return;
+      const each = kg / q;
+      if (Math.abs(each - w) / w <= 0.25) return;
+      const pcs = Math.max(1, Math.round(kg / w));
+      issues.push({ level: 'fix', title: r.product_name + ': recipe makes ' + q + ' pcs from ' + kg + ' kg', detail: 'That is ' + (+each.toFixed(3)) + ' kg per piece, but the name says ' + w + ' kg. Usually it should be ' + pcs + ' pc' + (pcs > 1 ? 's' : '') + ' / ' + kg + ' kg, or eggs and planned kg come out wrong.',
+        action: isSuper ? '<button type="button" data-action="super-fix-yield" data-id="' + esc(r.id) + '" data-name="' + esc(r.product_name) + '" data-qty="' + esc(r.yield_qty) + '" data-kg="' + esc(r.yield_kg) + '">✏️ Fix yield</button>' : '<span class="pd-muted">Ask the owner (super user) to fix the yield, or save a new recipe version.</span>' });
+    });
+    // 3. Recipe lines pointing at missing materials, a different unit, or no cost.
+    const mats = { materials: {}, packaging: {} };
+    rows('materials').forEach(m => { mats.materials[m.name] = m; }); rows('packaging').forEach(m => { mats.packaging[m.name] = m; });
+    const noCost = {};
+    Object.values(latest).forEach(r => {
+      [['materials', r.ingredients], ['packaging', r.packaging]].forEach(([kind, lines]) => (lines || []).forEach(l => {
+        const m = mats[kind][l.name];
+        if (!m) issues.push({ level: 'fix', title: r.product_name + ' uses “' + l.name + '”, which is not in Materials', detail: 'Stock cannot be taken off and the cost is unknown. Add the material, or edit the recipe.', action: button('edit-recipe', 'Edit recipe', r.id, !state.ready) });
+        else if (m.unit !== l.unit) issues.push({ level: 'fix', title: r.product_name + ': ' + l.name + ' is in ' + l.unit + ' but stocked in ' + m.unit, detail: 'Sales cannot take this off stock. Save a new recipe version with the quantity in ' + m.unit + '.', action: button('edit-recipe', 'Edit recipe', r.id, !state.ready) });
+        else if (m.cost_per_unit == null || num(m.cost_per_unit) === 0) (noCost[kind + '|' + m.name] = noCost[kind + '|' + m.name] || { kind: kind === 'materials' ? 'raw' : 'packaging', m, used: new Set() }).used.add(r.product_name);
+      }));
+    });
+    Object.values(noCost).forEach(x => issues.push({ level: 'fix', title: x.m.name + ' has no unit cost', detail: 'Used in ' + [...x.used].join(', ') + '. Profit for these is understated until a cost is set (₹ per ' + x.m.unit + ').',
+      action: '<button type="button" data-action="set-cost" data-kind="' + x.kind + '" data-name="' + esc(x.m.name) + '" data-unit="' + esc(x.m.unit) + '" data-cost=""' + (state.ready ? '' : ' disabled') + '>Set cost</button>' }));
+    // 4. Labour + other not set: the Profit report stays "Not ready".
+    if (state.data.making) Object.keys(latest).filter(n => menu.has(n) && !rows('making').some(m => m.product_name === n)).sort().forEach(n => issues.push({ level: 'check', title: n + ': labour + other cost not set', detail: 'The Profit report shows “Not ready” for this product until it is set (0 is fine).', action: makingCell(n) }));
+    // 5. Menu items with no recipe: stock and profit are not tracked for them.
+    const noRecipe = rows('menu').map(m => m.name).filter(n => !latest[n]).sort();
+    return { issues, noRecipe };
+  }
+  function setupCheck() {
+    const { issues, noRecipe } = setupIssues();
+    const fixes = issues.filter(i => i.level === 'fix'), checks = issues.filter(i => i.level === 'check');
+    const list = arr => arr.map(i => '<div class="pd-issue pd-issue-' + i.level + '"><div><strong>' + esc(i.title) + '</strong><div class="pd-muted">' + esc(i.detail) + '</div></div><div class="pd-issue-action">' + i.action + '</div></div>').join('');
+    return cards([['Needs fixing', fixes.length, fixes.length ? 'Blocks collection, stock or cost' : 'All good'], ['Worth checking', checks.length, 'Profit report completeness'], ['Menu items without recipe', noRecipe.length, 'Stock & profit not tracked']])
+      + '<section class="pd-card"><h3>Needs fixing</h3>' + (fixes.length ? list(fixes) : empty('✅ Nothing blocking. Names, yields, units and costs look right.')) + '</section>'
+      + (checks.length ? '<section class="pd-card"><h3>Worth checking</h3>' + list(checks) + '</section>' : '')
+      + '<section class="pd-card"><details><summary><strong>Menu items without a production recipe (' + noRecipe.length + ')</strong></summary><p class="pd-muted">Fine for bought-in items. For anything made in-house, add a recipe so sales take ingredients off stock and profit can be worked out.</p>'
+      + (noRecipe.length ? '<p>' + noRecipe.map(esc).join(' · ') + '</p>' : '') + '</details></section>'
+      + '<p class="pd-muted">Renaming a menu item now renames it in Production too (recipes, requests, batches, outlet stock, making costs, bookings).</p>';
+  }
+  function relinkForm(d) {
+    const dialog = root.querySelector('dialog');
+    const opts = rows('menu').map(m => m.name).sort((a, b) => a.localeCompare(b)).map(n => '<option value="' + esc(n) + '"' + (n === d.guess ? ' selected' : '') + '>' + esc(n) + '</option>').join('');
+    dialog.innerHTML = '<form><h3>Relink “' + esc(d.name) + '”</h3><p>Every recipe, request, batch, outlet stock and booking under this name moves to the menu item you choose. This cannot be undone automatically.</p><div class="pd-error" role="alert"></div>'
+      + select('target', 'Menu item', opts) + '<div class="pd-line pd-row">' + button('cancel', 'Cancel') + '<button type="submit">Relink</button></div></form>';
+    dialog.showModal();
+    dialog.querySelector('form').addEventListener('submit', async e => {
+      e.preventDefault(); if (state.busy) return; state.busy = true; dialog.querySelector('[type=submit]').disabled = true;
+      try {
+        const to = e.target.target.value;
+        const result = await dbClient().rpc('cc_super_relink_product', { p_from: d.name, p_to: to });
+        if (result.error) throw new Error(/cc_super_relink_product|schema cache/i.test(result.error.message || '') && !/super user|not found|menu/i.test(result.error.message || '') ? 'The database update is missing. Run migrations/20260966_setup_tools.sql in Supabase.' : result.error.message);
+        invalidateReads(); dialog.close(); await refresh(); window.alert('✅ “' + d.name + '” now uses “' + to + '”.');
+      } catch (error) { dialog.querySelector('[role=alert]').textContent = error.message; }
+      finally { state.busy = false; const b = dialog.querySelector('[type=submit]'); if (b) b.disabled = false; }
+    });
   }
   function productionTable() {
     return table(['Product / outlet', 'Requested', 'Status', 'Approved by', 'Action'], rows('requests').map(r => [esc(r.product_name) + '<br><span class="pd-muted">' + esc(r.outlet_name) + '</span>' + requestSource(r), esc(r.quantity) + ' pcs', badge(r.status), approvedBy(r), (r.status === 'pending' ? 'Pending admin approval' : r.status === 'approved' ? button('start', 'Plan & start baking', r.id, !state.ready) : '—') + superRequestButtons(r)]));
@@ -470,7 +605,8 @@
     if (state.tab === 'Production') html += '<div class="pd-grid"><div class="pd-stack"><section class="pd-card"><div class="pd-row"><h3>Sales requests</h3>' + button('request', 'New sales request', null, !state.ready) + '</div>' + productionTable() + '</section><section class="pd-card"><h3>Batches</h3>' + table(['Product', 'Planned', 'Actual', 'Cost', 'Status / action'], rows('batches').map(b => [esc(b.product_name), esc(b.planned_qty) + ' pcs / ' + esc(b.planned_kg) + ' kg', b.actual_qty == null ? '—' : esc(b.actual_qty) + ' pcs', cash(b.total_cost), badge(b.status) + ' ' + (b.status === 'baking' ? button('complete', 'Submit baked batch', b.id, !state.ready) : '')])) + '</section></div>' + readyPanel() + '</div>';
     if (state.tab === 'Materials') html += '<div class="pd-stack">' + toBuyCard() + '<section class="pd-card"><div class="pd-row"><h3>Raw materials</h3>' + button('purchase', 'Record stock-in', null, !state.ready) + '</div>' + table(['Material', 'Available', 'Reorder level', 'Unit cost', 'Stock value', ''], raw.map(r => [esc(r.name), esc(r.current_stock) + ' ' + esc(r.unit), reorderCell('raw', r, 'name'), cash(r.cost_per_unit) + ' <span class="pd-muted">/ ' + esc(r.unit) + '</span>', r.cost_per_unit == null ? 'Cost unavailable' : cash(num(r.current_stock) * num(r.cost_per_unit)), materialActions('raw', r)])) + '</section><section class="pd-card"><h3>Packaging by category</h3>' + table(['Packaging', 'Category', 'Available', 'Reorder level', 'Unit cost', ''], rows('packaging').map(r => [esc(r.name), esc(r.category || 'Uncategorized'), esc(r.current_stock) + ' ' + esc(r.unit), reorderCell('packaging', r, 'name'), cash(r.cost_per_unit) + ' <span class="pd-muted">/ ' + esc(r.unit) + '</span>', materialActions('packaging', r)])) + '</section><section class="pd-card"><h3>Stock-in history</h3>' + table(['Date', 'Material', 'Quantity', 'Total cost'], rows('purchases').slice().sort((a,b) => String(b.purchase_date).localeCompare(String(a.purchase_date))).slice(0,100).map(r => [date(r.purchase_date), esc(r.item_name), esc(r.quantity) + ' ' + esc(r.unit), cash(r.cost_total)])) + '</section></div>';
     if (state.tab === 'Recipes') html += '<section class="pd-card"><div class="pd-row"><h3>Production recipes</h3>' + button('recipe', 'Add recipe version', null, !state.ready) + '</div>' + table(['Product / revision', 'Base yield', 'Ingredients', 'Packaging', 'Labour + other / piece'], recipeRows()) + '</section>';
-    if (state.tab === 'Outlet') html += '<div class="pd-grid"><section class="pd-card"><h3>Main outlet stock</h3>' + table(['Product', 'Available', 'Reorder level', 'Auto kitchen request'], rows('outlet').map(r => [esc(r.item_name), esc(r.current_stock) + ' pcs', reorderCell('outlet', r, 'item_name'), r.auto_restock === false ? 'Off (made to order) <button type="button" data-action="auto-restock" data-name="' + esc(r.item_name) + '" data-level="' + esc(r.low_stock_threshold) + '" data-on="1">Turn on</button>' : 'On <button type="button" data-action="auto-restock" data-name="' + esc(r.item_name) + '" data-level="' + esc(r.low_stock_threshold) + '" data-on="0">Turn off</button>'])) + '<p class="pd-muted">Sales reduce this stock automatically. At or below the reorder level a sales request is created by itself (Auto · low stock). Booked cakes are made to order, so auto is off for them.</p></section>' + readyPanel() + '</div>';
+    if (state.tab === 'Outlet') html += '<div class="pd-grid"><section class="pd-card"><h3>Main outlet stock</h3>' + table(['Product', 'Available', 'Reorder level', 'Auto kitchen request', ''], rows('outlet').map(r => [esc(r.item_name), esc(r.current_stock) + ' pcs', reorderCell('outlet', r, 'item_name'), r.auto_restock === false ? 'Off (made to order) <button type="button" data-action="auto-restock" data-name="' + esc(r.item_name) + '" data-level="' + esc(r.low_stock_threshold) + '" data-on="1">Turn on</button>' : 'On <button type="button" data-action="auto-restock" data-name="' + esc(r.item_name) + '" data-level="' + esc(r.low_stock_threshold) + '" data-on="0">Turn off</button>', wasteButton(r)])) + '<p class="pd-muted">Sales reduce this stock automatically. At or below the reorder level a sales request is created by itself (Auto · low stock). Booked cakes are made to order, so auto is off for them.</p></section>' + readyPanel() + '</div>' + wastageCard();
+    if (state.tab === 'Setup check') html += setupCheck();
     if (state.tab === 'Approvals' && canReviewDeletion) html += approvalsPanel();
     if (state.tab === 'Profit report') {
       html += '<div class="pd-stack"><section class="pd-card"><h3>Paid, collected item sales · Last 30 days</h3>' + '<p class="pd-notice">Making cost per piece = (ingredients + packaging + labor + other making costs) ÷ good pieces produced. Estimated profit = sales − making cost of the pieces sold.</p>' + table(['Item', 'Pieces sold', 'Selling price / piece', 'Making cost / piece', 'Estimated profit · all sold pieces', 'Cost details'], profitRows()) + '<p class="pd-muted">Line prices before order-level discounts and refunds. Only paid orders marked collected are included.</p></section><section class="pd-card"><div class="pd-row"><h3>Production cost by batch</h3>' + button('export', 'Export batch costs') + '</div>' + table(['Product', 'Baked', 'Collected', 'Ingredients', 'Packaging', 'Labor / overhead', 'Cost / piece'], rows('batches').filter(b => b.status === 'completed').map(b => [esc(b.product_name), esc(b.actual_qty), esc(b.collected_qty), cash(b.material_cost), cash(b.packaging_cost), cash(num(b.labor_cost) + num(b.overhead_cost)), cash(b.unit_cost)])) + '<div class="pd-notice pd-line">Approved cost corrections take priority within their selected dates. Otherwise, batch estimates use the latest completed batch before the sale. Recipe-only costs use current material prices and do not include all making costs, so profit stays “Not ready.” All profits shown are estimates before discounts, refunds, tax and other business expenses. Recorded zero batch costs are treated as entered; review them if costs were omitted.</div></section></div>';
@@ -802,6 +938,8 @@
         else if (action === 'super-edit-request') await superEditRequest(target.dataset);
         else if (action === 'super-cancel-request') await superCancelRequest(target.dataset);
         else if (action === 'super-fix-yield') await superFixYield(target.dataset);
+        else if (action === 'waste') wasteForm(target.dataset);
+        else if (action === 'relink') relinkForm(target.dataset);
         else if (action === 'delete-material') await deleteMaterial(target.dataset);
         else if (action === 'reorder') await editReorderLevel(target.dataset.kind, target.dataset.name, target.dataset.level);
         else if (action === 'auto-restock') { const r = await dbClient().rpc('cc_set_reorder_level', { p_kind: 'outlet', p_name: target.dataset.name, p_level: num(target.dataset.level), p_auto: target.dataset.on === '1' }); if (r.error) throw r.error; invalidateReads(); await refresh(); }

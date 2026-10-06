@@ -67,7 +67,7 @@ function setup(authorized = true, reviewer = true) {
   const readsBeforeTabs=env.reads.length;
   await click('[data-tab="Outlet"]');
   await click('[data-tab="Dashboard"]');
-  assert.equal(env.reads.length,readsBeforeTabs,'recent shared data should not be fetched again when switching tabs');
+  assert.equal(env.reads.filter(name=>name!=='cc_wastage').length,readsBeforeTabs,'recent shared data should not be fetched again when switching tabs'); // Outlet adds only its own wastage log
   await click('[data-action="refresh"]');
   assert.ok(env.reads.length>readsBeforeTabs,'manual Refresh must bypass the cache');
   await click('[data-tab="Materials"]');
