@@ -128,7 +128,8 @@ function renderReportsHubCards() {
   // Only shown to the actual super user — regular admins never see this
   // card exist at all, not even greyed out.
   if (_rhIsSuperUser) {
-    html += reportCard('📊', 'Sales Reports', 'Dashboards, trends & PDF export', "rhOpen('sales-reports')");
+    html += reportCard('🌙', 'Daily Summary', 'Sales, top items, wastage & to-buy · 10 pm on your phone', "rhOpen('daily-summary')");
+    html += reportCard('📊', 'Sales Reports', 'Dashboards, trends, busy-hours heat-map & PDF export', "rhOpen('sales-reports')");
   }
 
   html += '<div style="display:flex;align-items:center;gap:14px;background:#faf7fb;'
@@ -151,6 +152,9 @@ function rhOpen(which) {
   } else if (which === 'expenses') {
     if (typeof openExpenses === 'function') openExpenses();
     else alert('Daily Expenses module not loaded — check that daily-expenses-patch.js is included.');
+  } else if (which === 'daily-summary') {
+    if (typeof openDailySummary === 'function') openDailySummary();
+    else alert('Daily Summary module not loaded — check that daily-summary-patch.js is included.');
   } else if (which === 'sales-reports') {
     if (typeof openReports === 'function') openReports();
     else alert('Sales Reports module not loaded — check that sales-reports-patch.js is included.');

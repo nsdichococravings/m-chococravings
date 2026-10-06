@@ -110,3 +110,29 @@
 #production-workspace .pd-issue-action{flex-shrink:0;text-align:right}
 @media(max-width:600px){#production-workspace .pd-issue{flex-direction:column}#production-workspace .pd-issue-action{text-align:left}}
 #production-workspace .pd-waste{margin-top:18px}
+
+/* Menu performance chart */
+#production-workspace .pd-menu-chart{margin:8px 0 14px}
+#production-workspace .pd-menu-scroll{overflow-x:auto}
+#production-workspace .pd-menu-chart svg{width:100%;min-width:520px;max-width:760px;height:auto;display:block;overflow:visible}
+#production-workspace .pd-ax{font-size:11px;fill:#7a6a86}
+#production-workspace .pd-ax-title{font-size:11px;font-weight:700;fill:#7a6a86}
+#production-workspace .pd-grid-line{stroke:#efe6f3;stroke-width:1}
+#production-workspace .pd-avg-line{stroke:#b9a3c4;stroke-width:1.5;stroke-dasharray:5 4}
+#production-workspace .pd-quad{font-size:12px;font-weight:700;fill:#9a86a6;pointer-events:none;paint-order:stroke;stroke:#fff;stroke-width:3px}
+#production-workspace .pd-dot-mark{fill:#6e0977;stroke:#fff;stroke-width:2}
+#production-workspace .pd-dot:hover .pd-dot-mark,#production-workspace .pd-dot:focus .pd-dot-mark{fill:#9c0ca1;r:7}
+#production-workspace .pd-dot:focus{outline:none}
+#production-workspace .pd-dot-label{font-size:11px;font-weight:600;fill:#291b32;pointer-events:none;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round}
+#production-workspace .pd-menu-groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+#production-workspace .pd-menu-group{border:1px solid #eee3f1;border-radius:12px;padding:12px 14px;border-top-width:4px}
+#production-workspace .pd-menu-group h4{margin:0 0 4px}
+#production-workspace .pd-menu-group p{margin:0 0 8px;font-size:12px}
+#production-workspace .pd-menu-group ul{list-style:none;margin:0;padding:0}
+#production-workspace .pd-menu-group li{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-top:1px solid #f4edf6;font-size:13px}
+#production-workspace .pd-menu-group li span:last-child{color:#6a5a76;white-space:nowrap;font-size:12px}
+#production-workspace .pd-menu-group em{color:#b45309;font-style:normal}
+#production-workspace .pd-menu-star{border-top-color:#6e0977}
+#production-workspace .pd-menu-puzzle{border-top-color:#b9a3c4}
+#production-workspace .pd-menu-horse{border-top-color:#b9a3c4}
+#production-workspace .pd-menu-dog{border-top-color:#e4dbe8}
