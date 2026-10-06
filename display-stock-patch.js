@@ -355,8 +355,36 @@ async function loadLiveStock() {
       + (statusTxt ? '<div style="font-size:9px;font-weight:700;color:' + color + ';letter-spacing:1px;margin-top:2px">' + statusTxt + '</div>' : '')
       + '</div>'
       + '<div style="font-family:Fraunces,Georgia,serif;font-size:22px;font-weight:900;color:' + color + '">' + item.current_stock + ' <span style="font-size:11px;font-weight:600;color:#9a8aaa">pcs</span></div>'
-      + '</div>' + reqBtn + '</div>';
+      + '</div>' + reqBtn
+      + (item.current_stock > 0 ? '<button onclick="dsThrowAway(\'' + item.item_name.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;') + '\',' + item.current_stock + ')" '
+        + 'style="width:100%;margin-top:6px;padding:8px;border-radius:9px;font-size:11px;font-weight:700;cursor:pointer;'
+        + 'background:#fff;border:1px dashed rgba(220,38,38,0.35);color:#b91c1c">🗑 Thrown away</button>' : '')
+      + '</div>';
   }).join('');
+}
+
+// Wastage: takes stale / damaged pieces off the counter and logs them
+// (cc_record_wastage, migrations/20260966_setup_tools.sql).
+async function dsThrowAway(itemName, onCounter) {
+  var qtyStr = prompt('How many "' + itemName + '" were thrown away? (' + onCounter + ' on the counter)', '1');
+  if (qtyStr === null) return;
+  var qty = parseInt(qtyStr, 10);
+  if (isNaN(qty) || qty <= 0) { showStoreToast('Enter a valid number of pieces'); return; }
+  if (qty > onCounter) { showStoreToast('Only ' + onCounter + ' on the counter'); return; }
+  var pick = prompt('Why?\n1 = Stale / expired\n2 = Damaged / dropped\n3 = Tasting sample\n4 = Other', '1');
+  if (pick === null) return;
+  var reason = { '1': 'stale', '2': 'damaged', '3': 'sample', '4': 'other' }[String(pick).trim()];
+  if (!reason) { showStoreToast('Choose 1, 2, 3 or 4'); return; }
+  var note = reason === 'other' ? (prompt('Short note (optional)', '') || '') : '';
+  var res = await db.rpc('cc_record_wastage', { p_item: itemName, p_qty: qty, p_reason: reason, p_note: note, p_by: currentLogName() || null });
+  if (res.error) {
+    var msg = res.error.message || '';
+    showStoreToast(/cc_record_wastage|schema cache/i.test(msg) ? 'Wastage needs the latest database update (20260966)' : 'Error: ' + msg);
+    return;
+  }
+  showStoreToast('🗑 ' + qty + ' × ' + itemName + ' taken off the counter');
+  refreshDsBadge();
+  loadLiveStock();
 }
 
 async function requestProduction(itemName, suggestedThreshold) {

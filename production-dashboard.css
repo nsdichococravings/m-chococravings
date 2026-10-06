@@ -101,3 +101,12 @@
 .pdk-history-reopen:hover{border-color:rgba(245,196,48,.7);transform:translateY(-1px)}
 .pd-kitchen-history .pdk-history-close:focus-visible,.pdk-history-reopen:focus-visible{outline:2px solid #f5c430;outline-offset:3px}
 @media(prefers-reduced-motion:reduce){.pd-kitchen-history .pdk-history-close,.pdk-history-reopen{transition:none;animation:none}.pd-kitchen-history .pdk-history-close:hover,.pd-kitchen-history .pdk-history-close:active{transform:none}}
+
+/* Setup check list */
+#production-workspace .pd-issue{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:12px 0;border-top:1px solid #eee3f1}
+#production-workspace .pd-issue:first-of-type{border-top:0}
+#production-workspace .pd-issue-fix strong{color:#8a1c2b}
+#production-workspace .pd-issue-check strong{color:#7a5a00}
+#production-workspace .pd-issue-action{flex-shrink:0;text-align:right}
+@media(max-width:600px){#production-workspace .pd-issue{flex-direction:column}#production-workspace .pd-issue-action{text-align:left}}
+#production-workspace .pd-waste{margin-top:18px}
