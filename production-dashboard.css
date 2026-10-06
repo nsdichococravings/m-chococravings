@@ -136,3 +136,12 @@
 #production-workspace .pd-menu-puzzle{border-top-color:#b9a3c4}
 #production-workspace .pd-menu-horse{border-top-color:#b9a3c4}
 #production-workspace .pd-menu-dog{border-top-color:#e4dbe8}
+
+/* Stock count */
+#production-workspace .pd-loss{color:#b91c1c;font-weight:600}
+#production-workspace .pd-count-scroll{max-height:52vh;overflow:auto}
+#production-workspace .pd-count-form table input{width:110px;max-width:100%}
+#production-workspace .pd-count-form th[scope=colgroup]{text-align:left;background:#f7f1f9;color:#52265e}
+#production-workspace .pd-count-total{font-weight:700;margin:8px 0}
+#production-workspace .pd-count-lines:empty{display:none}
+#production-workspace .pd-count-lines{margin-top:8px;min-width:280px}

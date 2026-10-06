@@ -2,12 +2,12 @@
 (function () {
   'use strict';
   const tabs = ['Dashboard', 'Production', 'Materials', 'Recipes', 'Outlet', 'Profit report', 'Setup check', 'Approvals'];
-  const sources = { corrections: 'cc_cost_corrections', deletions: 'cc_recipe_delete_requests', materials: 'inventory_items', packaging: 'packaging_materials', purchases: 'material_purchases', menu: 'store_menu', outlet: 'display_stock', requests: 'cc_production_requests', recipes: 'cc_production_recipes', batches: 'cc_production_batches', orders: 'store_orders', making: 'cc_making_costs', wastage: 'cc_wastage' };
+  const sources = { corrections: 'cc_cost_corrections', deletions: 'cc_recipe_delete_requests', materials: 'inventory_items', packaging: 'packaging_materials', purchases: 'material_purchases', menu: 'store_menu', outlet: 'display_stock', requests: 'cc_production_requests', recipes: 'cc_production_recipes', batches: 'cc_production_batches', orders: 'store_orders', making: 'cc_making_costs', wastage: 'cc_wastage', counts: 'cc_stock_counts' };
   const screenSources = {
     Dashboard: ['materials','packaging','outlet','requests','batches'], Production: ['requests','batches'],
-    Materials: ['materials','packaging','purchases'], Recipes: ['recipes','menu','materials','packaging','deletions','making'],
+    Materials: ['materials','packaging','purchases','counts'], Recipes: ['recipes','menu','materials','packaging','deletions','making'],
     Outlet: ['outlet','batches','wastage'], 'Profit report': ['orders','batches','recipes','materials','packaging','corrections','making','wastage'],
-    'Setup check': ['menu','recipes','materials','packaging','making','outlet','requests','batches'],
+    'Setup check': ['menu','recipes','materials','packaging','making','outlet','requests','batches','counts'],
     Approvals: ['requests','recipes','deletions','corrections']
   };
   const columns = {
@@ -22,7 +22,8 @@
     cc_production_batches: 'id,product_name,outlet_name,status,planned_qty,planned_kg,actual_qty,collected_qty,material_cost,packaging_cost,labor_cost,overhead_cost,total_cost,unit_cost,completed_at',
     store_orders: 'id,items,status,payment_status,created_at',
     cc_making_costs: '*', // labour + other per piece (20260962)
-    cc_wastage: '*' // thrown-away outlet pieces (20260966)
+    cc_wastage: '*', // thrown-away outlet pieces (20260966)
+    cc_stock_counts: '*' // shelf counts (20260970)
   };
   const state = { tab: 'Dashboard', data: {}, errors: [], ready: false, loading: false, busy: false, refreshed: null };
   let root, channel, refreshTimer, previousFocus, loadId = 0, previousOverflow = '', authListener, stockTimer, stockLoading = false, pendingRequest = null;
@@ -116,12 +117,13 @@
       if (tableName === 'material_purchases') query = query.order('purchase_date', { ascending: false }).order('id').limit(100);
       else if (tableName === 'store_orders') query = query.gte('created_at', new Date(Date.now() - 30 * 86400000).toISOString()).eq('status','collected').eq('payment_status','paid').order('created_at').order('id');
       else if (tableName === 'cc_making_costs') query = query.order('product_name'); // keyed by product, no id column
+      else if (tableName === 'cc_stock_counts') query = query.order('created_at', { ascending: false }).order('id').limit(20);
       else if (tableName === 'cc_wastage') query = query.gte('created_at', new Date(Date.now() - 30 * 86400000).toISOString()).order('created_at', { ascending: false }).order('id');
       else query = query.order('id');
-      const response = await query.range(from, tableName === 'material_purchases' ? 99 : from + 499);
+      const response = await query.range(from, tableName === 'material_purchases' ? 99 : tableName === 'cc_stock_counts' ? 19 : from + 499);
       if (response.error) throw response.error;
       result.push(...(response.data || []));
-      if (tableName === 'material_purchases' || !response.data || response.data.length < 500) return result;
+      if (tableName === 'material_purchases' || tableName === 'cc_stock_counts' || !response.data || response.data.length < 500) return result;
     }
   }
   async function refresh(useCache = false) {
@@ -319,6 +321,74 @@
       finally { state.busy = false; const b = dialog.querySelector('[type=submit]'); if (b) b.disabled = false; }
     });
   }
+  // ── Stock count (cc_stock_count, migration 20260970) ──
+  const fmtQty = v => (+num(v).toFixed(3)).toLocaleString('en-IN');
+  function stockCountCard() {
+    if (!state.data.counts) return '<section class="pd-card"><h3>Stock counts</h3><p class="pd-muted">Not available yet. Run migrations/20260970_customer_returns_stock_count.sql in Supabase.</p></section>';
+    const list = rows('counts');
+    const last = list[0];
+    const days = last ? Math.floor((Date.now() - new Date(last.created_at).getTime()) / 86400000) : null;
+    const due = days == null || days >= 7;
+    return '<section class="pd-card"><div class="pd-row"><h3>Stock counts</h3>' + button('stock-count', '📋 Count shelf stock', null, !state.ready) + '</div>'
+      + '<p class="' + (due ? 'pd-notice' : 'pd-muted') + '">' + (last ? 'Last count ' + (days === 0 ? 'today' : days + ' day' + (days === 1 ? '' : 's') + ' ago') + '. ' : 'No count recorded yet. ') + (due ? 'Count the shelf once a week so automatic stock stays true.' : 'Next count due in ' + (7 - days) + ' day' + (7 - days === 1 ? '' : 's') + '.') + '</p>'
+      + (list.length ? table(['When', 'By', 'Items', 'Value gap', ''], list.slice(0, 8).map(c => [esc(new Date(c.created_at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })), esc(c.counted_by_name || '—') + (c.note ? '<br><span class="pd-muted">' + esc(c.note) + '</span>' : ''), esc(c.lines_count),
+          '<span class="' + (num(c.value_gap) < 0 ? 'pd-loss' : '') + '">' + (num(c.value_gap) < 0 ? '−' : num(c.value_gap) > 0 ? '+' : '') + cash(Math.abs(num(c.value_gap))) + '</span>',
+          '<button type="button" data-action="count-lines" data-id="' + esc(c.id) + '">Details</button><div class="pd-count-lines" data-for="' + esc(c.id) + '"></div>'])) : '')
+      + '</section>';
+  }
+  async function showCountLines(id, btn) {
+    const box = root.querySelector('.pd-count-lines[data-for="' + id + '"]'); if (!box) return;
+    if (box.innerHTML) { box.innerHTML = ''; btn.textContent = 'Details'; return; }
+    const res = await dbClient().from('cc_stock_count_lines').select('*').eq('count_id', id).order('name');
+    if (res.error) { box.textContent = res.error.message; return; }
+    const lines = (res.data || []).slice().sort((a, b) => Math.abs(num(b.value_gap)) - Math.abs(num(a.value_gap)));
+    box.innerHTML = table(['Material', 'Expected', 'Counted', 'Gap'], lines.map(l => [esc(l.name), fmtQty(l.expected) + ' ' + esc(l.unit), fmtQty(l.counted) + ' ' + esc(l.unit),
+      '<span class="' + (num(l.gap) < 0 ? 'pd-loss' : '') + '">' + (num(l.gap) > 0 ? '+' : '') + fmtQty(l.gap) + ' ' + esc(l.unit) + (l.value_gap == null ? '' : ' · ' + (num(l.value_gap) < 0 ? '−' : '+') + cash(Math.abs(num(l.value_gap)))) + '</span>']));
+    btn.textContent = 'Hide';
+  }
+  function stockCountForm() {
+    const dialog = root.querySelector('dialog');
+    const line = (kind, r) => '<tr data-kind="' + kind + '" data-name="' + esc(r.name) + '" data-stock="' + esc(num(r.current_stock)) + '" data-cost="' + esc(r.cost_per_unit == null ? '' : r.cost_per_unit) + '"><td>' + esc(r.name) + '</td><td>' + fmtQty(r.current_stock) + ' ' + esc(r.unit) + '</td>'
+      + '<td><input type="number" inputmode="decimal" min="0" step="any" aria-label="Counted ' + esc(r.name) + ' in ' + esc(r.unit) + '" placeholder="' + esc(r.unit) + '"></td><td class="pd-count-gap"></td></tr>';
+    const group = (title, kind, list) => list.length ? '<tr><th colspan="4" scope="colgroup">' + title + '</th></tr>' + list.slice().sort((a, b) => String(a.name).localeCompare(String(b.name))).map(r => line(kind, r)).join('') : '';
+    dialog.innerHTML = '<form class="pd-count-form"><h3>Shelf stock count</h3><p class="pd-muted">Enter what is actually on the shelf, in the unit shown. Leave a line empty to skip it. Saving sets stock to what you counted.</p><div class="pd-error" role="alert"></div>'
+      + '<div class="pd-scroll pd-count-scroll"><table><thead><tr><th scope="col">Material</th><th scope="col">App expects</th><th scope="col">Counted</th><th scope="col">Gap</th></tr></thead><tbody>'
+      + group('Ingredients', 'raw', rows('materials')) + group('Packaging', 'packaging', rows('packaging')) + '</tbody></table></div>'
+      + '<p class="pd-count-total" aria-live="polite"></p><div class="pd-fields">' + '<label>Counted by<input name="by" maxlength="80" value="' + esc(typeof window.currentLogName === 'function' ? (window.currentLogName() || '') : '') + '"></label><label>Note (optional)<input name="note" maxlength="200"></label></div>'
+      + '<div class="pd-line pd-row">' + button('cancel', 'Cancel') + '<button type="submit">Save count</button></div></form>';
+    const form = dialog.querySelector('form');
+    const update = () => {
+      let n = 0, value = 0;
+      form.querySelectorAll('tr[data-name]').forEach(tr => {
+        const v = tr.querySelector('input').value, cell = tr.querySelector('.pd-count-gap');
+        if (v === '') { cell.textContent = ''; return; }
+        const gap = Number(v) - num(tr.dataset.stock); n++;
+        if (tr.dataset.cost !== '') value += gap * num(tr.dataset.cost);
+        cell.textContent = (gap > 0 ? '+' : '') + fmtQty(gap); cell.className = 'pd-count-gap' + (gap < 0 ? ' pd-loss' : '');
+      });
+      form.querySelector('.pd-count-total').textContent = n ? n + ' counted · value gap ' + (value < 0 ? '−' : '+') + cash(Math.abs(value)) : '';
+    };
+    form.addEventListener('input', update);
+    dialog.showModal();
+    form.addEventListener('submit', async e => {
+      e.preventDefault(); if (state.busy) return;
+      const lines = [...form.querySelectorAll('tr[data-name]')].filter(tr => tr.querySelector('input').value !== '').map(tr => ({ kind: tr.dataset.kind, name: tr.dataset.name, counted: Number(tr.querySelector('input').value) }));
+      if (!lines.length) { form.querySelector('[role=alert]').textContent = 'Enter at least one counted quantity.'; return; }
+      if (lines.some(l => !Number.isFinite(l.counted) || l.counted < 0)) { form.querySelector('[role=alert]').textContent = 'Counted quantities must be 0 or more.'; return; }
+      const odd = [...form.querySelectorAll('tr[data-name]')].filter(tr => { const v = tr.querySelector('input').value, e = num(tr.dataset.stock); return v !== '' && e > 0 && (Number(v) > e * 2 || Number(v) < e / 2); })
+        .map(tr => tr.dataset.name + ': app ' + fmtQty(tr.dataset.stock) + ' → counted ' + fmtQty(tr.querySelector('input').value));
+      if (odd.length && !window.confirm('These counts are very different from what the app expects. Check the unit (kg vs g, l vs ml):\n\n' + odd.slice(0, 8).join('\n') + '\n\nSave anyway?')) return;
+      state.busy = true; form.querySelector('[type=submit]').disabled = true;
+      try {
+        const result = await dbClient().rpc('cc_stock_count', { p_lines: lines, p_note: form.note.value, p_by: form.by.value });
+        if (result.error) throw new Error(/cc_stock_count|schema cache/i.test(result.error.message || '') ? 'The database update is missing. Run migrations/20260970_customer_returns_stock_count.sql in Supabase.' : result.error.message);
+        invalidateReads(); dialog.close(); await refresh();
+        const g = num(result.data && result.data.value_gap);
+        window.alert('✅ Count saved for ' + lines.length + ' item' + (lines.length === 1 ? '' : 's') + '. Stock now matches the shelf.\nValue gap: ' + (g < 0 ? '−' : '+') + cash(Math.abs(g)) + (g < 0 ? ' (missing stock)' : ''));
+      } catch (error) { form.querySelector('[role=alert]').textContent = error.message; }
+      finally { state.busy = false; const b = form.querySelector('[type=submit]'); if (b) b.disabled = false; }
+    });
+  }
   // ── Setup check: data problems that block production or profit ──
   const normName = n => String(n || '').toLowerCase().replace(/\s+/g, ' ').trim();
   function nameWeightKg(name) {
@@ -379,7 +449,12 @@
       action: '<button type="button" data-action="set-cost" data-kind="' + x.kind + '" data-name="' + esc(x.m.name) + '" data-unit="' + esc(x.m.unit) + '" data-cost=""' + (state.ready ? '' : ' disabled') + '>Set cost</button>' }));
     // 4. Labour + other not set: the Profit report stays "Not ready".
     if (state.data.making) Object.keys(latest).filter(n => menu.has(n) && !rows('making').some(m => m.product_name === n)).sort().forEach(n => issues.push({ level: 'check', title: n + ': labour + other cost not set', detail: 'The Profit report shows “Not ready” for this product until it is set (0 is fine).', action: makingCell(n) }));
-    // 5. Menu items with no recipe: stock and profit are not tracked for them.
+    // 5. Shelf count overdue: automatic stock drifts without a weekly count.
+    if (state.data.counts) {
+      const lastCount = rows('counts')[0], age = lastCount ? Math.floor((Date.now() - new Date(lastCount.created_at).getTime()) / 86400000) : null;
+      if (age == null || age >= 7) issues.push({ level: 'check', title: age == null ? 'No shelf stock count yet' : 'Last shelf stock count was ' + age + ' days ago', detail: 'Count ingredients and packaging once a week so the To-buy list and costs stay true.', action: button('stock-count', '📋 Count now', null, !state.ready) });
+    }
+    // 6. Menu items with no recipe: stock and profit are not tracked for them.
     const noRecipe = rows('menu').map(m => m.name).filter(n => !latest[n]).sort();
     return { issues, noRecipe };
   }
@@ -659,7 +734,7 @@
     const readyQty = rows('batches').filter(b => b.status === 'completed').reduce((sum, b) => sum + num(b.actual_qty) - num(b.collected_qty), 0);
     if (state.tab === 'Dashboard') html += cards([['Raw material value', cash(totalValue), 'Current recorded unit costs'], ['Ready at kitchen', readyQty + ' pcs', 'Awaiting collection'], ['Outlet stock', rows('outlet').reduce((s, r) => s + num(r.current_stock), 0) + ' pcs', 'Current display stock'], ['Active requests', rows('requests').filter(r => !['fulfilled', 'cancelled'].includes(r.status)).length, 'Sales demand']]) + '<div class="pd-grid"><div class="pd-stack"><section class="pd-card"><div class="pd-row"><h3>Production requests</h3>' + button('request', 'New sales request', null, !state.ready) + '</div>' + productionTable() + '</section>' + toBuyCard() + '</div>' + readyPanel() + '</div>';
     if (state.tab === 'Production') html += '<div class="pd-grid"><div class="pd-stack"><section class="pd-card"><div class="pd-row"><h3>Sales requests</h3>' + button('request', 'New sales request', null, !state.ready) + '</div>' + productionTable() + '</section><section class="pd-card"><h3>Batches</h3>' + table(['Product', 'Planned', 'Actual', 'Cost', 'Status / action'], rows('batches').map(b => [esc(b.product_name), esc(b.planned_qty) + ' pcs / ' + esc(b.planned_kg) + ' kg', b.actual_qty == null ? '—' : esc(b.actual_qty) + ' pcs', cash(b.total_cost), badge(b.status) + ' ' + (b.status === 'baking' ? button('complete', 'Submit baked batch', b.id, !state.ready) : '')])) + '</section></div>' + readyPanel() + '</div>';
-    if (state.tab === 'Materials') html += '<div class="pd-stack">' + toBuyCard() + '<section class="pd-card"><div class="pd-row"><h3>Raw materials</h3>' + button('purchase', 'Record stock-in', null, !state.ready) + '</div>' + table(['Material', 'Available', 'Reorder level', 'Unit cost', 'Stock value', ''], raw.map(r => [esc(r.name), esc(r.current_stock) + ' ' + esc(r.unit), reorderCell('raw', r, 'name'), cash(r.cost_per_unit) + ' <span class="pd-muted">/ ' + esc(r.unit) + '</span>', r.cost_per_unit == null ? 'Cost unavailable' : cash(num(r.current_stock) * num(r.cost_per_unit)), materialActions('raw', r)])) + '</section><section class="pd-card"><h3>Packaging by category</h3>' + table(['Packaging', 'Category', 'Available', 'Reorder level', 'Unit cost', ''], rows('packaging').map(r => [esc(r.name), esc(r.category || 'Uncategorized'), esc(r.current_stock) + ' ' + esc(r.unit), reorderCell('packaging', r, 'name'), cash(r.cost_per_unit) + ' <span class="pd-muted">/ ' + esc(r.unit) + '</span>', materialActions('packaging', r)])) + '</section><section class="pd-card"><h3>Stock-in history</h3>' + table(['Date', 'Material', 'Quantity', 'Total cost'], rows('purchases').slice().sort((a,b) => String(b.purchase_date).localeCompare(String(a.purchase_date))).slice(0,100).map(r => [date(r.purchase_date), esc(r.item_name), esc(r.quantity) + ' ' + esc(r.unit), cash(r.cost_total)])) + '</section></div>';
+    if (state.tab === 'Materials') html += '<div class="pd-stack">' + toBuyCard() + stockCountCard() + '<section class="pd-card"><div class="pd-row"><h3>Raw materials</h3><div>' + button('stock-count', '📋 Stock count', null, !state.ready || !state.data.counts) + ' ' + button('purchase', 'Record stock-in', null, !state.ready) + '</div></div>' + table(['Material', 'Available', 'Reorder level', 'Unit cost', 'Stock value', ''], raw.map(r => [esc(r.name), esc(r.current_stock) + ' ' + esc(r.unit), reorderCell('raw', r, 'name'), cash(r.cost_per_unit) + ' <span class="pd-muted">/ ' + esc(r.unit) + '</span>', r.cost_per_unit == null ? 'Cost unavailable' : cash(num(r.current_stock) * num(r.cost_per_unit)), materialActions('raw', r)])) + '</section><section class="pd-card"><h3>Packaging by category</h3>' + table(['Packaging', 'Category', 'Available', 'Reorder level', 'Unit cost', ''], rows('packaging').map(r => [esc(r.name), esc(r.category || 'Uncategorized'), esc(r.current_stock) + ' ' + esc(r.unit), reorderCell('packaging', r, 'name'), cash(r.cost_per_unit) + ' <span class="pd-muted">/ ' + esc(r.unit) + '</span>', materialActions('packaging', r)])) + '</section><section class="pd-card"><h3>Stock-in history</h3>' + table(['Date', 'Material', 'Quantity', 'Total cost'], rows('purchases').slice().sort((a,b) => String(b.purchase_date).localeCompare(String(a.purchase_date))).slice(0,100).map(r => [date(r.purchase_date), esc(r.item_name), esc(r.quantity) + ' ' + esc(r.unit), cash(r.cost_total)])) + '</section></div>';
     if (state.tab === 'Recipes') html += '<section class="pd-card"><div class="pd-row"><h3>Production recipes</h3>' + button('recipe', 'Add recipe version', null, !state.ready) + '</div>' + table(['Product / revision', 'Base yield', 'Ingredients', 'Packaging', 'Labour + other / piece'], recipeRows()) + '</section>';
     if (state.tab === 'Outlet') html += '<div class="pd-grid"><section class="pd-card"><h3>Main outlet stock</h3>' + table(['Product', 'Available', 'Reorder level', 'Auto kitchen request', ''], rows('outlet').map(r => [esc(r.item_name), esc(r.current_stock) + ' pcs', reorderCell('outlet', r, 'item_name'), r.auto_restock === false ? 'Off (made to order) <button type="button" data-action="auto-restock" data-name="' + esc(r.item_name) + '" data-level="' + esc(r.low_stock_threshold) + '" data-on="1">Turn on</button>' : 'On <button type="button" data-action="auto-restock" data-name="' + esc(r.item_name) + '" data-level="' + esc(r.low_stock_threshold) + '" data-on="0">Turn off</button>', wasteButton(r)])) + '<p class="pd-muted">Sales reduce this stock automatically. At or below the reorder level a sales request is created by itself (Auto · low stock). Booked cakes are made to order, so auto is off for them.</p></section>' + readyPanel() + '</div>' + wastageCard();
     if (state.tab === 'Setup check') html += setupCheck();
@@ -997,6 +1072,8 @@
         else if (action === 'super-cancel-request') await superCancelRequest(target.dataset);
         else if (action === 'super-fix-yield') await superFixYield(target.dataset);
         else if (action === 'waste') wasteForm(target.dataset);
+        else if (action === 'stock-count') { if (!state.data.materials || !state.data.packaging) { state.tab = 'Materials'; await refresh(true); } stockCountForm(); }
+        else if (action === 'count-lines') await showCountLines(target.dataset.id, target);
         else if (action === 'relink') relinkForm(target.dataset);
         else if (action === 'delete-material') await deleteMaterial(target.dataset);
         else if (action === 'reorder') await editReorderLevel(target.dataset.kind, target.dataset.name, target.dataset.level);
