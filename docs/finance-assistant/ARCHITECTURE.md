@@ -1,7 +1,7 @@
 # WealthPilot: AI Personal Finance Assistant (Architecture and Design)
 
 > Status: design proposal v1 (2026-10-09). Working name: **WealthPilot**, rename freely.
-> Companion files: [`schema.sql`](./schema.sql) (database, indexes, security),
+> Companion files: [`wealthpilot/`](../../wealthpilot/README.md) (the app, SQL migrations, functions),
 > [`EARNING-TARGET.md`](./EARNING-TARGET.md) (the "how much must I earn daily/weekly" engine).
 
 ---
@@ -329,7 +329,7 @@ flowchart TD
 | **Quick unlock** | After a normal password login, the user can set a 4–6 digit app PIN or fingerprint/face unlock on that device. It unlocks the stored session only; it is not a replacement for the password, and the app locks again after 5 minutes in the background. |
 | **Devices & sessions** | "Logged-in devices" screen with last seen time and place; "Sign out everywhere" button. New-device login sends an alert. |
 | **Other sign-in options** | Google and phone OTP can be linked to the same account, but password login always stays available. |
-| **Audit** | Every login, failure, lock, reset and 2FA change is written to `login_events` (see `schema.sql`) and visible to the user. |
+| **Audit** | Every login, failure, lock, reset and 2FA change is written to `login_events` (see `0006_ai_audit_login.sql`) and visible to the user. |
 
 ## 9. Delivery roadmap
 
@@ -353,7 +353,7 @@ wealthpilot/
 ├─ apps/web/            # PWA (screens, components, service worker)
 ├─ apps/android/        # Capacitor wrapper
 ├─ supabase/
-│  ├─ migrations/       # schema.sql split into ordered migrations
+│  ├─ migrations/       # ordered SQL migrations 0001-0010
 │  ├─ functions/
 │  │  ├─ agent-orchestrator/   # Claude agents
 │  │  ├─ ingest-sms/           # bank alert parser

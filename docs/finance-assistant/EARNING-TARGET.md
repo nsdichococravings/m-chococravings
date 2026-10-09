@@ -1,7 +1,7 @@
 # Earning Target Engine: "How much must I earn per day and per week?"
 
 This is the core of the app. It runs as plain, tested maths (SQL function
-`compute_earning_target()` in [`schema.sql`](./schema.sql)). The AI explains the result but
+`compute_earning_target()` in [`0008_functions.sql`](../../wealthpilot/supabase/migrations/0008_functions.sql)). The AI explains the result but
 does not produce it.
 
 ## 1. Formula
