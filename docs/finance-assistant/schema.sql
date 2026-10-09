@@ -434,6 +434,32 @@ create table fin.audit_log_default partition of fin.audit_log default;
 create index audit_log_time_brin on fin.audit_log using brin (created_at);
 create index audit_log_household_idx on fin.audit_log(household_id, created_at desc);
 
+
+-- Login history (written by the auth hook / Edge Function with the service role).
+-- Passwords are NEVER stored here; Supabase Auth keeps only a bcrypt hash in auth.users.
+create table fin.login_events(
+  id          bigint generated always as identity,
+  user_id     uuid,                                 -- null when the email/phone is unknown
+  event       text not null check (event in ('login_ok','login_failed','locked','unlocked','password_reset',
+                                             'password_changed','mfa_enabled','mfa_disabled','new_device','logout_all')),
+  ip          inet,
+  device      text,
+  created_at  timestamptz not null default now(),
+  primary key (created_at, id)
+) partition by range (created_at);
+create table fin.login_events_default partition of fin.login_events default;
+create index login_events_user_idx on fin.login_events(user_id, created_at desc);
+create index login_events_failed_ip_idx on fin.login_events(ip, created_at) where event = 'login_failed';
+
+-- Lockout check used before verifying a password: 5 failures in 15 minutes = locked
+create or replace function fin.is_login_locked(p_user uuid) returns boolean
+language sql stable security definer set search_path = fin as $$
+  select count(*) >= 5 from fin.login_events
+  where user_id = p_user and event = 'login_failed' and created_at > now() - interval '15 minutes'
+    and created_at > coalesce((select max(created_at) from fin.login_events
+                               where user_id = p_user and event in ('login_ok','unlocked','password_reset')), '-infinity');
+$$;
+
 -- ---------------------------------------------------------------------------
 -- 7. Security: membership helpers + RLS on every tenant table
 -- ---------------------------------------------------------------------------
@@ -497,6 +523,8 @@ create policy loan_schedule_read on fin.loan_schedule for select to authenticate
 -- except prices which everyone may read.
 alter table fin.ai_agent_runs enable row level security;
 alter table fin.audit_log enable row level security;
+alter table fin.login_events enable row level security;
+create policy login_events_self on fin.login_events for select to authenticated using (user_id = (select auth.uid()));
 alter table fin.asset_prices enable row level security;
 create policy asset_prices_read on fin.asset_prices for select to authenticated using (true);
 

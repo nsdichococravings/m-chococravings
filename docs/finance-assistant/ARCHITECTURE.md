@@ -49,7 +49,7 @@ flowchart LR
   end
 
   subgraph Supa["Supabase (backend)"]
-    AUTH["Auth<br/>OTP / Google / passkeys"]
+    AUTH["Auth<br/>email/phone + password,<br/>OTP, Google, 2FA"]
     REST["PostgREST API<br/>(RLS-protected)"]
     RT["Realtime<br/>(due-date & alert push)"]
     FN["Edge Functions<br/>(TypeScript / Deno)"]
@@ -186,7 +186,7 @@ bottom nav**, **dark mode**, **max 3 taps to add an expense**, **every screen an
 
 ```mermaid
 flowchart TD
-  A["Splash / Login<br/>phone OTP or Google"] --> B["Onboarding wizard (5 min)<br/>1 income, 2 EMIs and cards, 3 bills,<br/>4 kids and school, 5 goals"]
+  A["Sign up / Login<br/>email or phone + password<br/>(or Google / OTP)"] --> B["Onboarding wizard (5 min)<br/>1 income, 2 EMIs and cards, 3 bills,<br/>4 kids and school, 5 goals"]
   B --> H["🏠 Home"]
   H --> H1["Today card:<br/>Earn ₹3,233 today · 62% done"]
   H --> H2["Next 7 days dues<br/>(bills, EMI, cards)"]
@@ -285,7 +285,8 @@ mid-range Android over 4G, **Home in one round trip**.
 
 ## 8. Security and compliance
 
-- **Auth:** Supabase Auth (phone OTP, Google, passkeys); optional app PIN/biometric lock.
+- **Auth:** Supabase Auth with **email/phone + password** as the main login (Google and OTP as
+  optional extras), optional 2FA, app PIN/biometric quick unlock. Full design in section 8.1.
 - **RLS on every table**; service role used only inside Edge Functions.
 - **Encryption:** TLS everywhere; sensitive columns (account numbers, notes) encrypted with
   `pgsodium`/Vault; only last 4 digits stored in clear.
@@ -296,11 +297,45 @@ mid-range Android over 4G, **Home in one round trip**.
 - Bank data via **RBI Account Aggregator** consent flow; never ask for net-banking passwords.
 - Disclaimer: AI suggestions are educational, not SEBI-registered investment advice.
 
+### 8.1 Login with password
+
+Every user gets their own account with their own password. Passwords are handled by
+**Supabase Auth**: it stores only a **bcrypt hash** in `auth.users`. The app's own tables,
+logs, Edge Functions and AI never see or store a password.
+
+```mermaid
+flowchart TD
+  S["Sign up<br/>name, email or mobile, password"] --> V["Verify<br/>email link or SMS OTP"]
+  V --> L["Login<br/>email/mobile + password"]
+  L -->|"correct"| M{"2FA on?"}
+  M -->|"no"| OK["Signed in<br/>1-hour token + rotating refresh token"]
+  M -->|"yes"| T["Enter 6-digit code<br/>(authenticator app)"] --> OK
+  L -->|"wrong x3"| C["Show captcha"]
+  C -->|"wrong x5"| LK["Locked 15 min<br/>+ email alert"]
+  L --> F["Forgot password?"] --> R["Reset link / OTP<br/>valid 1 hour"] --> NP["Set new password<br/>other devices signed out"] --> L
+  OK --> P["Set app PIN / fingerprint<br/>for quick unlock on this phone"]
+```
+
+| Topic | Rule |
+|-------|------|
+| **Sign up** | Email or mobile number + password. Account is usable only after the email link or SMS OTP is confirmed. Invited family members set their own password from the invite link. |
+| **Password rules** | At least 10 characters, no maximum below 64, spaces and any characters allowed. Rejected if it appears in known data leaks (Supabase leaked-password protection) or contains the user's name/email. Strength meter on the form. No forced "change every 90 days". |
+| **Storage** | bcrypt hash only (Supabase Auth). Never logged, never sent to analytics or AI, never shown by support staff. |
+| **Login** | `signInWithPassword` over HTTPS. Returns a short-lived access token (1 hour) and a refresh token that rotates on each use; reuse of an old refresh token revokes the session. |
+| **Brute-force protection** | Supabase rate limits per IP, plus our rule: captcha (Cloudflare Turnstile) after 3 failures, 15-minute lock after 5, email alert to the owner. The message is always "email or password is incorrect" so it never reveals which accounts exist. |
+| **Forgot password** | Reset link by email (or OTP by SMS), valid 1 hour, single use. After the reset, all other sessions are signed out. |
+| **Change password** | Requires the current password (re-authentication). Confirmation email sent. |
+| **Two-factor (2FA)** | Optional TOTP authenticator app for everyone. **Required** for `super_admin`, `support`, `advisor`, and for owners on paid plans. Backup codes provided. |
+| **Quick unlock** | After a normal password login, the user can set a 4–6 digit app PIN or fingerprint/face unlock on that device. It unlocks the stored session only; it is not a replacement for the password, and the app locks again after 5 minutes in the background. |
+| **Devices & sessions** | "Logged-in devices" screen with last seen time and place; "Sign out everywhere" button. New-device login sends an alert. |
+| **Other sign-in options** | Google and phone OTP can be linked to the same account, but password login always stays available. |
+| **Audit** | Every login, failure, lock, reset and 2FA change is written to `login_events` (see `schema.sql`) and visible to the user. |
+
 ## 9. Delivery roadmap
 
 | Phase | Weeks | Scope |
 |-------|-------|-------|
-| **0. Foundation** | 1–2 | Repo, Supabase project, schema + RLS, auth, CI with query-plan checks |
+| **0. Foundation** | 1–2 | Repo, Supabase project, schema + RLS, password login (sign up, verify, reset, lockout), CI with query-plan checks |
 | **1. MVP (personal use)** | 3–6 | Manual income/expense, bills, EMIs, cards, dues calendar, **DET engine**, Home screen, reminders |
 | **2. Goals & kids** | 7–9 | Goals, sinking funds, education planner, holiday planner, Freedom Date |
 | **3. AI agents** | 10–13 | Categoriser, Bill Sentinel, Cost Cutter, Earning Coach, Ask AI chat |
