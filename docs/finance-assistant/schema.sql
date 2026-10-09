@@ -459,6 +459,8 @@ language sql stable security definer set search_path = fin as $$
     and created_at > coalesce((select max(created_at) from fin.login_events
                                where user_id = p_user and event in ('login_ok','unlocked','password_reset')), '-infinity');
 $$;
+-- Only the login Edge Function (service role) may ask; users cannot probe other accounts
+revoke execute on function fin.is_login_locked(uuid) from public;
 
 -- ---------------------------------------------------------------------------
 -- 7. Security: membership helpers + RLS on every tenant table
