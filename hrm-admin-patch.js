@@ -5,10 +5,9 @@
    <script> tag right before </body>, so it never touches the main dashboard
    code and can't cause hoisting/call-stack issues.
 
-   Creates its OWN Supabase client (same URL/key as admin-dashboard.html) —
-   does NOT rely on window.supabase being a ready client, since in
-   admin-dashboard.html window.supabase is just the raw SDK namespace
-   (the real client lives in a local variable called `db`).
+   Reuses admin-dashboard.html's client (the top-level `db` variable; in
+   that page window.supabase is just the raw SDK namespace). Only creates
+   its own client if `db` is missing.
    ============================================================================ */
 
 (function () {
@@ -322,7 +321,15 @@
       setTimeout(init, 300); // config.js / CDN script may still be loading
       return;
     }
-    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // Reuse the dashboard's own client when there is one. A second client
+    // shares the same saved login, and two clients refreshing it at once
+    // make each other wait, which slows every request on the page.
+    if (typeof db !== "undefined" && db && typeof db.from === "function") {
+      sb = db;
+    } else {
+      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY,
+        typeof ccClientOptions === "function" ? ccClientOptions({}) : {});
+    }
     injectShell();
   }
 

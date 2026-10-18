@@ -10,6 +10,7 @@
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <title>NSDI ChocoCravings</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"> </script>
+<script src="supabase-net.js?v=20261018"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
 
@@ -4207,13 +4208,15 @@ const NSDI_QR_URL  = 'https://yjbfditboewwpgyqzryd.supabase.co/storage/v1/object
 
 // Init Supabase client
 const { createClient } = supabase;
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+const dbOptions = {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true
   }
-});
+};
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY,
+  typeof ccClientOptions === 'function' ? ccClientOptions(dbOptions) : dbOptions);
 
 // NSDI WhatsApp number (receives order notifications)
 const NSDI_PHONE = '+91 89731 41898';

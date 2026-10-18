@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,400&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+<script src="supabase-net.js?v=20261018"></script>
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -897,9 +898,10 @@ function getStoreMenuClient() {
     if (typeof supabase === 'undefined') throw new Error('Connection library unavailable');
     // Public catalog only. Never use this client for orders, staff data or stock writes.
     // No stored session means no wait for the signed-in client's Auth refresh lock.
-    storeMenuClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    var menuOptions = {
       auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'cc-public-menu' }
-    });
+    };
+    storeMenuClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, (typeof ccClientOptions==='function'?ccClientOptions(menuOptions):menuOptions));
   }
   return storeMenuClient;
 }
@@ -2264,7 +2266,7 @@ async function autoFillPhone() {
 }
 // ── INIT ──────────────────────────────────────────────────────
 window.addEventListener('load', function(){
-  try{ if(typeof supabase !== 'undefined') db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY); }
+  try{ if(typeof supabase !== 'undefined') db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, (typeof ccClientOptions==='function'?ccClientOptions({}):{})); }
   catch(e){ console.warn('Supabase init',e); }
   setTab('Coffee');
   loadMenu();

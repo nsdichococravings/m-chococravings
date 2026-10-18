@@ -1,5 +1,5 @@
 // NSDI ChocoCravings — Service Worker
-const CACHE_NAME = 'chococravings-v50-offers';
+const CACHE_NAME = 'chococravings-v51-network';
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache immediately on install
@@ -56,16 +56,9 @@ self.addEventListener('fetch', function(event) {
   // HTML pages — network first, fallback to cache, then offline page
   if (acceptHeader.includes('text/html')) {
     event.respondWith(
-      fetch(event.request)
-        .then(function(response) {
-          var clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-          return response;
-        })
-        .catch(function() {
-          return caches.match(event.request)
-            .then(cached => cached || caches.match(OFFLINE_URL));
-        })
+      networkFirst(event).then(function(response) {
+        return response || caches.match(OFFLINE_URL);
+      })
     );
     return;
   }
@@ -73,22 +66,10 @@ self.addEventListener('fetch', function(event) {
   // JS and CSS — network first too. These are your patch files, core
   // scripts, and stylesheets, which change often during active
   // development. Serving a stale cached copy silently (with no error)
-  // is exactly what caused updates to not show up. Cache is only used
-  // as an offline fallback, never preferred over a fresh network copy.
+  // is exactly what caused updates to not show up. The cached copy is
+  // used only when the network fails or is very slow (see networkFirst).
   if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
-    event.respondWith(
-      fetch(event.request)
-        .then(function(response) {
-          if (response.ok) {
-            var clone = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-          }
-          return response;
-        })
-        .catch(function() {
-          return caches.match(event.request);
-        })
-    );
+    event.respondWith(networkFirst(event));
     return;
   }
 
@@ -107,6 +88,41 @@ self.addEventListener('fetch', function(event) {
     })
   );
 });
+
+// Network first, but don't wait forever. On a weak connection a request can
+// hang for a long time before failing, which left the app on a blank screen.
+// After NETWORK_WAIT_MS the saved copy is shown if there is one; the network
+// request keeps going and refreshes the saved copy for next time. With no
+// saved copy, it simply keeps waiting for the network.
+var NETWORK_WAIT_MS = 4000;
+
+function networkFirst(event) {
+  var request = event.request;
+  var network = fetch(request).then(function(response) {
+    if (response.ok) {
+      var clone = response.clone();
+      caches.open(CACHE_NAME).then(function(cache) { return cache.put(request, clone); });
+    }
+    return response;
+  });
+  // Keep the worker alive until the background refresh finishes.
+  event.waitUntil(network.catch(function() {}));
+
+  return new Promise(function(resolve) {
+    var done = false;
+    function finish(response) { if (!done) { done = true; resolve(response); } }
+    var timer = setTimeout(function() {
+      caches.match(request).then(function(cached) { if (cached) finish(cached); });
+    }, NETWORK_WAIT_MS);
+    network.then(function(response) {
+      clearTimeout(timer);
+      finish(response);
+    }, function() {
+      clearTimeout(timer);
+      caches.match(request).then(finish);
+    });
+  });
+}
 
 // ── PUSH NOTIFICATIONS ──
 // Sent by the send-push Edge Function (order status updates, admin offers).
