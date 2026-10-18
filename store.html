@@ -10,10 +10,9 @@
 <link rel="preconnect" href="https://yjbfditboewwpgyqzryd.supabase.co" crossorigin>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
 <script src="supabase-net.js?v=20261018"></script>
-<!-- Only needed for payment, QR scan and PDF: load without holding up the first screen. -->
-<script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js" defer></script>
-<script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
+<!-- Payment loads in the background. The QR scanner and PDF libraries
+     (about 480 KB) load only when someone scans or sends an invoice. -->
+<script src="https://checkout.razorpay.com/v1/checkout.js" async></script>
 <style>
 /* ── RESET ───────────────────────────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -840,7 +839,26 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 var SUPABASE_URL = 'https://yjbfditboewwpgyqzryd.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqYmZkaXRib2V3d3BneXF6cnlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNTgwNjcsImV4cCI6MjA4ODczNDA2N30.08Tvq71w2DBeWZrZb-IaiKfoI-2P_1MPJygzSPiRq24';
 
-var db = null; // initialised in window.load below
+// Created straight away (the library loads in <head>), so the first
+// requests don't wait for every script and image on the page.
+var db = null;
+try { if (typeof supabase !== 'undefined') db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, (typeof ccClientOptions==='function'?ccClientOptions({}):{})); }
+catch (e) { console.warn('Supabase init', e); }
+
+// Loads a script once, the first time a feature needs it.
+var _storeScripts = {};
+function storeLoadScript(src) {
+  if (!_storeScripts[src]) _storeScripts[src] = new Promise(function (resolve, reject) {
+    var el = document.createElement('script');
+    el.src = src; el.async = true;
+    el.onload = resolve;
+    el.onerror = function () { delete _storeScripts[src]; el.remove(); reject(new Error('Could not load ' + src)); };
+    document.head.appendChild(el);
+  });
+  return _storeScripts[src];
+}
+var JSQR_URL = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+var JSPDF_URL = 'https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js';
 
 // ── MENU DATA — loaded from Supabase store_menu table ────────
 var MENU = {
@@ -919,47 +937,84 @@ function hideStoreLoader() {
   if (overlay) { overlay.style.display = 'none'; overlay.style.opacity = '1'; }
   document.getElementById('cart-empty').style.display = 'block';
 }
+// The menu request is started as early as the page script runs (see
+// storeMenuPrefetch below the menu code) and picked up here.
+var storeMenuPrefetch = null;
+function startStoreMenuRequest() {
+  var controller = new AbortController();
+  // '*' so photo / egg_type / is_new come through once migration 20260954 has run.
+  var builder = getStoreMenuClient().from('store_menu')
+    .select('*')
+    .eq('available', true)
+    .order('sort_order', {ascending:true})
+    .abortSignal(controller.signal);
+  return { controller: controller, request: Promise.resolve(builder) };
+}
+
+// The last menu is saved on the phone, so On Store shows it instantly and
+// then swaps in the fresh menu (only if something changed).
+var STORE_MENU_CACHE_KEY = 'cc_store_menu_v1';
+var storeMenuShown = null;
+function applyMenuRows(rows) {
+  var json = JSON.stringify(rows || []);
+  if (json === storeMenuShown) return false;
+  storeMenuShown = json;
+  Object.keys(MENU).forEach(function(k){ MENU[k].items = []; });
+  (rows||[]).forEach(function(row){
+    if(MENU[row.category]){
+      MENU[row.category].items.push({id:row.id, name:row.name, price:row.price, tag:row.tag,
+        image_url:row.image_url||null, egg_type:row.egg_type||null, is_new:!!row.is_new});
+    }
+  });
+  renderItems();
+  // Show tabs dynamically based on which categories have items
+  ['Brownies','Cakes','Cookies','IceCream','Others','Milkshake','Chocolate','Spicy','Combo','Blondie','Cupcake'].forEach(function(cat) {
+    var tabEl = document.getElementById('tab-' + cat);
+    if (tabEl) {
+      tabEl.style.display = 'block';
+    }
+  });
+  return true;
+}
+function showSavedStoreMenu() {
+  try {
+    var rows = JSON.parse(localStorage.getItem(STORE_MENU_CACHE_KEY));
+    if (Array.isArray(rows) && rows.length) { applyMenuRows(rows); return true; }
+  } catch (e) {}
+  return false;
+}
+
 async function loadMenu(){
   if (storeMenuLoading) return;
   storeMenuLoading = true;
-  showSkeleton();
-  document.getElementById('items-list').innerHTML = '<div role="status" style="padding:32px;text-align:center;color:#6e0977">Connecting to the menu…</div>';
+  var hasSaved = storeMenuShown !== null || showSavedStoreMenu();
+  if (!hasSaved) {
+    showSkeleton();
+    document.getElementById('items-list').innerHTML = '<div role="status" style="padding:32px;text-align:center;color:#6e0977">Connecting to the menu…</div>';
+  }
   var revealTimer = setTimeout(hideStoreLoader, 2500);
   var timeoutTimer;
-  var controller = new AbortController();
+  var controller = null;
   try {
-    // '*' so photo / egg_type / is_new come through once migration 20260954 has run.
-    var request = getStoreMenuClient().from('store_menu')
-      .select('*')
-      .eq('available', true)
-      .order('sort_order', {ascending:true})
-      .abortSignal(controller.signal);
+    var started = storeMenuPrefetch || startStoreMenuRequest();
+    storeMenuPrefetch = null;
+    controller = started.controller;
+    var request = started.request;
     var timeout = new Promise(function(_, reject) {
       timeoutTimer = setTimeout(function() {
         reject(new Error('Menu connection timed out'));
-        controller.abort();
+        if (controller) controller.abort();
       }, 12000);
     });
     var res = await Promise.race([request, timeout]);
     if(res.error) throw res.error;
-    Object.keys(MENU).forEach(function(k){ MENU[k].items = []; });
-    (res.data||[]).forEach(function(row){
-      if(MENU[row.category]){
-        MENU[row.category].items.push({id:row.id, name:row.name, price:row.price, tag:row.tag,
-          image_url:row.image_url||null, egg_type:row.egg_type||null, is_new:!!row.is_new});
-      }
-    });
-    renderItems();
+    applyMenuRows(res.data || []);
+    try { localStorage.setItem(STORE_MENU_CACHE_KEY, JSON.stringify(res.data || [])); } catch (e) {}
     loadMenuStats();
-    // Show tabs dynamically based on which categories have items
-    ['Brownies','Cakes','Cookies','IceCream','Others','Milkshake','Chocolate','Spicy','Combo','Blondie','Cupcake'].forEach(function(cat) {
-      var tabEl = document.getElementById('tab-' + cat);
-      if (tabEl) {
-        tabEl.style.display = 'block';
-      }
-    });
   } catch(e){
     console.error('loadMenu', e);
+    // Connection failed but the saved menu is on screen: keep it.
+    if (storeMenuShown !== null) return;
     document.getElementById('items-list').innerHTML = '<div role="alert" style="text-align:center;padding:40px 20px;color:#6e0977">The menu connection is taking too long or is unavailable.<br><button type="button" onclick="loadMenu()" style="margin-top:16px;padding:12px 20px;border:0;border-radius:10px;background:#6e0977;color:white;cursor:pointer">Retry loading menu</button><p style="margin-top:12px;font-size:13px">Check your connection and try again.</p></div>';
   } finally {
     clearTimeout(revealTimer); clearTimeout(timeoutTimer);
@@ -968,6 +1023,8 @@ async function loadMenu(){
 }
 
 // ── STATE ─────────────────────────────────────────────────────
+// Start fetching the menu now, while the rest of the page downloads.
+try { storeMenuPrefetch = startStoreMenuRequest(); } catch (e) { storeMenuPrefetch = null; }
 var cart={}, tab='Coffee', payMethod='upi';
 var orderId=null, orderToken=null;
 var realtimeCh=null, kitchenCh=null;
@@ -1164,6 +1221,7 @@ function startScanner(){
   if('BarcodeDetector' in window){
     try { qrDetector = new BarcodeDetector({formats:['qr_code']}); } catch(e){}
   }
+  if(!qrDetector) storeLoadScript(JSQR_URL).catch(function(){});
 
   navigator.mediaDevices.getUserMedia({
     video:{ facingMode:{ ideal:'environment' } }, audio:false
@@ -2293,9 +2351,10 @@ if ('serviceWorker' in navigator) {
   });
 }
 // ── INIT ──────────────────────────────────────────────────────
-window.addEventListener('load', function(){
-  try{ if(typeof supabase !== 'undefined') db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, (typeof ccClientOptions==='function'?ccClientOptions({}):{})); }
-  catch(e){ console.warn('Supabase init',e); }
+// Runs once the page is parsed, instead of waiting for window 'load' (every
+// image and script). setTimeout lets the add-on scripts' own
+// DOMContentLoaded setup (search bar etc.) run first, as before.
+function storeInit(){
   setTab('Coffee');
   loadMenu();
   loadMyOrders();
@@ -2304,7 +2363,18 @@ window.addEventListener('load', function(){
   loadStoreOpenStatus();
   // If opened directly at #pg-kitchen
   if(window.location.hash === '#pg-kitchen') goTo('pg-kitchen');
-});
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function(){ setTimeout(storeInit, 0); });
+} else {
+  setTimeout(storeInit, 0);
+}
+
+// Opening On Store directly (not via Home) also turns on the offline/fast
+// open support.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function(){ navigator.serviceWorker.register('/sw.js').catch(function(){}); });
+}
 
 var isAdmin = false; // global flag
 
@@ -2437,6 +2507,7 @@ function invOpenWA() {
 async function sendInvoiceAuto(invoiceData) {
   try {
     // 1. Build PDF
+    if (!window.jspdf) await storeLoadScript(JSPDF_URL);
     var { jsPDF } = window.jspdf;
     var pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a5' });
     var W = pdf.internal.pageSize.getWidth();
@@ -3194,7 +3265,7 @@ async function toggleStoreOpenStatus() {
 <script src="menu-search-patch.js?v=20260954-photo-cards"></script>
 <script src="remember-phone-patch.js?v=20260952-table"></script>
 <script src="checkadminbadge-override.js?v=20260928-admin-access"></script>
-<script src="production-purchases-patch.js"></script>
+<script src="production-purchases-patch.js?v=20261018"></script>
 <link rel="stylesheet" href="production-dashboard.css?v=20260970-count">
 <script src="production-dashboard.js?v=20260970-count"></script>
 <link rel="stylesheet" href="loyalty-cards.css?v=20260922-auto-cards">
