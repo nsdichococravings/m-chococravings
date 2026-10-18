@@ -20,6 +20,9 @@
  */
 
 var _adminCheckGeneration=0, _adminAuthListener=null, _adminToolsRegistered=false;
+// Who the last successful check was for, and the pending retry after a
+// failed check (for example a dropped connection).
+var _adminCheckedUserId=null, _adminRetryTimer=null, _adminRetryCount=0;
 function resetAdminVisibility() {
   isAdmin=false;
   if(typeof ccSetAccess==='function') ccSetAccess(false);
@@ -32,10 +35,20 @@ async function checkAdminBadge(){
     if(!db) return;
 
     if(!_adminAuthListener && db.auth.onAuthStateChange) {
-      _adminAuthListener=db.auth.onAuthStateChange(function(event) {
-        if(event==='SIGNED_OUT' || event==='SIGNED_IN' || event==='USER_UPDATED' || event==='TOKEN_REFRESHED') {
+      _adminAuthListener=db.auth.onAuthStateChange(function(event, session) {
+        if(event==='SIGNED_OUT') {
+          ++_adminCheckGeneration; _adminCheckedUserId=null; clearAdminRetry(); resetAdminVisibility();
+          return;
+        }
+        // A token refresh (about once an hour, and whenever the phone wakes
+        // up) is the same person. Hiding the tools and asking the server
+        // again each time made staff tools disappear on a slow connection.
+        if(event==='TOKEN_REFRESHED') return;
+        if(event==='SIGNED_IN' || event==='USER_UPDATED') {
+          var uid=session && session.user && session.user.id;
+          if(uid && uid===_adminCheckedUserId) return;
           ++_adminCheckGeneration; resetAdminVisibility();
-          if(event!=='SIGNED_OUT') setTimeout(function(){checkAdminBadge();},0);
+          setTimeout(function(){checkAdminBadge();},0);
         }
       });
     }
@@ -43,7 +56,7 @@ async function checkAdminBadge(){
     if(generation!==_adminCheckGeneration) return;
     if(s.error) throw s.error;
     var user = s.data && s.data.user;
-    if(!user) return;
+    if(!user) { _adminCheckedUserId=null; clearAdminRetry(); return; }
 
     // Both flags in one query — avoids a second DB round-trip.
     var chk = await db.from('customers').select('is_admin, is_employee').eq('email', user.email).single();
@@ -51,6 +64,8 @@ async function checkAdminBadge(){
     if(chk.error) throw chk.error;
     var admin = !!(chk.data && chk.data.is_admin);
     var employee = !!(chk.data && chk.data.is_employee);
+    _adminCheckedUserId = user.id;
+    clearAdminRetry();
 
     if (admin) {
       isAdmin = true;
@@ -111,7 +126,37 @@ async function checkAdminBadge(){
     if (typeof initializeProductionAccess === 'function') {
       initializeProductionAccess().catch(function (error) { console.warn('Production access:', error.message); });
     }
-  } catch(e){ console.warn('checkAdminBadge error:', e.message); }
+  } catch(e){
+    console.warn('checkAdminBadge error:', e.message);
+    // Usually a dropped or slow connection. Try again shortly instead of
+    // leaving staff without their tools until someone reloads the page.
+    scheduleAdminRetry(generation);
+  }
+}
+
+function clearAdminRetry() {
+  if (_adminRetryTimer) { clearTimeout(_adminRetryTimer); _adminRetryTimer=null; }
+  _adminRetryCount=0;
+}
+
+function scheduleAdminRetry(generation) {
+  if (_adminRetryTimer || _adminRetryCount >= 5) return;
+  var delay = 3000 * Math.pow(2, _adminRetryCount++); // 3s, 6s, 12s, 24s, 48s
+  _adminRetryTimer = setTimeout(function () {
+    _adminRetryTimer = null;
+    if (generation === _adminCheckGeneration) checkAdminBadge();
+  }, delay);
+}
+
+// Coming back online, or back to the app, retries a failed check at once.
+function retryAdminCheckNow() {
+  if (!_adminRetryTimer) return;
+  clearTimeout(_adminRetryTimer); _adminRetryTimer=null;
+  checkAdminBadge();
+}
+if (typeof window !== 'undefined' && window.addEventListener) window.addEventListener('online', retryAdminCheckNow);
+if (typeof document !== 'undefined' && document.addEventListener) {
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) retryAdminCheckNow(); });
 }
 
 // Loads scripts one at a time, in order — async=false forces each to
