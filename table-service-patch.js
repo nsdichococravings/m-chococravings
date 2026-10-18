@@ -803,7 +803,7 @@ function renderKitchen(orders, loyaltyMap) {
     if (typeof lcOrderPhones === 'function') lcOrderPhones(o).forEach(function(phone) {
       var loyaltyMember=loyaltyMap[lcLast10(phone)];
       if (!loyaltyMember) {
-        loyaltyBox += '<div style="padding:8px;color:#c9b5cf">NSDI card ' + lcMaskPhone(phone) + (loyaltyMap._unavailable ? ' · Lookup unavailable; refresh to retry' : ' · No card found') + '</div>';
+        loyaltyBox += '<div style="padding:8px;color:#c9b5cf">NSDI card ' + lcMaskPhone(phone) + (loyaltyMap._pending ? ' · Checking card…' : loyaltyMap._unavailable ? ' · Lookup unavailable; refresh to retry' : ' · No card found') + '</div>';
         return;
       }
       var lcAvailable = lcRewardsFor(loyaltyMember).filter(function (r) { return !loyaltyMember.suspended && r.status === 'available'; });
@@ -1090,6 +1090,32 @@ function kitchenRefresh(showFeedback) {
   return _kRefreshPending;
 }
 
+// Cards looked up earlier in this visit, so tickets show them at once.
+var _kLoyaltyKnown = {};
+function kKnownLoyaltyMap(pending) {
+  var map = Object.assign({}, _kLoyaltyKnown);
+  if (pending) map._pending = true;
+  return map;
+}
+function kRememberLoyalty(map) {
+  if (!map || map._unavailable) return;
+  Object.keys(map).forEach(function (k) { if (k.charAt(0) !== '_') _kLoyaltyKnown[k] = map[k]; });
+}
+
+// Today's open tickets are kept for this browser tab, so reopening the
+// Kitchen shows them at once while the fresh list loads.
+var K_ORDERS_KEY = 'cc_kitchen_orders_v1';
+function kSaveOrders(orders) {
+  try { sessionStorage.setItem(K_ORDERS_KEY, JSON.stringify({ day: new Date().toISOString().slice(0, 10), orders: orders })); } catch (e) {}
+}
+function kSavedOrders() {
+  try {
+    var c = JSON.parse(sessionStorage.getItem(K_ORDERS_KEY));
+    if (c && c.day === new Date().toISOString().slice(0, 10) && Array.isArray(c.orders)) return c.orders;
+  } catch (e) {}
+  return null;
+}
+
 async function kitchenFetchOrders(showFeedback) {
   var icon = document.getElementById('kitchen-refresh-icon');
   if (showFeedback && icon) icon.style.animation = 'kitchenRefreshSpin .6s linear';
@@ -1104,7 +1130,15 @@ async function kitchenFetchOrders(showFeedback) {
 
     if (res.error) throw res.error;
     var orders = res.data || [];
-    var loyaltyMap = typeof lcLoyaltyMapFor === 'function' ? await lcLoyaltyMapFor(orders) : {};
+    kSaveOrders(orders);
+    // Show the tickets straight away with the cards already known, then
+    // fill in the loyalty cards when that lookup returns.
+    var loyaltyMap = {};
+    if (typeof lcLoyaltyMapFor === 'function') {
+      renderKitchen(orders, kKnownLoyaltyMap(true));
+      loyaltyMap = await lcLoyaltyMapFor(orders);
+      kRememberLoyalty(loyaltyMap);
+    }
     renderKitchen(orders, loyaltyMap);
     if (typeof loadProductionRequests === 'function') loadProductionRequests();
     if (showFeedback) showStoreToast('🔄 Refreshed');

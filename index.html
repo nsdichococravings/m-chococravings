@@ -4253,7 +4253,7 @@ async function confirmLogout() {
   await db.auth.signOut();
   currentUser = null;
   localStorage.removeItem('cc_user');
-  try { localStorage.removeItem(LC_CACHE_KEY); localStorage.removeItem(PROFILE_CACHE_KEY); localStorage.removeItem(ORDERS_CACHE_KEY); localStorage.removeItem('cc_staff_role_v1'); } catch (e) {}
+  try { localStorage.removeItem(LC_CACHE_KEY); localStorage.removeItem(PROFILE_CACHE_KEY); localStorage.removeItem(ORDERS_CACHE_KEY); localStorage.removeItem('cc_staff_role_v1'); localStorage.removeItem('cc_admin_orders_v1'); } catch (e) {}
   showToast('Signed out successfully');
   setTimeout(function(){ window.location.href = 'auth.html'; }, 800);
 }
