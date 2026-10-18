@@ -9,7 +9,7 @@ function harness(){
   const context={AbortController,console:{error(){}},Promise,MENU:{Coffee:{items:[]}},
     SUPABASE_URL:'https://example.test',SUPABASE_KEY:'public-test-key',
     document:{getElementById:id=>elements[id]},setTimeout:(fn,ms)=>{timers.set(++id,{fn,ms});return id;},clearTimeout:id=>timers.delete(id),
-    showSkeleton(){elements['store-loading-overlay'].style.display='flex';},renderItems(){renders++;},
+    showSkeleton(){elements['store-loading-overlay'].style.display='flex';},renderItems(){renders++;},loadMenuStats(){},
     db:{from(){requests++;return{select(){return this;},eq(){return this;},order(){return this;},abortSignal(s){signal=s;return new Promise(r=>{resolveRequest=r;});}}}}
   };
   context.supabase={createClient(url,key,options){
@@ -26,7 +26,7 @@ function harness(){
   assert.equal(test.elements['store-loading-overlay'].style.display,'none','slow request must release fullscreen loader');
   [...test.timers.values()].find(t=>t.ms===12000).fn();await pending;
   assert.equal(test.signal.aborted,true);assert.match(test.elements['items-list'].innerHTML,/Retry loading menu/);
-  assert.equal(test.context.storeMenuLoading,false);assert.equal(test.timers.size,0);
+  assert.equal(test.context.storeMenuLoading,false);assert.deepEqual([...test.timers.values()].map(t=>t.ms),[3000],'only the automatic reconnect is scheduled');
   test.resolve({data:[{id:'stale',category:'Coffee'}]});await Promise.resolve();
   assert.equal(test.renders,0,'late timed-out response must not replace error UI');
   const retry=test.context.loadMenu();test.resolve({data:[{id:'fresh',name:'Coffee',price:30,category:'Coffee'}]});await retry;
@@ -44,5 +44,5 @@ function harness(){
   publicOnly.context.supabase.createClient=()=>publicDb;
   const menu=publicOnly.context.loadMenu();publicOnly.resolve({data:[]});await menu;
   assert.equal(publicOnly.renders,1,'public menu loads independently of authenticated client');
-  console.log('PASS: loader release, timeout/abort, duplicate request guard, late response isolation, retry success, unavailable client recovery.');
+  console.log('PASS: automatic reconnect after failure, loader release, timeout/abort, duplicate request guard, late response isolation, retry success, unavailable client recovery.');
 })().catch(error=>{console.error(error);process.exitCode=1;});

@@ -984,9 +984,25 @@ function showSavedStoreMenu() {
   return false;
 }
 
+// If the menu can't be reached, keep trying by itself (3s, 6s, 12s, then
+// every 30s) and straight away when the phone is back online or the app
+// is reopened, so staff are never left on a dead "Retry" screen.
+var storeMenuRetryTimer = null, storeMenuRetryCount = 0;
+function scheduleMenuRetry() {
+  if (storeMenuRetryTimer) return;
+  var delay = Math.min(30000, 3000 * Math.pow(2, storeMenuRetryCount++));
+  storeMenuRetryTimer = setTimeout(function () { storeMenuRetryTimer = null; loadMenu(); }, delay);
+}
+function retryMenuNow() {
+  if (!storeMenuRetryTimer) return;
+  clearTimeout(storeMenuRetryTimer); storeMenuRetryTimer = null;
+  loadMenu();
+}
+
 async function loadMenu(){
   if (storeMenuLoading) return;
   storeMenuLoading = true;
+  if (storeMenuRetryTimer) { clearTimeout(storeMenuRetryTimer); storeMenuRetryTimer = null; }
   var hasSaved = storeMenuShown !== null || showSavedStoreMenu();
   if (!hasSaved) {
     showSkeleton();
@@ -1008,14 +1024,16 @@ async function loadMenu(){
     });
     var res = await Promise.race([request, timeout]);
     if(res.error) throw res.error;
+    storeMenuRetryCount = 0;
     applyMenuRows(res.data || []);
     try { localStorage.setItem(STORE_MENU_CACHE_KEY, JSON.stringify(res.data || [])); } catch (e) {}
     loadMenuStats();
   } catch(e){
     console.error('loadMenu', e);
+    scheduleMenuRetry();
     // Connection failed but the saved menu is on screen: keep it.
     if (storeMenuShown !== null) return;
-    document.getElementById('items-list').innerHTML = '<div role="alert" style="text-align:center;padding:40px 20px;color:#6e0977">The menu connection is taking too long or is unavailable.<br><button type="button" onclick="loadMenu()" style="margin-top:16px;padding:12px 20px;border:0;border-radius:10px;background:#6e0977;color:white;cursor:pointer">Retry loading menu</button><p style="margin-top:12px;font-size:13px">Check your connection and try again.</p></div>';
+    document.getElementById('items-list').innerHTML = '<div role="alert" style="text-align:center;padding:40px 20px;color:#6e0977">The menu connection is taking too long or is unavailable.<br><button type="button" onclick="loadMenu()" style="margin-top:16px;padding:12px 20px;border:0;border-radius:10px;background:#6e0977;color:white;cursor:pointer">Retry loading menu</button><p style="margin-top:12px;font-size:13px">Reconnecting automatically… you can also tap Retry.</p></div>';
   } finally {
     clearTimeout(revealTimer); clearTimeout(timeoutTimer);
     hideStoreLoader(); storeMenuLoading = false;
@@ -1023,6 +1041,8 @@ async function loadMenu(){
 }
 
 // ── STATE ─────────────────────────────────────────────────────
+window.addEventListener('online', retryMenuNow);
+document.addEventListener('visibilitychange', function(){ if (!document.hidden) retryMenuNow(); });
 // Start fetching the menu now, while the rest of the page downloads.
 try { storeMenuPrefetch = startStoreMenuRequest(); } catch (e) { storeMenuPrefetch = null; }
 var cart={}, tab='Coffee', payMethod='upi';
