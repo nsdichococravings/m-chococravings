@@ -2059,7 +2059,7 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
         </div>
         <div id="tracking-badge" style="display:none;background:var(--pink);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:auto">●</div>
       </div>
-      <div id="hamburger-admin-item" style="padding:12px 14px;border-radius:12px;cursor:pointer;align-items:center;gap:12px;background:rgba(107,47,206,.1);border:1px solid rgba(107,47,206,.2)" onclick="openAdminPanel();closeHamburgerMenu()">
+      <div id="hamburger-admin-item" style="display:none;padding:12px 14px;border-radius:12px;cursor:pointer;align-items:center;gap:12px;background:rgba(107,47,206,.1);border:1px solid rgba(107,47,206,.2)" onclick="openAdminPanel();closeHamburgerMenu()">
         <span style="font-size:20px">⚙️</span>
         <div>
           <div style="font-size:13px;font-weight:700;color:var(--pl)">Admin Panel</div>
@@ -3204,151 +3204,148 @@ async function shareReferral() {
 }
 
 var _profileLoading = false;
-async function loadProfileData() {
-  if (!currentUser || !currentUser.db_id) return;
-  _profileLoading = true;
-  try {
-    // ── Load customer stats from customers table ──
-    const { data: cust } = await db.from('customers')
-        .select('name,phone,email,city,loyalty_points,lifetime_points,loyalty_tier,total_orders,total_spent,egg_preference,customer_code')
-        .eq('id', currentUser.db_id)
-        .single();
+// Profile stats are saved on the phone, so the Profile page shows them at
+// once; fresh numbers replace them when the server replies. The reads run
+// at the same time instead of one after another.
+var PROFILE_CACHE_KEY = 'cc_profile_stats_v1';
+var ACTIVE_ORDER_STATUSES = ['pending','confirmed','baking','packed','out_for_delivery'];
+var PROFILE_TIERS = {
+  bronze:   { iconClass:'bronze',   icon:'ti-medal',   label:'Bronze Member', next:500  },
+  silver:   { iconClass:'silver',   icon:'ti-medal',   label:'Silver Member', next:1000 },
+  gold:     { iconClass:'gold',     icon:'ti-crown',   label:'Gold Member',   next:2000 },
+  platinum: { iconClass:'platinum', icon:'ti-diamond', label:'Platinum',      next:null }
+};
 
-    if (!cust) return;
+function renderProfileStats(st) {
+  var el;
+  el = document.getElementById('prof-name');   if(el) el.textContent = st.name || (currentUser && currentUser.name) || '';
+  el = document.getElementById('prof-phone');  if(el) el.textContent = (st.phone||'') + (st.city ? ' · '+st.city : '');
+  el = document.getElementById('prof-egg');
+  if (el) el.textContent = st.eggPref === 'egg' ? '❤️ With Egg' : st.eggPref === 'both' ? '🍫 Both' : '💚 Eggless';
+  el = document.getElementById('prof-orders'); if(el) el.textContent = st.orders;
+  el = document.getElementById('prof-points'); if(el) el.textContent = st.pts;
+  el = document.getElementById('prof-pts-num'); if(el) el.textContent = st.pts;
+  if (st.pieces != null) { el = document.getElementById('prof-spent'); if(el) el.textContent = st.pieces; }
 
-    // Update header
-    var el;
-    el = document.getElementById('prof-name');   if(el) el.textContent = cust.name || currentUser.name;
-    el = document.getElementById('prof-phone');  if(el) el.textContent = (cust.phone||'') + (cust.city ? ' · '+cust.city : '');
-    var eggPref = cust.egg_preference || (currentUser && currentUser.egg_preference) || 'Both';
-    el = document.getElementById('prof-egg');
-    if (el) el.textContent = eggPref === 'egg' ? '❤️ With Egg' : eggPref === 'both' ? '🍫 Both' : '💚 Eggless';
-    // Stats
-    var pts          = cust.loyalty_points  || 0; // redeemable balance
-    var lifetimePts  = cust.lifetime_points || pts; // for tier calculation
-    loadReferralSummary(cust.customer_code);
-    // Count actual orders from orders table instead of cached value
-    var { data: allOrders } = await db.from('orders')
-      .select('id', { count: 'exact' })
-      .eq('customer_id', currentUser.db_id);
-    var orders = allOrders ? allOrders.length : (cust.total_orders || 0);
-
-    var { data: spentOrders } = await db.from('orders')
-      .select('total')
-      .eq('customer_id', currentUser.db_id)
-      .not('status', 'in', '(cancelled)');
-    var spent = spentOrders ? spentOrders.reduce(function(s, o){ return s + (o.total || 0); }, 0) : (cust.total_spent || 0);
-    
-    el = document.getElementById('prof-orders'); if(el) el.textContent = orders;
-    el = document.getElementById('prof-points'); if(el) el.textContent = pts;
-    // Calculate total brownies enjoyed (sum of quantities)
-    var totalPieces = 0;
-    try {
-    var orderIds = allOrders ? allOrders.map(function(o){ return o.id; }) : [];
-    if (orderIds.length > 0) {
-        var { data: itemData } = await db
-        .from('order_items')
-        .select('quantity')
-        .in('order_id', orderIds);
-        totalPieces = itemData ? itemData.reduce(function(s,i){ return s + (i.quantity||1); }, 0) : 0;
-    }
-    
-    } catch(e) { totalPieces = 0; }
-    el = document.getElementById('prof-spent');
-    if(el) el.textContent = totalPieces;
-    el = document.getElementById('prof-pts-num'); if(el) el.textContent = pts;
-    
-    // Loyalty tier
-    var loyaltyTier = (cust.loyalty_tier || 'bronze').toLowerCase();
-    checkTierUpgrade(loyaltyTier);
-    var tierConfig = {
-        bronze:   { iconClass:'bronze',   icon:'ti-medal',  label:'Bronze Member', next:500  },
-        silver:   { iconClass:'silver',   icon:'ti-medal',  label:'Silver Member', next:1000 },
-        gold:     { iconClass:'gold',     icon:'ti-crown',  label:'Gold Member',   next:2000 },
-        platinum: { iconClass:'platinum',icon:'ti-diamond', label:'Platinum',      next:null }
-      };
-      var tc = tierConfig[loyaltyTier] || tierConfig.bronze;
-      el = document.getElementById('prof-tier-lbl'); if(el) el.textContent = tc.label;
-
-      var badgeEl = document.getElementById('prof-tier-badge');
-      if (badgeEl) {
-        badgeEl.className = 'tier-badge ' + tc.iconClass;
-        badgeEl.innerHTML = '<i class="ti ' + tc.icon + '"></i>';
-      }
-
-      var cardEl = document.querySelector('.lcard');
-      if (cardEl) {
-        cardEl.classList.remove('tier-bronze','tier-silver','tier-gold','tier-platinum');
-        cardEl.classList.add('tier-' + tc.iconClass);
-      }
-
-
-    // Tier progress based on LIFETIME points
-    var pct = tc.next ? Math.min(100, Math.round(lifetimePts/tc.next*100)) : 100;
-    el = document.getElementById('prof-lbar'); if(el) el.style.width = pct + '%';
-    el = document.getElementById('prof-tier-sub');
-    if (el) el.textContent = tc.next
-    ? (tc.next - lifetimePts) + ' pts more to unlock next tier!'
+  var tc = PROFILE_TIERS[st.tier] || PROFILE_TIERS.bronze;
+  el = document.getElementById('prof-tier-lbl'); if(el) el.textContent = tc.label;
+  var badgeEl = document.getElementById('prof-tier-badge');
+  if (badgeEl) {
+    badgeEl.className = 'tier-badge ' + tc.iconClass;
+    badgeEl.innerHTML = '<i class="ti ' + tc.icon + '"></i>';
+  }
+  var cardEl = document.querySelector('.lcard');
+  if (cardEl) {
+    cardEl.classList.remove('tier-bronze','tier-silver','tier-gold','tier-platinum');
+    cardEl.classList.add('tier-' + tc.iconClass);
+  }
+  // Tier progress based on LIFETIME points
+  var pct = tc.next ? Math.min(100, Math.round(st.lifetimePts/tc.next*100)) : 100;
+  el = document.getElementById('prof-lbar'); if(el) el.style.width = pct + '%';
+  el = document.getElementById('prof-tier-sub');
+  if (el) el.textContent = tc.next
+    ? (tc.next - st.lifetimePts) + ' pts more to unlock next tier!'
     : '🏆 You have reached the highest tier!';
 
-    // Orders sub-label
-    var { data: activeOrders } = await db.from('orders')
-      .select('id', { count:'exact' })
-      .eq('customer_id', currentUser.db_id)
-      .in('status', ['pending','confirmed','baking','packed','out_for_delivery']);
-    var activeCount = activeOrders ? activeOrders.length : 0;
-    el = document.getElementById('prof-orders-sub');
-    if (el) el.textContent = orders + ' total · ' + activeCount + ' active';
-    el = document.getElementById('prof-active-badge');
-    if (el) { el.textContent = activeCount + ' Active'; el.style.display = activeCount > 0 ? 'inline' : 'none'; }
-
-
-    if (eggPref && eggPref !== 'both') applyEggPreferenceFilter(eggPref);
-      await checkAndShowAdminTab();
-    
-
-    // Addresses sub-label
-    var { data: addrs } = await db.from('customer_addresses')
-      .select('id', { count:'exact' })
-      .eq('customer_id', currentUser.db_id);
+  el = document.getElementById('prof-orders-sub');
+  if (el) el.textContent = st.orders + ' total · ' + st.active + ' active';
+  el = document.getElementById('prof-active-badge');
+  if (el) { el.textContent = st.active + ' Active'; el.style.display = st.active > 0 ? 'inline' : 'none'; }
+  if (st.addrCount != null) {
     el = document.getElementById('prof-addr-sub');
-    if (el) el.textContent = addrs ? addrs.length + ' saved address' + (addrs.length !== 1 ? 'es' : '') : 'No addresses yet';
-
-  } catch(e) { console.warn('loadProfileData:', e.message); }
-  // Always re-check admin status after profile loads  
-  _profileLoading = false; 
+    if (el) el.textContent = st.addrCount + ' saved address' + (st.addrCount !== 1 ? 'es' : '');
+  }
 }
 
-async function checkAndShowAdminTab() {
-  var adminItem = document.getElementById('hamburger-admin-item');
-  if (adminItem) adminItem.style.display = 'none';
-  var stallTab = document.getElementById('nav-stall');
-  if (stallTab) stallTab.style.display = 'none';
-  var attendanceTab = document.getElementById('nav-attendance');
-  if (attendanceTab) attendanceTab.style.display = 'none';
-  currentUser.is_admin = false;
+function readProfileCache(uid) {
+  try { var c = JSON.parse(localStorage.getItem(PROFILE_CACHE_KEY)); if (c && c.uid === uid) return c.stats; } catch(e) {}
+  return null;
+}
 
+async function loadProfileData() {
   if (!currentUser || !currentUser.db_id) return;
-
+  var uid = currentUser.db_id;
+  _profileLoading = true;
+  var cached = readProfileCache(uid);
+  if (cached) renderProfileStats(cached);
   try {
-    var { data: cust, error } = await db
-      .from('customers')
-      .select('is_admin, is_employee, name')
-      .eq('id', currentUser.db_id)
-      .single();
+    var adminCheck = checkAndShowAdminTab();
+    var results = await Promise.all([
+      db.from('customers')
+        .select('name,phone,email,city,loyalty_points,lifetime_points,loyalty_tier,total_orders,total_spent,egg_preference,customer_code')
+        .eq('id', uid)
+        .single(),
+      // One read of the customer's orders gives the total, active count and ids.
+      db.from('orders').select('id,status').eq('customer_id', uid),
+      db.from('customer_addresses').select('id').eq('customer_id', uid)
+    ]);
+    var cust = results[0].data;
+    if (!cust || !currentUser || currentUser.db_id !== uid) return;
+    var allOrders = results[1].data;
+    var addrs = results[2].data;
+    loadReferralSummary(cust.customer_code);
 
-    if (error || !cust) return;
+    var pts = cust.loyalty_points || 0; // redeemable balance
+    var st = {
+      name: cust.name || currentUser.name, phone: cust.phone, city: cust.city,
+      eggPref: cust.egg_preference || currentUser.egg_preference || 'Both',
+      pts: pts, lifetimePts: cust.lifetime_points || pts,
+      tier: (cust.loyalty_tier || 'bronze').toLowerCase(),
+      orders: allOrders ? allOrders.length : (cust.total_orders || 0),
+      active: allOrders ? allOrders.filter(function(o){ return ACTIVE_ORDER_STATUSES.indexOf(o.status) !== -1; }).length : 0,
+      pieces: cached ? cached.pieces : null,
+      addrCount: addrs ? addrs.length : (cached ? cached.addrCount : null)
+    };
+    renderProfileStats(st);
+    checkTierUpgrade(st.tier);
+    if (st.eggPref && st.eggPref !== 'both') applyEggPreferenceFilter(st.eggPref);
 
-    if (cust.is_admin === true) {
-      if (adminItem) adminItem.style.display = 'flex';
-      if (stallTab) stallTab.style.display = 'flex';
-      currentUser.is_admin = true;
+    // Total brownies enjoyed (sum of quantities) needs the order ids first.
+    try {
+      var orderIds = allOrders ? allOrders.map(function(o){ return o.id; }) : [];
+      st.pieces = 0;
+      if (orderIds.length > 0) {
+        var { data: itemData } = await db.from('order_items').select('quantity').in('order_id', orderIds);
+        st.pieces = itemData ? itemData.reduce(function(s,i){ return s + (i.quantity||1); }, 0) : 0;
+      }
+      if (currentUser && currentUser.db_id === uid) renderProfileStats(st);
+    } catch(e) {}
+    try { localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify({ uid: uid, stats: st })); } catch(e) {}
+    await adminCheck;
+  } catch(e) { console.warn('loadProfileData:', e.message); }
+  finally { _profileLoading = false; }
+}
+
+// Shows the admin / stall / attendance entries for staff. Several places
+// call this at startup; they share one request.
+var _adminTabPending = null;
+function checkAndShowAdminTab() {
+  if (!currentUser || !currentUser.db_id) return Promise.resolve();
+  if (_adminTabPending) return _adminTabPending;
+  var uid = currentUser.db_id;
+  _adminTabPending = (async function() {
+    try {
+      var { data: cust, error } = await db
+        .from('customers')
+        .select('is_admin, is_employee, name')
+        .eq('id', uid)
+        .single();
+      if (error || !cust || !currentUser || currentUser.db_id !== uid) return;
+      var admin = cust.is_admin === true;
+      var staff = admin || cust.is_employee === true;
+      currentUser.is_admin = admin;
+      var adminItem = document.getElementById('hamburger-admin-item');
+      if (adminItem) adminItem.style.display = admin ? 'flex' : 'none';
+      var stallTab = document.getElementById('nav-stall');
+      if (stallTab) stallTab.style.display = admin ? 'flex' : 'none';
+      var attendanceTab = document.getElementById('nav-attendance');
+      if (attendanceTab) attendanceTab.style.display = staff ? 'flex' : 'none';
+    } catch(e) {
+    } finally {
+      _adminTabPending = null;
     }
-
-    if (cust.is_employee === true || cust.is_admin === true) {
-      if (attendanceTab) attendanceTab.style.display = 'flex';
-    }
-  } catch(e) {}
+  })();
+  return _adminTabPending;
 }
 
 async function checkStoreOpenStatus() {
@@ -3363,24 +3360,52 @@ async function checkStoreOpenStatus() {
   } catch(e) { console.warn('checkStoreOpenStatus:', e.message); }
 }
 
+// The last order list is saved on the phone so My Orders opens at once;
+// the fresh list (and ratings, loaded at the same time) replace it.
+var ORDERS_CACHE_KEY = 'cc_my_orders_v1';
+var _ordersShown = null;
+
 async function loadAndShowOrders() {
   showPage('orders');
   var listEl = document.getElementById('orders-list');
-  if (!listEl || !currentUser.db_id) return;
-  listEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--dim)">Loading...</div>';
+  if (!listEl || !currentUser || !currentUser.db_id) return;
+  var uid = currentUser.db_id;
+  _ordersShown = null;
+  var cached = null;
+  try { var c = JSON.parse(localStorage.getItem(ORDERS_CACHE_KEY)); if (c && c.uid === uid) cached = c; } catch(e) {}
+  if (cached) {
+    _myOrderRatings = cached.ratings;
+    renderOrdersList(cached.orders);
+  } else {
+    listEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--dim)">Loading...</div>';
+  }
 
+  var ratings = loadMyOrderRatings();
   const { data: orders, error } = await db.from('orders')
     .select('id,order_number,status,total,payment_method,is_custom,created_at,order_items(product_name,quantity,pack_label,egg_type),custom_orders(*)')
-    .eq('customer_id', currentUser.db_id)
+    .eq('customer_id', uid)
     .order('created_at', { ascending: false })
     .limit(20);
+  await ratings;
+  if (!currentUser || currentUser.db_id !== uid) return;
+  // Connection failed: keep the saved list on screen.
+  if (error && cached) return;
+  renderOrdersList(error ? [] : (orders || []));
+  if (!error) {
+    try { localStorage.setItem(ORDERS_CACHE_KEY, JSON.stringify({ uid: uid, orders: orders || [], ratings: _myOrderRatings })); } catch(e) {}
+  }
+}
 
-  if (error || !orders || orders.length === 0) {
+function renderOrdersList(orders) {
+  var listEl = document.getElementById('orders-list');
+  if (!listEl) return;
+  var json = JSON.stringify([orders, _myOrderRatings]);
+  if (json === _ordersShown) return;
+  _ordersShown = json;
+  if (!orders || orders.length === 0) {
     listEl.innerHTML = '<div style="text-align:center;padding:40px 20px"><div style="font-size:40px;margin-bottom:12px">📦</div><div style="font-size:14px;font-weight:600;color:var(--white)">No orders yet</div><div style="font-size:12px;color:var(--dim);margin-top:6px">Your orders will appear here</div></div>';
     return;
   }
-
-  await loadMyOrderRatings();
 
   var statusColors = {
     pending:'rgba(255,180,0,.15)', confirmed:'rgba(107,47,206,.15)',
@@ -4228,7 +4253,7 @@ async function confirmLogout() {
   await db.auth.signOut();
   currentUser = null;
   localStorage.removeItem('cc_user');
-  try { localStorage.removeItem(LC_CACHE_KEY); } catch (e) {}
+  try { localStorage.removeItem(LC_CACHE_KEY); localStorage.removeItem(PROFILE_CACHE_KEY); localStorage.removeItem(ORDERS_CACHE_KEY); localStorage.removeItem('cc_staff_role_v1'); } catch (e) {}
   showToast('Signed out successfully');
   setTimeout(function(){ window.location.href = 'auth.html'; }, 800);
 }
