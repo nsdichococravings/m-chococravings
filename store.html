@@ -1701,9 +1701,17 @@ async function rateOrder(n){
 
 // ── KITCHEN ───────────────────────────────────────────────────
 async function kitchenLoad(){
+  // Show the tickets from the last visit in this tab at once.
+  if (typeof kSavedOrders === 'function' && typeof kKnownLoyaltyMap === 'function') {
+    var saved = kSavedOrders();
+    if (saved) renderKitchen(saved, kKnownLoyaltyMap(true));
+  }
   // ── Admin guard ───────────────────────────────────────────────
-  try {
-    var s = await db.auth.getUser(); var user = s.data.user;
+  // Skipped when this page has already confirmed admin with the server
+  // (checkAdminBadge); the database still enforces who can read orders.
+  var confirmedAdmin = isAdmin && typeof _adminCheckedUserId !== 'undefined' && !!_adminCheckedUserId;
+  if (!confirmedAdmin) try {
+    var s = await getStoreVerifiedUser(); var user = s.data.user;
     if (!user) { goTo('pg-menu'); showKitchenDenied(); return; }
     var chk = await db.from('customers').select('is_admin').eq('email', user.email).single();
     if (!chk.data || !chk.data.is_admin) { goTo('pg-menu'); showKitchenDenied(); return; }
