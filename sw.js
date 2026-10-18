@@ -1,5 +1,5 @@
 // NSDI ChocoCravings — Service Worker
-const CACHE_NAME = 'chococravings-v51-network';
+const CACHE_NAME = 'chococravings-v52-instant';
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache immediately on install
@@ -53,13 +53,10 @@ self.addEventListener('fetch', function(event) {
 
   var acceptHeader = event.request.headers.get('accept') || '';
 
-  // HTML pages — network first, fallback to cache, then offline page
-  if (acceptHeader.includes('text/html')) {
-    event.respondWith(
-      networkFirst(event).then(function(response) {
-        return response || caches.match(OFFLINE_URL);
-      })
-    );
+  // HTML pages — saved copy first so the app opens instantly; the new
+  // version is downloaded in the background (see savedPageFirst).
+  if (acceptHeader.includes('text/html') && url.origin === self.location.origin) {
+    event.respondWith(savedPageFirst(event));
     return;
   }
 
@@ -120,6 +117,55 @@ function networkFirst(event) {
     }, function() {
       clearTimeout(timer);
       caches.match(request).then(finish);
+    });
+  });
+}
+
+// Pages open from the saved copy at once, with no wait for the network.
+// The latest version is always downloaded in the background and saved;
+// if it differs from what was shown, the open page is told so it can offer
+// "Update Now". With no saved copy yet, the network is used as normal.
+function savedPageFirst(event) {
+  var request = event.request;
+  // The query string (?open=orders etc.) is read by the page itself; the
+  // HTML file is the same, so any saved copy of the page will do.
+  return caches.match(request, { ignoreSearch: true }).then(function(cached) {
+    var cachedCopy = cached ? cached.clone() : null;
+    var network = fetch(request).then(function(response) {
+      if (response.ok && !response.redirected) {
+        var forCache = response.clone();
+        var forCompare = response.clone();
+        event.waitUntil(
+          caches.open(CACHE_NAME)
+            .then(function(cache) { return cache.put(request, forCache); })
+            .then(function() {
+              if (!cachedCopy) return;
+              return Promise.all([cachedCopy.text(), forCompare.text()]).then(function(texts) {
+                if (texts[0] !== texts[1]) return tellPageUpdated(event, request.url);
+              });
+            })
+            .catch(function() {})
+        );
+      }
+      return response;
+    });
+    if (cached) {
+      event.waitUntil(network.catch(function() {}));
+      return cached;
+    }
+    return network.catch(function() {
+      return caches.match(OFFLINE_URL);
+    });
+  });
+}
+
+function tellPageUpdated(event, pageUrl) {
+  var path = new URL(pageUrl).pathname;
+  return self.clients.matchAll({ type: 'window' }).then(function(list) {
+    list.forEach(function(client) {
+      if (client.id === event.resultingClientId || new URL(client.url).pathname === path) {
+        client.postMessage({ type: 'cc-page-updated' });
+      }
     });
   });
 }
