@@ -26,7 +26,7 @@ function harness(){
   assert.equal(test.elements['store-loading-overlay'].style.display,'none','slow request must release fullscreen loader');
   [...test.timers.values()].find(t=>t.ms===12000).fn();await pending;
   assert.equal(test.signal.aborted,true);assert.match(test.elements['items-list'].innerHTML,/Retry loading menu/);
-  assert.equal(test.context.storeMenuLoading,false);assert.deepEqual([...test.timers.values()].map(t=>t.ms),[3000],'only the automatic reconnect is scheduled');
+  assert.equal(test.context.storeMenuLoading,false);const left=[...test.timers.values()].map(t=>t.ms);assert.equal(left.length,1,'only the automatic reconnect is scheduled');assert.ok(left[0]>=5000&&left[0]<8000,'first reconnect after about 5s');
   test.resolve({data:[{id:'stale',category:'Coffee'}]});await Promise.resolve();
   assert.equal(test.renders,0,'late timed-out response must not replace error UI');
   const retry=test.context.loadMenu();test.resolve({data:[{id:'fresh',name:'Coffee',price:30,category:'Coffee'}]});await retry;
