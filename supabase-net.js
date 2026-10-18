@@ -6,14 +6,16 @@
 // token refresh hangs like that, every other database call waits behind it,
 // which is the "app stuck, then works again after a few minutes" problem.
 //
-// ccFetch gives each request a time limit. The Supabase library already
-// retries failed reads by itself, so a stuck read is cancelled and tried
-// again instead of hanging. Pass it to createClient through ccClientOptions():
+// ccFetch gives each request a time limit so the app shows an error and
+// can recover instead of hanging. A timed-out request is NOT sent again
+// automatically: when the server is overloaded, resending slow requests
+// only adds load (the abandoned request keeps running on the server).
+// Pass it to createClient through ccClientOptions():
 //   supabase.createClient(URL, KEY, ccClientOptions({ auth: {...} }))
 (function () {
-  var LIMIT_AUTH = 15000;      // login / token refresh
-  var LIMIT_READ = 15000;      // database reads (the library retries these)
-  var LIMIT_WRITE = 25000;     // database writes (never retried)
+  var LIMIT_AUTH = 20000;      // login / token refresh
+  var LIMIT_READ = 30000;      // database reads
+  var LIMIT_WRITE = 30000;     // database writes
   var LIMIT_FUNCTIONS = 45000; // edge functions (push, email)
   var LIMIT_STORAGE = 120000;  // photo uploads
 
@@ -49,12 +51,12 @@
         // The caller cancelled on purpose: pass that through untouched.
         if (callerSignal && callerSignal.aborted) throw error;
         if (timedOut) {
-          // Named TimeoutError (not AbortError) so the library treats it as
-          // a network failure and retries reads. Writes are never retried:
-          // a timed-out write may still have reached the server, and
+          // Named AbortError so the Supabase library does not resend it.
+          // A timed-out write may also have reached the server, and
           // repeating it could save an order twice.
           error = new Error('Connection is slow. Please check the internet and try again.');
-          error.name = 'TimeoutError';
+          error.name = 'AbortError';
+          error.ccTimeout = true;
         }
         throw error;
       }
