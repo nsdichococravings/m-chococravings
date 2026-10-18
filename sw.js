@@ -66,7 +66,12 @@ self.addEventListener('fetch', function(event) {
   // is exactly what caused updates to not show up. The cached copy is
   // used only when the network fails or is very slow (see networkFirst).
   if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
-    event.respondWith(networkFirst(event));
+    // A versioned file (script.js?v=2026...) never changes under the same
+    // address: a new release links a new ?v=. So the saved copy is safe to
+    // use at once, which means repeat opens don't wait on the network for
+    // scripts. Files without a version keep the network-first rule.
+    var versioned = url.origin === self.location.origin && /(^|&)v=/.test(url.search.slice(1));
+    event.respondWith(versioned ? savedFileFirst(event) : networkFirst(event));
     return;
   }
 
@@ -85,6 +90,25 @@ self.addEventListener('fetch', function(event) {
     })
   );
 });
+
+function savedFileFirst(event) {
+  var request = event.request;
+  return caches.match(request).then(function(cached) {
+    var network = fetch(request).then(function(response) {
+      if (response.ok) {
+        var clone = response.clone();
+        event.waitUntil(caches.open(CACHE_NAME).then(function(cache) { return cache.put(request, clone); }).catch(function() {}));
+      }
+      return response;
+    });
+    if (cached) {
+      // Refresh in the background in case the file was re-uploaded.
+      event.waitUntil(network.catch(function() {}));
+      return cached;
+    }
+    return network;
+  });
+}
 
 // Network first, but don't wait forever. On a weak connection a request can
 // hang for a long time before failing, which left the app on a blank screen.
