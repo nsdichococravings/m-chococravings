@@ -4,9 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NSDI ChocoCravings — Admin</title>
+<link rel="preconnect" href="https://yjbfditboewwpgyqzryd.supabase.co" crossorigin>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-net.js?v=20261018"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<!-- Charts load without holding up the first screen. -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" async onload="if (typeof renderRevenueChart === 'function') renderRevenueChart()"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -612,6 +614,9 @@ function mbnClick(name, el) {
 // ─────────────────────────────────────────
 // Dashboard loads directly — auth verified by parent app before iframe is shown
 document.addEventListener('DOMContentLoaded', async () => {
+  // Orders first; the admin's name loads alongside instead of before them.
+  initDashboard();
+
   // Try to restore session from localStorage (shared with parent page on same origin)
   try {
     const { data: { session } } = await db.auth.getSession();
@@ -636,11 +641,34 @@ document.addEventListener('DOMContentLoaded', async () => {
       } catch(e) {}
     }
   });
+});
 
-  initDashboard();
+// The last order list is saved on this device so the dashboard shows it at
+// once; the fresh list replaces it a moment later. Cleared on logout.
+const ADMIN_ORDERS_KEY = 'cc_admin_orders_v1';
+function saveAdminOrders() {
+  try { localStorage.setItem(ADMIN_ORDERS_KEY, JSON.stringify(allOrders)); } catch(e) {}
+}
+function showSavedAdminOrders() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(ADMIN_ORDERS_KEY));
+    if (!Array.isArray(saved) || !saved.length || allOrders.length) return;
+    allOrders = saved;
+    renderAll(); updateStats(); renderCharts();
+  } catch(e) { console.warn('saved orders:', e.message); }
+}
+
+// Live updates can be missed while the phone is asleep or the app is in
+// the background, so refresh when it comes back after a while.
+let _adminHiddenAt = 0;
+document.addEventListener('visibilitychange', function() {
+  if (document.hidden) { _adminHiddenAt = Date.now(); return; }
+  if (_adminHiddenAt && Date.now() - _adminHiddenAt > 60000) loadOrders();
+  _adminHiddenAt = 0;
 });
 
 async function adminLogout() {
+  try { localStorage.removeItem(ADMIN_ORDERS_KEY); } catch(e) {}
   await db.auth.signOut();
   // Notify parent to close admin panel and sign out
   try { window.parent.postMessage({ type: 'adminLogout' }, '*'); } catch(e) {}
@@ -651,6 +679,7 @@ async function initDashboard() {
   const b = document.getElementById('setup-banner');
   if (b) b.style.display = 'none';
   setConn('connecting');
+  showSavedAdminOrders();
   await loadOrders();
   subscribeRealtime();
   updatePendingBadge();
@@ -691,6 +720,7 @@ async function loadOrders() {
 
         if (!err2) {
           allOrders = data2 || [];
+          saveAdminOrders();
           setConn('connected');
           renderAll(); updateStats(); renderCharts();
           showToast('⚠️ Partial data', 'Run fix-admin-rls.sql in Supabase for full access');
@@ -702,6 +732,7 @@ async function loadOrders() {
     }
 
     allOrders = data || [];
+    saveAdminOrders();
     setConn('connected');
     renderAll();
     updateStats();
@@ -1386,6 +1417,7 @@ function renderRevenueChart() {
 
   if (revenueChart) { revenueChart.destroy(); revenueChart = null; }
 
+  if (typeof Chart === 'undefined') return; // charts library still loading
   var ctx = canvas.getContext('2d');
   revenueChart = new Chart(ctx, {
     type: 'bar',
