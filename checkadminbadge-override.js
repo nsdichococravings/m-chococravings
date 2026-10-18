@@ -28,16 +28,35 @@ function resetAdminVisibility() {
   if(typeof ccSetAccess==='function') ccSetAccess(false);
   ['admin-quick-actions','kitchen-fab','print-invoice-btn','admin-fab-pill','admin-fab-menu','admin-fab-backdrop'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
 }
+// The last confirmed staff role is saved on the phone, so the Command
+// Center and staff tools appear (and start loading) the moment the page
+// opens instead of after two server round trips. The server check still
+// runs every time and removes access if the role has changed. This only
+// controls what is shown; the database decides what each user may do.
+var STAFF_ROLE_CACHE_KEY='cc_staff_role_v1';
+function readStaffRoleCache(uid){
+  try { var c=JSON.parse(localStorage.getItem(STAFF_ROLE_CACHE_KEY)); if(c && uid && c.uid===uid) return c; } catch(e) {}
+  return null;
+}
+function saveStaffRoleCache(uid, admin, employee){
+  try {
+    if(admin || employee) localStorage.setItem(STAFF_ROLE_CACHE_KEY, JSON.stringify({uid:uid, admin:!!admin, employee:!!employee}));
+    else localStorage.removeItem(STAFF_ROLE_CACHE_KEY);
+  } catch(e) {}
+}
+function clearStaffRoleCache(){ try { localStorage.removeItem(STAFF_ROLE_CACHE_KEY); } catch(e) {} }
+
 async function checkAdminBadge(){
   var generation=++_adminCheckGeneration;
   resetAdminVisibility();
+  var shown=null; // role shown from the saved copy, if any
   try {
     if(!db) return;
 
     if(!_adminAuthListener && db.auth.onAuthStateChange) {
       _adminAuthListener=db.auth.onAuthStateChange(function(event, session) {
         if(event==='SIGNED_OUT') {
-          ++_adminCheckGeneration; _adminCheckedUserId=null; clearAdminRetry(); resetAdminVisibility();
+          ++_adminCheckGeneration; _adminCheckedUserId=null; clearAdminRetry(); clearStaffRoleCache(); resetAdminVisibility();
           return;
         }
         // A token refresh (about once an hour, and whenever the phone wakes
@@ -52,11 +71,23 @@ async function checkAdminBadge(){
         }
       });
     }
-    var s = await db.auth.getUser();
+
+    // Saved role first: getSession reads the login stored on this phone.
+    if(typeof db.auth.getSession==='function') {
+      var ss = await db.auth.getSession();
+      if(generation!==_adminCheckGeneration) return;
+      var su = ss && ss.data && ss.data.session && ss.data.session.user;
+      var saved = su && readStaffRoleCache(su.id);
+      if(saved) { shown={uid:su.id, admin:saved.admin, employee:saved.employee}; applyStaffRole(saved.admin, saved.employee); }
+    }
+
+    // Then confirm with the server. Shares one request with other startup
+    // checks on this page instead of asking the login server three times.
+    var s = await (typeof getStoreVerifiedUser==='function' ? getStoreVerifiedUser() : db.auth.getUser());
     if(generation!==_adminCheckGeneration) return;
     if(s.error) throw s.error;
     var user = s.data && s.data.user;
-    if(!user) { _adminCheckedUserId=null; clearAdminRetry(); return; }
+    if(!user) { _adminCheckedUserId=null; clearAdminRetry(); clearStaffRoleCache(); if(shown) resetAdminVisibility(); return; }
 
     // Both flags in one query — avoids a second DB round-trip.
     var chk = await db.from('customers').select('is_admin, is_employee').eq('email', user.email).single();
@@ -66,71 +97,80 @@ async function checkAdminBadge(){
     var employee = !!(chk.data && chk.data.is_employee);
     _adminCheckedUserId = user.id;
     clearAdminRetry();
+    saveStaffRoleCache(user.id, admin, employee);
 
-    if (admin) {
-      isAdmin = true;
-      if(typeof ccSetAccess==='function') ccSetAccess(true);
-
-      // Show admin-only UI elements
-      var adminActions = document.getElementById('admin-quick-actions');
-      if (adminActions) adminActions.style.display = 'flex';
-
-      var fab = document.getElementById('kitchen-fab');
-      if (fab) fab.style.display = 'flex';
-
-      var pb = document.getElementById('print-invoice-btn');
-      if (pb) pb.style.display = 'block';
-
-      // These three were previously hardcoded static HTML inside the old
-      // #admin-fab-menu dropdown — now registered through the Command
-      // Center like every other tool, instead of living as separate markup.
-      if (!_adminToolsRegistered && typeof registerAdminTool === 'function') {
-        _adminToolsRegistered=true;
-        registerAdminTool('Daily Operations', {
-          icon: '👤', iconBg: 'rgba(110,9,119,0.1)',
-          title: 'Place Order', subtitle: 'On behalf of customer',
-          onClick: function () { if (typeof openAdminOrder === 'function') openAdminOrder(); }
-        });
-        registerAdminTool('Daily Operations', {
-          icon: '➕', iconBg: 'rgba(110,9,119,0.1)',
-          title: 'Add Menu Item', subtitle: 'Instant menu update',
-          onClick: function () { if (typeof openQaItem === 'function') openQaItem(); }
-        });
-        registerAdminTool('Daily Operations', {
-          icon: function () { return _storeIsOpen ? '🟢' : '🔴'; },
-          iconBg: function () { return _storeIsOpen ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)'; },
-          title: function () { return _storeIsOpen ? 'Store is Open' : 'Store is Closed'; },
-          subtitle: function () { return _storeIsOpen ? 'Tap to close store' : 'Tap to open store'; },
-          keepOpen: true,
-          onClick: function () { if (typeof toggleStoreOpenStatus === 'function') toggleStoreOpenStatus(); }
-        });
-      }
-    }
-
-    // Lazy-load admin/staff-only scripts — regular customers browsing the
-    // menu never download or execute any of this. Table Service + Staff
-    // Login are needed by BOTH admins and regular employees (is_employee
-    // flag, for staff PIN login to the Tables board) — everything else
-    // is admin-only.
-    if (admin || employee) {
-      loadScriptsSequentially(['table-service-patch.js?v=20260952-seat-paid', 'staff-order-patch.js?v=20260952-clock-in', 'birthday-report-patch.js?v=20260946-offer-code', 'ratings-report-patch.js?v=20260948']);
-    }
-    if (admin) {
-      loadScriptsSequentially([
-        'inventory-patch.js?v=20260960', 'display-stock-patch.js?v=20260966', 'daily-expenses-patch.js',
-        'day-close-patch.js', 'sales-reports-patch.js?v=20260968', 'reports-hub-patch.js?v=20260970', 'daily-summary-patch.js?v=20260968', 'customer-returns-patch.js?v=20260970',
-        'cash-counter-patch.js', 'custom-bookings-patch.js?v=20260956-kitchen', 'executive-dashboard-patch.js',
-        'push-broadcast-patch.js?v=20260974'
-      ]);
+    var same = shown && shown.uid===user.id && shown.admin===admin && shown.employee===employee;
+    if(!same) {
+      if(shown) resetAdminVisibility();
+      applyStaffRole(admin, employee);
     }
     if (typeof initializeProductionAccess === 'function') {
       initializeProductionAccess().catch(function (error) { console.warn('Production access:', error.message); });
     }
   } catch(e){
     console.warn('checkAdminBadge error:', e.message);
-    // Usually a dropped or slow connection. Try again shortly instead of
-    // leaving staff without their tools until someone reloads the page.
+    // Usually a dropped or slow connection. Tools shown from the saved role
+    // stay; try again shortly instead of waiting for a page reload.
     scheduleAdminRetry(generation);
+  }
+}
+
+function applyStaffRole(admin, employee) {
+  if (admin) {
+    isAdmin = true;
+    if(typeof ccSetAccess==='function') ccSetAccess(true);
+
+    // Show admin-only UI elements
+    var adminActions = document.getElementById('admin-quick-actions');
+    if (adminActions) adminActions.style.display = 'flex';
+
+    var fab = document.getElementById('kitchen-fab');
+    if (fab) fab.style.display = 'flex';
+
+    var pb = document.getElementById('print-invoice-btn');
+    if (pb) pb.style.display = 'block';
+
+    // These three were previously hardcoded static HTML inside the old
+    // #admin-fab-menu dropdown — now registered through the Command
+    // Center like every other tool, instead of living as separate markup.
+    if (!_adminToolsRegistered && typeof registerAdminTool === 'function') {
+      _adminToolsRegistered=true;
+      registerAdminTool('Daily Operations', {
+        icon: '👤', iconBg: 'rgba(110,9,119,0.1)',
+        title: 'Place Order', subtitle: 'On behalf of customer',
+        onClick: function () { if (typeof openAdminOrder === 'function') openAdminOrder(); }
+      });
+      registerAdminTool('Daily Operations', {
+        icon: '➕', iconBg: 'rgba(110,9,119,0.1)',
+        title: 'Add Menu Item', subtitle: 'Instant menu update',
+        onClick: function () { if (typeof openQaItem === 'function') openQaItem(); }
+      });
+      registerAdminTool('Daily Operations', {
+        icon: function () { return _storeIsOpen ? '🟢' : '🔴'; },
+        iconBg: function () { return _storeIsOpen ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)'; },
+        title: function () { return _storeIsOpen ? 'Store is Open' : 'Store is Closed'; },
+        subtitle: function () { return _storeIsOpen ? 'Tap to close store' : 'Tap to open store'; },
+        keepOpen: true,
+        onClick: function () { if (typeof toggleStoreOpenStatus === 'function') toggleStoreOpenStatus(); }
+      });
+    }
+  }
+
+  // Lazy-load admin/staff-only scripts — regular customers browsing the
+  // menu never download or execute any of this. Table Service + Staff
+  // Login are needed by BOTH admins and regular employees (is_employee
+  // flag, for staff PIN login to the Tables board) — everything else
+  // is admin-only.
+  if (admin || employee) {
+    loadScriptsSequentially(['table-service-patch.js?v=20260952-seat-paid', 'staff-order-patch.js?v=20260952-clock-in', 'birthday-report-patch.js?v=20260946-offer-code', 'ratings-report-patch.js?v=20260948']);
+  }
+  if (admin) {
+    loadScriptsSequentially([
+      'inventory-patch.js?v=20260960', 'display-stock-patch.js?v=20260966', 'daily-expenses-patch.js',
+      'day-close-patch.js', 'sales-reports-patch.js?v=20260968', 'reports-hub-patch.js?v=20260970', 'daily-summary-patch.js?v=20260968', 'customer-returns-patch.js?v=20260970',
+      'cash-counter-patch.js', 'custom-bookings-patch.js?v=20260956-kitchen', 'executive-dashboard-patch.js',
+      'push-broadcast-patch.js?v=20260974'
+    ]);
   }
 }
 
