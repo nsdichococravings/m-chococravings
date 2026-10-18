@@ -22,22 +22,22 @@ const tick=()=>new Promise(r=>setImmediate(r));
    const opts=h.ctx.ccClientOptions({auth:{persistSession:false},global:{headers:{a:'1'}}});
    assert.equal(opts.auth.persistSession,false);assert.equal(opts.global.headers.a,'1');assert.equal(opts.global.fetch,h.ctx.ccFetch);}
 
-  // A hung read gives up after 15s with a clear error (the library retries reads itself).
+  // A hung read gives up after 30s with a clear error, marked so the
+  // Supabase library does not resend it to a struggling server.
   {const h=harness((n,init)=>hanging(init));
    const p=h.ctx.ccFetch('https://x.supabase.co/rest/v1/menu',{method:'GET'});
-   h.fire(15000);
-   await assert.rejects(p,e=>e.name==='TimeoutError'&&/slow/.test(e.message));await tick();assert.equal(h.calls.length,1,'no extra retry on top of the library');}
+   h.fire(30000);
+   await assert.rejects(p,e=>e.name==='AbortError'&&e.ccTimeout===true&&/slow/.test(e.message));await tick();assert.equal(h.calls.length,1,'not resent');}
 
-  // A write gets longer and is never repeated: it may already have reached the server.
+  // A write is never repeated: it may already have reached the server.
   {const h=harness((n,init)=>hanging(init));
    const p=h.ctx.ccFetch('https://x.supabase.co/rest/v1/store_orders',{method:'POST',body:'{}'});
-   assert.ok(!h.timers.some(t=>t.ms===15000));
-   h.fire(25000);await assert.rejects(p,e=>e.name==='TimeoutError');await tick();assert.equal(h.calls.length,1,'no duplicate order');}
+   h.fire(30000);await assert.rejects(p,e=>e.ccTimeout===true);await tick();assert.equal(h.calls.length,1,'no duplicate order');}
 
-  // Login refresh uses a shorter limit so it can't block other calls for long.
+  // Login refresh has its own limit so it can't block other calls for long.
   {const h=harness((n,init)=>hanging(init));
    const p=h.ctx.ccFetch('https://x.supabase.co/auth/v1/token?grant_type=refresh_token',{method:'POST'});
-   h.fire(15000);await assert.rejects(p,e=>e.name==='TimeoutError');}
+   h.fire(20000);await assert.rejects(p,e=>e.ccTimeout===true);}
 
   // Photo uploads get a long limit.
   {const h=harness(()=>new Promise(()=>{}));
@@ -61,5 +61,5 @@ const tick=()=>new Promise(r=>setImmediate(r));
     assert.ok(lib>0&&net>lib,page+' loads supabase-net.js after the library');
     assert.match(html,/ccClientOptions/,page+' uses ccClientOptions');
   }
-  console.log('PASS: read time limit with clear error, writes longer and never repeated, short auth limit, long upload limit, caller cancel respected, timers cleared, pages wired.');
+  console.log('PASS: timeouts not resent, writes never repeated, auth limit, long upload limit, caller cancel respected, timers cleared, pages wired.');
 })().catch(e=>{console.error(e);process.exitCode=1;});
