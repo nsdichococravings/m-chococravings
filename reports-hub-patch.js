@@ -6,10 +6,10 @@
  *  - The "📈 Reports" FAB entry itself is visible to any regular ADMIN
  *    (isAdmin=true) — not super-user gated, since Day Close is an
  *    everyday operational task.
- *  - Inside the hub, "🧾 Daily Close Reports" is always shown to any
- *    admin who got in.
- *  - "📊 Sales Reports" is additionally gated behind the stricter
- *    is_super_user flag — only the actual owner sees that card at all.
+ *  - Inside the hub, "💰 Daily Expenses" is shown to any admin who got in.
+ *  - "🧾 Daily Close Reports", "📊 Sales Reports" and the other owner
+ *    reports are gated behind the stricter is_super_user flag — only the
+ *    actual owner (super admin) sees those cards at all.
  *
  * Load AFTER day-close-patch.js and sales-reports-patch.js, right
  * before </body>:
@@ -121,13 +121,13 @@ function renderReportsHubCards() {
   var container = document.getElementById('rh-cards');
   var html = '';
 
-  // Always visible to any admin who reached the hub.
-  html += reportCard('🧾', 'Daily Close Reports', 'Cash reconciliation & payment breakdown', "rhOpen('daily-close')");
+  // Visible to any admin who reached the hub.
   html += reportCard('💰', 'Daily Expenses', 'Purchases, history & recurring fixed costs', "rhOpen('expenses')");
 
-  // Only shown to the actual super user — regular admins never see this
-  // card exist at all, not even greyed out.
+  // Only shown to the actual super user (owner) — regular admins never see
+  // these cards exist at all, not even greyed out.
   if (_rhIsSuperUser) {
+    html += reportCard('🧾', 'Daily Close Reports', 'Cash reconciliation & payment breakdown', "rhOpen('daily-close')");
     html += reportCard('🌙', 'Daily Summary', 'Sales, top items, wastage & to-buy · 10 pm on your phone', "rhOpen('daily-summary')");
     html += reportCard('👥', 'Customer Returns', 'New vs returning, missing regulars & win-back messages', "rhOpen('customer-returns')");
     html += reportCard('📊', 'Sales Reports', 'Dashboards, trends, busy-hours heat-map & PDF export', "rhOpen('sales-reports')");
@@ -145,8 +145,16 @@ function renderReportsHubCards() {
   container.innerHTML = html;
 }
 
+// Owner-only reports also refuse to open for anyone else, even if called
+// directly.
+var RH_OWNER_ONLY = ['daily-close', 'daily-summary', 'customer-returns', 'sales-reports'];
+
 function rhOpen(which) {
   closeReportsHub();
+  if (RH_OWNER_ONLY.indexOf(which) !== -1 && !_rhIsSuperUser) {
+    if (typeof showStoreToast === 'function') showStoreToast('Only the owner can open this report.');
+    return;
+  }
   if (which === 'daily-close') {
     if (typeof openDayClose === 'function') openDayClose();
     else alert('Day Close module not loaded — check that day-close-patch.js is included.');

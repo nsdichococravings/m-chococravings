@@ -167,7 +167,7 @@ function applyStaffRole(admin, employee) {
   if (admin) {
     loadScriptsSequentially([
       'inventory-patch.js?v=20260960', 'display-stock-patch.js?v=20260966', 'daily-expenses-patch.js',
-      'day-close-patch.js', 'sales-reports-patch.js?v=20260968', 'reports-hub-patch.js?v=20260970', 'daily-summary-patch.js?v=20260968', 'customer-returns-patch.js?v=20260970',
+      'day-close-patch.js', 'sales-reports-patch.js?v=20260968', 'reports-hub-patch.js?v=20261020-owner-close', 'daily-summary-patch.js?v=20260968', 'customer-returns-patch.js?v=20260970',
       'cash-counter-patch.js', 'custom-bookings-patch.js?v=20260956-kitchen', 'executive-dashboard-patch.js',
       'push-broadcast-patch.js?v=20260974'
     ]);
