@@ -23,6 +23,24 @@ function brEsc(s) {
   });
 }
 
+// The badge refresh when On Store opens runs at most every 30 minutes per
+// phone: each run is a full report on the database, and staff reopen On
+// Store many times an evening. In between, the last badge count is reused.
+// Opening the report itself always loads fresh data.
+function brStartupDue() {
+  try {
+    var c = JSON.parse(localStorage.getItem('cc_badge_birthday_v1'));
+    if (c && Date.now() - c.at < 30 * 60 * 1000) {
+      if (typeof ccUpdateBadge === 'function') ccUpdateBadge('birthday-report', c.count || 0);
+      return false;
+    }
+  } catch (e) {}
+  return true;
+}
+function brSaveBadge(count) {
+  try { localStorage.setItem('cc_badge_birthday_v1', JSON.stringify({ at: Date.now(), count: count })); } catch (e) {}
+}
+
 async function brLoad() {
   try {
     var res = await db.rpc('cc_birthday_report');
@@ -35,6 +53,7 @@ async function brLoad() {
     (_brReport.upcoming || []).forEach(function (c) { c._isToday = false; });
     brNotify();
     if (typeof ccUpdateBadge === 'function') ccUpdateBadge('birthday-report', (_brReport.today || []).length);
+    brSaveBadge((_brReport.today || []).length);
     if (_brDialog && _brDialog.open) brRender();
   } catch (e) {
     console.warn('birthday report:', e.message);
@@ -499,7 +518,7 @@ function _brRegister() {
       onClick: brOpen
     });
   }
-  brLoad();
+  if (brStartupDue()) brLoad();
 }
 if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', _brRegister); } else { _brRegister(); }
 window.openBirthdayReport = brOpen;
