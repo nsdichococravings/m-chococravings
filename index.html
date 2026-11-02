@@ -4505,6 +4505,44 @@ document.addEventListener('DOMContentLoaded', function() {
 // Fallback if DOMContentLoaded already fired
 setTimeout(updateCartDots, 100);
 
+// Resolves once the signed-in customer (with their account id) is known.
+// Things that need currentUser.db_id wait on this instead of a fixed delay.
+var _ccUserReadyResolve;
+var ccUserReady = new Promise(function (resolve) { _ccUserReadyResolve = resolve; });
+
+// The saved copy of the customer can lack the account id: the login page
+// saves db_id: null when its lookup fails (for example while the database
+// is slow), and nothing looked it up again, so the loyalty card, orders and
+// order alerts stayed empty until the customer logged out. Look it up now,
+// and keep trying in the background if the database doesn't answer.
+var _ccUserRepairTries = 0;
+async function ccRepairCurrentUser(email) {
+  try {
+    var res = await db.from('customers')
+      .select('id, name, phone, email, city')
+      .eq('email', email)
+      .maybeSingle();
+    if (res.error) throw res.error;
+    if (!res.data) return 'missing';
+    currentUser = Object.assign({}, currentUser || {}, {
+      name: res.data.name, phone: res.data.phone, email: res.data.email,
+      city: res.data.city, db_id: res.data.id
+    });
+    try { localStorage.setItem('cc_user', JSON.stringify(currentUser)); } catch (e) {}
+    return 'ok';
+  } catch (e) {
+    console.warn('Customer lookup failed:', e.message);
+    if (_ccUserRepairTries++ < 6) {
+      setTimeout(function () {
+        ccRepairCurrentUser(email).then(function (r) {
+          if (r === 'ok') { updateProfileUI(); _ccUserReadyResolve(); }
+        });
+      }, 5000 * _ccUserRepairTries);
+    }
+    return 'error';
+  }
+}
+
 // Restore session on load — Supabase session + localStorage cache
 (async function(){
   // ── Auth gate — must be logged in to use the app ──
@@ -4517,24 +4555,28 @@ setTimeout(updateCartDots, 100);
     // Session valid — load user from cache or fetch fresh
     var saved = null;
     try { saved = JSON.parse(localStorage.getItem('cc_user')); } catch(e){}
-    if (saved && (saved.name || saved.email)) {
+    var sessionEmail = (session.user && session.user.email) || '';
+    var savedUsable = saved && (saved.name || saved.email)
+      && (!saved.email || !sessionEmail || saved.email.toLowerCase() === sessionEmail.toLowerCase());
+    if (savedUsable && saved.db_id) {
       currentUser = saved;
     } else {
-      // Fetch from customers table
-      const { data: cust } = await db.from('customers')
-        .select('id, name, phone, email, city')
-        .eq('email', session.user.email)
-        .single();
-      if (cust) {
-        currentUser = { name: cust.name, phone: cust.phone, email: cust.email, city: cust.city, db_id: cust.id };
-        localStorage.setItem('cc_user', JSON.stringify(currentUser));
-      } else {
+      // No saved copy, a saved copy for another account, or one without
+      // the account id: look the customer up.
+      if (savedUsable) currentUser = saved; // show the name meanwhile
+      var repaired = await ccRepairCurrentUser(sessionEmail);
+      if (repaired === 'missing' && !currentUser) {
         // No customer record — send back to signup
+        window.location.href = 'auth.html';
+        return;
+      }
+      if (repaired === 'error' && !currentUser) {
         window.location.href = 'auth.html';
         return;
       }
     }
     updateProfileUI();
+    if (currentUser && currentUser.db_id) _ccUserReadyResolve();
     setTimeout(checkAndShowAdminTab, 500);
     setTimeout(loadStoreOpenStatus, 500);
     setTimeout(checkStoreOpenStatus, 500);
@@ -8501,12 +8543,14 @@ async function pollOrderStatuses() {
   }
 }
 
-setTimeout(async function() {
+// Starts once the customer's account id is known (see ccUserReady), not
+// after a fixed delay that a slow login could miss.
+ccUserReady.then(async function() {
   await loadNotifications();
   subscribeOrderNotifications();
   // Start polling immediately as backup — works even without realtime
   startOrderPolling();
-}, 1500);
+});
 
 async function redeemPoints() {
   if (!currentUser || !currentUser.db_id) return;
@@ -9513,6 +9557,5 @@ function closeTierCelebration() {
 </script>
 
 <script src="/lucky-draw.js"></script>
-<script src="js/hrm-embedded.js"></script>
 </body>
 </html>
