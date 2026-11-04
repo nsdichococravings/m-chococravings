@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<meta name="theme-color" content="#09010F"/>
+<meta name="robots" content="noindex"/>
+<title>NSDI Store · Manage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://yjbfditboewwpgyqzryd.supabase.co" crossorigin/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-net.js?v=20261018"></script>
+<style>
+/* Same colours as the admin dashboard, so the NSDI Store tools look the same in both places. */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --p:#6B2FCE;--p2:#8B44E8;--pl:#C084FC;--pg:rgba(107,47,206,.12);
+  --dark:#09010F;--d2:#110020;--d3:#1C003A;--d4:#0F0018;
+  --white:#FAF5FF;--off:#E9D5FF;--dim:#9F7ABA;--faint:#4A3060;
+  --green:#22C55E;--gold:#F59E0B;--red:#EF4444;
+  --card:rgba(255,255,255,.035);--bdr:rgba(255,255,255,.07);--bdr2:rgba(107,47,206,.25);
+}
+html,body{background:var(--dark);color:var(--white);font-family:'DM Sans',system-ui,sans-serif;min-height:100vh}
+a{color:var(--pl)}
+.top{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;background:var(--d4);border-bottom:1px solid var(--bdr)}
+.top a{width:38px;height:38px;border-radius:11px;background:var(--card);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;color:var(--white);text-decoration:none;font-size:18px}
+.top .t{font-family:'Cormorant Garamond',serif;font-size:21px;font-weight:700;flex:1}
+.top .shop{width:auto;padding:0 12px;font-size:13px;font-weight:700}
+#view-grocery{max-width:980px;margin:0 auto}
+#notif-toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(140%);transition:transform .25s;z-index:1000;background:#1d1030;border:1px solid var(--bdr2);border-radius:14px;padding:12px 16px;min-width:240px;max-width:92vw;box-shadow:0 12px 30px rgba(0,0,0,.4)}
+#notif-toast.show{transform:translateX(-50%) translateY(0)}
+#nt-title{font-weight:700;font-size:14px}#nt-body{font-size:12.5px;color:var(--dim);margin-top:2px}
+</style>
+</head>
+<body data-grocery-admin>
+<div class="top">
+  <a href="index.html" aria-label="Back to the app">‹</a>
+  <div class="t">Manage NSDI Store</div>
+  <a class="shop" href="grocery.html">View store ↗</a>
+</div>
+<div id="view-grocery"></div>
+<div id="notif-toast" role="status"><div id="nt-title"></div><div id="nt-body"></div></div>
+<script>
+var SUPABASE_URL = 'https://yjbfditboewwpgyqzryd.supabase.co';
+var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqYmZkaXRib2V3d3BneXF6cnlkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNTgwNjcsImV4cCI6MjA4ODczNDA2N30.08Tvq71w2DBeWZrZb-IaiKfoI-2P_1MPJygzSPiRq24';
+// Shared with grocery-admin.js (it uses the global `db`, like in the admin dashboard).
+var db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, (typeof ccClientOptions === 'function' ? ccClientOptions({}) : {}));
+var toastTimer;
+function showToast(title, body) {
+  document.getElementById('nt-title').textContent = title;
+  document.getElementById('nt-body').textContent = body || '';
+  var t = document.getElementById('notif-toast'); t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove('show'); }, 3500);
+}
+</script>
+<script src="grocery-admin.js?v=20261105"></script>
+</body>
+</html>
