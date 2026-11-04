@@ -8439,13 +8439,19 @@ function subscribeOrderNotifications() {
 var _pollingInterval = null;
 var _lastKnownStatuses = {};
 
+// Backup for live updates. Every open customer phone runs this, so it is
+// kept light: once a minute, and only while the app is on screen (live
+// updates still arrive in the background). Coming back to the app checks
+// straight away.
 function startOrderPolling() {
   if (_pollingInterval) return; // already polling
-  console.log('Starting order status polling every 30s');
-
-  // Poll immediately then every 30 seconds
   pollOrderStatuses();
-  _pollingInterval = setInterval(pollOrderStatuses, 30000);
+  _pollingInterval = setInterval(function () {
+    if (!document.hidden) pollOrderStatuses();
+  }, 60000);
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && _pollingInterval) pollOrderStatuses();
+  });
 }
 
 function stopOrderPolling() {

@@ -28,12 +28,31 @@ function rrStars(n) {
   return '<span style="color:#e0a526">' + '★'.repeat(n) + '</span><span style="color:#e3d6e6">' + '★'.repeat(5 - n) + '</span>';
 }
 
+// The badge refresh when On Store opens runs at most every 30 minutes per
+// phone: each run is a full report on the database, and staff reopen On
+// Store many times an evening. In between, the last badge count is reused.
+// Opening the report itself always loads fresh data.
+function rrStartupDue() {
+  try {
+    var c = JSON.parse(localStorage.getItem('cc_badge_ratings_v1'));
+    if (c && Date.now() - c.at < 30 * 60 * 1000) {
+      if (typeof ccUpdateBadge === 'function') ccUpdateBadge('ratings-report', c.count || 0);
+      return false;
+    }
+  } catch (e) {}
+  return true;
+}
+function rrSaveBadge(count) {
+  try { localStorage.setItem('cc_badge_ratings_v1', JSON.stringify({ at: Date.now(), count: count })); } catch (e) {}
+}
+
 async function rrLoad(notify) {
   try {
     var res = await db.rpc('cc_ratings_report', { p_days: _rrDays });
     if (res.error) throw res.error;
     _rrReport = res.data;
     if (typeof ccUpdateBadge === 'function') ccUpdateBadge('ratings-report', _rrReport.low_7d || 0);
+    rrSaveBadge(_rrReport.low_7d || 0);
     if (notify && _rrReport.low_7d && typeof showStoreToast === 'function') {
       showStoreToast('⚠️ ' + _rrReport.low_7d + ' low customer rating' + (_rrReport.low_7d === 1 ? '' : 's') + ' this week — check Customer Ratings');
     }
@@ -157,7 +176,7 @@ function _rrRegister() {
       onClick: rrOpen
     });
   }
-  rrLoad(true);
+  if (rrStartupDue()) rrLoad(true);
 }
 if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', _rrRegister); } else { _rrRegister(); }
 window.openRatingsReport = rrOpen;
