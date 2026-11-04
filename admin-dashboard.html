@@ -196,6 +196,7 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;color:var(--white);
     <div class="nav-item on" onclick="showView('dashboard',this)"><span class="nav-icon">📊</span><span class="nav-label">Dashboard</span></div>
     <div class="nav-item" onclick="showView('orders',this)"><span class="nav-icon">📦</span><span class="nav-label">Orders</span><span class="nav-badge" id="pending-badge">0</span></div>
     <div class="nav-item" onclick="showView('products',this)"><span class="nav-icon">🍫</span><span class="nav-label">Products</span></div>
+    <div class="nav-item" onclick="showView('grocery',this)"><span class="nav-icon">🛍️</span><span class="nav-label">NSDI Store</span></div>
     <div class="nav-section">Tools</div>
     <div class="nav-item" onclick="showView('analytics',this)"><span class="nav-icon">📈</span><span class="nav-label">Analytics</span></div>
     <div class="nav-item" onclick="showView('customers',this)"><span class="nav-icon">👥</span><span class="nav-label">Customers</span></div>
@@ -337,6 +338,9 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;color:var(--white);
     <div class="section-title" style="margin-bottom:16px">Products Catalogue</div>
     <div style="color:var(--dim);font-size:13px;background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:20px">Product management coming soon. All 15 brownie variants, 2 tiers, toppings will be editable here.</div>
   </div>
+  <!-- NSDI Store (grocery-admin.js fills this when opened) -->
+  <div id="view-grocery" class="content" style="display:none;padding:0"></div>
+
   <div id="view-analytics" class="content" style="display:none">
     <div class="section-title" style="margin-bottom:16px">Analytics</div>
     <div style="color:var(--dim);font-size:13px;background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:20px">Revenue charts, popular products, peak hours — coming in next build.</div>
@@ -436,6 +440,9 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;color:var(--white);
     <div class="mbn-icon">📦</div>
     <div class="mbn-badge" id="mbn-badge">0</div>
     <div class="mbn-lbl">Orders</div>
+  </div>
+  <div class="mbn-tab" id="mbn-grocery" onclick="mbnClick('grocery',this)">
+    <div class="mbn-icon">🛍️</div><div class="mbn-lbl">NSDI Store</div>
   </div>
   <!--
   <div class="mbn-tab" id="mbn-analytics" onclick="mbnClick('analytics',this)">
@@ -1864,5 +1871,6 @@ function getDemoOrders() {
 }
 </script>
 <script src="hrm-admin-patch.js"></script>
+<script src="grocery-admin.js?v=20261104" defer></script>
 </body>
 </html>
