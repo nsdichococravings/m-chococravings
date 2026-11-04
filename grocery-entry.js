@@ -57,7 +57,7 @@
         + '<div class="nse-bd"><span class="nse-t">NSDI Store</span><span class="nse-s">Daily essentials · pick up at the outlet</span><span class="nse-cta" style="background:' + s[3] + '">Open →</span></div></a>');
     }
     box.innerHTML = '<section class="nse" aria-label="NSDI Store"><div class="nse-hd"><span class="nse-eb">New in NSDI Store</span><a class="nse-all" href="/grocery">Open store →</a></div>'
-      + (d.preview ? '<div class="nse-pv">Staff preview: customers do not see this yet.</div>' : '')
+      + (d.preview ? '<div class="nse-pv">Staff preview: customers do not see this yet. <a href="/grocery-admin.html" style="color:#6e0977;font-weight:700">Manage store →</a></div>' : '')
       + '<div class="nse-rail">' + cards.join('') + '</div></section>';
   }
 
