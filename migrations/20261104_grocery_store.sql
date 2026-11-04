@@ -44,7 +44,7 @@ create table if not exists public.grocery_settings(
 insert into public.grocery_settings(id) values (1) on conflict (id) do nothing;
 
 create table if not exists public.grocery_pilot_customers(
- customer_id uuid primary key references public.customers(id) on delete cascade,
+ customer_id text primary key,   -- customers.id as text (live ids are text; no hard link so ids of any type work)
  added_at timestamptz not null default now(),
  added_by uuid
 );
@@ -112,7 +112,7 @@ create table if not exists public.grocery_orders(
  id uuid primary key default gen_random_uuid(),
  order_no text not null unique,
  user_id uuid not null,
- customer_id uuid references public.customers(id) on delete set null,
+ customer_id text,                -- customers.id as text
  name text,
  phone text,
  outlet_code text not null default 'MAIN',
@@ -203,7 +203,7 @@ create index if not exists grocery_order_events_order_idx on public.grocery_orde
 create table if not exists public.grocery_item_requests(
  id uuid primary key default gen_random_uuid(),
  user_id uuid not null,
- customer_id uuid references public.customers(id) on delete set null,
+ customer_id text,                -- customers.id as text
  item_key text not null check (length(item_key) between 1 and 70),
  label text not null check (length(label) between 1 and 60),
  note text check (note is null or length(note) <= 200),
@@ -248,9 +248,9 @@ language sql stable security definer set search_path=pg_catalog,public as $$
  where u.id=auth.uid() and u.email_confirmed_at is not null
 $$;
 
-create or replace function public.grocery_customer_id() returns uuid
+create or replace function public.grocery_customer_id() returns text
 language sql stable security definer set search_path=pg_catalog,public as $$
- select c.id from auth.users u join public.customers c on lower(c.email)=lower(u.email)
+ select c.id::text from auth.users u join public.customers c on lower(c.email)=lower(u.email)
  where u.id=auth.uid() order by c.id limit 1
 $$;
 
@@ -835,7 +835,7 @@ declare r text := public.grocery_require('admin');
 begin
  return (select to_jsonb(s) || jsonb_build_object('role', r,
    'pilots', coalesce((select jsonb_agg(jsonb_build_object('customer_id', c.id, 'name', c.name, 'phone', c.phone) order by p.added_at desc)
-     from public.grocery_pilot_customers p join public.customers c on c.id=p.customer_id), '[]'::jsonb))
+     from public.grocery_pilot_customers p join public.customers c on c.id::text=p.customer_id), '[]'::jsonb))
   from public.grocery_settings s);
 end $$;
 
@@ -865,11 +865,11 @@ end $$;
 
 create or replace function public.grocery_admin_set_pilot(p_phone text, p_add boolean) returns jsonb
 language plpgsql security definer set search_path=pg_catalog,public as $$
-declare v_id uuid; v_digits text := right(regexp_replace(coalesce(p_phone,''),'\D','','g'),10);
+declare v_id text; v_digits text := right(regexp_replace(coalesce(p_phone,''),'\D','','g'),10);
 begin
  perform public.grocery_require('admin');
  if length(v_digits) <> 10 then raise exception 'Enter a 10-digit phone number'; end if;
- select id into v_id from public.customers where right(regexp_replace(coalesce(phone,''),'\D','','g'),10)=v_digits order by id limit 1;
+ select id::text into v_id from public.customers where right(regexp_replace(coalesce(phone,''),'\D','','g'),10)=v_digits order by id limit 1;
  if v_id is null then raise exception 'No customer with this phone number'; end if;
  if p_add then insert into public.grocery_pilot_customers(customer_id, added_by) values (v_id, auth.uid()) on conflict do nothing;
  else delete from public.grocery_pilot_customers where customer_id=v_id; end if;

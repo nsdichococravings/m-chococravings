@@ -14,7 +14,7 @@ const { PGlite } = require('../.production-test-runtime/node_modules/@electric-s
     grant usage on schema auth to anon, authenticated;
     create table auth.users(id uuid primary key, email text, email_confirmed_at timestamptz);
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
-    create table public.customers(id uuid primary key default gen_random_uuid(), name text, phone text, email text,
+    create table public.customers(id text primary key default ('cust_' || substr(md5(random()::text),1,12)), name text, phone text, email text,
       is_admin boolean default false, is_employee boolean default false, is_super_user boolean default false);
     create table public.store_orders(id uuid primary key default gen_random_uuid(), item_name text);
     insert into public.store_orders(item_name) values ('Brownie');
