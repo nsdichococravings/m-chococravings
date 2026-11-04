@@ -81,7 +81,10 @@
       + tabs() + '<div id="ga-body">' + body + '</div></div>';
   }
   function loading() { draw('<div class="ga-dim" style="padding:20px 0">Loading…</div>'); }
-  function failed(e) { draw('<div class="ga-err">' + h(errText(e)) + '</div><button class="ga-btn" data-ga="reload">Try again</button>'); }
+  function failed(e) {
+    var t = errText(e), signIn = /sign in/i.test(t);
+    draw('<div class="ga-err">' + h(t) + '</div>' + (signIn ? '<a class="ga-btn p" style="display:inline-flex;align-items:center;text-decoration:none" href="auth.html">Sign in</a> ' : '') + '<button class="ga-btn" data-ga="reload">Try again</button>');
+  }
 
   async function open() {
     css();
@@ -541,4 +544,12 @@
     };
   }
   window.ccGroceryAdmin = { open: open };
+
+  // Stand-alone page (grocery-admin.html): open straight away, on the tab in the address (#products, #orders…).
+  if (document.body && document.body.hasAttribute('data-grocery-admin')) {
+    var want = (location.hash || '').replace('#', '');
+    if (['orders', 'products', 'requests', 'settings', 'profit'].indexOf(want) >= 0) G.tab = want; else G.tab = 'products';
+    var startTab = G.tab;
+    open().then(function () { if (G.role === 'staff' && startTab !== 'orders') show('orders'); });
+  }
 })();
