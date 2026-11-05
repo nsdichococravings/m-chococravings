@@ -1440,6 +1440,9 @@ var _spTotal = 0;
 var _spContext = null;
 var _spMode = 'full'; // 'full' | 'partial'
 var _spFullMethod = null; // selected method in Full mode, before confirming cash
+var _spPhone = '';        // customer's phone for the NSDI Wallet (10 digits)
+var _spWalletBal = null;  // that wallet's balance, once looked up
+function spHasWallet() { return typeof window.swCall === 'function'; }
 
 var SP_METHOD_META = {
   cash:   { label: 'Cash',     icon: '💵', color: '#b87410', bg: 'rgba(184,116,16,0.1)',  border: 'rgba(184,116,16,0.35)' },
@@ -1479,6 +1482,16 @@ function openSplitPaymentPicker(orderId, total, context) {
     + '<div style="font-family:Fraunces,Georgia,serif;font-size:38px;font-weight:900;color:#f5c430;margin-top:2px">₹' + _spTotal + '</div>'
     + '</div>'
     + '<div style="padding:20px 22px 24px">'
+    + (spHasWallet()
+      ? '<div style="display:flex;align-items:center;gap:8px;background:#fffaf3;border:1px solid rgba(201,166,51,.5);'
+        + 'border-radius:14px;padding:6px 6px 6px 12px;margin-bottom:14px">'
+        + '<span style="font-size:15px;color:#8a6d12">◈</span>'
+        + '<input id="sp-wallet-phone" type="tel" inputmode="numeric" maxlength="14" placeholder="Customer mobile (wallet)" '
+        +   'onchange="spWalletLookup()" onkeydown="if(event.key===\'Enter\'){event.preventDefault();spWalletLookup();}" '
+        +   'style="flex:1;min-width:0;border:0;background:transparent;outline:none;font-size:14px;font-weight:600;padding:8px 0">'
+        + '<span id="sp-wallet-bal" style="font-size:12px;font-weight:800;color:#6e0977;white-space:nowrap;padding:0 6px"></span>'
+        + '</div>'
+      : '')
     + '<div style="display:flex;gap:8px;margin-bottom:18px;background:#f5eeff;border-radius:14px;padding:4px">'
     +   '<div id="sp-mode-full" onclick="spSetMode(\'full\')" style="flex:1;text-align:center;padding:10px;border-radius:11px;'
     +     'font-size:12px;font-weight:700;cursor:pointer;background:#6e0977;color:#fff">💯 Full Payment</div>'
@@ -1492,7 +1505,110 @@ function openSplitPaymentPicker(orderId, total, context) {
 
   overlay.appendChild(box);
   document.body.appendChild(overlay);
+  _spPhone = ''; _spWalletBal = null;
   renderSpBody();
+  if (spHasWallet()) spLoadOrderPhone(orderId);
+}
+
+// ── NSDI Wallet on the Collect Payment screen (wallet-staff.js) ──
+async function spLoadOrderPhone(orderId) {
+  try {
+    var r = await db.from('store_orders').select('customer_phone').eq('id', orderId).single();
+    var phone = swPhone10(r.data && r.data.customer_phone);
+    var input = document.getElementById('sp-wallet-phone');
+    if (!phone || !input || _spOrderId !== orderId || input.value) return;
+    input.value = phone;
+    spWalletLookup();
+  } catch (e) {}
+}
+
+async function spWalletLookup() {
+  var input = document.getElementById('sp-wallet-phone');
+  var phone = swPhone10(input && input.value);
+  _spPhone = phone; _spWalletBal = null;
+  spWalletUi();
+  if (!phone) return null;
+  var forOrder = _spOrderId;
+  try {
+    var d = await swCall('lookup', { phone: phone });
+    if (_spOrderId !== forOrder || _spPhone !== phone) return null;
+    _spWalletBal = Number(d.balance) || 0;
+  } catch (e) { showStoreToast(e.message); }
+  spWalletUi();
+  return _spWalletBal;
+}
+
+// Updates only the wallet bits, so a half-typed cash amount isn't wiped.
+function spWalletUi() {
+  var bal = document.getElementById('sp-wallet-bal');
+  if (bal) bal.textContent = !_spPhone ? '' : (_spWalletBal === null ? '…' : 'Wallet ' + swMoney(_spWalletBal));
+  var sub = document.getElementById('sp-wallet-tile-sub');
+  if (sub) sub.textContent = !_spPhone ? 'Enter mobile above' : (_spWalletBal === null ? 'Checking…' : 'Balance ' + swMoney(_spWalletBal));
+  var hint = document.getElementById('sp-partial-wallet-hint');
+  if (hint) hint.textContent = _spWalletBal === null ? '' : 'Balance ' + swMoney(_spWalletBal);
+}
+
+function spNeedPhone() {
+  if (_spPhone) return true;
+  showStoreToast('Enter the customer\'s mobile number for the wallet');
+  var i = document.getElementById('sp-wallet-phone'); if (i) i.focus();
+  return false;
+}
+
+async function spWalletSpend(amount) {
+  try {
+    var r = await swCall('spend', { phone: _spPhone, amount: amount, order_id: _spOrderId });
+    _spWalletBal = Number(r.balance);
+    return true;
+  } catch (e) { showStoreToast('Wallet: ' + e.message); return false; }
+}
+
+async function spWalletFull() {
+  if (!spNeedPhone()) return;
+  var bal = _spWalletBal === null ? await spWalletLookup() : _spWalletBal;
+  if (bal === null) return;
+  if (bal <= 0) { showStoreToast('This wallet is empty'); return; }
+  if (bal < _spTotal) {
+    showStoreToast('Wallet has ' + swMoney(bal) + ' — take that, and the rest another way');
+    spSetMode('partial');
+    var w = document.getElementById('sp-wallet'); if (w) { w.value = bal; updateSplitRemaining(); }
+    return;
+  }
+  if (!confirm('Take ' + swMoney(_spTotal) + ' from wallet ••' + _spPhone.slice(-4) + ' (balance ' + swMoney(bal) + ')?')) return;
+  if (!(await spWalletSpend(_spTotal))) return;
+  await spFinalizePayment({ wallet: _spTotal }, 'wallet', 'Wallet ₹' + _spTotal, null, null);
+}
+
+// Puts the cash change the customer didn't take into their wallet. The
+// cash stays in the drawer, so the Cash Counter gets it too.
+async function spKeepChange(phone, change, orderId, label) {
+  try {
+    var r = await swCall('credit_change', { phone: phone, amount: change, order_id: orderId });
+    showStoreToast('◈ ' + swMoney(change) + ' change saved to wallet · balance ' + swMoney(r.balance));
+    if (!r.repeat) {
+      try {
+        await db.from('cash_counter_entries').insert([{ entry_type: 'order_payment', amount: change,
+          note: 'Change kept in customer wallet — ' + label, staff_name: swStaffName() }]);
+      } catch (e) {}
+    }
+  } catch (e) {
+    alert('Could not save the change to the wallet: ' + e.message + '\n\nPlease give ₹' + change + ' change in cash.');
+  }
+}
+
+function spKeepRowHtml(id) {
+  if (!spHasWallet()) return '';
+  return '<label id="' + id + '-row" style="display:none;align-items:center;gap:10px;margin-top:10px;padding:10px 12px;'
+    + 'background:#fff;border:1.5px dashed rgba(201,166,51,.6);border-radius:12px;cursor:pointer;font-size:13px;font-weight:600;color:#5c4300">'
+    + '<input id="' + id + '" type="checkbox" style="width:18px;height:18px;accent-color:#6e0977">'
+    + '<span>◈ No change? Save <b id="' + id + '-amt"></b> to customer\'s wallet</span></label>';
+}
+function spShowKeepRow(id, change) {
+  var row = document.getElementById(id + '-row');
+  if (!row) return;
+  row.style.display = change > 0 ? 'flex' : 'none';
+  var a = document.getElementById(id + '-amt'); if (a) a.textContent = '₹' + change;
+  if (!(change > 0)) { var c = document.getElementById(id); if (c) c.checked = false; }
 }
 
 function spSetMode(mode) {
@@ -1509,6 +1625,7 @@ function renderSpBody() {
   var body = document.getElementById('sp-body');
   body.innerHTML = _spMode === 'full' ? spFullModeHtml() : spPartialModeHtml();
   if (_spMode === 'partial') updateSplitRemaining();
+  if (spHasWallet()) spWalletUi();
 }
 
 // ── FULL PAYMENT MODE ──
@@ -1531,13 +1648,23 @@ function spFullModeHtml() {
       + 'style="width:100%;padding:14px;border-radius:12px;border:1.5px solid rgba(245,196,48,0.5);'
       + 'font-family:Fraunces,Georgia,serif;font-size:24px;font-weight:900;text-align:center;color:#1a0820;outline:none;box-sizing:border-box">'
       + '<div id="sp-change-display" style="text-align:center;margin-top:12px;font-size:14px;font-weight:700"></div>'
+      + spKeepRowHtml('sp-keep-change')
       + '<button onclick="spConfirmFullCash()" style="width:100%;padding:14px;margin-top:14px;'
       + 'background:linear-gradient(135deg,#6e0977,#9c0ca1);color:#fff;font-size:14px;font-weight:700;'
       + 'border:none;border-radius:12px;cursor:pointer">✅ Confirm Cash Payment</button>'
       + '</div>'
     : '';
 
-  return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' + methodGrid + '</div>' + cashSection;
+  var walletTile = spHasWallet()
+    ? '<div onclick="spWalletFull()" style="grid-column:1/-1;display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;'
+      + 'cursor:pointer;background:linear-gradient(120deg,#fffaf3,#fdf0e4);border:1.5px solid rgba(201,166,51,.5)">'
+      + '<div style="width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,#6e0977,#2b0a35);color:#ffd6b0;'
+      + 'display:flex;align-items:center;justify-content:center;font-size:16px">◈</div>'
+      + '<div style="flex:1;text-align:left"><div style="font-size:13px;font-weight:800;color:#3d0543">NSDI Wallet</div>'
+      + '<div id="sp-wallet-tile-sub" style="font-size:11px;color:#8a6d12;margin-top:1px"></div></div>'
+      + '<span style="color:#6e0977;font-weight:800">›</span></div>'
+    : '';
+  return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' + methodGrid + walletTile + '</div>' + cashSection;
 }
 
 function spSelectFullMethod(key) {
@@ -1557,6 +1684,7 @@ function spUpdateChange() {
   var received = parseFloat(document.getElementById('sp-cash-received').value) || 0;
   var change = Math.round((received - _spTotal) * 100) / 100;
   var display = document.getElementById('sp-change-display');
+  spShowKeepRow('sp-keep-change', received > 0 ? change : 0);
   if (received === 0) {
     display.textContent = '';
   } else if (change > 0) {
@@ -1578,7 +1706,16 @@ async function spConfirmFullCash() {
     if (!proceed) return;
   }
   var change = Math.max(0, Math.round((received - _spTotal) * 100) / 100);
-  await spFinalizePayment({ cash: _spTotal }, 'cash', 'Cash ₹' + _spTotal, received, change);
+  var keepEl = document.getElementById('sp-keep-change');
+  var keep = !!(keepEl && keepEl.checked && change > 0);
+  if (keep && !spNeedPhone()) return;
+  var phone = _spPhone, orderId = _spOrderId, label = spOrderLabel();
+  var ok = await spFinalizePayment({ cash: _spTotal }, 'cash', 'Cash ₹' + _spTotal, received, keep ? 0 : change);
+  if (ok && keep) await spKeepChange(phone, change, orderId, label);
+}
+
+function spOrderLabel() {
+  return _spContext && _spContext.type === 'table' ? ('Table ' + _spContext.tableCode) : ('Order ' + String(_spOrderId).slice(0, 8));
 }
 
 async function spConfirmFullNonCash(method) {
@@ -1599,6 +1736,14 @@ function spPartialModeHtml() {
       + '</div>';
   }).join('');
 
+  if (spHasWallet()) {
+    rows += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f5f0f8">'
+      + '<span style="font-size:14px;font-weight:600;color:#8a6d12">◈ Wallet <small id="sp-partial-wallet-hint" style="font-weight:500;color:#9a8aaa"></small></span>'
+      + '<input id="sp-wallet" type="number" inputmode="decimal" placeholder="0" oninput="updateSplitRemaining()" '
+      + 'style="width:110px;padding:9px 10px;border-radius:10px;border:1.5px solid rgba(201,166,51,.5);'
+      + 'font-size:14px;font-weight:700;text-align:right;outline:none">'
+      + '</div>';
+  }
   return rows
     + '<div id="sp-cash-change-row" style="display:none;background:#fff8e6;border:1.5px solid rgba(245,196,48,0.4);'
     + 'border-radius:14px;padding:12px 14px;margin-top:12px">'
@@ -1607,6 +1752,7 @@ function spPartialModeHtml() {
     + 'style="width:100%;padding:10px;border-radius:10px;border:1.5px solid rgba(245,196,48,0.5);font-size:15px;'
     + 'font-weight:700;text-align:center;outline:none;box-sizing:border-box">'
     + '<div id="sp-partial-change-display" style="text-align:center;margin-top:8px;font-size:13px;font-weight:700"></div>'
+    + spKeepRowHtml('sp-pkeep-change')
     + '</div>'
     + '<div id="sp-remaining" style="text-align:center;padding:12px;margin:14px 0;border-radius:12px;font-size:13px;font-weight:700"></div>'
     + '<button id="sp-confirm-btn" onclick="confirmSplitPayment()" style="width:100%;padding:15px;'
@@ -1619,13 +1765,14 @@ function getSplitValues() {
     cash:   parseFloat(document.getElementById('sp-cash').value) || 0,
     upi:    parseFloat(document.getElementById('sp-upi').value) || 0,
     upi_qr: parseFloat(document.getElementById('sp-upi_qr').value) || 0,
-    card:   parseFloat(document.getElementById('sp-card').value) || 0
+    card:   parseFloat(document.getElementById('sp-card').value) || 0,
+    wallet: document.getElementById('sp-wallet') ? (parseFloat(document.getElementById('sp-wallet').value) || 0) : 0
   };
 }
 
 function updateSplitRemaining() {
   var v = getSplitValues();
-  var entered = v.cash + v.upi + v.upi_qr + v.card;
+  var entered = v.cash + v.upi + v.upi_qr + v.card + v.wallet;
   var remaining = Math.round((_spTotal - entered) * 100) / 100;
   var box = document.getElementById('sp-remaining');
   var btn = document.getElementById('sp-confirm-btn');
@@ -1661,6 +1808,7 @@ function spUpdatePartialChange() {
   var received = parseFloat(document.getElementById('sp-partial-cash-received').value) || 0;
   var change = Math.round((received - v.cash) * 100) / 100;
   var display = document.getElementById('sp-partial-change-display');
+  spShowKeepRow('sp-pkeep-change', received > 0 ? change : 0);
   if (received === 0) {
     display.textContent = '';
   } else if (change > 0) {
@@ -1684,7 +1832,7 @@ function closeSplitPaymentPicker() {
 
 async function confirmSplitPayment() {
   var v = getSplitValues();
-  var entered = v.cash + v.upi + v.upi_qr + v.card;
+  var entered = v.cash + v.upi + v.upi_qr + v.card + v.wallet;
   var remaining = Math.round((_spTotal - entered) * 100) / 100;
 
   if (entered === 0) { showStoreToast('Enter at least one amount'); return; }
@@ -1697,13 +1845,24 @@ async function confirmSplitPayment() {
 
   var received = v.cash > 0 ? (parseFloat(document.getElementById('sp-partial-cash-received').value) || 0) : null;
   var change = received !== null ? Math.max(0, Math.round((received - v.cash) * 100) / 100) : null;
+  var keepEl = document.getElementById('sp-pkeep-change');
+  var keep = !!(keepEl && keepEl.checked && change > 0);
 
-  var labels = { cash: 'Cash', upi: 'UPI', upi_qr: 'Scan QR', card: 'Card' };
+  if ((v.wallet > 0 || keep) && !spNeedPhone()) return;
+  if (v.wallet > 0) {
+    if (_spWalletBal === null && (await spWalletLookup()) === null) return;
+    if (v.wallet > _spWalletBal) { showStoreToast('Wallet has only ' + swMoney(_spWalletBal)); return; }
+  }
+  var phone = _spPhone, orderId = _spOrderId, label = spOrderLabel();
+  if (v.wallet > 0 && !(await spWalletSpend(v.wallet))) return;
+
+  var labels = { cash: 'Cash', upi: 'UPI', upi_qr: 'Scan QR', card: 'Card', wallet: 'Wallet' };
   var usedMethods = Object.keys(v).filter(function (k) { return v[k] > 0; });
   var summaryMethod = usedMethods.length === 1 ? usedMethods[0] : (usedMethods.length > 1 ? 'split' : 'cash');
   var breakdownText = usedMethods.map(function (k) { return labels[k] + ' ₹' + v[k]; }).join(' + ');
 
-  await spFinalizePayment(v, summaryMethod, breakdownText, received, change);
+  var ok = await spFinalizePayment(v, summaryMethod, breakdownText, received, keep ? 0 : change);
+  if (ok && keep) await spKeepChange(phone, change, orderId, label);
 }
 
 // ── Shared finalize step for both Full and Partial modes ──
@@ -1729,7 +1888,7 @@ async function spFinalizePayment(splitObj, summaryMethod, breakdownText, cashRec
     Object.keys(prevSplit).forEach(function (k) { mergedSplit[k] = prevSplit[k]; });
     Object.keys(splitObj).forEach(function (k) { mergedSplit[k] = Math.round(((mergedSplit[k] || 0) + splitObj[k]) * 100) / 100; });
 
-    var labels = { cash: 'Cash', upi: 'UPI', upi_qr: 'Scan QR', card: 'Card' };
+    var labels = { cash: 'Cash', upi: 'UPI', upi_qr: 'Scan QR', card: 'Card', wallet: 'Wallet' };
     var mergedMethods = Object.keys(mergedSplit).filter(function (k) { return mergedSplit[k] > 0; });
     var mergedSummaryMethod = mergedMethods.length === 1 ? mergedMethods[0] : (mergedMethods.length > 1 ? 'split' : summaryMethod);
     var mergedBreakdownText = mergedMethods.map(function (k) { return labels[k] + ' ₹' + mergedSplit[k]; }).join(' + ');
@@ -1777,8 +1936,10 @@ async function spFinalizePayment(splitObj, summaryMethod, breakdownText, cashRec
     if (context.type === 'table') {
       await sendTableBillWhatsApp(orderId, context.tableCode, mergedBreakdownText);
     }
+    return true;
   } catch (e) {
     showStoreToast('Error: ' + e.message);
+    return false;
   }
 }
 
@@ -2210,7 +2371,7 @@ function renderKitchenHistory(orders, loyaltyMap) {
     var isCancelled = o.status === 'cancelled';
     var expanded = _khExpandedId === o.id;
 
-    var pmMap = { upi: 'UPI', upi_qr: 'Scan QR', cash: 'Cash', card: 'Card', split: 'Split', razorpay: 'Razorpay' };
+    var pmMap = { upi: 'UPI', upi_qr: 'Scan QR', cash: 'Cash', card: 'Card', split: 'Split', razorpay: 'Razorpay', wallet: 'Wallet' };
     var pmLabel = pmMap[(o.payment_method || '').toLowerCase()] || (o.payment_method || '—');
 
     var statusBadge = isCancelled

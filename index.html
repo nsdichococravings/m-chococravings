@@ -280,6 +280,27 @@ body{background:var(--dark);font-family:'DM Sans',sans-serif;display:flex;justif
 .nlbl{font-size:10px;color:var(--faint);font-weight:500}
 .ntab.on .nlbl{color:var(--pl)}
 .ndot{width:4px;height:4px;border-radius:50%;background:transparent;margin:0 auto}
+/* Staff tab + sheet (openStaffSheet) */
+.nstaff-ico{width:30px;height:26px;margin:2px 0 1px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+  color:#fff;background:linear-gradient(135deg,#6e0977,#2b0a35);box-shadow:0 3px 8px rgba(110,9,119,.28)}
+.nstaff-ico svg{width:16px;height:16px}
+.sf-ov{position:fixed;inset:0;z-index:5000;background:rgba(18,8,24,.5);backdrop-filter:blur(3px);display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .2s}
+.sf-ov.on{opacity:1}
+.sf-sh{width:100%;max-width:480px;background:#fffaf5;border-radius:26px 26px 0 0;padding:10px 16px calc(20px + env(safe-area-inset-bottom));transform:translateY(30px);transition:transform .25s cubic-bezier(.3,.8,.3,1)}
+.sf-ov.on .sf-sh{transform:none}
+.sf-grab{width:38px;height:4px;border-radius:2px;background:#e3d3e6;margin:0 auto 14px}
+.sf-hd{display:flex;align-items:flex-end;justify-content:space-between;padding:0 4px 14px}
+.sf-eb{font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#8a6d12}
+.sf-t{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:700;color:#2b0a35;line-height:1.1;margin-top:2px}
+.sf-x{width:32px;height:32px;border-radius:50%;border:0;background:#f1e6f2;color:#6e0977;font-size:14px;cursor:pointer}
+.sf-card{display:flex;align-items:center;gap:14px;padding:14px;margin-bottom:10px;border-radius:18px;background:#fff;
+  border:1px solid #eedff0;box-shadow:0 4px 14px rgba(61,5,67,.06);text-decoration:none;color:inherit;-webkit-tap-highlight-color:transparent}
+.sf-card:active{transform:scale(.985)}
+.sf-ic{flex:none;width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;color:#ffd6b0;
+  background:linear-gradient(135deg,#6e0977,#2b0a35)}
+.sf-ic.alt{color:#3a0718;background:linear-gradient(135deg,#ffe08a,#e09b2d)}
+.sf-ct{font-size:15px;font-weight:700;color:#2a1530}.sf-cs{font-size:12px;color:#8a7a90;margin-top:2px}
+.sf-go{margin-left:auto;color:#6e0977;font-size:20px;font-weight:700}
 .ntab.on .ndot{background:var(--pl)}
 
 /* ══════════════════════════════
@@ -1091,13 +1112,14 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
       </div>
       <div class="nlbl">On Store</div>
     </div>
-        <div class="ntab" id="nav-stall" style="display:none" onclick="window.location.href='/stall'">
-      <div class="nicon" style="position:relative;display:inline-block">🎪</div>
-      <div class="nlbl">Stall</div>
-    </div>
-    <div class="ntab" id="nav-attendance" style="display:none" onclick="window.location.href='/attendance'">
-      <div class="nicon" style="position:relative;display:inline-block">⏰</div>
-      <div class="nlbl">Attendance</div>
+    <!-- Staff only: one tab that opens Stall / Attendance (openStaffSheet). -->
+    <div class="ntab" id="nav-staff" style="display:none" onclick="openStaffSheet()" aria-label="Staff tools">
+      <div class="nicon nstaff-ico" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="7" width="18" height="13" rx="3"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/><path d="M3 12.5h18"/><path d="M11 12.5h2v2h-2z"/>
+        </svg>
+      </div>
+      <div class="nlbl">Staff</div><div class="ndot"></div>
     </div>
     </div>
     <!-- ═══ HOME ═══ -->
@@ -1123,20 +1145,23 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 
       <!-- ═══ LOYALTY CARD — stamp progress ═══ -->
       <style>
-      .lc-card{position:relative;margin:0 16px 20px;border-radius:24px;overflow:hidden;background:linear-gradient(135deg,#2b0a35 0%,#6e0977 55%,#1a0820 100%);padding:20px 22px;cursor:pointer}
-      .lc-eyebrow{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-      .lc-eyebrow-text{font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.6)}
-      .lc-code{font-family:'Cormorant Garamond',serif;font-size:15px;font-weight:700;color:#ffd6b0;letter-spacing:.5px}
-      .lc-title{font-family:'Cormorant Garamond',serif;font-size:26px;font-weight:600;color:#fff;line-height:1.1;margin-bottom:4px}
-      .lc-sub{font-size:11px;color:rgba(255,255,255,.6);margin-bottom:16px}
-      .lc-stampgrid{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;margin-bottom:14px}
-      .lc-stamp{aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;border:1px solid rgba(255,255,255,.2)}
-      .lc-stamp.filled{background:linear-gradient(135deg,#f9c8ff,#ffd6b0);color:#5c0872;font-weight:800;border-color:transparent}
-      .lc-stamp.reward{border:1.5px solid #ffd6b0}
-      .lc-foot{display:flex;justify-content:space-between;align-items:center;padding-top:14px;border-top:1px solid rgba(255,255,255,.12)}
-      .lc-foot-label{font-size:9px;color:rgba(255,255,255,.5);letter-spacing:1px;text-transform:uppercase}
-      .lc-foot-val{font-size:12px;color:#fff;font-weight:700;margin-top:2px}
-      .lc-empty{margin:0 16px 20px;border-radius:24px;background:var(--card);border:1px solid var(--bdr);padding:26px 22px;text-align:center}
+      .lc-card{position:relative;margin:0 16px 18px;border-radius:18px;overflow:hidden;background:linear-gradient(120deg,#2b0a35 0%,#6e0977 60%,#1a0820 100%);padding:12px 16px 13px;cursor:pointer;box-shadow:0 6px 16px rgba(61,5,67,.18)}
+      .lc-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+      .lc-eyebrow-text{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .lc-code{color:#ffd6b0;letter-spacing:.5px}
+      .lc-pill{flex:none;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.14);color:#fff}
+      .lc-pill.off{background:#c0392b}
+      .lc-main{display:flex;align-items:baseline;gap:8px;margin:6px 0 9px;min-width:0}
+      .lc-title{flex:none;font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:#fff;line-height:1}
+      .lc-sub{font-size:11px;color:rgba(255,255,255,.65);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+      .lc-bar{display:flex;gap:3px}
+      .lc-seg{flex:1;height:5px;border-radius:3px;background:rgba(255,255,255,.16)}
+      .lc-seg.filled{background:linear-gradient(90deg,#f9c8ff,#ffd6b0)}
+      .lc-seg.reward:not(.filled){background:transparent;box-shadow:inset 0 0 0 1px #ffd6b0}
+      .lc-track{position:relative;height:5px;border-radius:3px;background:rgba(255,255,255,.16);overflow:hidden}
+      .lc-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#f9c8ff,#ffd6b0)}
+      .lc-meta{margin-top:7px;font-size:10px;color:rgba(255,255,255,.5);letter-spacing:.3px}
+      .lc-empty{margin:0 16px 18px;border-radius:18px;background:var(--card);border:1px solid var(--bdr);padding:12px 16px;display:flex;align-items:center;gap:12px}
       </style>
 
       <div id="lc-section"></div>
@@ -1313,11 +1338,7 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
           </div>
         </div>
       </div>
-      <!-- TRENDING -->
-      <div class="sec"><span class="sec-t">Trending 🔥</span><span class="sec-l" onclick="showPage('explore')">See all →</span></div>
-      <div class="tscroll" id="trending-scroll">
-        <!-- loaded dynamically -->
-      </div>
+      <!-- Trending row removed: "Our Brownies" above shows the same products. -->
 
       <!-- REVIEWS -->
       <!--
@@ -1763,6 +1784,8 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 
           <!-- TIER NOTICE -->
           <div id="ck-tier-notice" style="display:none;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;line-height:1.6;border:0.5px solid"></div>
+          <!-- NSDI Wallet (wallet.js): "Use wallet" switch -->
+          <div id="ck-wallet"></div>
 
           <!-- PAYMENT TABS -->
           <div style="display:flex;gap:8px;margin-bottom:16px">
@@ -3076,6 +3099,7 @@ async function renderCachedLoyaltyCard() {
 
 var _lcPending = null;
 function loadLoyaltyCard() {
+  if (window.ccWalletRefresh) window.ccWalletRefresh(); // wallet strip under the card (wallet.js)
   var section = document.getElementById('lc-section');
   if (!section) return Promise.resolve();
   if (!currentUser || !currentUser.db_id) {
@@ -3108,11 +3132,14 @@ function renderLoyaltyCard(card) {
   var section = document.getElementById('lc-section');
   if (!section) return;
 
+  // A super admin hid this card after it reached 100 days.
+  if (card && card.home_hidden) { section.innerHTML = ''; return; }
+
   if (!card) {
     section.innerHTML = '<div class="lc-empty">'
-      + '<div style="font-size:32px;margin-bottom:8px">🎫</div>'
-      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:18px;font-weight:700;color:var(--white);margin-bottom:4px">No Loyalty Card Yet</div>'
-      + '<div style="font-size:12px;color:var(--dim)">Ask our staff to set one up on your next visit</div>'
+      + '<div style="font-size:22px" aria-hidden="true">🎫</div>'
+      + '<div><div style="font-family:\'Cormorant Garamond\',serif;font-size:16px;font-weight:700;color:var(--white)">No Loyalty Card Yet</div>'
+      + '<div style="font-size:11px;color:var(--dim)">Ask our staff to set one up on your next visit</div></div>'
       + '</div>';
     return;
   }
@@ -3133,25 +3160,24 @@ function renderLoyaltyCard(card) {
   // cycle completed + 5 stamps so far on Card 2 = 15 total days.
   var totalDays = (card.completed_days || 0) + stampCount;
 
-  var stampsHtml = '';
-  for (var d = 1; d <= gridSize; d++) {
-    var filled = d <= stampCount;
-    var isReward = rewardDays.hasOwnProperty(d);
-    stampsHtml += '<div class="lc-stamp' + (filled ? ' filled' : '') + (isReward ? ' reward' : '') + '">'
-      + (filled ? '✓' : (isReward ? '🎁' : d))
-      + '</div>';
+  // Short cards show one segment per stamp; long cards show a smooth bar.
+  var barHtml = '';
+  if (gridSize <= 20) {
+    for (var d = 1; d <= gridSize; d++) {
+      barHtml += '<div class="lc-seg' + (d <= stampCount ? ' filled' : '') + (rewardDays.hasOwnProperty(d) ? ' reward' : '') + '"></div>';
+    }
+    barHtml = '<div class="lc-bar">' + barHtml + '</div>';
+  } else {
+    barHtml = '<div class="lc-track"><div class="lc-fill" style="width:' + Math.min(100, stampCount / gridSize * 100) + '%"></div></div>';
   }
 
   section.innerHTML = '<div class="lc-card">'
-    + '<div class="lc-eyebrow"><span class="lc-eyebrow-text">Loyalty Card</span><span class="lc-code">' + (card.card_code || '') + '</span></div>'
-    + '<div class="lc-title">' + stampCount + ' Stamp' + (stampCount === 1 ? '' : 's') + '</div>'
-    + '<div class="lc-sub">' + (nextReward ? nextReward.item + ' unlocks at day ' + nextReward.day : 'All rewards on this card redeemed!') + '</div>'
-    + '<div class="lc-stampgrid">' + stampsHtml + '</div>'
-    + '<div class="lc-foot">'
-    + '<div><div class="lc-foot-label">Card</div><div class="lc-foot-val">#' + (card.cycle || 1) + '</div></div>'
-    + '<div><div class="lc-foot-label">Total days</div><div class="lc-foot-val">' + totalDays + ' / 100</div></div>'
-    + '<div style="text-align:right"><div class="lc-foot-label">Status</div><div class="lc-foot-val">' + (card.suspended ? 'Suspended' : 'Active') + '</div></div>'
-    + '</div>'
+    + '<div class="lc-row"><span class="lc-eyebrow-text">Loyalty · <span class="lc-code">' + (card.card_code || '') + '</span></span>'
+    + '<span class="lc-pill' + (card.suspended ? ' off' : '') + '">' + (card.suspended ? 'Suspended' : 'Active') + '</span></div>'
+    + '<div class="lc-main"><span class="lc-title">' + stampCount + ' Stamp' + (stampCount === 1 ? '' : 's') + '</span>'
+    + '<span class="lc-sub">' + (totalDays >= 100 ? '🏆 100 days completed. Thank you!' : (nextReward ? '🎁 ' + nextReward.item + ' at day ' + nextReward.day : 'All rewards redeemed!')) + '</span></div>'
+    + barHtml
+    + '<div class="lc-meta">Card #' + (card.cycle || 1) + ' · ' + totalDays + ' / 100 total days</div>'
     + '</div>';
 }
 
@@ -3319,13 +3345,30 @@ async function loadProfileData() {
   finally { _profileLoading = false; }
 }
 
-// Shows the admin / stall / attendance entries for staff. Several places
-// call this at startup; they share one request.
+// Shows the admin entry and the Staff tab (Stall / Attendance) for staff.
+// The last answer is saved on the phone per customer, so the tab is there
+// as soon as Home opens instead of popping in after the server replies.
+// Several places call this at startup; they share one request.
+var STAFF_NAV_KEY = 'cc_home_staff_v1';
+var _staffNav = { admin: false, staff: false };
+function applyStaffNav(admin, staff) {
+  _staffNav = { admin: !!admin, staff: !!(staff || admin) };
+  var adminItem = document.getElementById('hamburger-admin-item');
+  if (adminItem) adminItem.style.display = _staffNav.admin ? 'flex' : 'none';
+  var tab = document.getElementById('nav-staff');
+  if (tab) tab.style.display = _staffNav.staff ? 'flex' : 'none';
+  if (!_staffNav.staff) closeStaffSheet();
+}
 var _adminTabPending = null;
 function checkAndShowAdminTab() {
-  if (!currentUser || !currentUser.db_id) return Promise.resolve();
-  if (_adminTabPending) return _adminTabPending;
+  if (!currentUser || !currentUser.db_id) { applyStaffNav(false, false); return Promise.resolve(); }
   var uid = currentUser.db_id;
+  try {
+    var saved = JSON.parse(localStorage.getItem(STAFF_NAV_KEY));
+    if (saved && saved.uid === uid) applyStaffNav(saved.admin, saved.staff);
+    else applyStaffNav(false, false);
+  } catch (e) {}
+  if (_adminTabPending) return _adminTabPending;
   _adminTabPending = (async function() {
     try {
       var { data: cust, error } = await db
@@ -3337,18 +3380,46 @@ function checkAndShowAdminTab() {
       var admin = cust.is_admin === true;
       var staff = admin || cust.is_employee === true;
       currentUser.is_admin = admin;
-      var adminItem = document.getElementById('hamburger-admin-item');
-      if (adminItem) adminItem.style.display = admin ? 'flex' : 'none';
-      var stallTab = document.getElementById('nav-stall');
-      if (stallTab) stallTab.style.display = admin ? 'flex' : 'none';
-      var attendanceTab = document.getElementById('nav-attendance');
-      if (attendanceTab) attendanceTab.style.display = staff ? 'flex' : 'none';
+      try { localStorage.setItem(STAFF_NAV_KEY, JSON.stringify({ uid: uid, admin: admin, staff: staff })); } catch (e) {}
+      applyStaffNav(admin, staff);
     } catch(e) {
+      // Offline: keep what was saved.
     } finally {
       _adminTabPending = null;
     }
   })();
   return _adminTabPending;
+}
+
+function openStaffSheet() {
+  if (!_staffNav.staff) return;
+  closeStaffSheet(true);
+  var ic = {
+    stall: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/><path d="M5 12v8h14v-8"/><path d="M10 20v-5h4v5"/></svg>',
+    att: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5"/><path d="M9 2h6"/></svg>'
+  };
+  var card = function (href, icon, alt, title, sub) {
+    return '<a class="sf-card" href="' + href + '"><div class="sf-ic' + (alt ? ' alt' : '') + '">' + icon + '</div>'
+      + '<div><div class="sf-ct">' + title + '</div><div class="sf-cs">' + sub + '</div></div><span class="sf-go">›</span></a>';
+  };
+  var first = String((currentUser && currentUser.name) || '').split(' ')[0];
+  var ov = document.createElement('div');
+  ov.id = 'sf-ov'; ov.className = 'sf-ov';
+  ov.innerHTML = '<div class="sf-sh" role="dialog" aria-label="Staff tools"><div class="sf-grab"></div>'
+    + '<div class="sf-hd"><div><div class="sf-eb">NSDI · Staff</div><div class="sf-t">' + (first ? 'Hi ' + first.replace(/[<>&"]/g, '') : 'Staff tools') + '</div></div>'
+    + '<button class="sf-x" type="button" aria-label="Close" onclick="closeStaffSheet()">✕</button></div>'
+    + card('/attendance', ic.att, true, 'Attendance', 'Clock in / out · leave & shifts')
+    + (_staffNav.admin ? card('/stall', ic.stall, false, 'Stall', 'Event stall billing & sales') : '')
+    + '</div>';
+  ov.addEventListener('click', function (e) { if (e.target === ov) closeStaffSheet(); });
+  document.body.appendChild(ov);
+  requestAnimationFrame(function () { ov.classList.add('on'); });
+}
+function closeStaffSheet(now) {
+  var ov = document.getElementById('sf-ov');
+  if (!ov) return;
+  if (now) { ov.remove(); return; }
+  ov.classList.remove('on'); setTimeout(function () { ov.remove(); }, 220);
 }
 
 async function checkStoreOpenStatus() {
@@ -4256,7 +4327,8 @@ async function confirmLogout() {
   await db.auth.signOut();
   currentUser = null;
   localStorage.removeItem('cc_user');
-  try { localStorage.removeItem(LC_CACHE_KEY); localStorage.removeItem(PROFILE_CACHE_KEY); localStorage.removeItem(ORDERS_CACHE_KEY); localStorage.removeItem('cc_staff_role_v1'); localStorage.removeItem('cc_admin_orders_v1'); } catch (e) {}
+  try { localStorage.removeItem(LC_CACHE_KEY); localStorage.removeItem(PROFILE_CACHE_KEY); localStorage.removeItem(ORDERS_CACHE_KEY); localStorage.removeItem('cc_staff_role_v1'); localStorage.removeItem('cc_admin_orders_v1'); localStorage.removeItem(STAFF_NAV_KEY); localStorage.removeItem('cc_wallet_v1'); } catch (e) {}
+  applyStaffNav(false, false);
   showToast('Signed out successfully');
   setTimeout(function(){ window.location.href = 'auth.html'; }, 800);
 }
@@ -5686,6 +5758,14 @@ if (currentPayTab === 'upi' && currentUtrValue) {
     ? (currentOrderTotal - amountPaidNow)
     : (currentPayTab === 'cod' ? currentOrderTotal : 0);
 
+  // NSDI Wallet: this much is taken from the wallet right after the order is
+  // saved (cc_wallet_pay_order); until then it shows as due on the order.
+  var walletUse = (!isPartialPayment && window.ccCheckoutWalletUse) ? window.ccCheckoutWalletUse() : 0;
+  if (walletUse > 0) {
+    amountPaidNow = currentPayTab === 'wallet' ? 0 : Math.round((currentOrderTotal - walletUse) * 100) / 100;
+    balanceDueNow = walletUse;
+  }
+
   console.log('Payment snapshot — tab:', currentPayTab, 'utr:', currentUtrValue, 'advance:', currentAdvanceMode, 'amtPaid:', amountPaidNow);
 
   const orderData = {
@@ -5724,6 +5804,12 @@ if (currentPayTab === 'upi' && currentUtrValue) {
     if (error) throw error;
 
     orderData.id = data.id; // ← this line is missing — causes all downstream failures
+
+    if (walletUse > 0) {
+      var paidFromWallet = await window.ccWalletPayOrder(data.id, walletUse);
+      currentPayMethod = !paidFromWallet ? currentPayMethod
+        : (currentPayTab === 'wallet' ? 'NSDI Wallet' : 'UPI + Wallet ₹' + walletUse);
+    }
 
     // Deduct redeemed points from customer balance
     if (appliedPromo && appliedPromo.code === 'POINTS') {
@@ -6472,7 +6558,7 @@ function showProducts(products) {
   _productsShown = json;
   renderFeaturedGrid(products);
   renderExploreList(products);
-  renderTrending(products);
+  renderTrending(products); // no-op now that Home has no Trending row
   // Keep a search the customer already typed.
   var inp = document.getElementById('explore-search');
   if (inp && inp.value && typeof searchProducts === 'function') searchProducts(inp.value);
@@ -9153,7 +9239,8 @@ async function openRazorpay() {
           'Authorization': 'Bearer ' + (session ? session.access_token : '')
         },
         body: JSON.stringify({
-          amount: Math.max(1, Math.round(currentOrderTotal)),
+          // Part paid from the NSDI Wallet (wallet.js) comes off what UPI collects.
+          amount: Math.max(1, Math.round(currentOrderTotal - (window.ccCheckoutWalletUse ? window.ccCheckoutWalletUse() : 0))),
           receipt: orderNum,
           notes: { customer_name: name, customer_phone: phone, order_number: orderNum }
         })
@@ -9567,5 +9654,8 @@ function closeTierCelebration() {
 
 <script src="/lucky-draw.js"></script>
 <script src="/grocery-entry.js?v=20261105" defer></script>
+<script src="/wallet.js?v=20261110"></script>
+<script src="/diwali-card.js?v=20261105"></script>
+<script src="/festive-theme.js?v=20261111b"></script>
 </body>
 </html>
