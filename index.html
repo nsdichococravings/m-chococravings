@@ -3111,6 +3111,9 @@ function renderLoyaltyCard(card) {
   var section = document.getElementById('lc-section');
   if (!section) return;
 
+  // A super admin hid this card after it reached 100 days.
+  if (card && card.home_hidden) { section.innerHTML = ''; return; }
+
   if (!card) {
     section.innerHTML = '<div class="lc-empty">'
       + '<div style="font-size:22px" aria-hidden="true">🎫</div>'
@@ -3151,7 +3154,7 @@ function renderLoyaltyCard(card) {
     + '<div class="lc-row"><span class="lc-eyebrow-text">Loyalty · <span class="lc-code">' + (card.card_code || '') + '</span></span>'
     + '<span class="lc-pill' + (card.suspended ? ' off' : '') + '">' + (card.suspended ? 'Suspended' : 'Active') + '</span></div>'
     + '<div class="lc-main"><span class="lc-title">' + stampCount + ' Stamp' + (stampCount === 1 ? '' : 's') + '</span>'
-    + '<span class="lc-sub">' + (nextReward ? '🎁 ' + nextReward.item + ' at day ' + nextReward.day : 'All rewards redeemed!') + '</span></div>'
+    + '<span class="lc-sub">' + (totalDays >= 100 ? '🏆 100 days completed. Thank you!' : (nextReward ? '🎁 ' + nextReward.item + ' at day ' + nextReward.day : 'All rewards redeemed!')) + '</span></div>'
     + barHtml
     + '<div class="lc-meta">Card #' + (card.cycle || 1) + ' · ' + totalDays + ' / 100 total days</div>'
     + '</div>';

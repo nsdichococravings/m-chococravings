@@ -15,8 +15,7 @@ function lcInit() {
   if (_lcDialog) return;
   var d = document.createElement('dialog');
   d.id = 'lc-dialog';
-  d.style.cssText = 'width:min(560px,calc(100% - 24px));max-height:92dvh;padding:0;border:1px solid #eadfeb;'
-    + 'border-radius:22px;background:#fffaf3;color:#291830;font:14px \'DM Sans\',Arial,sans-serif';
+  d.style.cssText = _lcDialogCss();
   d.innerHTML =
       '<div style="display:flex;justify-content:space-between;align-items:center;padding:20px 24px;'
     +   'position:sticky;top:0;background:#fffaf3;border-bottom:1px solid #eadfeb;z-index:1">'
@@ -28,6 +27,11 @@ function lcInit() {
   d.addEventListener('cancel', function (e) { e.preventDefault(); lcClose(); });
   document.body.appendChild(d);
   _lcDialog = d;
+}
+
+function _lcDialogCss() {
+  return 'width:min(560px,calc(100% - 24px));max-height:92dvh;padding:0;border:1px solid #eadfeb;'
+    + 'border-radius:22px;background:#fffaf3;color:#291830;font:14px \'DM Sans\',Arial,sans-serif';
 }
 
 function lcOpen() {
@@ -681,6 +685,142 @@ window.lcLoyaltyMapFor = lcLoyaltyMapFor;
 window.lcRewardsFor = lcRewardsFor;
 window.lcApplyRewardToOrder = lcApplyRewardToOrder;
 
+// ── Completed cards (100+ total days) — super admin only ──
+// Lists cards whose lifetime total reached 100 days. A super admin can
+// hide a card from the customer's Home, show it again, or reset it to
+// Card 1 with 0 days. cc_loyalty_super() checks super admin server-side.
+var _lcxDialog = null, _lcxRows = [], _lcxBusy = false;
+
+async function lcxCall(action, payload) {
+  if (!window.db) throw new Error('Store connection is not ready.');
+  var res = await window.db.rpc('cc_loyalty_super', { p_action: action, p_payload: payload || {} });
+  if (res.error) {
+    throw new Error(res.error.message.indexOf('schema cache') !== -1
+      ? 'Not installed yet. Run migrations/20261106_loyalty_completed_controls.sql.'
+      : res.error.message);
+  }
+  return res.data;
+}
+
+function lcxOpen() {
+  if (!_lcxDialog) {
+    var d = document.createElement('dialog');
+    d.style.cssText = _lcDialogCss();
+    d.innerHTML =
+        '<div style="display:flex;justify-content:space-between;align-items:center;padding:20px 24px;'
+      +   'position:sticky;top:0;background:#fffaf3;border-bottom:1px solid #eadfeb;z-index:1">'
+      +   '<div><div style="font-size:10px;letter-spacing:2px;color:#8c647f">SUPER ADMIN</div>'
+      +     '<h2 style="font:24px Georgia,serif;margin:5px 0 0">Completed Loyalty Cards</h2></div>'
+      +   '<button type="button" onclick="lcxClose()" style="font-size:26px;border:0;background:transparent;cursor:pointer">×</button>'
+      + '</div>'
+      + '<div style="padding:14px 24px 24px">'
+      +   '<p style="font-size:12px;color:#79677e;margin:0 0 10px">Cards that reached 100 total days. '
+      +     '<b>Hide</b> removes the card from the customer\'s Home screen. <b>Reset</b> starts them again on Card 1 with 0 days.</p>'
+      +   '<div style="display:flex;gap:8px"><input id="lcx-q" type="text" placeholder="Name, phone or card code" '
+      +     'style="flex:1;padding:11px;border:1px solid #ddcce2;border-radius:9px;font:inherit;min-height:42px" '
+      +     'onkeydown="if(event.key===\'Enter\'){event.preventDefault();lcxLoad();}">'
+      +   '<button onclick="lcxLoad()" style="cursor:pointer;border:1px solid #e2cfe6;background:white;color:#790c88;'
+      +     'border-radius:10px;padding:10px 14px;font:inherit">Search</button></div>'
+      +   '<div id="lcx-msg" style="min-height:18px;font-size:13px;color:#a02929;margin-top:8px"></div>'
+      +   '<div id="lcx-list"></div>'
+      + '</div>';
+    d.addEventListener('cancel', function (e) { e.preventDefault(); lcxClose(); });
+    document.body.appendChild(d);
+    _lcxDialog = d;
+  }
+  if (!_lcxDialog.open) _lcxDialog.showModal();
+  lcxLoad();
+}
+
+function lcxClose() { if (!_lcxBusy && _lcxDialog && _lcxDialog.open) _lcxDialog.close(); }
+
+function lcxMsg(t) { var el = document.getElementById('lcx-msg'); if (el) el.textContent = t || ''; }
+
+async function lcxLoad() {
+  if (_lcxBusy) return;
+  _lcxBusy = true; lcxMsg('Loading…');
+  try {
+    var q = (document.getElementById('lcx-q').value || '').trim();
+    _lcxRows = (await lcxCall('list_completed', { query: q })).members || [];
+    lcxMsg('');
+    lcxRender();
+  } catch (e) { lcxMsg(e.message); } finally { _lcxBusy = false; }
+}
+
+function lcxRender() {
+  var el = document.getElementById('lcx-list');
+  if (!el) return;
+  if (!_lcxRows.length) { el.innerHTML = '<p style="font-size:13px;color:#79677e">No cards have reached 100 days yet.</p>'; return; }
+  var btn = 'cursor:pointer;border-radius:9px;padding:8px 12px;font:inherit;font-size:12.5px;';
+  el.innerHTML = '<div style="font-size:11px;color:#79677e;margin-bottom:6px">' + _lcxRows.length + ' card' + (_lcxRows.length === 1 ? '' : 's') + '</div>'
+    + _lcxRows.map(function (m, i) {
+      return '<div style="border:1px solid #eadfeb;background:#fff;border-radius:14px;padding:12px 14px;margin-bottom:8px">'
+        + '<div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">'
+        +   '<div style="min-width:0"><div style="font-weight:700">' + lcEsc(m.name) + '</div>'
+        +   '<div style="font-size:11px;color:#79677e">' + lcEsc(m.card_code) + ' · ' + lcMaskPhone(m.phone) + ' · Card ' + m.cycle + ' · ' + m.total_days + ' days</div></div>'
+        +   '<span style="flex:none;font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 8px;border-radius:999px;'
+        +     (m.home_hidden ? 'background:#f3e3e3;color:#a02929">HIDDEN' : 'background:#e2f4e8;color:#15803d">VISIBLE') + '</span>'
+        + '</div>'
+        + '<div style="display:flex;gap:8px;margin-top:10px">'
+        +   '<button onclick="lcxSetVisible(' + i + ',' + m.home_hidden + ')" style="' + btn + 'border:1px solid #e2cfe6;background:white;color:#790c88">'
+        +     (m.home_hidden ? '👁 Show on Home' : '🚫 Hide from Home') + '</button>'
+        +   '<button onclick="lcxReset(' + i + ')" style="' + btn + 'border:1px solid #f0d0d0;background:white;color:#a02929">↺ Reset card</button>'
+        + '</div></div>';
+    }).join('');
+}
+
+async function lcxSetVisible(i, visible) {
+  var m = _lcxRows[i];
+  if (!m || _lcxBusy) return;
+  _lcxBusy = true;
+  try {
+    var r = await lcxCall('set_visible', { member_id: m.id, visible: visible });
+    m.home_hidden = r.home_hidden;
+    lcxMsg(''); lcxRender();
+    showStoreToast(visible ? '👁 Card shown on Home' : '🚫 Card hidden from Home');
+  } catch (e) { lcxMsg(e.message); } finally { _lcxBusy = false; }
+}
+
+async function lcxReset(i) {
+  var m = _lcxRows[i];
+  if (!m || _lcxBusy) return;
+  var typed = prompt('Reset ' + m.name + '\'s card (' + m.card_code + ')?\n\nThey go back to Card 1 with 0 stamps and 0 total days, '
+    + 'rewards start again, and the card shows on their Home. The stamp history is kept.\n\nType the card code to confirm:');
+  if (typed === null) return;
+  if (typed.trim().toUpperCase() !== String(m.card_code).toUpperCase()) { lcxMsg('Card code did not match. Nothing was reset.'); return; }
+  _lcxBusy = true;
+  try {
+    await lcxCall('reset', { member_id: m.id });
+    _lcxRows.splice(i, 1);
+    lcxMsg(''); lcxRender();
+    showStoreToast('↺ ' + m.card_code + ' reset to Card 1');
+  } catch (e) { lcxMsg(e.message); } finally { _lcxBusy = false; }
+}
+
+// Shown only to a super admin: the tool is registered hidden, then
+// unlocked once the server confirms the signed-in person is one.
+var _lcxTool = {
+  icon: '🏁', iconBg: 'rgba(121,12,136,0.12)',
+  title: 'Completed Loyalty Cards', subtitle: '100 days: hide, show or reset',
+  superAdminOnly: true, onClick: lcxOpen
+};
+function lcxUnlockWhenSuper() {
+  var tries = 0;
+  var t = setInterval(async function () {
+    if (++tries > 60) { clearInterval(t); return; }
+    if (!window.db || !window.db.auth) return;
+    try {
+      var s = await window.db.auth.getSession();
+      if (!(s.data && s.data.session)) return;
+      clearInterval(t);
+      var r = await lcxCall('check');
+      _lcxTool._allowedSuper = !!(r && r.super);
+      if (_lcxTool._allowedSuper && typeof renderCommandCenter === 'function' && _ccOpen) renderCommandCenter();
+    } catch (e) { clearInterval(t); }
+  }, 1000);
+}
+window.openCompletedLoyaltyCards = lcxOpen;
+
 // ── Entry points ──
 function _lcRegister() {
   if (window.registerAdminTool) {
@@ -689,6 +829,8 @@ function _lcRegister() {
       title: 'Loyalty Cards', subtitle: 'Look up, stamp & issue cards',
       onClick: lcOpen
     });
+    window.registerAdminTool('Growth & Insights', _lcxTool);
+    lcxUnlockWhenSuper();
   }
 }
 if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', _lcRegister); } else { _lcRegister(); }
