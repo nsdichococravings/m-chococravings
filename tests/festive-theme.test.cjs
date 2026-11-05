@@ -18,7 +18,7 @@ await db.exec(`update roles set r='staff'`);
 await assert.rejects(db.query(`select cc_set_festive_theme('off')`),/Admin access required/);
 await db.close();
 // Calendar: which theme shows on which India date.
-const ctx={window:{},document:{readyState:'loading',addEventListener(){}},setInterval(){},localStorage:{getItem(){return null},setItem(){}}};ctx.window=ctx;
+const ctx={window:{},document:{readyState:'loading',addEventListener(){},getElementById(){return null}},setInterval(){},localStorage:{getItem(){return null},setItem(){}}};ctx.window=ctx;
 vm.createContext(ctx);vm.runInContext(fs.readFileSync('festive-theme.js','utf8'),ctx);
 const a=ctx.ccFestive.autoTheme;
 assert.equal(a('2026-11-05'),'diwali');assert.equal(a('2026-11-08'),'diwali');assert.equal(a('2026-11-13'),null);

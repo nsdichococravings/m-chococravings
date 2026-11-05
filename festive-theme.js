@@ -1,5 +1,11 @@
 /**
- * festive-theme.js — On Store (store.html) dresses up for festivals and special days.
+ * festive-theme.js — On Store (store.html) and Home (index.html) dress up
+ * for festivals and special days.
+ *
+ * Home keeps its light page (for readable text) and gets: the garland under
+ * the logo bar, a soft festive glow at the top, a greeting banner
+ * ("Happy Diwali, <name> 🪔") under the greeting, and the floating
+ * particles while Home is open. Everything below is On Store.
  *
  * What changes while a theme is on:
  *   - the page background (colours + soft glow) behind the menu,
@@ -24,17 +30,17 @@
     diwali: {
       name: 'Diwali', icon: '🪔', greet: 'Happy Diwali 🪔',
       bg: 'radial-gradient(90% 50% at 50% 0%,rgba(246,196,83,.35),transparent 70%),radial-gradient(60% 40% at 0% 100%,rgba(224,155,45,.28),transparent 70%),linear-gradient(170deg,#4a0a22 0%,#5b0b2c 40%,#2a0512 100%)',
-      garland: 'marigold', fx: 'sparkle', ink: '#a3194d', diyas: true
+      dark: true, garland: 'marigold', fx: 'sparkle', ink: '#a3194d', diyas: true
     },
     christmas: {
       name: 'Christmas', icon: '🎄', greet: 'Merry Christmas 🎄',
       bg: 'radial-gradient(80% 50% at 50% 0%,rgba(255,255,255,.18),transparent 70%),linear-gradient(170deg,#0f3d2e 0%,#145a41 50%,#0b2a20 100%)',
-      garland: 'lights', fx: 'snow', ink: '#b91c1c'
+      dark: true, garland: 'lights', fx: 'snow', ink: '#b91c1c'
     },
     newyear: {
       name: 'New Year', icon: '🎆', greet: 'Happy New Year ✨',
       bg: 'radial-gradient(80% 50% at 50% 0%,rgba(246,196,83,.25),transparent 70%),linear-gradient(170deg,#0d1030 0%,#1b1f5c 55%,#0a0b22 100%)',
-      garland: 'lights', fx: 'confetti', ink: '#4338ca'
+      dark: true, garland: 'lights', fx: 'confetti', ink: '#4338ca'
     },
     pongal: {
       name: 'Pongal', icon: '🌾', greet: 'Happy Pongal 🌾',
@@ -184,11 +190,27 @@
       + '<div class="ft-diyas">' + out + '</div>';
   }
 
-  var CSS = ''
+  var PAGE = document.getElementById('pg-menu') ? 'store' : (document.getElementById('page-home') ? 'home' : null);
+
+  var STORE_CSS = ''
     + 'body.ft-on{background:var(--ft-bg)!important}'
     + 'body.ft-on .page:not(#pg-kitchen){background:transparent!important}'
     + 'body.ft-on .sec-lbl{background:rgba(255,251,242,.92);backdrop-filter:blur(6px);border-radius:0 0 14px 14px;margin:0 10px}'
-    + '#ft-bg{position:fixed;inset:0;z-index:0;background:var(--ft-bg);pointer-events:none}'
+    + '#ft-bg{position:fixed;inset:0;z-index:0;background:var(--ft-bg);pointer-events:none}';
+  var HOME_CSS = ''
+    + 'body:has(#page-home:not(.active)) #ft-fx{display:none}'
+    + '.ft-band{position:absolute;top:0;left:0;right:0;height:360px;z-index:-1;pointer-events:none;background:var(--ft-bg);opacity:.3;'
+    +   '-webkit-mask-image:linear-gradient(#000,#000 35%,transparent);mask-image:linear-gradient(#000,#000 35%,transparent)}'
+    + '.ft-hg{position:absolute;left:0;right:0;bottom:-17px;height:17px;pointer-events:none}.ft-hg svg{display:block;width:100%;height:100%}'
+    + 'body.ft-home #page-home .greet{padding-top:22px}'
+    + '.ft-banner{position:relative;margin:2px 16px 14px;padding:12px 16px;border-radius:18px;overflow:hidden;display:flex;align-items:center;gap:12px;'
+    +   'background:var(--ft-bg);box-shadow:0 8px 22px rgba(0,0,0,.12)}'
+    + '.ft-banner.dark{color:#fff7e6}.ft-banner.light{color:#2a1530;border:1px solid rgba(0,0,0,.06)}'
+    + '.ft-banner-t{font-family:"Cormorant Garamond",Fraunces,Georgia,serif;font-size:20px;font-weight:700;line-height:1.1}'
+    + '.ft-banner.dark .ft-banner-t{color:#ffe08a}.ft-banner.light .ft-banner-t{color:var(--ft-ink)}'
+    + '.ft-banner-s{font-size:11.5px;opacity:.75;margin-top:3px}'
+    + '.ft-banner-i{flex:none;font-size:30px;margin-left:auto;animation:ftShimmer 3s ease-in-out infinite}';
+  var CSS = ''
     + '#ft-fx{position:fixed;inset:0;z-index:250;pointer-events:none;overflow:hidden}'
     + 'body:has(#pg-kitchen.active) #ft-fx,body:has(#pg-kitchen.active) #ft-bg{display:none}'
     + '.ft-garland{display:block;height:22px;margin:0 -20px -1px;pointer-events:none}'
@@ -213,29 +235,59 @@
     + '@media (prefers-reduced-motion:reduce){.ft-p,.ft-bulb,.ft-flame,.ft-greet{animation:none!important}.ft-p{display:none}}';
 
   var current = null, savedTagline = null;
+  function client() {
+    try { if (typeof db !== 'undefined' && db && db.from) return db; } catch (e) {}
+    return window.db;
+  }
+
+  function applyHome(t) {
+    document.querySelectorAll('.ft-band,.ft-hg,.ft-banner').forEach(function (e) { e.remove(); });
+    if (!t) return;
+    var home = document.getElementById('page-home');
+    if (!home) return;
+    var band = document.createElement('div'); band.className = 'ft-band'; home.insertBefore(band, home.firstChild);
+    var hdr = document.querySelector('.logo-wrap');
+    if (hdr) { var g = document.createElement('div'); g.className = 'ft-hg'; g.innerHTML = garlandSvg(t.garland); hdr.appendChild(g); }
+    var name = '';
+    try { name = String((currentUser && currentUser.name) || '').split(' ')[0].replace(/[<>&"']/g, ''); } catch (e) {}
+    var greet = t.greet.replace(/\s*\S+$/, ''); // "Happy Diwali 🪔" -> "Happy Diwali"
+    var b = document.createElement('div');
+    b.className = 'ft-banner ' + (t.dark ? 'dark' : 'light');
+    b.setAttribute('role', 'note');
+    b.innerHTML = '<div><div class="ft-banner-t">' + greet + (name ? ', ' + name : '') + '</div>'
+      + '<div class="ft-banner-s">Sweet wishes from NSDI ChocoCravings</div></div><div class="ft-banner-i" aria-hidden="true">' + t.icon + '</div>';
+    var after = home.querySelector('.greet');
+    if (after) after.parentNode.insertBefore(b, after.nextSibling); else home.insertBefore(b, band.nextSibling);
+  }
 
   function apply(id) {
     var t = id && THEMES[id];
     if ((t ? id : null) === current) return;
     current = t ? id : null;
-    document.body.classList.toggle('ft-on', !!t);
-    document.body.classList.toggle('ft-diya', !!(t && t.diyas));
+    if (PAGE === 'store') {
+      document.body.classList.toggle('ft-on', !!t);
+      document.body.classList.toggle('ft-diya', !!(t && t.diyas));
+    }
     ['ft-bg', 'ft-fx'].forEach(function (x) { var e = document.getElementById(x); if (e) e.remove(); });
     document.querySelectorAll('.ft-garland').forEach(function (e) { e.remove(); });
     var tag = document.querySelector('#pg-menu .pg-hdr-right');
     if (tag && savedTagline !== null) { tag.textContent = savedTagline; tag.classList.remove('ft-greet'); }
+    if (PAGE === 'home') { applyHome(null); document.body.classList.toggle('ft-home', !!t); }
     if (!t) return;
 
     if (!document.getElementById('ft-css')) {
-      var st = document.createElement('style'); st.id = 'ft-css'; st.textContent = CSS; document.head.appendChild(st);
+      var st = document.createElement('style'); st.id = 'ft-css';
+      st.textContent = CSS + (PAGE === 'store' ? STORE_CSS : PAGE === 'home' ? HOME_CSS : '');
+      document.head.appendChild(st);
     }
     document.body.style.setProperty('--ft-bg', t.bg);
     document.body.style.setProperty('--ft-ink', t.ink);
-    var bg = document.createElement('div'); bg.id = 'ft-bg'; document.body.insertBefore(bg, document.body.firstChild);
+    if (PAGE === 'store') { var bg = document.createElement('div'); bg.id = 'ft-bg'; document.body.insertBefore(bg, document.body.firstChild); }
     var fx = document.createElement('div'); fx.id = 'ft-fx';
-    var html = ''; for (var i = 0; i < 14; i++) html += particle(t.fx, i);
-    fx.innerHTML = html + (t.diyas ? diyaRow() : '');
+    var html = ''; for (var i = 0; i < (PAGE === 'home' ? 10 : 14); i++) html += particle(t.fx, i);
+    fx.innerHTML = html + (t.diyas && PAGE === 'store' ? diyaRow() : '');
     document.body.appendChild(fx);
+    if (PAGE === 'home') { applyHome(t); return; }
 
     document.querySelectorAll('.page:not(#pg-kitchen) .pg-hdr').forEach(function (hdr) {
       var g = document.createElement('div'); g.className = 'ft-garland'; g.innerHTML = garlandSvg(t.garland);
@@ -254,8 +306,9 @@
     try { var c = localStorage.getItem('cc_festive_theme'); if (c) setting = c; } catch (e) {}
     apply(resolve());
     try {
-      if (!window.db || !window.db.from) return;
-      var r = await window.db.from('app_settings').select('value').eq('key', 'festive_theme').maybeSingle();
+      var c = client();
+      if (!c || !c.from) return;
+      var r = await c.from('app_settings').select('value').eq('key', 'festive_theme').maybeSingle();
       if (r && !r.error) {
         setting = (r.data && r.data.value) || 'auto';
         try { localStorage.setItem('cc_festive_theme', setting); } catch (e) {}
@@ -290,7 +343,7 @@
       var b = e.target.closest('button[data-v]'); if (!b) return;
       var val = b.getAttribute('data-v');
       try {
-        var r = await window.db.rpc('cc_set_festive_theme', { p_value: val });
+        var r = await client().rpc('cc_set_festive_theme', { p_value: val });
         if (r.error) throw r.error;
         setting = val; try { localStorage.setItem('cc_festive_theme', val); } catch (x) {}
         apply(resolve()); ov.remove();
@@ -313,7 +366,13 @@
   }
 
   window.ccFestive = { apply: apply, autoTheme: autoTheme, themes: THEMES, open: openPicker };
-  function start() { register(); load(); }
+  function start() {
+    register(); load();
+    // Home: put the customer's name in the banner once sign-in has loaded.
+    if (PAGE === 'home') [1500, 4000].forEach(function (ms) {
+      setTimeout(function () { if (current) applyHome(THEMES[current]); }, ms);
+    });
+  }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
   // Pick up a new day (or an admin change) without a reload.
   setInterval(load, 30 * 60 * 1000);
