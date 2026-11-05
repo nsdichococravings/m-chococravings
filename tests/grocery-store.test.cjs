@@ -29,6 +29,8 @@ const { PGlite } = require('../.production-test-runtime/node_modules/@electric-s
   const sql = fs.readFileSync(path.join(__dirname, '../migrations/20261104_grocery_store.sql'), 'utf8');
   await db.exec(sql);
   await db.exec(sql); // runs twice without errors or duplicate seed rows
+  const paySql = fs.readFileSync(path.join(__dirname, '../migrations/20261109_grocery_verified_payments.sql'), 'utf8');
+  await db.exec(paySql); await db.exec(paySql);
   await db.exec('grant usage on schema public to anon, authenticated');
 
   async function as(who) {
@@ -41,6 +43,13 @@ const { PGlite } = require('../.production-test-runtime/node_modules/@electric-s
     return (await db.query(`select public.${fn}(${ph}) r`, args)).rows[0].r;
   }
   async function raw(q, a = []) { await db.exec('reset role'); const r = (await db.query(q, a)).rows; return r; }
+  // What the grocery-payment edge function does once Razorpay confirms a payment.
+  async function pay(who, order, payId, opts = {}) {
+    const ref = 'ref' in opts ? opts.ref : order.order_no;
+    const paise = 'paise' in opts ? opts.paise : Math.max(1, Math.round(Number(order.total))) * 100;
+    return (await raw('select public.grocery_record_verified_payment($1,$2,$3,$4,$5,$6) r',
+      [ids[who], order.id, payId, 'order_rzp', paise, ref]))[0].r;
+  }
   const stock = async (pid) => (await raw('select on_hand, reserved from grocery_stock where product_id=$1', [pid]))[0];
   const items = (pid, qty) => JSON.stringify([{ product_id: pid, qty }]);
   const key = () => randomUUID();
@@ -135,17 +144,21 @@ const { PGlite } = require('../.production-test-runtime/node_modules/@electric-s
   assert.deepEqual(await stock(rice.id), { on_hand: 2, reserved: 2 }, 'a failed order holds nothing');
 
   // ── Payment ──
-  await as('c');
-  await assert.rejects(rpc('grocery_record_payment', [oA.id, 'pay_AAAAAA', 'order_1']), /not found/, 'cannot pay for someone else');
+  // The app can no longer mark its own order paid; only the payment server can.
   await as('a');
-  let paid = await rpc('grocery_record_payment', [oA.id, 'pay_AAAAAA', 'order_1']);
+  await assert.rejects(rpc('grocery_record_payment', [oA.id, 'pay_AAAAAA', 'order_1']), /permission denied/, 'customer cannot self-confirm');
+  await assert.rejects(rpc('grocery_record_verified_payment', [ids.a, oA.id, 'pay_AAAAAA', 'order_1', 46500, oA.order_no]), /permission denied/);
+  await as('owner');
+  await assert.rejects(rpc('grocery_record_payment', [oA.id, 'pay_AAAAAA', 'order_1']), /permission denied/, 'staff cannot either');
+  await assert.rejects(pay('c', oA, 'pay_AAAAAA'), /not found/, 'cannot pay for someone else');
+  await assert.rejects(pay('a', oA, 'pay_AAAAAA', { paise: 100 }), /does not match/, 'wrong amount');
+  await assert.rejects(pay('a', oA, 'pay_AAAAAA', { ref: 'CC-OTHER' }), /not made for this order/, 'payment for another order');
+  let paid = await pay('a', oA, 'pay_AAAAAA');
   assert.equal(paid.status, 'placed'); assert.equal(paid.payment_status, 'paid');
   assert.deepEqual(await stock(rice.id), { on_hand: 1, reserved: 1 });
-  await as('a');
-  paid = await rpc('grocery_record_payment', [oA.id, 'pay_AAAAAA', 'order_1']);
+  paid = await pay('a', oA, 'pay_AAAAAA');
   assert.deepEqual(await stock(rice.id), { on_hand: 1, reserved: 1 }, 'same payment twice changes nothing');
-  await as('b');
-  await assert.rejects(rpc('grocery_record_payment', [oB.id, 'pay_AAAAAA', 'order_1']), /another order/);
+  await assert.rejects(pay('b', oB, 'pay_AAAAAA'), /another order/);
 
   // ── Honest badges: "only N left" and "selling fast" come from real numbers ──
   await as('c');
@@ -157,8 +170,7 @@ const { PGlite } = require('../.production-test-runtime/node_modules/@electric-s
   assert.equal((await raw('select grocery_release_expired() n'))[0].n, 1);
   assert.deepEqual(await stock(rice.id), { on_hand: 1, reserved: 0 });
   assert.equal((await raw('select status from grocery_orders where id=$1', [oB.id]))[0].status, 'expired');
-  await as('b');
-  let late = await rpc('grocery_record_payment', [oB.id, 'pay_BBBBBB', null]);
+  let late = await pay('b', oB, 'pay_BBBBBB', { ref: null });
   assert.equal(late.status, 'placed'); assert.equal(late.payment_status, 'paid');
   assert.deepEqual(await stock(rice.id), { on_hand: 0, reserved: 0 });
 
@@ -172,8 +184,7 @@ const { PGlite } = require('../.production-test-runtime/node_modules/@electric-s
   await raw('select grocery_release_expired()');
   await as('a');
   const oA2 = await rpc('grocery_place_order', [items(rice.id, 1), 'cash', 'Asha', '9000000004', key(), 465]);
-  await as('c');
-  late = await rpc('grocery_record_payment', [oC.id, 'pay_CCCCCC', null]);
+  late = await pay('c', oC, 'pay_CCCCCC');
   assert.equal(late.status, 'expired'); assert.equal(late.payment_status, 'refund_due');
   assert.equal(Number((await raw("select count(*) n from grocery_payments where rzp_payment_id='pay_CCCCCC'"))[0].n), 1, 'late payment is recorded for refund');
   assert.deepEqual(await stock(rice.id), { on_hand: 1, reserved: 1 }, 'the cash order keeps its pack');

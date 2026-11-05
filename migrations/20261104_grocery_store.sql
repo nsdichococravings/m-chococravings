@@ -913,7 +913,9 @@ do $$ declare f text; begin
   execute format('grant execute on function public.%s to anon, authenticated', f);
  end loop;
  foreach f in array array[
-   'grocery_place_order(jsonb,text,text,text,text,numeric)','grocery_record_payment(uuid,text,text)',
+   'grocery_place_order(jsonb,text,text,text,text,numeric)',
+   -- grocery_record_payment is not granted: payments are confirmed by the grocery-payment
+   -- edge function (migrations/20261109_grocery_verified_payments.sql).
    'grocery_cancel_order(uuid,text)','grocery_my_orders(int)','grocery_order(uuid)',
    'grocery_request_items(jsonb,text,boolean)','grocery_my_requests()',
    'grocery_admin_products(boolean)','grocery_admin_save_product(jsonb)','grocery_admin_adjust_stock(uuid,int,text,text)',
@@ -925,6 +927,7 @@ do $$ declare f text; begin
   execute format('revoke all on function public.%s from public, anon', f);
   execute format('grant execute on function public.%s to authenticated', f);
  end loop;
+ execute 'revoke all on function public.grocery_record_payment(uuid,text,text) from public, anon, authenticated';
 end $$;
 
 -- ── Product photos: public read, admin-only write ────────────────────

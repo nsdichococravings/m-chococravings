@@ -816,19 +816,32 @@ async function recordPayment(orderId, payId, rzpOrderId) {
   writeJSON('ns_pending_pay', { o: orderId, p: payId, r: rzpOrderId, at: Date.now() });
   for (var i = 0; i < 4; i++) {
     try {
-      var r = await db.rpc('grocery_record_payment', { p_order_id: orderId, p_payment_id: payId, p_rzp_order_id: rzpOrderId });
-      if (r.error) throw r.error;
+      var r = await confirmPayment(orderId, payId, rzpOrderId);
       localStorage.removeItem('ns_pending_pay');
       S.order = r.data; S.busy = false; payingOverlay(false);
       toast(r.data.payment_status === 'paid' ? 'Payment received. Order placed!' : 'Payment received after the hold ended. We will refund it.');
       render(); return;
     } catch (e) {
-      if (!/network|slow|fetch|timed out|abort/i.test(cleanErr(e))) { payingOverlay(false); S.busy = false; S.error = cleanErr(e); render(); return; }
+      if (!/network|slow|fetch|timed out|abort|not complete yet/i.test(cleanErr(e))) { payingOverlay(false); S.busy = false; S.error = cleanErr(e); render(); return; }
       await new Promise(function (r) { setTimeout(r, 1500 * (i + 1)); });
     }
   }
   payingOverlay(false); S.busy = false;
   S.error = 'Payment done, but we could not confirm it yet. Keep this screen open or reopen NSDI Store; it will retry.'; render();
+}
+// The grocery-payment edge function checks the payment with Razorpay before
+// the order is marked paid; the app can't mark it paid by itself.
+async function confirmPayment(orderId, payId, rzpOrderId) {
+  var sess = await signedIn();
+  if (!sess) throw new Error('Please sign in again');
+  var res = await fetch(SUPABASE_URL + '/functions/v1/grocery-payment', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + sess.access_token },
+    body: JSON.stringify({ order_id: orderId, payment_id: payId, rzp_order_id: rzpOrderId || null })
+  });
+  var data = await res.json().catch(function () { return null; });
+  if (!data) throw new Error('Network error, please retry');
+  if (!res.ok || data.error) throw new Error(data.error || 'Could not confirm payment');
+  return { data: data };
 }
 async function retryPendingPayment() {
   var p = readJSON('ns_pending_pay');
