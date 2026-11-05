@@ -23,14 +23,14 @@
       + '.nse-eb{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8a6d12}'
       + '.nse-all{font-size:13px;font-weight:600;color:#6e0977;text-decoration:none;padding:6px 0}'
       + '.nse-rail{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 16px 10px;scrollbar-width:none}.nse-rail::-webkit-scrollbar{display:none}'
-      + '.nse-c{flex:0 0 200px;height:290px;border-radius:24px;overflow:hidden;display:flex;flex-direction:column;scroll-snap-align:start;text-decoration:none;box-shadow:0 8px 22px rgba(61,5,67,.12)}'
-      + '.nse-art{height:160px;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}.nse-art img{width:100%;height:100%;object-fit:cover}'
-      + '.nse-tag{position:absolute;top:12px;left:12px;font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:4px 8px;border-radius:999px;color:#fff}'
-      + '.nse-pk{width:86px;height:114px;border-radius:28px 28px 10px 10px;background:#efe3c8;border:2px solid #c9a633;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:3px;overflow:hidden;box-shadow:0 12px 24px rgba(0,0,0,.16)}'
-      + '.nse-pk b{width:100%;background:#6e0977;color:#fff;text-align:center;font-size:16px;padding:6px 0}.nse-pk i{font-style:normal;font-size:8px;font-weight:700;letter-spacing:.12em;color:#3d0543}'
-      + '.nse-bd{flex:1;padding:12px 14px 14px;display:flex;flex-direction:column;gap:4px}'
-      + '.nse-t{font-family:"Cormorant Garamond",Georgia,serif;font-size:22px;font-weight:700;line-height:1.05}.nse-s{font-size:12px;opacity:.85}'
-      + '.nse-cta{margin-top:auto;align-self:flex-start;font-size:12.5px;font-weight:700;padding:8px 13px;border-radius:999px;color:#fff}'
+      + '.nse-c{flex:0 0 82%;max-width:340px;height:380px;border-radius:26px;overflow:hidden;display:flex;flex-direction:column;scroll-snap-align:start;text-decoration:none;box-shadow:0 8px 22px rgba(61,5,67,.12)}'
+      + '.nse-art{height:220px;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden}.nse-art img{width:100%;height:100%;object-fit:cover}'
+      + '.nse-tag{position:absolute;top:14px;left:14px;font-size:10.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:4px 8px;border-radius:999px;color:#fff}'
+      + '.nse-pk{width:110px;height:146px;border-radius:28px 28px 10px 10px;background:#efe3c8;border:2px solid #c9a633;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:3px;overflow:hidden;box-shadow:0 12px 24px rgba(0,0,0,.16)}'
+      + '.nse-pk b{width:100%;background:#6e0977;color:#fff;text-align:center;font-size:20px;padding:8px 0}.nse-pk i{font-style:normal;font-size:8px;font-weight:700;letter-spacing:.12em;color:#3d0543}'
+      + '.nse-bd{flex:1;padding:16px 18px 18px;display:flex;flex-direction:column;gap:6px}'
+      + '.nse-t{font-family:"Cormorant Garamond",Georgia,serif;font-size:28px;font-weight:700;line-height:1.05}.nse-s{font-size:13.5px;opacity:.85}'
+      + '.nse-cta{margin-top:auto;align-self:flex-start;font-size:14px;font-weight:700;padding:10px 16px;border-radius:999px;color:#fff}'
       + '.nse-pv{margin:0 16px 10px;font-size:11.5px;background:#fff4d6;color:#5c4300;border-radius:10px;padding:7px 10px}';
     document.head.appendChild(s);
   }
@@ -53,7 +53,7 @@
       + '<div class="nse-pk" style="background:#fff"><b style="background:' + m[3] + '">+ ASK</b><i style="color:' + m[1] + '">YOUR LIST</i></div></div>'
       + '<div class="nse-bd"><span class="nse-t">What should we stock next?</span><span class="nse-s">Tell us and we bring it in.</span><span class="nse-cta" style="background:' + m[3] + '">Tell us →</span></div></a>');
     if (!(d.slides || []).length) {
-      cards.unshift('<a class="nse-c" href="/grocery" style="background:' + s[0] + ';color:' + s[1] + '"><div class="nse-art" style="background:' + s[2] + '"><span class="nse-tag" style="background:' + s[3] + '">New</span><div style="font-size:56px" aria-hidden="true">🛍️</div></div>'
+      cards.unshift('<a class="nse-c" href="/grocery" style="background:' + s[0] + ';color:' + s[1] + '"><div class="nse-art" style="background:' + s[2] + '"><span class="nse-tag" style="background:' + s[3] + '">New</span><div style="font-size:72px" aria-hidden="true">🛍️</div></div>'
         + '<div class="nse-bd"><span class="nse-t">NSDI Store</span><span class="nse-s">Daily essentials · pick up at the outlet</span><span class="nse-cta" style="background:' + s[3] + '">Open →</span></div></a>');
     }
     box.innerHTML = '<section class="nse" aria-label="NSDI Store"><div class="nse-hd"><span class="nse-eb">New in NSDI Store</span><a class="nse-all" href="/grocery">Open store →</a></div>'
