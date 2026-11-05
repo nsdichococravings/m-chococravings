@@ -1766,6 +1766,8 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 
           <!-- TIER NOTICE -->
           <div id="ck-tier-notice" style="display:none;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;line-height:1.6;border:0.5px solid"></div>
+          <!-- NSDI Wallet (wallet.js): "Use wallet" switch -->
+          <div id="ck-wallet"></div>
 
           <!-- PAYMENT TABS -->
           <div style="display:flex;gap:8px;margin-bottom:16px">
@@ -5692,6 +5694,14 @@ if (currentPayTab === 'upi' && currentUtrValue) {
     ? (currentOrderTotal - amountPaidNow)
     : (currentPayTab === 'cod' ? currentOrderTotal : 0);
 
+  // NSDI Wallet: this much is taken from the wallet right after the order is
+  // saved (cc_wallet_pay_order); until then it shows as due on the order.
+  var walletUse = (!isPartialPayment && window.ccCheckoutWalletUse) ? window.ccCheckoutWalletUse() : 0;
+  if (walletUse > 0) {
+    amountPaidNow = currentPayTab === 'wallet' ? 0 : Math.round((currentOrderTotal - walletUse) * 100) / 100;
+    balanceDueNow = walletUse;
+  }
+
   console.log('Payment snapshot — tab:', currentPayTab, 'utr:', currentUtrValue, 'advance:', currentAdvanceMode, 'amtPaid:', amountPaidNow);
 
   const orderData = {
@@ -5730,6 +5740,12 @@ if (currentPayTab === 'upi' && currentUtrValue) {
     if (error) throw error;
 
     orderData.id = data.id; // ← this line is missing — causes all downstream failures
+
+    if (walletUse > 0) {
+      var paidFromWallet = await window.ccWalletPayOrder(data.id, walletUse);
+      currentPayMethod = !paidFromWallet ? currentPayMethod
+        : (currentPayTab === 'wallet' ? 'NSDI Wallet' : 'UPI + Wallet ₹' + walletUse);
+    }
 
     // Deduct redeemed points from customer balance
     if (appliedPromo && appliedPromo.code === 'POINTS') {
@@ -9159,7 +9175,8 @@ async function openRazorpay() {
           'Authorization': 'Bearer ' + (session ? session.access_token : '')
         },
         body: JSON.stringify({
-          amount: Math.max(1, Math.round(currentOrderTotal)),
+          // Part paid from the NSDI Wallet (wallet.js) comes off what UPI collects.
+          amount: Math.max(1, Math.round(currentOrderTotal - (window.ccCheckoutWalletUse ? window.ccCheckoutWalletUse() : 0))),
           receipt: orderNum,
           notes: { customer_name: name, customer_phone: phone, order_number: orderNum }
         })
@@ -9573,6 +9590,6 @@ function closeTierCelebration() {
 
 <script src="/lucky-draw.js"></script>
 <script src="/grocery-entry.js?v=20261105" defer></script>
-<script src="/wallet.js?v=20261108"></script>
+<script src="/wallet.js?v=20261110"></script>
 </body>
 </html>

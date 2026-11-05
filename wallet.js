@@ -235,7 +235,7 @@
       + '<div class="wl-sec"><div class="wl-t">Recent activity</div>'
       + (txns.length ? txns.map(function (t) {
           var k = KIND[t.kind] || KIND.adjust, a = Number(t.amount);
-          var label = t.kind === 'adjust' && t.note ? t.note : k.t;
+          var label = (t.kind === 'adjust' || /^Online order/.test(t.note || '')) && t.note ? t.note : k.t;
           return '<div class="wl-row"><div class="wl-ri" style="background:' + k.bg + ';color:' + k.c + '">' + k.i + '</div>'
             + '<div class="wl-rm"><div class="wl-rt">' + esc(label) + '</div><div class="wl-rd">' + when(t.created_at) + '</div></div>'
             + '<div class="wl-ra" style="color:' + (a >= 0 ? '#15803d' : '#2a1530') + '">' + (a >= 0 ? '+' : '−') + money(Math.abs(a)) + '</div></div>';
@@ -280,6 +280,134 @@
       var b = document.querySelector('#wl-sh .wl-go'); if (b && !state.busy) b.textContent = 'Add ' + money(state.amount || 0) + ' with UPI';
     } else renderSheet();
   };
+  // ── Checkout: pay an online order (fully or partly) from the wallet ──
+  // index.html: #ck-wallet holds the switch; openRazorpay() charges only
+  // the rest; placeOrder() calls ccWalletPayOrder() once the order is saved.
+  var ck = { on: false, shown: '', locked: null }; // locked: wallet share fixed when UPI opens
+  function ckTotal() { try { return Number(currentOrderTotal) || 0; } catch (e) { return 0; } }
+  function ckAllowed() {
+    try { if (currentPayTab === 'cod' || currentAdvanceMode === 'partial') return false; } catch (e) {}
+    return true;
+  }
+  function ckBalance() { return state.data ? Number(state.data.balance) || 0 : 0; }
+  function ckUse() {
+    if (ck.locked != null) return ck.locked;
+    if (!ck.on || !user() || !ckAllowed()) return 0;
+    return Math.round(Math.min(ckBalance(), ckTotal()) * 100) / 100;
+  }
+  window.ccCheckoutWalletUse = ckUse;
+
+  css += '.ckw{display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:14px;border-radius:14px;cursor:pointer;'
+    + 'background:linear-gradient(120deg,#fffaf3,#fdf0e4);border:1px solid rgba(201,166,51,.5);-webkit-tap-highlight-color:transparent}'
+    + '.ckw.on{border-color:#6e0977;box-shadow:0 0 0 1px #6e0977 inset}'
+    + '.ckw .wl-ico{width:32px;height:32px;border-radius:10px;font-size:15px}'
+    + '.ckw-t{font-size:13px;font-weight:700;color:#3d0543}.ckw-s{font-size:11px;color:#8a6d12;margin-top:2px}'
+    + '.ckw-sw{flex:none;width:42px;height:24px;border-radius:12px;background:#e3d3e6;position:relative;transition:background .2s}'
+    + '.ckw-sw::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}'
+    + '.ckw.on .ckw-sw{background:#6e0977}.ckw.on .ckw-sw::after{transform:translateX(18px)}';
+
+  function ckRender() {
+    var box = document.getElementById('ck-wallet');
+    var page = document.getElementById('page-checkout');
+    if (!box || !page || !page.classList.contains('active')) return;
+    var bal = ckBalance(), total = ckTotal();
+    var show = user() && state.data && !state.data.no_phone && bal > 0 && ckAllowed() && total > 0;
+    if (!show) ck.on = false;
+    var use = ckUse();
+    var key = [show, ck.on, bal, total, use].join('|');
+    if (key !== ck.shown) {
+      ck.shown = key;
+      ensureCss();
+      box.innerHTML = !show ? '' : '<div class="ckw' + (ck.on ? ' on' : '') + '" role="switch" aria-checked="' + ck.on + '" tabindex="0" onclick="ccCheckoutWalletToggle()">'
+        + '<div class="wl-ico" aria-hidden="true">◈</div>'
+        + '<div style="flex:1;min-width:0"><div class="ckw-t">Use NSDI Wallet · ' + money(bal) + '</div>'
+        + '<div class="ckw-s">' + (!ck.on ? 'Tap to pay with your wallet balance'
+            : use >= total ? 'Whole order paid from wallet' : money(use) + ' from wallet · ' + money(total - use) + ' by UPI') + '</div></div>'
+        + '<div class="ckw-sw" aria-hidden="true"></div></div>';
+    }
+    // Pay button label follows the wallet split.
+    var btn = document.getElementById('rzp-btn');
+    if (btn && !btn.disabled && use > 0) {
+      var want = use >= total ? 'Pay ' + money(total) + ' from Wallet' : 'Pay ' + money(total - use) + ' by UPI + ' + money(use) + ' Wallet';
+      if (btn.textContent.trim() !== want) btn.textContent = want;
+      btn.dataset.wl = '1';
+    } else if (btn && !btn.disabled && btn.dataset.wl) {
+      delete btn.dataset.wl;
+      btn.innerHTML = 'Pay ₹<span id="rzp-amt-btn">' + total + '</span>';
+    }
+  }
+  window.ccCheckoutWalletToggle = function () { if (state.busy) return; ck.on = !ck.on; ck.locked = null; ckRender(); };
+  setInterval(function () {
+    var page = document.getElementById('page-checkout');
+    if (page && page.classList.contains('active')) {
+      if (user() && !state.data && !state.loading) load();
+      ckRender();
+    } else { ck.on = false; ck.shown = ''; ck.locked = null; }
+  }, 600);
+
+  // Whole order from the wallet: no UPI step, the order is saved and paid at once.
+  function ckFormOk() {
+    var ids = ['ck-name', 'ck-phone', 'ck-address', 'ck-city'];
+    for (var i = 0; i < ids.length; i++) {
+      var el = document.getElementById(ids[i]);
+      if (el && !el.value.trim()) { var err = document.getElementById('ck-err'); if (err) err.style.display = 'block'; return false; }
+    }
+    var e2 = document.getElementById('ck-err'); if (e2) e2.style.display = 'none';
+    return true;
+  }
+  var _origOpenRazorpay = window.openRazorpay;
+  if (typeof _origOpenRazorpay === 'function') {
+    window.openRazorpay = async function () {
+      ck.locked = null;
+      var use = ckUse(), total = ckTotal();
+      if (!(use > 0 && use >= total)) {
+        ck.locked = use > 0 ? use : null; // the UPI part is charged for total minus this
+        return _origOpenRazorpay.apply(this, arguments);
+      }
+      if (state.busy || !ckFormOk()) return;
+      if (!confirm('Pay ' + money(total) + ' from your NSDI Wallet?')) return;
+      state.busy = true;
+      var btn = document.getElementById('rzp-btn');
+      if (btn) { btn.disabled = true; btn.textContent = 'Placing your order…'; }
+      try {
+        // Make sure the balance is current before saving the order.
+        await load();
+        if (ckUse() < total) { toast('Wallet balance changed. Please check and try again.'); return; }
+        currentPayTab = 'wallet'; currentPayMethod = 'wallet'; currentUtrValue = '';
+        await placeOrder();
+      } catch (e) {
+        toast('Order error: ' + (e.message || e));
+      } finally {
+        state.busy = false; ck.on = false; ck.shown = ''; ck.locked = null;
+        try { if (currentPayTab === 'wallet') currentPayTab = 'upi'; } catch (e) {}
+        if (btn) btn.disabled = false;
+      }
+    };
+  }
+
+  // Called by placeOrder() once the order is saved. Returns true when paid.
+  window.ccWalletPayOrder = async function (orderId, amount) {
+    for (var i = 0; i < 3; i++) {
+      try {
+        var r = await db.rpc('cc_wallet_pay_order', { p_order_id: orderId, p_amount: amount });
+        if (r.error) throw r.error;
+        if (state.data) state.data.balance = r.data.balance;
+        ck.on = false; ck.shown = ''; ck.locked = null;
+        load();
+        return true;
+      } catch (e) {
+        var msg = (e && e.message) || '';
+        if (!/network|fetch|timed out|abort/i.test(msg) || i === 2) {
+          toast('Wallet could not pay ' + money(amount) + ': ' + msg + ' — this amount is still due on the order.');
+          ck.locked = null;
+          return false;
+        }
+        await new Promise(function (ok) { setTimeout(ok, 1200 * (i + 1)); });
+      }
+    }
+    return false;
+  };
+
   window.ccWalletTopUp = topUp;
   window.ccWalletRefresh = load;
   // Home may have loaded before this file did.
