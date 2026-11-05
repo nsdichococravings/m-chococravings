@@ -1338,11 +1338,7 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
           </div>
         </div>
       </div>
-      <!-- TRENDING -->
-      <div class="sec"><span class="sec-t">Trending 🔥</span><span class="sec-l" onclick="showPage('explore')">See all →</span></div>
-      <div class="tscroll" id="trending-scroll">
-        <!-- loaded dynamically -->
-      </div>
+      <!-- Trending row removed: "Our Brownies" above shows the same products. -->
 
       <!-- REVIEWS -->
       <!--
@@ -6562,7 +6558,7 @@ function showProducts(products) {
   _productsShown = json;
   renderFeaturedGrid(products);
   renderExploreList(products);
-  renderTrending(products);
+  renderTrending(products); // no-op now that Home has no Trending row
   // Keep a search the customer already typed.
   var inp = document.getElementById('explore-search');
   if (inp && inp.value && typeof searchProducts === 'function') searchProducts(inp.value);
