@@ -703,6 +703,31 @@ function saveSettings() {
 // ─────────────────────────────────────────
 //  LOAD ORDERS FROM SUPABASE
 // ─────────────────────────────────────────
+// ── NSDI Wallet on online orders (migrations/20261110_wallet_online_orders.sql) ──
+// wallet_paid = part of the order paid from the customer's wallet.
+function walletAmt(n) { n = Number(n) || 0; return '₹' + (Math.round(n * 100) / 100).toLocaleString('en-IN'); }
+function walletBadgeHTML(order) {
+  var w = Number(order.wallet_paid) || 0;
+  if (w <= 0) return '';
+  var full = w >= (Number(order.total) || 0);
+  return '<div style="display:inline-block;margin-top:3px;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:700;'
+    + 'background:rgba(201,166,51,.16);color:var(--gold,#e0bc5a);border:1px solid rgba(201,166,51,.45)">◈ '
+    + (full ? 'Wallet ' + walletAmt(w) : walletAmt(w) + ' wallet') + '</div>';
+}
+function walletRowsHTML(order) {
+  var w = Number(order.wallet_paid) || 0, total = Number(order.total) || 0;
+  var paid = order.amount_paid == null ? null : Number(order.amount_paid);
+  var due = order.balance_due == null ? null : Number(order.balance_due);
+  var rows = '';
+  if (w > 0) {
+    rows += '<div class="dp-row"><span class="dp-key">◈ Wallet</span><span class="dp-val" style="color:var(--gold,#e0bc5a);font-weight:700">'
+      + walletAmt(w) + (w >= total ? ' · whole order' : '') + '</span></div>';
+    if (paid != null && paid - w > 0) rows += '<div class="dp-row"><span class="dp-key">UPI</span><span class="dp-val">' + walletAmt(paid - w) + '</span></div>';
+  }
+  if (due != null && due > 0) rows += '<div class="dp-row"><span class="dp-key">Balance due</span><span class="dp-val" style="color:#dc2626;font-weight:700">' + walletAmt(due) + '</span></div>';
+  return rows;
+}
+
 async function loadOrders() {
   setConn('connecting');
   try {
@@ -1270,6 +1295,7 @@ function renderOrderRow(order, isNew = false) {
       <div style="text-align:right;flex-shrink:0">
         <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:var(--gold)">₹${order.total}</div>
         <div style="font-size:10px;color:var(--faint);margin-top:2px">${(order.payment_method||'cod').toUpperCase()}</div>
+        ${walletBadgeHTML(order)}
         <div style="font-size:10px;color:var(--faint);margin-top:2px">${dt}</div>
       </div>
     </div>
@@ -1528,6 +1554,7 @@ function openPanel(id) {
       <div class="dp-slabel">Order Info</div>
       <div class="dp-row"><span class="dp-key">Ordered</span><span class="dp-val">${dt}</span></div>
       <div class="dp-row"><span class="dp-key">Payment</span><span class="dp-val">${(order.payment_method||'').toUpperCase()}</span></div>
+      ${walletRowsHTML(order)}
       <div class="dp-row"><span class="dp-key">Egg</span><span class="dp-val">${order.egg_preference==='eggless'?'💚 Eggless':'❤️ Contains Egg'}</span></div>
       ${buildCustomDetailsHTML(order)}
     </div>
