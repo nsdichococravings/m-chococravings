@@ -1862,7 +1862,7 @@ async function printStoreInvoice(id) {
       : [];
 
     // Map payment method to display label
-    var pmMap = { upi:'UPI', upi_qr:'UPI (QR)', cash:'Cash', razorpay:'Razorpay', gpay:'Google Pay', phonepe:'PhonePe' };
+    var pmMap = { upi:'UPI', upi_qr:'UPI (QR)', cash:'Cash', razorpay:'Razorpay', gpay:'Google Pay', phonepe:'PhonePe', wallet:'Wallet' };
     var pm    = pmMap[(o.payment_method||'').toLowerCase()] || o.payment_method || 'UPI';
 
     // Build invoice data object
@@ -2465,7 +2465,7 @@ function buildInvoiceData(o) {
     : typeof rawItems === 'string'
     ? JSON.parse(rawItems)
     : [];
-  var pmMap = { upi:'UPI', upi_qr:'UPI (QR)', cash:'Cash', razorpay:'Razorpay', gpay:'Google Pay', phonepe:'PhonePe' };
+  var pmMap = { upi:'UPI', upi_qr:'UPI (QR)', cash:'Cash', razorpay:'Razorpay', gpay:'Google Pay', phonepe:'PhonePe', wallet:'Wallet' };
   var pm = pmMap[(o.payment_method||'').toLowerCase()] || o.payment_method || 'UPI';
   return {
     order_number:        o.token || o.id,
@@ -3285,12 +3285,13 @@ async function toggleStoreOpenStatus() {
 <script src="menu-art.js?v=20260956"></script>
 <script src="menu-search-patch.js?v=20260954-photo-cards"></script>
 <script src="remember-phone-patch.js?v=20260952-table"></script>
-<script src="checkadminbadge-override.js?v=20261102-io"></script>
+<script src="checkadminbadge-override.js?v=20261108-wallet"></script>
 <script src="production-purchases-patch.js?v=20261018"></script>
 <link rel="stylesheet" href="production-dashboard.css?v=20260970-count">
 <script src="production-dashboard.js?v=20260970-count"></script>
 <link rel="stylesheet" href="loyalty-cards.css?v=20260922-auto-cards">
 <script src="loyalty-cards.js?v=20261107-auto-hide"></script>
+<script src="wallet-staff.js?v=20261108"></script>
 <script src="grocery-cc-tool.js?v=20261105" defer></script>
 </body>
 </html>

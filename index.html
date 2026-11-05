@@ -3079,6 +3079,7 @@ async function renderCachedLoyaltyCard() {
 
 var _lcPending = null;
 function loadLoyaltyCard() {
+  if (window.ccWalletRefresh) window.ccWalletRefresh(); // wallet strip under the card (wallet.js)
   var section = document.getElementById('lc-section');
   if (!section) return Promise.resolve();
   if (!currentUser || !currentUser.db_id) {
@@ -9572,5 +9573,6 @@ function closeTierCelebration() {
 
 <script src="/lucky-draw.js"></script>
 <script src="/grocery-entry.js?v=20261105" defer></script>
+<script src="/wallet.js?v=20261108"></script>
 </body>
 </html>
