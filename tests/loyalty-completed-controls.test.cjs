@@ -37,5 +37,27 @@ await db.exec('update su set v=false');
 assert.equal((await q('check')).super,false);
 await assert.rejects(q('list_completed'),/Super admin access required/);
 await assert.rejects(q('reset',{member_id:'aaaaaaaa-0000-0000-0000-000000000002'}),/Super admin access required/);
-await db.close();console.log('PASS loyalty 100-day controls: list, hide/show, reset; super admin only.');
+// Auto-hide at 100 days.
+await db.exec(`insert into cc_loyalty_members(id,name,phone,card_code,stamp_count,completed_days) values
+ ('aaaaaaaa-0000-0000-0000-000000000003','Old','+919811111111','NSDI-CARD-3',2,100),
+ ('aaaaaaaa-0000-0000-0000-000000000004','Near','+919822222222','NSDI-CARD-4',8,90)`);
+await db.exec('update su set v=true');
+const auto=fs.readFileSync('migrations/20261107_loyalty_auto_hide.sql','utf8');await db.exec(auto);
+const hid=async id=>(await db.query(`select home_hidden h from cc_loyalty_members where id=$1`,[id])).rows[0].h;
+assert.equal(await hid('aaaaaaaa-0000-0000-0000-000000000003'),true,'already past 100 -> hidden on first run');
+assert.equal(await hid('aaaaaaaa-0000-0000-0000-000000000004'),false);
+await db.exec(`update cc_loyalty_members set stamp_count=9 where id='aaaaaaaa-0000-0000-0000-000000000004'`);
+assert.equal(await hid('aaaaaaaa-0000-0000-0000-000000000004'),false,'99 days stays visible');
+await db.exec(`update cc_loyalty_members set stamp_count=10 where id='aaaaaaaa-0000-0000-0000-000000000004'`);
+assert.equal(await hid('aaaaaaaa-0000-0000-0000-000000000004'),true,'hides when it reaches 100');
+await q('set_visible',{member_id:'aaaaaaaa-0000-0000-0000-000000000004',visible:true});
+await db.exec(`update cc_loyalty_members set stamp_count=11 where id='aaaaaaaa-0000-0000-0000-000000000004'`);
+assert.equal(await hid('aaaaaaaa-0000-0000-0000-000000000004'),false,'shown by super admin stays shown');
+await db.exec(auto);
+assert.equal(await hid('aaaaaaaa-0000-0000-0000-000000000004'),false,'re-running does not re-hide');
+await q('reset',{member_id:'aaaaaaaa-0000-0000-0000-000000000004'});
+assert.equal(await hid('aaaaaaaa-0000-0000-0000-000000000004'),false);
+await db.exec(`update cc_loyalty_members set completed_days=95,stamp_count=5 where id='aaaaaaaa-0000-0000-0000-000000000004'`);
+assert.equal(await hid('aaaaaaaa-0000-0000-0000-000000000004'),true,'hides again after reset + 100');
+await db.close();console.log('PASS loyalty 100-day controls (+ auto-hide): list, hide/show, reset; super admin only.');
 })().catch(e=>{console.error(e);process.exit(1);});

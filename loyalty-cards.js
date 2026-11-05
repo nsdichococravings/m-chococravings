@@ -715,7 +715,8 @@ function lcxOpen() {
       + '</div>'
       + '<div style="padding:14px 24px 24px">'
       +   '<p style="font-size:12px;color:#79677e;margin:0 0 10px">Cards that reached 100 total days. '
-      +     '<b>Hide</b> removes the card from the customer\'s Home screen. <b>Reset</b> starts them again on Card 1 with 0 days.</p>'
+      +     'They are <b>hidden</b> from the customer\'s Home automatically. <b>Show</b> brings one back; '
+      +     '<b>Reset</b> starts them again on Card 1 with 0 days.</p>'
       +   '<div style="display:flex;gap:8px"><input id="lcx-q" type="text" placeholder="Name, phone or card code" '
       +     'style="flex:1;padding:11px;border:1px solid #ddcce2;border-radius:9px;font:inherit;min-height:42px" '
       +     'onkeydown="if(event.key===\'Enter\'){event.preventDefault();lcxLoad();}">'
@@ -801,7 +802,7 @@ async function lcxReset(i) {
 // unlocked once the server confirms the signed-in person is one.
 var _lcxTool = {
   icon: '🏁', iconBg: 'rgba(121,12,136,0.12)',
-  title: 'Completed Loyalty Cards', subtitle: '100 days: hide, show or reset',
+  title: 'Completed Loyalty Cards', subtitle: '100 days: auto-hidden; show or reset',
   superAdminOnly: true, onClick: lcxOpen
 };
 function lcxUnlockWhenSuper() {
