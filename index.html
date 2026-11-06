@@ -1128,6 +1128,46 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 #page-profile .mitem-out .mico{color:#a33a52;background:#fcf1f3;border-color:#f3dde2}
 #page-profile .mfoot{text-align:center;font-family:var(--cx-serif);font-style:italic;font-size:14px;color:var(--cx-muted);margin:22px 0 6px}
 
+/* My Orders on the boutique look (tokens from cart-ui.css) */
+#page-orders.cx{background:var(--cx-bg)}
+#orders-list{display:flex;flex-direction:column;gap:14px;padding:0 16px}
+.ord-loading{text-align:center;padding:48px 20px;color:var(--cx-muted);font-family:var(--cx-serif);font-style:italic;font-size:16px}
+.ord-card{background:var(--cx-card);border:1px solid var(--cx-line);border-radius:22px;padding:16px 18px;box-shadow:0 10px 30px -20px rgba(58,10,70,.22)}
+.ord-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.ord-no{font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--cx-gold)}
+.ord-chip{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.04em;padding:5px 11px;border-radius:999px;white-space:nowrap}
+.ord-chip i{width:6px;height:6px;border-radius:50%}
+.ord-title{font-family:var(--cx-serif);font-size:20px;font-weight:600;color:var(--cx-ink);line-height:1.15}
+.ord-more{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;color:var(--cx-brand);white-space:nowrap}
+.ord-meta{font-size:12px;color:var(--cx-muted);margin-top:3px}
+.ord-steps{display:flex;gap:4px;margin:14px 0 6px}
+.ord-steps span{flex:1;height:4px;border-radius:999px;background:var(--cx-line)}
+.ord-steps span.done{background:linear-gradient(90deg,#b08d57,#d9b87a)}
+.ord-steps span.now{background:linear-gradient(90deg,#6e0977,#9c0ca1);box-shadow:0 0 0 3px rgba(110,9,119,.1)}
+.ord-steps-l{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.06em;color:var(--cx-muted)}
+.ord-steps-l span:nth-child(2){color:var(--cx-brand);font-weight:700}
+.ord-foot{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--cx-line2);font-size:12px;color:var(--cx-muted)}
+.ord-total{font-family:var(--cx-serif);font-size:22px;font-weight:700;color:var(--cx-plum)}
+.ord-custom{display:block;width:100%;margin-top:12px;padding:11px;border-radius:999px;border:1px solid var(--cx-brand);background:#fff;color:var(--cx-brand);
+  font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:600;letter-spacing:.06em;cursor:pointer}
+.ord-rate{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px;padding-top:12px;border-top:1px dashed var(--cx-line);font-size:12px;color:var(--cx-muted)}
+.ord-stars{white-space:nowrap}
+.ord-star{cursor:pointer;font-size:21px;padding:0 1px;color:#e3d6cf;transition:color .15s}
+.ord-star.on{color:var(--cx-gold)}
+.ord-card :focus-visible{outline:2px solid var(--cx-gold);outline-offset:2px;border-radius:6px}
+/* Rating sheet */
+#rate-sheet .rate-card{width:100%;max-width:480px;background:var(--cx-card);border-radius:28px 28px 0 0;padding:12px 22px calc(24px + env(safe-area-inset-bottom));box-shadow:0 -20px 40px -20px rgba(36,5,45,.5)}
+#rate-sheet .rate-grab{width:40px;height:4px;border-radius:2px;background:#e6d9cf;margin:0 auto 16px}
+#rate-sheet .rate-eb{font-size:10px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--cx-gold)}
+#rate-sheet .rate-t{font-family:var(--cx-serif);font-size:28px;font-weight:600;color:var(--cx-plum);margin-top:4px}
+#rate-sheet .rate-t em{font-style:italic;color:var(--cx-gold);font-weight:500}
+#rate-sheet .rate-s{font-size:12.5px;color:var(--cx-muted);margin:4px 0 16px}
+#rate-sheet .rate-stars{display:flex;gap:10px;justify-content:center;margin:4px 0 18px}
+#rate-sheet .rate-star{cursor:pointer;font-size:38px;line-height:1;color:#e3d6cf;transition:color .15s,transform .15s}
+#rate-sheet .rate-star.on{color:var(--cx-gold)}
+#rate-sheet .rate-star:active{transform:scale(.9)}
+#rate-sheet .rate-star:focus-visible{outline:2px solid var(--cx-gold);outline-offset:3px;border-radius:6px}
+
 /* Product detail on the boutique look (tokens from cart-ui.css) */
 #page-detail.cx{padding-bottom:var(--bnav-space)!important}
 #page-detail .dhero{height:340px;background:linear-gradient(160deg,#f7efe9,#efdcea,#f7efe9)}
@@ -1803,14 +1843,13 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
     </div><!-- /profile -->
 
     <!-- ═══ MY ORDERS ═══ -->
-    <div class="page" id="page-orders">
-      <div style="background:linear-gradient(160deg,var(--d3),var(--d2));padding:8px 22px 18px">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
-            <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--white)">My Orders</div>
-        </div>
+    <div class="page cx" id="page-orders">
+      <div class="cx-hdr">
+        <div class="cx-back" role="button" tabindex="0" aria-label="Back" onclick="goBack()">‹</div>
+        <div><div class="cx-title">My <em>Orders</em></div><div class="cx-sub">Your recent orders and their progress</div></div>
       </div>
-      <div id="orders-list" style="padding:1px 22px;display:flex;flex-direction:column;gap:12px">
-        <div style="text-align:center;padding:40px 20px;color:var(--dim)">Loading orders...</div>
+      <div id="orders-list">
+        <div class="ord-loading">Loading your orders…</div>
       </div>
       <div style="height:20px"></div>
     </div><!-- /orders -->
@@ -3517,7 +3556,7 @@ async function loadAndShowOrders() {
     _myOrderRatings = cached.ratings;
     renderOrdersList(cached.orders);
   } else {
-    listEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--dim)">Loading...</div>';
+    listEl.innerHTML = '<div class="ord-loading">Loading your orders…</div>';
   }
 
   var ratings = loadMyOrderRatings();
@@ -3536,6 +3575,25 @@ async function loadAndShowOrders() {
   }
 }
 
+// Order status: label, colour, and where it sits on the progress line.
+var ORDER_STEPS = ['pending', 'confirmed', 'baking', 'packed', 'out_for_delivery', 'delivered'];
+var ORDER_STEPS_ACC = ['pending', 'confirmed', 'packed', 'shipped', 'delivered'];
+var ORDER_STATUS = {
+  pending:          { t: 'Placed',     c: '#9a6a12', b: '#fbf1dc' },
+  confirmed:        { t: 'Confirmed',  c: '#6e0977', b: '#f6ecf6' },
+  baking:           { t: 'Baking',     c: '#9a4a12', b: '#fbeee2' },
+  packed:           { t: 'Packed',     c: '#2f6a8a', b: '#e9f3f8' },
+  shipped:          { t: 'Shipped',    c: '#2f5aa8', b: '#eaf0fb' },
+  out_for_delivery: { t: 'On the way', c: '#2f5aa8', b: '#eaf0fb' },
+  delivered:        { t: 'Delivered',  c: '#2f7a4b', b: '#edf6ef' },
+  cancelled:        { t: 'Cancelled',  c: '#a33a52', b: '#fcf1f3' }
+};
+var ORDER_STEP_LABEL = { pending: 'Placed', confirmed: 'Confirmed', baking: 'Baking', packed: 'Packed', shipped: 'Shipped', out_for_delivery: 'On the way', delivered: 'Delivered' };
+
+function ordEsc(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
+}
+
 function renderOrdersList(orders) {
   var listEl = document.getElementById('orders-list');
   if (!listEl) return;
@@ -3543,36 +3601,34 @@ function renderOrdersList(orders) {
   if (json === _ordersShown) return;
   _ordersShown = json;
   if (!orders || orders.length === 0) {
-    listEl.innerHTML = '<div style="text-align:center;padding:40px 20px"><div style="font-size:40px;margin-bottom:12px">📦</div><div style="font-size:14px;font-weight:600;color:var(--white)">No orders yet</div><div style="font-size:12px;color:var(--dim);margin-top:6px">Your orders will appear here</div></div>';
+    listEl.innerHTML = '<div class="cx-empty"><div class="cx-empty-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8"/></svg></div>'
+      + '<div class="cx-empty-t">No orders yet</div><p>Your orders will appear here.</p>'
+      + '<button class="cx-cta" style="margin:22px auto 0;max-width:250px" onclick="setNav(\'home\');showPage(\'home\')">Browse menu <span class="cx-arrow" aria-hidden="true">→</span></button></div>';
     return;
   }
 
-  var statusColors = {
-    pending:'rgba(255,180,0,.15)', confirmed:'rgba(107,47,206,.15)',
-    baking:'rgba(255,140,0,.15)', packed:'rgba(34,197,94,.15)',
-    out_for_delivery:'rgba(59,130,246,.15)', delivered:'rgba(34,197,94,.15)',
-    cancelled:'rgba(244,114,182,.15)'
-  };
-  var statusLabels = {
-    pending:'⏳ Pending', confirmed:'✅ Confirmed', baking:'🍫 Baking',
-    packed:'📦 Packed', out_for_delivery:'🚚 Out for Delivery',
-    delivered:'🎉 Delivered', cancelled:'❌ Cancelled'
-  };
-
   listEl.innerHTML = orders.map(function(o) {
     var items = o.order_items || [];
-    var itemSummary = items.length > 0
-      ? items[0].product_name + (items[0].pack_label ? ' · ' + items[0].pack_label : '') + (items.length > 1 ? ' +' + (items.length-1) + ' more' : '')
-      : 'Order items';
+    var first = items[0];
+    var title = first ? first.product_name : 'Your order';
+    var more = items.length > 1 ? ' <span class="ord-more">+ ' + (items.length - 1) + ' more</span>' : '';
+    var qty = items.reduce(function (n, i) { return n + (i.quantity || 1); }, 0);
+    var meta = first ? [first.pack_label, qty ? qty + (qty === 1 ? ' item' : ' items') : ''].filter(Boolean).join(' · ') : '';
     var isAcc = isAccessoryOrder(o.order_items);
-    var accStatusLabels = {
-      pending:'⏳ Pending', confirmed:'✅ Confirmed', packed:'📦 Packed',
-      shipped:'🚚 Shipped', delivered:'🎉 Delivered', cancelled:'❌ Cancelled'
-    };
-    var statusBg  = statusColors[o.status]  || 'rgba(255,255,255,.05)';
-    var statusLbl = (isAcc ? accStatusLabels[o.status] : statusLabels[o.status]) || o.status;
+    var st = ORDER_STATUS[o.status] || { t: o.status || 'Order', c: '#4a3a50', b: '#f3ece4' };
+    var date = o.created_at ? new Date(o.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    var pay = { cod: 'Cash on delivery', upi: 'UPI', wallet: 'NSDI Wallet', card: 'Card' }[o.payment_method] || (o.payment_method || '').toUpperCase();
 
-    var date = o.created_at ? new Date(o.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) : '';
+    // Progress line for orders still on their way.
+    var steps = isAcc ? ORDER_STEPS_ACC : ORDER_STEPS;
+    var at = steps.indexOf(o.status);
+    var progress = '';
+    if (at >= 0 && o.status !== 'delivered') {
+      progress = '<div class="ord-steps" aria-label="Order progress: ' + ordEsc(st.t) + '">'
+        + steps.map(function (k, i) { return '<span class="' + (i < at ? 'done' : i === at ? 'now' : '') + '"></span>'; }).join('')
+        + '</div><div class="ord-steps-l"><span>' + ORDER_STEP_LABEL[steps[0]] + '</span><span>' + ordEsc(st.t) + '</span><span>' + ORDER_STEP_LABEL[steps[steps.length - 1]] + '</span></div>';
+    }
+
     // Store custom order data in memory — avoids JSON escaping issues in HTML attributes
     if (!window._coData) window._coData = {};
     var customBtn = '';
@@ -3580,21 +3636,16 @@ function renderOrdersList(orders) {
       var co = Array.isArray(o.custom_orders) ? o.custom_orders[0] : o.custom_orders;
       if (co) {
         window._coData[o.order_number] = co;
-        customBtn = '<div onclick="showCustomOrderDetail(\'' + o.order_number + '\',\'' + o.status + '\')" '
-          + 'style="margin-top:10px;padding:9px;background:rgba(107,47,206,.1);border:1px solid rgba(107,47,206,.25);border-radius:10px;'
-          + 'font-size:12px;font-weight:700;color:var(--pl);text-align:center;cursor:pointer">🎂 View Custom Order Details</div>';
+        customBtn = '<button type="button" class="ord-custom" onclick="showCustomOrderDetail(\'' + o.order_number + '\',\'' + o.status + '\')">View custom order details</button>';
       }
     }
-return '<div style="background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:14px">'
-      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">'
-      + '<div style="font-size:13px;font-weight:700;color:var(--pl)">' + (o.order_number||'#'+o.id.slice(0,6)) + '</div>'
-      + '<div style="font-size:12px;font-weight:700;color:var(--white)">₹' + o.total + '</div>'
-      + '</div>'
-      + '<div style="font-size:12px;color:var(--white);margin-bottom:6px">' + itemSummary + '</div>'
-      + '<div style="display:flex;justify-content:space-between;align-items:center">'
-      + '<div style="font-size:11px;color:var(--dim)">' + date + ' · ' + (o.payment_method||'').toUpperCase() + '</div>'
-      + '<div style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;background:' + statusBg + ';color:var(--white)">' + statusLbl + '</div>'
-      + '</div>'
+    return '<div class="ord-card">'
+      + '<div class="ord-top"><span class="ord-no">' + ordEsc(o.order_number || '#' + String(o.id).slice(0, 6)) + '</span>'
+      +   '<span class="ord-chip" style="color:' + st.c + ';background:' + st.b + '"><i style="background:' + st.c + '"></i>' + ordEsc(st.t) + '</span></div>'
+      + '<div class="ord-title">' + ordEsc(title) + more + '</div>'
+      + (meta ? '<div class="ord-meta">' + ordEsc(meta) + '</div>' : '')
+      + progress
+      + '<div class="ord-foot"><span>' + ordEsc(date) + (pay ? ' · ' + ordEsc(pay) : '') + '</span><span class="ord-total">₹' + ordEsc(o.total) + '</span></div>'
       + customBtn
       + orderRatingRow(o)
       + '</div>';
@@ -3620,12 +3671,10 @@ function orderRatingRow(o) {
   var stars = '';
   for (var n = 1; n <= 5; n++) {
     var on = r && n <= r.stars;
-    stars += '<span onclick="openRateOrder(\'' + o.id + '\',' + n + ')" style="cursor:pointer;font-size:20px;padding:0 2px;color:'
-      + (on ? 'var(--gold)' : 'rgba(255,255,255,.25)') + '">★</span>';
+    stars += '<span role="button" tabindex="0" aria-label="' + n + ' star' + (n > 1 ? 's' : '') + '" onclick="openRateOrder(\'' + o.id + '\',' + n + ')" class="ord-star' + (on ? ' on' : '') + '">★</span>';
   }
-  return '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;gap:8px">'
-    + '<div style="font-size:11px;color:var(--dim)">' + (r ? 'Your rating · tap to change' : 'How was it? Rate your order') + '</div>'
-    + '<div style="white-space:nowrap">' + stars + '</div></div>';
+  return '<div class="ord-rate"><span>' + (r ? 'Your rating · tap to change' : 'How was it? Rate your order') + '</span>'
+    + '<span class="ord-stars">' + stars + '</span></div>';
 }
 
 function openRateOrder(orderId, stars) {
@@ -3633,16 +3682,17 @@ function openRateOrder(orderId, stars) {
   if (!sheet) {
     sheet = document.createElement('div');
     sheet.id = 'rate-sheet';
-    sheet.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center';
+    sheet.className = 'cx';
+    sheet.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(24,8,30,.5);backdrop-filter:blur(3px);display:flex;align-items:flex-end;justify-content:center';
     sheet.onclick = function(e) { if (e.target === sheet) closeRateOrder(); };
-    sheet.innerHTML = '<div style="width:100%;max-width:480px;background:var(--d2,#1a0f24);border-radius:22px 22px 0 0;padding:20px 22px 26px;border-top:1px solid var(--bdr)">'
-      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:22px;font-weight:700;color:var(--white);margin-bottom:4px">Rate your order</div>'
-      + '<div style="font-size:12px;color:var(--dim);margin-bottom:14px">Your rating helps other customers and our kitchen.</div>'
-      + '<div id="rate-stars" style="display:flex;gap:8px;justify-content:center;margin-bottom:14px"></div>'
-      + '<textarea id="rate-comment" maxlength="500" rows="3" placeholder="Tell us more (optional)" '
-      + 'style="width:100%;box-sizing:border-box;background:rgba(255,255,255,.05);border:1px solid var(--bdr);border-radius:12px;padding:10px;color:var(--white);font:inherit;font-size:13px;resize:none"></textarea>'
+    sheet.innerHTML = '<div class="rate-card" role="dialog" aria-label="Rate your order"><div class="rate-grab"></div>'
+      + '<div class="rate-eb">Your feedback</div>'
+      + '<div class="rate-t">Rate your <em>order</em></div>'
+      + '<div class="rate-s">Your rating helps other customers and our kitchen.</div>'
+      + '<div id="rate-stars" class="rate-stars"></div>'
+      + '<label class="cx-field">Tell us more (optional)<textarea id="rate-comment" maxlength="500" rows="3" placeholder="What did you love? What could be better?" style="resize:none"></textarea></label>'
       + '<div id="rate-google" style="display:none;margin-top:12px"></div>'
-      + '<button id="rate-submit" onclick="submitRateOrder()" style="margin-top:14px;width:100%;padding:13px;border:0;border-radius:14px;background:var(--p,#6b2fce);color:#fff;font-weight:700;font-size:14px;cursor:pointer">Submit rating</button>'
+      + '<button id="rate-submit" class="cx-cta" style="margin-top:16px;width:100%" onclick="submitRateOrder()">Submit rating</button>'
       + '</div>';
     document.body.appendChild(sheet);
   }
@@ -3661,8 +3711,7 @@ function setRateStars(n) {
   sheet.dataset.stars = n;
   var html = '';
   for (var i = 1; i <= 5; i++) {
-    html += '<span onclick="setRateStars(' + i + ')" style="cursor:pointer;font-size:34px;color:'
-      + (i <= n ? 'var(--gold)' : 'rgba(255,255,255,.25)') + '">★</span>';
+    html += '<span role="button" tabindex="0" aria-label="' + i + ' star' + (i > 1 ? 's' : '') + '" onclick="setRateStars(' + i + ')" class="rate-star' + (i <= n ? ' on' : '') + '">★</span>';
   }
   document.getElementById('rate-stars').innerHTML = html;
 }
@@ -3698,9 +3747,9 @@ async function submitRateOrder() {
     }
     if (/^https:\/\//.test(_googleReviewUrl)) {
       var g = document.getElementById('rate-google');
-      g.innerHTML = '<div style="font-size:13px;color:var(--white);text-align:center;margin-bottom:10px">Thank you! 💜 Would you share it on Google too?</div>'
-        + '<button onclick="window.open(_googleReviewUrl,\'_blank\');closeRateOrder()" style="width:100%;padding:12px;border:1px solid var(--gold);border-radius:14px;background:transparent;color:var(--gold);font-weight:700;font-size:14px;cursor:pointer">⭐ Review us on Google</button>'
-        + '<div onclick="closeRateOrder()" style="text-align:center;font-size:12px;color:var(--dim);margin-top:10px;cursor:pointer">Maybe later</div>';
+      g.innerHTML = '<div style="font-family:var(--cx-serif);font-size:18px;color:var(--cx-plum);text-align:center;margin-bottom:12px">Thank you! Would you share it on Google too?</div>'
+        + '<button class="cx-cta" style="width:100%;background:#fff;color:#8a6a33;box-shadow:none;border:1px solid var(--cx-gold)" onclick="window.open(_googleReviewUrl,\'_blank\');closeRateOrder()">Review us on Google</button>'
+        + '<button type="button" onclick="closeRateOrder()" style="display:block;margin:12px auto 0;border:0;background:none;font:inherit;font-size:12.5px;color:var(--cx-muted);cursor:pointer">Maybe later</button>';
       g.style.display = '';
       btn.style.display = 'none';
       return;
@@ -7005,7 +7054,7 @@ async function debugProducts() {
   else { console.log('variants columns:', Object.keys(v[0])); console.log('variants row:', v[0]); }
 }
 document.addEventListener('keydown', function (e) {
-  var t = e.target && e.target.closest && e.target.closest('.ntab');
+  var t = e.target && e.target.closest && e.target.closest('.ntab,[role="button"][tabindex]');
   if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); t.click(); }
 });
 function setNav(name) {
