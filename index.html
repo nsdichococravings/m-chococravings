@@ -1066,6 +1066,68 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
     box-shadow:0 18px 40px -18px rgba(58,10,70,.35)}
 }
 
+/* Profile on the boutique look (tokens from cart-ui.css) */
+#page-profile.cx{background:var(--cx-bg)}
+#page-profile .prof-hero{min-height:0;text-align:center;padding:26px 20px 22px;
+  background:radial-gradient(120% 70% at 50% 0%,#f3e3f1 0%,rgba(250,246,240,0) 70%),var(--cx-bg)}
+#page-profile .pavatar{width:88px;height:88px;margin:0 auto 14px;border-radius:50%;border:0;position:relative;
+  display:flex;align-items:center;justify-content:center;font-family:var(--cx-serif);font-size:34px;font-weight:600;letter-spacing:.02em;color:#ffe9c2;
+  background:radial-gradient(circle at 30% 25%,#8e1a8f,#3a0a46 70%);
+  box-shadow:0 0 0 3px var(--cx-bg),0 0 0 4.5px var(--cx-gold),0 16px 30px -14px rgba(58,10,70,.6)}
+#page-profile .pname{font-family:var(--cx-serif);font-size:30px;font-weight:600;color:var(--cx-plum);line-height:1.05;margin:0 0 4px;letter-spacing:-.01em}
+#page-profile .pemail{font-size:12.5px;color:var(--cx-muted);letter-spacing:.02em;margin-bottom:18px}
+#page-profile .pstats{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin:0 auto;max-width:420px;background:var(--cx-card);
+  border:1px solid var(--cx-line);border-radius:20px;padding:14px 4px;box-shadow:0 10px 30px -18px rgba(58,10,70,.18)}
+#page-profile .pstat{background:none;border:0;border-radius:0;padding:0 6px}
+#page-profile .pstat+.pstat{border-left:1px solid var(--cx-line)}
+#page-profile .pstat-n{font-family:var(--cx-serif);font-size:26px;font-weight:700;color:var(--cx-plum);line-height:1.1}
+#page-profile .pstat-l{font-size:9.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--cx-gold);margin-top:3px}
+
+/* Membership card: dark plum with gold lettering; the foil colour follows the tier */
+#page-profile .lcard{--foil:#e8c46a;min-height:0;position:relative;overflow:hidden;margin:18px 16px 6px;padding:20px 20px 18px;border-radius:24px;border:1px solid rgba(255,255,255,.08);
+  background:radial-gradient(120% 90% at 100% 0%,rgba(255,233,194,.16),transparent 55%),linear-gradient(135deg,#2b0a35 0%,#5a0b63 55%,#1a0820 100%);
+  color:#fff;box-shadow:0 18px 36px -20px rgba(36,5,45,.75)}
+#page-profile .lcard::after{content:"";position:absolute;right:-40px;bottom:-60px;width:180px;height:180px;border-radius:50%;border:1px solid rgba(255,255,255,.08);box-shadow:0 0 0 22px rgba(255,255,255,.03)}
+#page-profile .lcard.tier-bronze{--foil:#e0a875;background:radial-gradient(120% 90% at 100% 0%,rgba(224,168,117,.2),transparent 55%),linear-gradient(135deg,#2b0a35 0%,#5a0b63 55%,#1a0820 100%);border-color:rgba(224,168,117,.25)}
+#page-profile .lcard.tier-silver{--foil:#dfe4ea;background:radial-gradient(120% 90% at 100% 0%,rgba(223,228,234,.2),transparent 55%),linear-gradient(135deg,#2b0a35 0%,#5a0b63 55%,#1a0820 100%);border-color:rgba(223,228,234,.25)}
+#page-profile .lcard.tier-gold{--foil:#f0cf7a;background:radial-gradient(120% 90% at 100% 0%,rgba(240,207,122,.24),transparent 55%),linear-gradient(135deg,#2b0a35 0%,#5a0b63 55%,#1a0820 100%);border-color:rgba(240,207,122,.3)}
+#page-profile .lcard.tier-platinum{--foil:#cfe9f5;background:radial-gradient(120% 90% at 100% 0%,rgba(207,233,245,.22),transparent 55%),linear-gradient(135deg,#1f1030 0%,#3f2a6b 55%,#120a1e 100%);border-color:rgba(207,233,245,.3)}
+#page-profile .lc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;position:relative;z-index:1}
+#page-profile .lc-eb{font-size:9.5px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.6)}
+#page-profile .lt{font-family:var(--cx-serif);font-size:24px;font-weight:600;color:var(--foil);margin:4px 0 0;line-height:1.05}
+#page-profile .tier-badge{flex:none;width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:21px;
+  color:var(--foil);background:rgba(255,255,255,.06);border:1px solid var(--foil)}
+#page-profile .lpts{position:relative;z-index:1;font-family:var(--cx-serif);font-size:34px;font-weight:700;color:#fff;line-height:1}
+#page-profile .lpts #prof-pts-num{font-family:var(--cx-serif);font-size:34px;font-weight:700;color:#fff}
+#page-profile .lpts span+span{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;color:rgba(255,255,255,.6);letter-spacing:.04em}
+#page-profile .lbar{position:relative;z-index:1;height:5px;background:rgba(255,255,255,.12);border-radius:999px;margin:14px 0 8px}
+#page-profile .lbar-fill{background:linear-gradient(90deg,var(--foil),#fff4d8);border-radius:999px;box-shadow:0 0 12px rgba(255,233,194,.35)}
+#page-profile .lsub{position:relative;z-index:1;font-size:11.5px;color:rgba(255,255,255,.65);letter-spacing:.02em}
+
+/* Options: grouped hairline lists with line icons */
+#page-profile .msec{margin:18px 16px 10px}
+#page-profile .mgrp{font-size:10px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--cx-gold);margin:18px 4px 10px;padding:0;display:flex;align-items:center;gap:10px}
+#page-profile .mgrp::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--cx-line),transparent)}
+#page-profile .mlist{background:var(--cx-card);border:1px solid var(--cx-line);border-radius:20px;overflow:hidden;box-shadow:0 10px 30px -20px rgba(58,10,70,.2)}
+#page-profile .mitem{display:flex;align-items:center;gap:14px;margin:0;padding:14px 16px;border:0;border-radius:0;background:transparent;cursor:pointer;transition:background .15s;outline:none}
+#page-profile .mitem+.mitem{border-top:1px solid var(--cx-line2)}
+#page-profile .mitem:active{transform:none;background:#fbf5ef}
+#page-profile .mitem:focus-visible{box-shadow:inset 0 0 0 2px var(--cx-gold)}
+#page-profile .mitem-static{cursor:default;opacity:1}
+#page-profile .mico{flex:none;width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--cx-plum);background:var(--cx-bg);border:1px solid var(--cx-line2)}
+#page-profile .mico svg{width:19px;height:19px}
+#page-profile .mico.gold{color:#8a6a33;background:var(--cx-gold-l);border-color:#ecdcbf}
+#page-profile .mtxt{flex:1;min-width:0}
+#page-profile .mtitle{font-size:14.5px;font-weight:600;color:var(--cx-ink)}
+#page-profile .msub{font-size:12px;color:var(--cx-muted);margin-top:2px}
+#page-profile .mbadge{flex:none;font-size:10px;font-weight:700;letter-spacing:.08em;padding:4px 10px;border-radius:999px;background:var(--cx-brand-l);color:var(--cx-brand);border:1px solid #efdcef}
+#page-profile #prof-refer-code{background:var(--cx-gold-l);color:#8a6a33;border-color:#ecdcbf}
+#page-profile .marrow{flex:none;display:flex;color:#c5b8c6}
+#page-profile .marrow svg{width:18px;height:18px}
+#page-profile .mitem-out .mtitle{color:#a33a52}
+#page-profile .mitem-out .mico{color:#a33a52;background:#fcf1f3;border-color:#f3dde2}
+#page-profile .mfoot{text-align:center;font-family:var(--cx-serif);font-style:italic;font-size:14px;color:var(--cx-muted);margin:22px 0 6px}
+
 /* Product detail on the boutique look (tokens from cart-ui.css) */
 #page-detail.cx{padding-bottom:var(--bnav-space)!important}
 #page-detail .dhero{height:340px;background:linear-gradient(160deg,#f7efe9,#efdcea,#f7efe9)}
@@ -1673,83 +1735,71 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
     </div><!-- /cart -->
 
     <!-- ═══ PROFILE ═══ -->
-    <div class="page" id="page-profile">
-      <div class="prof-hero" style="position:relative;">
-        <!--<div class="back" onclick="showPage('home')" style="top:16px;left:16px;">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div> -->
-        <div class="pavatar" id="prof-avatar">👤</div>
+    <div class="page cx" id="page-profile">
+      <div class="prof-hero">
+        <div class="pavatar" id="prof-avatar" aria-hidden="true">·</div>
         <div class="pname" id="prof-name">Guest</div>
         <div class="pemail" id="prof-phone">Not signed in</div>
         <div class="pstats">
           <div class="pstat"><div class="pstat-n" id="prof-orders">0</div><div class="pstat-l">Orders</div></div>
           <div class="pstat"><div class="pstat-n" id="prof-points">0</div><div class="pstat-l">Points</div></div>
-          <div class="pstat"><div class="pstat-n" id="prof-spent">₹0</div><div class="pstat-l">Enjoyed!</div></div>
+          <div class="pstat"><div class="pstat-n" id="prof-spent">0</div><div class="pstat-l">Pieces enjoyed</div></div>
         </div>
       </div>
+
       <div class="lcard">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
-          <div class="tier-badge bronze" id="prof-tier-badge"><i class="ti ti-medal"></i></div>
-          <div class="lt" id="prof-tier-lbl" style="margin:0">Bronze Member</div>
+        <div class="lc-top">
+          <div><div class="lc-eb">NSDI Membership</div><div class="lt" id="prof-tier-lbl">Bronze Member</div></div>
+          <div class="tier-badge bronze" id="prof-tier-badge"></div>
         </div>
-        <div class="lpts">
-            <span id="prof-pts-num">0</span> 
-            <span>points</span>
-        </div>
+        <div class="lpts"><span id="prof-pts-num">0</span><span> points</span></div>
         <div class="lbar"><div class="lbar-fill" id="prof-lbar" style="width:0%"></div></div>
         <div class="lsub" id="prof-tier-sub">Place your first order to earn points!</div>
       </div>
+
       <div class="msec">
         <div class="mgrp">Account</div>
-        <div class="mitem" onclick="loadAndShowOrders()">
-          <div class="mtxt"><div class="mtitle">My Orders</div><div class="msub" id="prof-orders-sub">Loading...</div></div>
-          <span class="mbadge" id="prof-active-badge" style="display:none">Active</span>
-          <span class="marrow">›</span>
-        </div>
-        <div class="mitem" onclick="loadAndShowAddresses()">
-          <div class="mtxt"><div class="mtitle">Delivery Addresses</div><div class="msub" id="prof-addr-sub">Loading...</div></div>
-          <span class="marrow">›</span>
-        </div>
-        <div class="mitem" id="prof-push-item" onclick="togglePushNotifications()" style="display:none">
-          <div class="mtxt"><div class="mtitle">🔔 Order Notifications & Offers</div><div class="msub" id="prof-push-sub">Off — tap to turn on</div></div>
-          <span class="marrow">›</span>
-        </div>
-        <div class="mitem" id="prof-refer-item" onclick="shareReferral()" style="display:none">
-          <div class="mtxt">
-            <div class="mtitle">🎁 Refer a Friend</div>
-            <div class="msub" id="prof-refer-sub">Share your code — you both get bonus points</div>
+        <div class="mlist">
+          <div class="mitem" role="button" tabindex="0" onclick="loadAndShowOrders()">
+            <span class="mico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8"/></svg></span>
+            <div class="mtxt"><div class="mtitle">My orders</div><div class="msub" id="prof-orders-sub">Loading...</div></div>
+            <span class="mbadge" id="prof-active-badge" style="display:none">Active</span><span class="marrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>
           </div>
-          <span class="mbadge" id="prof-refer-code"></span>
-          <span class="marrow">›</span>
+          <div class="mitem" role="button" tabindex="0" onclick="loadAndShowAddresses()">
+            <span class="mico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg></span>
+            <div class="mtxt"><div class="mtitle">Delivery addresses</div><div class="msub" id="prof-addr-sub">Loading...</div></div><span class="marrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>
+          </div>
+          <div class="mitem" id="prof-push-item" role="button" tabindex="0" onclick="togglePushNotifications()" style="display:none">
+            <span class="mico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></span>
+            <div class="mtxt"><div class="mtitle">Order updates &amp; offers</div><div class="msub" id="prof-push-sub">Off — tap to turn on</div></div><span class="marrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>
+          </div>
+          <div class="mitem" id="prof-refer-item" role="button" tabindex="0" onclick="shareReferral()" style="display:none">
+            <span class="mico gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="8" width="17" height="4" rx="1"/><path d="M5 12v8h14v-8M12 8v12"/><path d="M12 8c-1.5-3-5-3-5-1s3 1 5 1c2 0 5 1 5-1s-3.5-2-5 1z"/></svg></span>
+            <div class="mtxt"><div class="mtitle">Refer a friend</div><div class="msub" id="prof-refer-sub">Share your code — you both get bonus points</div></div>
+            <span class="mbadge" id="prof-refer-code"></span><span class="marrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>
+          </div>
         </div>
+
         <div class="mgrp">Preferences</div>
-        <div class="mitem" id="egg-pref-item" style="cursor:not-allowed;opacity:0.6;">
-          <div class="mtxt">
-            <div class="mtitle">Egg Preference</div>
-            <div class="msub" id="prof-egg">💚 Eggless</div>
-            <div style="font-size:10px;color:var(--faint);margin-top:2px">Set during signup · Cannot be changed</div>
+        <div class="mlist">
+          <div class="mitem mitem-static" id="egg-pref-item">
+            <span class="mico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.5 0 6.5 5.5 6.5 10a6.5 6.5 0 0 1-13 0C5.5 8.5 8.5 3 12 3z"/></svg></span>
+            <div class="mtxt"><div class="mtitle">Egg preference</div><div class="msub"><span id="prof-egg">Eggless</span> · set at sign-up</div></div>
+          </div>
+          <div class="mitem" role="button" tabindex="0" onclick="window.open('https://instagram.com/nsdi.chococravings','_blank')">
+            <span class="mico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.2 6.8v.01"/></svg></span>
+            <div class="mtxt"><div class="mtitle">Follow on Instagram</div><div class="msub">@nsdi.chococravings</div></div><span class="marrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>
           </div>
         </div>
-        <div class="mitem" onclick="window.open('https://instagram.com/nsdi.chococravings','_blank')">
-          <div class="mtxt"><div class="mtitle">Follow on Instagram</div><div class="msub">@nsdi.chococravings</div></div>
-          <span class="marrow">›</span>
+
+        <div class="mlist" style="margin-top:18px">
+          <div class="mitem mitem-out" role="button" tabindex="0" onclick="doLogout()">
+            <span class="mico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4"/><path d="M10 16l-4-4 4-4M6 12h10"/></svg></span>
+            <div class="mtxt"><div class="mtitle">Sign out</div></div>
+          </div>
         </div>
-        <!--
-        <div class="mitem" onclick="openThemePicker()" style="cursor:pointer">
-          <div class="mico" style="background:rgba(107,47,206,.15)">🎨</div>
-          <div class="mtxt"><div class="mtitle">App Theme</div><div class="msub" id="theme-current-lbl">Purple (Default)</div></div>
-          <div id="theme-dot-preview" style="width:18px;height:18px;border-radius:50%;background:var(--p);flex-shrink:0;margin-right:4px"></div>
-          <span class="marrow">›</span>
-        </div>-->
-        <div class="mitem" onclick="doLogout()">
-          <div class="mtxt"><div class="mtitle">Sign Out</div><div class="msub">See you soon!</div></div>
-          <span class="marrow">›</span>
-        </div>
+        <div class="mfoot">NSDI ChocoCravings · Happy to serve fresh</div>
       </div>
-      <div style="height:10px"></div>
-      
     </div><!-- /profile -->
 
     <!-- ═══ MY ORDERS ═══ -->
@@ -2851,7 +2901,7 @@ function updateProfileUI() {
   var phone = currentUser.phone || '';
   var city  = currentUser.city  ? ' · ' + currentUser.city : '';
   var el;
-  el = document.getElementById('prof-avatar'); if(el) el.textContent = '👤';
+  el = document.getElementById('prof-avatar'); if(el) el.textContent = profInitials(name);
   el = document.getElementById('prof-name');   if(el) el.textContent = name;
   el = document.getElementById('prof-phone');  if(el) el.textContent = phone + city;
     // Update home greeting with customer name
@@ -3245,12 +3295,28 @@ var PROFILE_TIERS = {
   platinum: { iconClass:'platinum', icon:'ti-diamond', label:'Platinum',      next:null }
 };
 
+// Tier emblems drawn inline, so they don't depend on the icon font loading.
+var PROFILE_TIER_ICONS = (function () {
+  var s = function (d) { return '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>'; };
+  var medal = s('<circle cx="12" cy="14.5" r="5"/><path d="M9 3.5l3 6 3-6M12 12.3l.8 1.6 1.7.2-1.2 1.2.3 1.7-1.6-.8-1.6.8.3-1.7-1.2-1.2 1.7-.2z"/>');
+  return { bronze: medal, silver: medal,
+    gold: s('<path d="M4 8l4 4 4-6 4 6 4-4-1.5 10h-13z"/><path d="M5.5 20h13"/>'),
+    platinum: s('<path d="M7 4h10l4 5-9 11L3 9z"/><path d="M3 9h18M12 20 8.5 9 12 4l3.5 5z"/>') };
+})();
+
+function profInitials(name) {
+  var parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return '·';
+  return ((parts[0][0] || '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+}
+
 function renderProfileStats(st) {
   var el;
+  el = document.getElementById('prof-avatar'); if (el) el.textContent = profInitials(st.name || (currentUser && currentUser.name));
   el = document.getElementById('prof-name');   if(el) el.textContent = st.name || (currentUser && currentUser.name) || '';
   el = document.getElementById('prof-phone');  if(el) el.textContent = (st.phone||'') + (st.city ? ' · '+st.city : '');
   el = document.getElementById('prof-egg');
-  if (el) el.textContent = st.eggPref === 'egg' ? '❤️ With Egg' : st.eggPref === 'both' ? '🍫 Both' : '💚 Eggless';
+  if (el) el.textContent = st.eggPref === 'egg' ? 'With egg' : st.eggPref === 'both' ? 'Both' : 'Eggless';
   el = document.getElementById('prof-orders'); if(el) el.textContent = st.orders;
   el = document.getElementById('prof-points'); if(el) el.textContent = st.pts;
   el = document.getElementById('prof-pts-num'); if(el) el.textContent = st.pts;
@@ -3261,7 +3327,7 @@ function renderProfileStats(st) {
   var badgeEl = document.getElementById('prof-tier-badge');
   if (badgeEl) {
     badgeEl.className = 'tier-badge ' + tc.iconClass;
-    badgeEl.innerHTML = '<i class="ti ' + tc.icon + '"></i>';
+    badgeEl.innerHTML = PROFILE_TIER_ICONS[tc.iconClass] || PROFILE_TIER_ICONS.bronze;
   }
   var cardEl = document.querySelector('.lcard');
   if (cardEl) {
@@ -3273,8 +3339,8 @@ function renderProfileStats(st) {
   el = document.getElementById('prof-lbar'); if(el) el.style.width = pct + '%';
   el = document.getElementById('prof-tier-sub');
   if (el) el.textContent = tc.next
-    ? (tc.next - st.lifetimePts) + ' pts more to unlock next tier!'
-    : '🏆 You have reached the highest tier!';
+    ? (tc.next - st.lifetimePts) + ' points to your next tier'
+    : 'You have reached the highest tier';
 
   el = document.getElementById('prof-orders-sub');
   if (el) el.textContent = st.orders + ' total · ' + st.active + ' active';
@@ -3986,7 +4052,7 @@ async function setEggPref(pref) {
   } catch(e){}
 
   // Update profile display
-  var labels = { eggless:'💚 Eggless', egg:'❤️ With Egg', both:'🍫 Both' };
+  var labels = { eggless:'Eggless', egg:'With egg', both:'Both' };
   var el = document.getElementById('prof-egg');
   if (el) el.textContent = labels[pref] || pref;
 
