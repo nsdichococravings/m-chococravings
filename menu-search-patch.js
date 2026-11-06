@@ -28,15 +28,16 @@ function injectMenuSearchBar() {
   if (!secLbl) return;
 
   var wrap = document.createElement('div');
-  wrap.style.cssText = 'padding:10px 20px 0;background:#fdf5e3';
+  wrap.id = 'menu-search-wrap';
+  wrap.style.cssText = 'padding:12px 16px 2px;background:transparent';
   wrap.innerHTML =
       '<div style="position:relative">'
-    + '<span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:14px;color:#9a8aaa">🔍</span>'
-    + '<style>#menu-search:empty:before{content:attr(data-placeholder);color:#82758b;pointer-events:none}</style>'
+    + '<span style="position:absolute;left:16px;top:50%;transform:translateY(-50%);display:flex;color:#8d7f90"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg></span>'
+    + '<style>#menu-search:empty:before{content:attr(data-placeholder);color:#ab9fae;pointer-events:none}#menu-search:focus{border-color:#6e0977!important;box-shadow:0 0 0 3px rgba(110,9,119,.08)}</style>'
     + '<div id="menu-search" contenteditable="plaintext-only" role="searchbox" tabindex="0" aria-multiline="false" inputmode="search" aria-label="Search menu items" data-placeholder="Search menu..." oninput="onMenuSearchInput()" '
-    +   'style="width:100%;min-height:44px;white-space:pre;overflow-x:auto;padding:12px 14px 12px 38px;border-radius:24px;border:1.5px solid rgba(18,10,30,0.1);'
-    +   'background:#fffbf2;font-family:\'Instrument Sans\',sans-serif;font-size:14px;outline:none;'
-    +   'box-sizing:border-box;color:#120a1e"></div>'
+    +   'style="width:100%;min-height:50px;white-space:pre;overflow-x:auto;padding:14px 16px 14px 44px;border-radius:999px;border:1px solid #ece2d8;'
+    +   'background:#fffdfa;font-family:\'DM Sans\',sans-serif;font-size:14.5px;outline:none;box-shadow:0 10px 26px -20px rgba(58,10,70,.3);'
+    +   'box-sizing:border-box;color:#24112b;transition:border-color .15s,box-shadow .15s"></div>'
     + '</div>';
 
   secLbl.parentNode.insertBefore(wrap, secLbl);
