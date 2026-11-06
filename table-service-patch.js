@@ -50,98 +50,65 @@ if (document.readyState === 'loading') { document.addEventListener('DOMContentLo
 function buildTablesBoardDOM() {
   var overlay = document.createElement('div');
   overlay.id = 'ts-board-overlay';
+  overlay.className = 'ts-ov';
   overlay.onclick = closeTablesBoard;
-  overlay.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);'
-    + 'z-index:3000;backdrop-filter:blur(4px)';
+  overlay.style.cssText = 'display:none;z-index:3000';
   document.body.appendChild(overlay);
 
   var sheet = document.createElement('div');
   sheet.id = 'ts-board-sheet';
-  sheet.style.cssText = 'display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;'
-    + 'border-radius:22px 22px 0 0;border-top:1px solid #e8d0f0;z-index:3001;'
-    + 'padding:0 0 28px;font-family:\'DM Sans\',sans-serif;max-height:88vh;overflow-y:auto';
+  sheet.className = 'ts-sheet';
+  sheet.style.cssText = 'display:none;z-index:3001;max-height:88vh';
   sheet.innerHTML =
-      '<div style="width:40px;height:4px;border-radius:2px;background:#ddd0ea;margin:14px auto 0"></div>'
-    + '<div style="padding:16px 20px 12px;border-bottom:1px solid #f0e8f8;display:flex;'
-    +   'align-items:center;justify-content:space-between">'
-    +   '<div>'
-    +     '<div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;'
-    +       'color:#9c0ca1;margin-bottom:4px">Dine-In</div>'
-    +     '<div style="font-size:18px;font-weight:700;color:#1a0820">Tables</div>'
-    +   '</div>'
-    +   '<div onclick="closeTablesBoard()" style="width:34px;height:34px;border-radius:50%;'
-    +     'background:#f5eeff;border:1px solid #e0c8f0;display:flex;align-items:center;'
-    +     'justify-content:center;cursor:pointer;font-size:14px;color:#6e0977">✕</div>'
-    + '</div>'
-    + '<div style="padding:12px 20px;display:flex;gap:12px;align-items:center"><span id="ts-board-status" role="status" aria-live="polite" style="flex:1;font-size:12px;color:#73547d"></span><button type="button" onclick="loadTablesStatus()" style="padding:10px 16px;border:1px solid #e0c8f0;border-radius:10px;background:#fff;color:#6e0977">Refresh</button></div>'
-    + '<div id="ts-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:18px 20px"></div>';
+      '<div class="ts-grab"></div>'
+    + '<div class="ts-hd"><div><div class="ts-eb">Dine-in</div><div class="ts-title">Tables</div></div>'
+    +   '<button type="button" class="ts-x" aria-label="Close" onclick="closeTablesBoard()">✕</button></div>'
+    + '<div class="ts-bar"><span id="ts-board-status" role="status" aria-live="polite"></span>'
+    +   '<button type="button" class="ts-pill" onclick="loadTablesStatus()">↻ Refresh</button></div>'
+    + '<div class="ts-legend"><span class="free">Free</span><span class="busy">Occupied</span><span class="rank">1 = waiting longest</span></div>'
+    + '<div id="ts-grid" class="ts-grid"></div>';
   document.body.appendChild(sheet);
 
   var tOverlay = document.createElement('div');
   tOverlay.id = 'ts-order-overlay';
+  tOverlay.className = 'ts-ov';
   tOverlay.onclick = closeTableOrderSheet;
-  tOverlay.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);'
-    + 'z-index:3100;backdrop-filter:blur(4px)';
+  tOverlay.style.cssText = 'display:none;z-index:3100';
   document.body.appendChild(tOverlay);
 
   var tSheet = document.createElement('div');
   tSheet.id = 'ts-order-sheet';
-  tSheet.style.cssText = 'display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;'
-    + 'border-radius:22px 22px 0 0;border-top:1px solid #e8d0f0;z-index:3101;'
-    + 'padding:0 0 28px;font-family:\'DM Sans\',sans-serif;max-height:92vh;overflow-y:auto';
+  tSheet.className = 'ts-sheet';
+  tSheet.style.cssText = 'display:none;z-index:3101;max-height:92vh';
   tSheet.innerHTML =
-      '<div style="width:40px;height:4px;border-radius:2px;background:#ddd0ea;margin:14px auto 0"></div>'
-    + '<div style="padding:16px 20px 12px;border-bottom:1px solid #f0e8f8">'
-    +   '<div style="display:flex;align-items:center;justify-content:space-between">'
-    +     '<div>'
-    +       '<div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;'
-    +         'color:#9c0ca1;margin-bottom:4px">Table</div>'
-    +       '<div id="ts-order-title" style="font-size:20px;font-weight:700;color:#1a0820">T1</div>'
-    +     '</div>'
-    +     '<div onclick="closeTableOrderSheet()" style="width:34px;height:34px;border-radius:50%;'
-    +       'background:#f5eeff;border:1px solid #e0c8f0;display:flex;align-items:center;'
-    +       'justify-content:center;cursor:pointer;font-size:14px;color:#6e0977">✕</div>'
-    +   '</div>'
-    +   '<input id="ts-cust-phone" type="tel" inputmode="numeric" maxlength="10" placeholder="📱 Customer phone (optional)" '
-    +     'style="width:100%;padding:12px 14px;border:1.5px solid #e0c8f0;border-radius:12px;font-size:14px;'
-    +     'font-family:\'DM Sans\',sans-serif;outline:none;box-sizing:border-box;margin-top:12px">'
-    + '<label style="display:block;margin-top:12px;font-size:13px;color:#6e0977">Friends’ NSDI card mobile numbers (comma separated)</label>'
-    + '<input id="ts-group-phones" type="text" autocomplete="off" placeholder="9876543210, 9123456780" style="width:100%;padding:12px;border:1px solid #e0c8f0;border-radius:12px;box-sizing:border-box">'
-    + '<button type="button" onclick="tsSaveGroupPhones(true)" style="margin-top:8px;padding:8px 12px;border-radius:8px;border:1px solid #e0c8f0;background:#fff;color:#6e0977">Save friends on existing bill</button>'
-    + '<small>Only include friends present. Each matching card earns one stamp per day after payment and collection.</small>'
+      '<div class="ts-grab"></div>'
+    + '<div class="ts-hd"><div><div class="ts-eb">Table</div><div id="ts-order-title" class="ts-title">T1</div></div>'
+    +   '<button type="button" class="ts-x" aria-label="Close" onclick="closeTableOrderSheet()">✕</button></div>'
+    + '<div class="ts-sec">'
+    +   '<label class="ts-lbl" for="ts-cust-phone">Customer phone</label>'
+    +   '<input id="ts-cust-phone" class="ts-in" type="tel" inputmode="numeric" maxlength="10" placeholder="Optional · 10 digits">'
+    +   '<label class="ts-lbl" for="ts-group-phones" style="margin-top:12px">Friends’ NSDI card numbers</label>'
+    +   '<input id="ts-group-phones" class="ts-in" type="text" autocomplete="off" placeholder="9876543210, 9123456780">'
+    +   '<div class="ts-help"><button type="button" class="ts-pill" onclick="tsSaveGroupPhones(true)">Save friends on bill</button>'
+    +   '<small>Only friends present. Each card earns one stamp a day after payment and collection.</small></div>'
     + '</div>'
-    + '<div style="padding:18px 20px;display:flex;flex-direction:column;gap:14px">'
-    +   '<div id="ts-items-list" style="display:flex;flex-direction:column;gap:8px">'
-    +     '<div style="font-size:12px;color:#b090c0;text-align:center;padding:10px">No items yet</div>'
-    +   '</div>'
-    +   '<input id="ts-search" type="text" placeholder="🔍 Search items..." oninput="tsFilterItems()" '
-    +     'style="width:100%;padding:12px 14px;border:1.5px solid #e0c8f0;border-radius:12px;font-size:14px;'
-    +     'font-family:\'DM Sans\',sans-serif;outline:none;box-sizing:border-box">'
-    +   '<div id="ts-cat-tabs" style="display:flex;gap:6px;overflow-x:auto;padding-bottom:2px"></div>'
-    +   '<div id="ts-item-grid" style="display:flex;flex-wrap:wrap;gap:8px;max-height:200px;'
-    +     'overflow-y:auto;padding:2px"></div>'
-    +   '<div style="display:flex;justify-content:space-between;align-items:center;background:#f5eeff;'
-    +     'border:1px solid #e0c8f0;border-radius:12px;padding:13px 16px">'
-    +     '<div style="font-size:13px;font-weight:700;color:#1a0820">Total</div>'
-    +     '<div id="ts-total" style="font-size:22px;font-weight:700;color:#6e0977;'
-    +       'font-family:\'Fraunces\',Georgia,serif">₹0</div>'
-    +   '</div>'
-    +   '<button id="ts-send-btn" onclick="tsSubmit()" style="width:100%;padding:15px;'
-    +     'background:linear-gradient(135deg,#6e0977,#9c0ca1);color:#fff;font-size:13px;font-weight:700;'
-    +     'border:none;border-radius:14px;cursor:pointer;letter-spacing:1px;font-family:\'DM Sans\',sans-serif">'
-    +     '➕ Send to Kitchen</button>'
-    +   '<button id="ts-bill-btn" onclick="tsBillAndClose()" style="display:none;width:100%;padding:15px;'
-    +     'background:rgba(34,197,94,0.1);color:#15803d;font-size:13px;font-weight:700;'
-    +     'border:1.5px solid rgba(34,197,94,0.35);border-radius:14px;cursor:pointer;letter-spacing:1px;'
-    +     'font-family:\'DM Sans\',sans-serif">💰 Bill &amp; Close Table</button>'
-    +   '<button id="ts-move-btn" onclick="openMoveTablePicker()" style="display:none;width:100%;padding:13px;margin-top:8px;'
-    +     'background:rgba(37,99,235,0.08);color:#2563eb;font-size:12px;font-weight:700;'
-    +     'border:1.5px solid rgba(37,99,235,0.25);border-radius:14px;cursor:pointer;letter-spacing:.5px;'
-    +     'font-family:\'DM Sans\',sans-serif">🔄 Move to Another Table</button>'
-    +   '<button id="ts-undo-btn" onclick="tsUndoDelivered()" style="display:none;width:100%;padding:13px;'
-    +     'background:rgba(220,38,38,0.08);color:#dc2626;font-size:12px;font-weight:700;'
-    +     'border:1.5px solid rgba(220,38,38,0.25);border-radius:14px;cursor:pointer;letter-spacing:.5px;'
-    +     'font-family:\'DM Sans\',sans-serif;margin-top:8px">↩️ Undo Delivered — back to Kitchen</button>'
+    + '<div class="ts-sec">'
+    +   '<div class="ts-h">This order</div>'
+    +   '<div id="ts-items-list" class="ts-lines"><div class="ts-none">No items yet</div></div>'
+    + '</div>'
+    + '<div class="ts-sec">'
+    +   '<div class="ts-h">Add items</div>'
+    +   '<label class="ts-search"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>'
+    +   '<input id="ts-search" type="text" placeholder="Search the menu…" oninput="tsFilterItems()"></label>'
+    +   '<div id="ts-cat-tabs" class="ts-tabs"></div>'
+    +   '<div id="ts-item-grid" class="ts-menu"></div>'
+    + '</div>'
+    + '<div class="ts-foot">'
+    +   '<div class="ts-total"><span>Total</span><b id="ts-total">₹0</b></div>'
+    +   '<button id="ts-send-btn" class="ts-cta" onclick="tsSubmit()">Send to kitchen</button>'
+    +   '<button id="ts-bill-btn" class="ts-cta ok" onclick="tsBillAndClose()" style="display:none">Bill &amp; close table</button>'
+    +   '<button id="ts-move-btn" class="ts-ghost" onclick="openMoveTablePicker()" style="display:none">Move to another table</button>'
+    +   '<button id="ts-undo-btn" class="ts-link" onclick="tsUndoDelivered()" style="display:none">Undo delivered — back to kitchen</button>'
     + '</div>';
   document.body.appendChild(tSheet);
 }
@@ -209,43 +176,23 @@ function renderTablesGrid(map, rankMap) {
   if (!grid) return;
   grid.innerHTML = TABLE_CODES.map(function (code) {
     var o = map[code];
-    if (o) {
-      var rawItems = o.items;
-      var items = Array.isArray(rawItems) ? rawItems : JSON.parse(rawItems || '[]');
-      var count = items.reduce(function (s, i) { return s + (i.qty || 1); }, 0);
-      var statusLbl = { pending: 'Pending', preparing: 'Preparing', ready: 'Ready!', delivered: 'Waiting for Bill' }[o.status] || o.status;
-      var staffBadge = o.staff_name ? ('<div style="font-size:10px;color:#8a6a3a;margin-top:2px">👤 ' + o.staff_name + '</div>') : '';
-      var collected = tsCollectedAmount(items);
-      var billLine = collected > 0
-        ? count + ' items · 💰 ₹' + Math.max(0, Math.round((o.total - collected) * 100) / 100) + ' left'
-        : count + ' items · ₹' + o.total;
-
-      var rank = rankMap[code];
-      var rankColors = ['#dc2626', '#f97316', '#eab308', '#8b5cf6', '#6b7280'];
-      var rankColor = rankColors[Math.min((rank || 1) - 1, rankColors.length - 1)];
-      var rankBadge = rank
-        ? '<div style="position:absolute;top:-8px;right:-8px;width:26px;height:26px;border-radius:50%;'
-          + 'background:' + rankColor + ';color:#fff;font-size:12px;font-weight:900;display:flex;'
-          + 'align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,0.25);'
-          + 'font-family:Fraunces,Georgia,serif;border:2px solid #fff">' + rank + '</div>'
-        : '';
-
-      return '<div onclick="openTableOrderSheet(\'' + code + '\')" style="position:relative;background:rgba(184,116,16,0.09);'
-        + 'border:1.5px solid rgba(184,116,16,0.35);border-radius:14px;padding:14px;cursor:pointer;'
-        + 'text-align:center">'
-        + rankBadge
-        + '<div style="font-family:Fraunces,Georgia,serif;font-size:22px;font-weight:900;color:#b87410">' + code + '</div>'
-        + '<div style="font-size:10px;font-weight:700;color:#b87410;letter-spacing:1px;margin-top:2px">' + statusLbl.toUpperCase() + '</div>'
-        + '<div style="font-size:12px;color:#8a6a3a;margin-top:6px">' + billLine + '</div>'
-        + staffBadge
-        + (o._tsOpenOrderCount>1?'<div style="font-size:11px;color:#8a6a3a;margin-top:5px">'+o._tsOpenOrderCount+' open bills · newest shown</div>':'')
-        + '</div>';
+    if (!o) {
+      return '<button type="button" class="ts-tb free" onclick="openTableOrderSheet(\'' + code + '\')">'
+        + '<div class="ts-tb-code">' + code + '</div><div class="ts-tb-st">Free</div><div class="ts-tb-s">Tap to start an order</div></button>';
     }
-    return '<div onclick="openTableOrderSheet(\'' + code + '\')" style="background:rgba(34,197,94,0.08);'
-      + 'border:1.5px solid rgba(34,197,94,0.3);border-radius:14px;padding:14px;cursor:pointer;text-align:center">'
-      + '<div style="font-family:Fraunces,Georgia,serif;font-size:22px;font-weight:900;color:#15803d">' + code + '</div>'
-      + '<div style="font-size:10px;font-weight:700;color:#15803d;letter-spacing:1px;margin-top:2px">FREE</div>'
-      + '</div>';
+    var items = tsParseItems(o.items) || [];
+    var count = items.reduce(function (n, i) { return n + (i.qty || 1); }, 0);
+    var statusLbl = { pending: 'New', preparing: 'Preparing', ready: 'Ready', delivered: 'Waiting for bill' }[o.status] || o.status;
+    var collected = tsCollectedAmount(items);
+    var amount = collected > 0 ? '₹' + Math.max(0, Math.round((o.total - collected) * 100) / 100) + ' left' : '₹' + o.total;
+    var rank = rankMap[code];
+    return '<button type="button" class="ts-tb busy s-' + o.status + '" onclick="openTableOrderSheet(\'' + code + '\')">'
+      + (rank ? '<span class="ts-rank r' + Math.min(rank, 4) + '" title="Order of arrival">' + rank + '</span>' : '')
+      + '<div class="ts-tb-code">' + code + '</div><div class="ts-tb-st">' + statusLbl + '</div>'
+      + '<div class="ts-tb-amt">' + amount + '</div>'
+      + '<div class="ts-tb-s">' + count + (count === 1 ? ' item' : ' items') + (o.staff_name ? ' · ' + kEsc(o.staff_name) : '') + '</div>'
+      + (o._tsOpenOrderCount > 1 ? '<div class="ts-tb-warn">' + o._tsOpenOrderCount + ' open bills · newest shown</div>' : '')
+      + '</button>';
   }).join('');
 }
 
@@ -298,14 +245,14 @@ function openTableOrderSheet(code) {
         _tsItems = (Array.isArray(rawItems) ? rawItems : JSON.parse(rawItems || '[]')).map(function (i) {
           return { name: i.name, price: i.price, qty: i.qty, delivered: !!i.delivered, prepared_by: i.prepared_by || null, prepared_at: i.prepared_at || null, complimentary: !!i.complimentary, paidQty: i.paidQty || 0, _origQty: i.qty };
         });
-        sendBtn.textContent = '➕ Add Items';
+        sendBtn.textContent = 'Add items';
         billBtn.style.display = 'block';
         undoBtn.style.display = res.data.status === 'delivered' ? 'block' : 'none';
         moveBtn.style.display = 'block';
         phoneInput.value = (res.data.customer_phone || '').replace(/^\+?91/, '');
         if(document.getElementById('ts-group-phones')) document.getElementById('ts-group-phones').value=(res.data.customer_group_phones || []).join(', ');
       } else {
-        sendBtn.textContent = '➕ Send to Kitchen';
+        sendBtn.textContent = 'Send to kitchen';
         billBtn.style.display = 'none';
         undoBtn.style.display = 'none';
         moveBtn.style.display = 'none';
@@ -357,7 +304,7 @@ async function kOpenOrderEditFromKitchen(orderId) {
   document.getElementById('ts-order-title').textContent = o.table_code ? o.table_code : ('#' + o.token);
   tsPopulateDropdown();
 
-  document.getElementById('ts-send-btn').textContent = '➕ Add Items';
+  document.getElementById('ts-send-btn').textContent = 'Add items';
   document.getElementById('ts-send-btn').disabled = false;
   document.getElementById('ts-cust-phone').value = (o.customer_phone || '').replace(/^\+?91/, '');
         if(document.getElementById('ts-group-phones')) document.getElementById('ts-group-phones').value=(o.customer_group_phones || []).join(', ');
@@ -406,11 +353,7 @@ function renderTsCatTabs() {
   if (!tabsEl) return;
   var cats = Object.keys(MENU).filter(function (c) { return MENU[c].items.length; });
   tabsEl.innerHTML = cats.map(function (c) {
-    var on = c === _tsActiveCat;
-    return '<div onclick="tsSetCat(\'' + c + '\')" style="flex-shrink:0;padding:7px 13px;border-radius:20px;'
-      + 'font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;'
-      + (on ? 'background:#6e0977;color:#fff' : 'background:#f5eeff;color:#6e0977;border:1px solid #e0c8f0')
-      + '">' + c + '</div>';
+    return '<button type="button" class="ts-tab' + (c === _tsActiveCat ? ' on' : '') + '" onclick="tsSetCat(\'' + c + '\')">' + kEsc(c) + '</button>';
   }).join('');
 }
 
@@ -438,16 +381,15 @@ function renderTsItemGrid(filterText) {
   }
   grid.innerHTML = items.length
     ? items.map(function (item) {
-        return '<div onclick="tsQuickAdd(\'' + item.name.replace(/'/g, "\\'") + '\',' + item.price + ')" '
-          + 'style="padding:9px 13px;border-radius:20px;background:#f5eeff;border:1.5px solid #e0c8f0;'
-          + 'font-size:12px;font-weight:600;color:#6e0977;cursor:pointer">' + item.name + ' · ₹' + item.price + '</div>';
+        return '<button type="button" class="ts-dish" onclick="tsQuickAdd(\'' + item.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'") + '\',' + item.price + ')">'
+          + '<span>' + kEsc(item.name) + '</span><b>₹' + item.price + '</b></button>';
       }).join('')
-    : '<div style="font-size:12px;color:#b090c0;padding:10px;text-align:center;width:100%">No items found</div>';
+    : '<div class="ts-none">No items found</div>';
 }
 
 function tsFilterItems() {
   var q = (document.getElementById('ts-search').value || '').trim();
-  document.getElementById('ts-cat-tabs').style.display = q ? 'none' : 'flex';
+  document.getElementById('ts-cat-tabs').style.display = q ? 'none' : '';
   renderTsItemGrid(q);
 }
 
@@ -483,40 +425,23 @@ function tsDecrementItem(idx) {
 function tsRenderItems() {
   var list = document.getElementById('ts-items-list');
   if (!list) return;
-  if (!_tsItems.length) {
-    list.innerHTML = '<div style="font-size:12px;color:#b090c0;text-align:center;padding:10px">No items yet</div>';
-    return;
-  }
+  if (!_tsItems.length) { list.innerHTML = '<div class="ts-none">No items yet · pick from the menu below</div>'; return; }
   list.innerHTML = _tsItems.map(function (item, i) {
     var isFree = !!item.complimentary;
-    return '<div style="display:flex;align-items:center;justify-content:space-between;'
-      + 'background:' + (isFree ? '#fff8e6' : '#f5eeff') + ';border:1px solid ' + (isFree ? 'rgba(245,196,48,0.4)' : '#e0c8f0') + ';'
-      + 'border-radius:10px;padding:10px 12px">'
-      + '<div style="flex:1;min-width:0">'
-      + '<div style="font-size:13px;font-weight:600;color:#1a0820;display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
-      + '<span>' + item.name + '</span>'
-      + '<span style="font-family:Fraunces,Georgia,serif;font-size:13px;font-weight:900;color:#fff;'
-      + 'background:' + (isFree ? '#b87410' : '#6e0977') + ';padding:2px 9px;border-radius:20px;flex-shrink:0">×' + item.qty + '</span>'
-      + (isFree ? '<span style="font-size:9px;font-weight:700;color:#b87410;background:rgba(245,196,48,0.2);padding:2px 7px;border-radius:10px">🎁 FREE</span>' : '')
-      + (item.paidQty > 0 ? '<span style="font-size:9px;font-weight:700;color:#15803d;background:rgba(74,222,128,0.15);padding:2px 7px;border-radius:10px">💰 ' + item.paidQty + '/' + item.qty + ' paid</span>' : '')
-      + '</div>'
-      + '<div style="font-size:11px;color:#9c0ca1;margin-top:2px;' + (isFree ? 'text-decoration:line-through' : '') + '">₹' + item.price + ' each</div>'
-      + '</div>'
-      + '<div style="font-size:13px;font-weight:700;color:' + (isFree ? '#b87410' : '#6e0977') + ';margin-right:8px;flex-shrink:0">'
-      + (isFree ? 'FREE' : ('₹' + (item.price * item.qty))) + '</div>'
-      + '<div onclick="tsToggleComplimentary(' + i + ')" title="Mark complimentary" style="width:26px;height:26px;border-radius:50%;'
-      + 'background:' + (isFree ? '#b87410' : '#fff') + ';border:1px solid ' + (isFree ? '#b87410' : '#e0c8f0') + ';display:flex;'
-      + 'align-items:center;justify-content:center;cursor:pointer;font-size:12px;margin-right:6px">🎁</div>'
-      + '<div onclick="tsDecrementItem(' + i + ')" style="width:26px;height:26px;border-radius:50%;'
-      + 'background:#fff;border:1px solid #e0c8f0;display:flex;align-items:center;'
-      + 'justify-content:center;cursor:pointer;font-size:16px;font-weight:700;color:#6e0977;margin-right:6px">−</div>'
-      + '<div onclick="tsQuickAdd(\'' + item.name.replace(/'/g, "\\'") + '\',' + item.price + ')" '
-      + 'style="width:26px;height:26px;border-radius:50%;background:#6e0977;color:#fff;display:flex;'
-      + 'align-items:center;justify-content:center;cursor:pointer;font-size:14px;font-weight:700;margin-right:6px">+</div>'
-      + '<div onclick="tsRemoveItem(' + i + ')" style="width:26px;height:26px;border-radius:50%;'
-      + 'background:#fff;border:1px solid #e0c8f0;display:flex;align-items:center;'
-      + 'justify-content:center;cursor:pointer;font-size:12px;color:#e05080">✕</div>'
-      + '</div>';
+    var nameArg = item.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    return '<div class="ts-line' + (isFree ? ' free' : '') + '">'
+      + '<div class="ts-line-i"><div class="ts-line-n">' + kEsc(item.name) + '</div>'
+      + '<div class="ts-line-m">₹' + item.price + ' each'
+      + (isFree ? ' <span class="ts-tag gold">Free</span>' : '')
+      + (item.paidQty > 0 ? ' <span class="ts-tag ok">' + item.paidQty + '/' + item.qty + ' paid</span>' : '') + '</div></div>'
+      + '<div class="ts-line-p">' + (isFree ? 'Free' : '₹' + (item.price * item.qty)) + '</div>'
+      + '<div class="ts-line-c">'
+      + '<button type="button" class="ts-rb gift' + (isFree ? ' on' : '') + '" title="Mark complimentary" aria-label="Mark complimentary" aria-pressed="' + isFree + '" onclick="tsToggleComplimentary(' + i + ')">'
+      + '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="9" width="16" height="11" rx="1.5"/><path d="M3 9h18M12 9v11M12 9c-1.5-3-5-3.5-5-1.2C7 9 12 9 12 9zM12 9c1.5-3 5-3.5 5-1.2C17 9 12 9 12 9z"/></svg></button>'
+      + '<div class="ts-step"><button type="button" aria-label="Fewer" onclick="tsDecrementItem(' + i + ')">−</button><span>' + item.qty + '</span>'
+      + '<button type="button" aria-label="More" onclick="tsQuickAdd(\'' + nameArg + '\',' + item.price + ')">+</button></div>'
+      + '<button type="button" class="ts-rb del" aria-label="Remove" onclick="tsRemoveItem(' + i + ')">✕</button>'
+      + '</div></div>';
   }).join('');
 }
 

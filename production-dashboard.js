@@ -908,7 +908,11 @@
     const url = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
     const a = document.createElement('a'); a.href = url; a.download = 'production-costs-' + today() + '.csv'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
+  // Remembered on this device, so a closed panel stays closed after a refresh
+  // until someone taps "Collections" to open it again.
+  const KITCHEN_HISTORY_KEY = 'cc_kitchen_collections_closed';
   let kitchenHistoryClosed = false;
+  try { kitchenHistoryClosed = localStorage.getItem(KITCHEN_HISTORY_KEY) === '1'; } catch (e) {}
   function histTime(value) { return new Date(value).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); }
   function renderKitchen() {
     const kitchen = document.getElementById('pg-kitchen'); if (!kitchen || !state.ready) return;
@@ -979,6 +983,7 @@
     kitchen.addEventListener('click', event => {
       if (event.target.closest('[data-action="hide-collections"], [data-action="show-collections"]')) {
         kitchenHistoryClosed = !!event.target.closest('[data-action="hide-collections"]');
+        try { localStorage.setItem(KITCHEN_HISTORY_KEY, kitchenHistoryClosed ? '1' : '0'); } catch (e) {}
         renderKitchen();
         kitchen.querySelector(kitchenHistoryClosed ? '[data-action="show-collections"]' : '[data-action="hide-collections"]').focus();
         return;
