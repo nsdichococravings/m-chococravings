@@ -462,6 +462,50 @@ body{background:var(--cream);font-family:'DM Sans','Instrument Sans',system-ui,s
 .step-lbl.done{color:var(--plum)}
 .step-det{color:#6e0977}
 
+
+/* Category tabs: one swipeable row, "All" expands to a grid */
+.tabs-row{display:flex;align-items:center;gap:8px;padding-bottom:14px;position:relative}
+#menu-tabs{flex:1;min-width:0;display:flex;flex-wrap:nowrap;gap:6px;overflow-x:auto;padding:2px 2px 2px 0;scrollbar-width:none;scroll-behavior:smooth;
+  -webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
+#menu-tabs::-webkit-scrollbar{display:none}
+#menu-tabs.expanded{flex-wrap:wrap;overflow:visible;-webkit-mask-image:none;mask-image:none}
+#menu-tabs .tab{white-space:nowrap}
+.tabs{padding-bottom:0}
+.tabs-more{flex:none;align-self:flex-start;display:flex;align-items:center;gap:6px;height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--rule);background:#fff;
+  color:var(--plum);font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:600;cursor:pointer}
+.tabs-more svg{width:16px!important;height:16px!important;flex:none}
+.tabs-more[aria-expanded="true"]{background:var(--gold-l);border-color:#ecdcbf;color:#8a6a33}
+.tabs-more:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+/* Compact header on phones */
+@media (max-width:599px){
+  .pg-hdr-row{padding-bottom:10px}
+  .pg-hdr-left .title{font-size:28px}
+  .pg-hdr-right{font-size:12.5px}
+  #menu-tabs .tab{padding:8px 14px;font-size:12px}
+}
+
+/* Slimmer menu cards */
+.mc-ph{aspect-ratio:4/3;font-size:48px}
+.mc-body{padding:10px 12px 12px}
+.mc-name{font-size:17px}
+.mc-tag{font-size:11px;margin:2px 0 8px}
+.mc-price{font-size:20px}
+.mc-add{padding:7px 12px;font-size:11.5px}
+.mc-step span{width:24px;height:24px}
+#items-list.menu-grid{gap:12px}
+@media (min-width:900px){#items-list.menu-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (min-width:1200px){#items-list.menu-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}
+
+/* Wide screens: header, search, section bar and menu share one centred width */
+@media (min-width:600px){
+  #pg-menu .pg-hdr{max-width:none;margin:0}
+  #pg-menu .pg-hdr-row,#pg-menu .tabs-row{max-width:1108px;margin-left:auto;margin-right:auto}
+  #menu-search-wrap{max-width:1140px;margin:0 auto;box-sizing:border-box}
+  #pg-menu .sec-lbl{max-width:1108px;margin-left:auto!important;margin-right:auto!important;box-sizing:border-box}
+  #items-list.menu-grid{padding-left:16px;padding-right:16px}
+}
+
 /* Phone field in the order sheet */
 .phone-field{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--rule);border-radius:999px;padding:0 18px;transition:border-color .15s,box-shadow .15s}
 .phone-field:focus-within{border-color:#6e0977;box-shadow:0 0 0 3px rgba(110,9,119,.08)}
@@ -487,7 +531,8 @@ body{background:var(--cream);font-family:'DM Sans','Instrument Sans',system-ui,s
       </div>
       <div class="pg-hdr-right">Quick · Fresh · Yours</div>
     </div>
-    <div class="tabs" id="menu-tabs" style="flex-wrap:wrap;gap:6px">
+    <div class="tabs-row">
+    <div class="tabs" id="menu-tabs">
       <div class="tab on-coffee" onclick="setTab('Coffee')">Coffee</div>
       <div class="tab"           onclick="setTab('Tea')">Tea</div>
       <div class="tab"           onclick="setTab('Desserts')">Desserts</div>
@@ -502,6 +547,11 @@ body{background:var(--cream);font-family:'DM Sans','Instrument Sans',system-ui,s
       <div class="tab" onclick="setTab('Blondie')"    id="tab-Blondie"    style="display:none">Blondie</div>
       <div class="tab" onclick="setTab('Cupcake')"    id="tab-Cupcake"    style="display:none">Cupcake</div>
       <div class="tab"           onclick="setTab('Others')"   id="tab-Others"   style="display:none">Fresh Juices</div>
+    </div>
+    <button type="button" class="tabs-more" id="tabs-more" aria-expanded="false" aria-controls="menu-tabs" onclick="toggleMenuTabs()">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg>
+      <span>All</span>
+    </button>
     </div>
   </div>
   <div class="sec-lbl">
@@ -1188,6 +1238,30 @@ window.addEventListener('popstate',function(e){
 });
 
 // ── TAB / RENDER ──────────────────────────────────────────────
+// Category tabs sit in one swipeable row; "All" opens every category as a
+// grid, and choosing one folds it back with the chosen tab in view.
+function toggleMenuTabs(open) {
+  var tabs = document.getElementById('menu-tabs'), btn = document.getElementById('tabs-more');
+  if (!tabs) return;
+  var on = typeof open === 'boolean' ? open : !tabs.classList.contains('expanded');
+  tabs.classList.toggle('expanded', on);
+  if (btn) {
+    btn.setAttribute('aria-expanded', on ? 'true' : 'false');
+    btn.querySelector('span').textContent = on ? 'Less' : 'All';
+  }
+  if (!on) showActiveMenuTab();
+}
+function showActiveMenuTab() {
+  var tabs = document.getElementById('menu-tabs');
+  var on = tabs && tabs.querySelector('.tab[class*="on-"]');
+  if (on && tabs.scrollWidth > tabs.clientWidth) {
+    tabs.scrollTo({ left: Math.max(0, on.offsetLeft - (tabs.clientWidth - on.offsetWidth) / 2), behavior: 'smooth' });
+  }
+}
+document.addEventListener('click', function (e) {
+  if (e.target.closest && e.target.closest('#menu-tabs .tab')) setTimeout(function () { toggleMenuTabs(false); }, 0);
+});
+
 function setTab(t){
   tab=t;
   document.querySelectorAll('.tab').forEach(function(el){
