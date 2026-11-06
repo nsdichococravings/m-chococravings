@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#fdf5e3"/>
 <title>On Store — ChocoCravings</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,400&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,400&family=Instrument+Sans:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="preconnect" href="https://yjbfditboewwpgyqzryd.supabase.co" crossorigin>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
 <script src="supabase-net.js?v=20261018"></script>
@@ -359,6 +359,118 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 .mc-step{display:flex;align-items:center;gap:4px;background:#1d0f24;color:#fff;border-radius:13px;padding:3px;font-weight:800;font-size:14px}
 .mc-step span{width:26px;height:26px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:10px;font-size:16px}
 .mc-step b{min-width:16px;text-align:center}
+
+/* ══ Boutique look: same ivory, plum, gold and type as the app (index.html, cart-ui.css) ══
+   Customer screens only; the Kitchen screen keeps its dark look. */
+:root{
+  --ink:#24112b; --cream:#faf6f0; --paper:#fffdfa; --muted:#8d7f90; --rule:#ece2d8;
+  --plum:#3a0a46; --gold:#b08d57; --gold-l:#f6eedf;
+  --serif:'Cormorant Garamond',Fraunces,Georgia,serif;
+}
+body{background:var(--cream);font-family:'DM Sans','Instrument Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+
+/* Header */
+.pg-hdr{background:rgba(255,253,250,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--rule)}
+.pg-hdr-left .sub{font-size:9.5px;letter-spacing:.26em;color:var(--gold)}
+.pg-hdr-left .title{font-family:var(--serif);font-size:34px;font-weight:600;color:var(--plum);letter-spacing:-.01em}
+.pg-hdr-left .title em{color:var(--gold);font-weight:500}
+.pg-hdr-left > div:last-child{background:var(--gold)!important;opacity:.6!important}
+.pg-hdr-right{font-family:var(--serif);font-size:14px;color:var(--muted);opacity:1}
+#back-home-btn,.back-btn{border:1px solid var(--rule)!important;background:#fff!important;color:var(--plum)!important}
+
+/* Category tabs: one quiet pill style instead of amber / green / purple blocks */
+.tabs{padding-bottom:14px}
+.tab{flex:0 0 auto;padding:9px 16px;border-radius:999px;border:1px solid var(--rule);background:#fff;color:#4a3a50;
+  font-size:12.5px;font-weight:600;letter-spacing:.01em}
+.tab.on-coffee,.tab.on-tea,.tab.on-desserts{background:var(--plum);border-color:var(--plum);color:#fff;box-shadow:0 8px 18px -10px rgba(58,10,70,.6)}
+
+/* Section label */
+.sec-lbl{background:transparent;padding:16px 20px 8px}
+.sec-dot{background:var(--gold)!important;width:6px;height:6px}
+.sec-name{color:var(--gold)!important;font-size:10px;letter-spacing:.24em}
+.sec-line{background:linear-gradient(90deg,var(--rule),transparent)}
+.sec-cnt{font-size:11px;color:var(--muted)}
+
+/* Menu cards */
+.mcard{background:var(--paper);border:1px solid var(--rule);box-shadow:0 12px 28px -20px rgba(58,10,70,.35)}
+.mcard.in-cart{border-color:#e2cfe2;box-shadow:0 0 0 3px rgba(110,9,119,.08),0 12px 28px -18px rgba(58,10,70,.4)}
+.mc-ph::after{background:linear-gradient(180deg,rgba(0,0,0,0) 62%,rgba(36,17,43,.28))}
+.mc-rate{background:rgba(255,253,250,.92);backdrop-filter:blur(6px);color:var(--ink)}
+.mc-rate em{color:var(--gold)}
+.mc-badge{font-size:9px;letter-spacing:.14em;text-transform:uppercase}
+.mc-best{background:rgba(58,10,70,.88);color:#ffe9c2}.mc-new{background:rgba(255,253,250,.92);color:var(--plum)}
+.mc-name{font-family:var(--serif);font-weight:600;font-size:19px;line-height:1.12;color:var(--ink)}
+.mc-tag{font-size:11.5px;color:var(--muted)}
+.mc-price{font-family:var(--serif);font-weight:700;font-size:22px;color:var(--plum)}
+.mc-add{border-radius:999px;background:linear-gradient(135deg,var(--plum),#6e0977);font-family:'DM Sans',sans-serif;font-weight:600;letter-spacing:.04em;
+  box-shadow:0 8px 16px -10px rgba(58,10,70,.6)}
+.mc-step{background:#fff;color:var(--plum);border:1px solid #e3d3e3;border-radius:999px}
+.mc-step span{color:#6e0977;border-radius:50%}
+.mc-step b{color:var(--ink)}
+
+/* Cart bar */
+.cart-inner{border-radius:999px;padding:15px 22px;background:linear-gradient(135deg,var(--plum) 0%,#6e0977 60%,#8e1a8f 100%);
+  box-shadow:0 0 0 1px rgba(176,141,87,.35) inset,0 16px 30px -12px rgba(58,10,70,.6)}
+.cart-cnt{font-family:var(--serif);font-size:15px;color:rgba(255,255,255,.7)}
+.cart-lbl{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase}
+.cart-tot{font-family:var(--serif);font-size:22px;font-weight:700;color:#ffe9c2}
+#cart-empty{color:var(--muted);letter-spacing:.2em}
+
+/* Order sheet */
+#backdrop{background:rgba(24,8,30,.5);backdrop-filter:blur(3px)}
+#sheet{background:var(--paper);border-top:1px solid var(--rule);box-shadow:0 -20px 40px -20px rgba(36,5,45,.45)}
+.handle span{background:#e6d9cf}
+.sheet-title{font-family:var(--serif);font-size:30px;font-weight:600;color:var(--plum)}
+.sheet-sub{font-family:'DM Sans',sans-serif;font-style:normal;font-size:12px;color:var(--muted)}
+.sheet-item{border-bottom:1px solid #f3ece4}
+.stripe{width:3px;background:var(--gold)!important}
+.si-name{font-family:var(--serif);font-size:17px;font-weight:600}
+.si-price{font-family:var(--serif);font-size:18px;font-weight:700;color:var(--plum)}
+.total-lbl,.pay-lbl{font-size:10px;letter-spacing:.24em;color:var(--gold)}
+.total-amt{font-family:var(--serif);font-size:34px;font-weight:700;color:var(--plum)}
+.pay-opt{border-radius:999px;border:1px solid var(--rule);background:#fff;color:#4a3a50;font-weight:600}
+.pay-opt.on{background:var(--plum);border-color:var(--plum);color:#fff;box-shadow:0 8px 18px -10px rgba(58,10,70,.6)}
+.place-btn{border-radius:999px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:18px}
+.place-upi,.place-cash{background:linear-gradient(135deg,var(--plum) 0%,#6e0977 60%,#8e1a8f 100%);box-shadow:0 0 0 1px rgba(176,141,87,.35) inset,0 14px 28px -12px rgba(58,10,70,.6)}
+
+/* Token ticket */
+.conf-strip{background:radial-gradient(120% 90% at 100% 0%,rgba(255,233,194,.18),transparent 55%),linear-gradient(135deg,#2b0a35 0%,#5a0b63 55%,#1a0820 100%)}
+.conf-strip .sub{letter-spacing:.26em;color:rgba(255,233,194,.7)}
+.conf-strip .tit{font-family:var(--serif);font-size:34px;font-weight:600}
+.ticket{background:var(--paper);border-radius:24px;box-shadow:0 18px 36px -22px rgba(36,5,45,.45),inset 0 0 0 1px var(--rule)}
+.tok-lbl,.ti-total-lbl,.perf-txt{letter-spacing:.24em;color:var(--gold)}
+.tok-num{font-family:var(--serif);font-size:60px;font-weight:700;color:var(--plum);letter-spacing:-1px}
+.tok-hint{font-family:var(--serif);font-size:14px}
+.qr-wrap{background:#fff;border:1px solid var(--rule);border-radius:16px}
+.ti-price{font-family:var(--serif);font-size:16px}
+.ti-total-amt{font-family:var(--serif);font-size:28px;font-weight:700;color:var(--plum)}
+.perf{background:var(--gold-l)}
+.conf-btn{display:block;margin:10px 16px 0;padding:16px;text-align:center;border-radius:999px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}
+.conf-btn-o{color:var(--plum);border:1px solid var(--plum);background:#fff}
+.conf-btn-p{margin-bottom:28px;color:#fff;background:linear-gradient(135deg,var(--plum) 0%,#6e0977 60%,#8e1a8f 100%);box-shadow:0 0 0 1px rgba(176,141,87,.35) inset,0 14px 28px -12px rgba(58,10,70,.6)}
+.conf-btn:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.track-btn{margin:20px 16px 0!important;border:1px solid var(--plum);border-radius:999px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--plum)}
+
+/* Order status */
+.status-hdr{background:rgba(255,253,250,.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--rule)}
+.status-hdr .tit{font-family:var(--serif);font-size:26px;font-weight:600;color:var(--plum)}
+.status-hdr .tok{letter-spacing:.2em;color:var(--gold)}
+.step-icon{border-radius:50%;border:1px solid var(--rule);font-family:var(--serif)}
+.step-icon.done{background:linear-gradient(135deg,var(--plum),#6e0977);border-color:transparent;box-shadow:0 8px 18px -8px rgba(58,10,70,.55)}
+.step-conn{width:1.5px}.step-conn.done{background:var(--gold)}
+.step-lbl{font-family:var(--serif);font-size:21px;font-weight:600}
+.step-lbl.done{color:var(--plum)}
+.step-det{color:#6e0977}
+
+/* Phone field in the order sheet */
+.phone-field{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--rule);border-radius:999px;padding:0 18px;transition:border-color .15s,box-shadow .15s}
+.phone-field:focus-within{border-color:#6e0977;box-shadow:0 0 0 3px rgba(110,9,119,.08)}
+.phone-field span{font-size:13px;font-weight:600;color:var(--muted)}
+.phone-field input{flex:1;min-width:0;padding:14px 0;border:0;background:transparent;font-family:'DM Sans',sans-serif;font-size:16px;font-weight:600;color:var(--ink);outline:none;letter-spacing:.04em}
+.phone-field input::placeholder{font-weight:400;color:#ab9fae;letter-spacing:0}
+
+/* Focus */
+.tab:focus-visible,.mc-add:focus-visible,.pay-opt:focus-visible,.place-btn:focus-visible,.cart-inner:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
 </style>
 </head>
 <body>
@@ -439,10 +551,10 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
     </div>
   </div>
   <div class="track-btn" onclick="goTo('pg-status')">Track Order Status →</div>
-  <div id="print-invoice-btn" onclick="printStoreInvoice(orderId)" style="display:none;margin:10px 16px 0;padding:14px;text-align:center;border-radius:14px;font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:900;color:#6e0977;background:transparent;border:2px solid #6e0977;cursor:pointer">
+  <div id="print-invoice-btn" class="conf-btn conf-btn-o" role="button" tabindex="0" onclick="printStoreInvoice(orderId)" style="display:none">
     🖨️ Print Invoice
   </div>
-  <div onclick="newOrder()" style="display:block;margin:10px 16px 24px;padding:14px;text-align:center;border-radius:14px;font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:900;color:#fff;background:#c2607a;cursor:pointer;box-shadow:0 4px 20px rgba(194,96,122,0.35)">
+  <div class="conf-btn conf-btn-p" role="button" tabindex="0" onclick="newOrder()">
   + New Order
   </div>
 </div>
@@ -719,15 +831,14 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
       <div class="total-amt" id="sheet-total">₹0</div>
     </div>
     <div style="margin-bottom:16px">
-      <div style="font-size:10px;letter-spacing:3px;color:#9a8aaa;font-weight:700;margin-bottom:8px">CUSTOMER PHONE <span style="opacity:0.5;font-size:9px;letter-spacing:1px">(FOR INVOICE)</span></div>
-      <div style="display:flex;align-items:center;gap:8px;background:#fdf5e3;border:1.5px solid rgba(18,10,30,0.1);border-radius:12px;padding:0 14px">
-        <span style="font-size:13px;font-weight:700;color:#9a8aaa">+91</span>
-        <input id="customer-phone-input" type="tel" maxlength="10" placeholder="Enter number"
-          style="flex:1;padding:13px 0;border:none;background:transparent;font-family:'Fraunces',Georgia,serif;font-size:16px;font-weight:700;color:#120a1e;outline:none"/>
+      <div class="pay-lbl">CUSTOMER PHONE <span style="opacity:0.6;letter-spacing:.08em">(for invoice)</span></div>
+      <div class="phone-field">
+        <span>+91</span>
+        <input id="customer-phone-input" type="tel" inputmode="numeric" maxlength="10" placeholder="Enter number" autocomplete="tel-national"/>
       </div>
     </div>
     <div style="margin-bottom:16px">
-      <div style="font-size:10px;letter-spacing:3px;color:#9a8aaa;font-weight:700;margin-bottom:8px">WHERE ARE YOU SEATED?</div>
+      <div class="pay-lbl">WHERE ARE YOU SEATED?</div>
       <div id="seat-opts" style="display:grid;grid-template-columns:repeat(5,1fr);gap:7px"></div>
       <div id="seat-err" style="display:none;font-size:11px;color:#dc2626;font-weight:700;margin-top:6px">Please choose your table so we can bring your order.</div>
     </div>
@@ -3283,7 +3394,7 @@ async function toggleStoreOpenStatus() {
 <script src="admin-command-center.js?v=20260928-admin-access"></script>
 <script src="store-patch.js?v=20260921-premium-email"></script>
 <script src="menu-art.js?v=20260956"></script>
-<script src="menu-search-patch.js?v=20260954-photo-cards"></script>
+<script src="menu-search-patch.js?v=20261106-boutique"></script>
 <script src="remember-phone-patch.js?v=20260952-table"></script>
 <script src="checkadminbadge-override.js?v=20261108-wallet"></script>
 <script src="production-purchases-patch.js?v=20261018"></script>
