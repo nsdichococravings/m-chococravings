@@ -78,8 +78,10 @@ var CC_CLOSED_TRANSFORM = 'translateX(-100%)';
 function ccSlideOpen() {
   if (!_ccAccessGranted) return;
   document.getElementById('acc-overlay').style.display = 'block';
-  document.getElementById('acc-sheet').style.transform = CC_OPEN_TRANSFORM;
-  document.getElementById('acc-tab').style.left = '360px';
+  var sheet = document.getElementById('acc-sheet');
+  sheet.style.transform = CC_OPEN_TRANSFORM;
+  // The panel is narrower than 360px on phones (max-width:88vw).
+  document.getElementById('acc-tab').style.left = (sheet.offsetWidth || 360) + 'px';
   _ccOpen = true;
   renderCommandCenter();
 }
@@ -93,48 +95,68 @@ function ccToggleSlide() {
   if (_ccOpen) ccSlideClosed(); else ccSlideOpen();
 }
 
+var CC_CSS = ''
+  + '#acc-overlay{position:fixed;inset:0;background:rgba(26,8,32,.5);z-index:498;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}'
+  + '#acc-sheet{position:fixed;top:0;left:0;bottom:0;width:360px;max-width:88vw;z-index:499;overflow-y:auto;background:#faf6f0;color:#24112b;'
+  +   'transform:translateX(-100%);transition:transform .32s cubic-bezier(.4,0,.2,1);font-family:"DM Sans","Instrument Sans",sans-serif;'
+  +   'box-shadow:18px 0 50px -20px rgba(26,8,32,.55);-webkit-font-smoothing:antialiased}'
+  + '.acc-hd{position:sticky;top:0;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;color:#fff;'
+  +   'padding:calc(22px + env(safe-area-inset-top)) 20px 22px;border-radius:0 0 26px 0;'
+  +   'background:radial-gradient(120% 90% at 100% 0%,rgba(255,233,194,.18),transparent 60%),linear-gradient(160deg,#2b0a35 0%,#5a0b63 60%,#1a0820 100%)}'
+  + '.acc-eb{font-size:10px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:rgba(255,233,194,.75)}'
+  + '.acc-t{font-family:"Cormorant Garamond",Georgia,serif;font-size:32px;font-weight:600;line-height:1;margin-top:6px}'
+  + '.acc-t em{font-style:italic;color:#e8c98f;font-weight:500}'
+  + '.acc-x{flex:none;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:14px;cursor:pointer}'
+  + '#acc-body{padding:18px 16px 30px}'
+  + '.acc-sec{margin-bottom:20px}'
+  + '.acc-h{display:flex;align-items:center;gap:10px;font-size:10px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:#b08d57;margin:0 4px 10px}'
+  + '.acc-h::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,#ece2d8,transparent)}'
+  + '.acc-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}'
+  + '.acc-card{position:relative;display:flex;flex-direction:column;align-items:flex-start;text-align:left;padding:14px 12px 13px;border-radius:18px;cursor:pointer;'
+  +   'background:#fffdfa;border:1px solid #ece2d8;font-family:inherit;box-shadow:0 10px 24px -20px rgba(58,10,70,.35);transition:transform .12s,border-color .15s}'
+  + '.acc-card:hover{border-color:#d9c3d9}.acc-card:active{transform:scale(.98)}'
+  + '.acc-ico{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;margin-bottom:10px;'
+  +   'background:radial-gradient(circle at 50% 40%,#fff,#f6eedf);box-shadow:0 0 0 1px #ecdcbf}'
+  + '.acc-ct{font-size:13px;font-weight:600;color:#24112b;line-height:1.25}'
+  + '.acc-cs{font-size:10.5px;color:#8d7f90;margin-top:3px;line-height:1.35}'
+  + '.acc-badge{display:none;position:absolute;top:10px;right:10px;min-width:20px;text-align:center;background:#a33a52;color:#fff;font-size:10px;font-weight:700;border-radius:999px;padding:2px 7px}'
+  + '.acc-none{text-align:center;padding:30px;color:#8d7f90;font-size:12.5px}'
+  + '#acc-tab{position:fixed;top:50%;left:0;transform:translateY(-50%);width:38px;height:84px;z-index:500;cursor:pointer;display:none;'
+  +   'align-items:center;justify-content:center;border-radius:0 18px 18px 0;color:#e8c98f;'
+  +   'background:linear-gradient(160deg,#3a0a46,#6e0977);box-shadow:0 0 0 1px rgba(217,184,122,.35) inset,6px 0 18px -6px rgba(58,10,70,.55);'
+  +   'transition:left .32s cubic-bezier(.4,0,.2,1)}'
+  + '#acc-tab svg{width:18px;height:18px}';
+
 function buildCommandCenterUI() {
+  if (!document.getElementById('acc-css')) {
+    var st = document.createElement('style'); st.id = 'acc-css'; st.textContent = CC_CSS; document.head.appendChild(st);
+  }
   var overlay = document.createElement('div');
   overlay.id = 'acc-overlay';
   overlay.onclick = function () { if (typeof closeAdminMenu === 'function') closeAdminMenu(); };
-  overlay.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(12,8,16,0.55);'
-    + 'z-index:498;backdrop-filter:blur(3px)';
+  overlay.style.display = 'none';
   document.body.appendChild(overlay);
 
   var sheet = document.createElement('div');
   sheet.id = 'acc-sheet';
-  sheet.style.cssText = 'display:none;position:fixed;top:0;left:0;bottom:0;width:360px;max-width:88vw;'
-    + 'background:linear-gradient(165deg,#fffbf2,#fdf5e3);z-index:499;'
-    + 'transform:translateX(-100%);transition:transform .32s cubic-bezier(.4,0,.2,1);'
-    + 'font-family:\'Instrument Sans\',sans-serif;overflow-y:auto;box-shadow:12px 0 40px rgba(18,10,30,0.25)';
+  sheet.setAttribute('role', 'dialog');
+  sheet.setAttribute('aria-label', 'Command Center');
+  sheet.style.display = 'none';
   sheet.innerHTML =
-      '<div style="padding:22px 20px 10px;display:flex;align-items:flex-start;justify-content:space-between">'
-    +   '<div>'
-    +     '<div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#c2607a">ADMIN</div>'
-    +     '<div style="font-family:Fraunces,Georgia,serif;font-size:20px;font-weight:900;color:#1a0820;margin-top:2px">🍫 Command Center</div>'
-    +   '</div>'
-    +   '<div onclick="closeAdminMenu()" style="width:32px;height:32px;border-radius:50%;'
-    +     'background:rgba(18,10,30,0.06);display:flex;align-items:center;justify-content:center;'
-    +     'cursor:pointer;font-size:14px;color:#6e0977;flex-shrink:0">✕</div>'
-    + '</div>'
-    + '<div id="acc-body" style="padding:6px 20px 28px"></div>';
+      '<div class="acc-hd"><div><div class="acc-eb">Admin</div><div class="acc-t">Command <em>Center</em></div></div>'
+    +   '<button type="button" class="acc-x" aria-label="Close" onclick="closeAdminMenu()">✕</button></div>'
+    + '<div id="acc-body"></div>';
   document.body.appendChild(sheet);
 
-  // Standalone, access-controlled tab — replaces the old floating pill
-  // entirely. Its own `left` position is synced (in ccSlideOpen/Closed)
-  // to sit at the panel's edge whether open or closed, so it reads as
-  // one attached handle even though it's a separate fixed element —
-  // avoids clipping issues a truly-nested child would hit against the
-  // panel's own overflow:auto scroll area.
+  // Standalone, access-controlled tab — its `left` is synced in
+  // ccSlideOpen/Closed so it always sits at the panel's edge.
   var tab = document.createElement('div');
   tab.id = 'acc-tab';
+  tab.setAttribute('role', 'button');
+  tab.setAttribute('aria-label', 'Command Center');
   tab.onclick = ccToggleSlide;
-  tab.style.cssText = 'position:fixed;top:50%;left:0px;transform:translateY(-50%);'
-    + 'width:40px;height:88px;background:linear-gradient(135deg,#6e0977,#9c0ca1);'
-    + 'border-radius:0 16px 16px 0;z-index:500;cursor:pointer;'
-    + 'display:none;flex-direction:column;align-items:center;justify-content:center;gap:4px;'
-    + 'box-shadow:4px 0 16px rgba(110,9,119,0.4);transition:left .32s cubic-bezier(.4,0,.2,1)';
-  tab.innerHTML = '<span style="font-size:16px">⚙️</span>';
+  tab.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">'
+    + '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>';
   document.body.appendChild(tab);
 }
 
@@ -149,37 +171,27 @@ function renderCommandCenter() {
   CC_CATEGORIES.forEach(function (cat) {
     var tools = (_ccTools[cat] || []).filter(function (t) { return !t.superAdminOnly || t._allowedSuper; });
     if (!tools.length) return;
-
-    html += '<div style="margin-bottom:18px">'
-      + '<div style="font-size:10px;font-weight:700;letter-spacing:2px;color:#c2607a;margin-bottom:10px">' + cat.toUpperCase() + '</div>'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-      + tools.map(function (t) { return ccToolCard(t); }).join('')
-      + '</div></div>';
+    html += '<div class="acc-sec"><div class="acc-h">' + cat + '</div><div class="acc-grid">'
+      + tools.map(function (t) { return ccToolCard(t); }).join('') + '</div></div>';
   });
 
-  body.innerHTML = html || '<div style="text-align:center;padding:30px;color:#9a8aaa;font-size:12px">No tools available.</div>';
+  body.innerHTML = html || '<div class="acc-none">No tools available.</div>';
 }
 
 function ccToolCard(t) {
-  var badgeHtml = t.badgeId
-    ? '<span id="' + t.badgeId + '-cc" style="display:none;background:#dc2626;color:#fff;font-size:9px;'
-      + 'font-weight:700;border-radius:20px;padding:2px 7px;position:absolute;top:10px;right:10px">0</span>'
-    : '';
+  var badgeHtml = t.badgeId ? '<span id="' + t.badgeId + '-cc" class="acc-badge">0</span>' : '';
   // icon/subtitle can be a plain string, or a function returning one —
   // the latter is for tools whose display changes based on live state
   // (e.g. the Store Open/Closed toggle), re-evaluated on every render.
   var icon = typeof t.icon === 'function' ? t.icon() : t.icon;
   var title = typeof t.title === 'function' ? t.title() : t.title;
   var subtitle = typeof t.subtitle === 'function' ? t.subtitle() : t.subtitle;
-  var iconBg = typeof t.iconBg === 'function' ? t.iconBg() : (t.iconBg || 'rgba(110,9,119,0.1)');
-  return '<div onclick="ccInvoke(this)" data-onclick-ref="' + ccRegisterCallback(t) + '" style="position:relative;'
-    + 'background:#fff;border:1.5px solid #f0e0f5;border-radius:16px;padding:14px 12px;cursor:pointer">'
+  return '<button type="button" class="acc-card" onclick="ccInvoke(this)" data-onclick-ref="' + ccRegisterCallback(t) + '">'
     + badgeHtml
-    + '<div style="width:36px;height:36px;border-radius:10px;background:' + iconBg + ';'
-    + 'display:flex;align-items:center;justify-content:center;font-size:18px;margin-bottom:8px">' + icon + '</div>'
-    + '<div style="font-size:12.5px;font-weight:700;color:#1a0820;line-height:1.3">' + title + '</div>'
-    + '<div style="font-size:10.5px;color:#9a8aaa;margin-top:2px;line-height:1.3">' + subtitle + '</div>'
-    + '</div>';
+    + '<span class="acc-ico">' + icon + '</span>'
+    + '<span class="acc-ct">' + title + '</span>'
+    + (subtitle ? '<span class="acc-cs">' + subtitle + '</span>' : '')
+    + '</button>';
 }
 
 // Callback refs — since onClick is a real function, not a string, we
