@@ -1203,6 +1203,61 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 .adr-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .adr-cancel{border:0;background:none;font-family:'DM Sans',sans-serif;font-size:12.5px;color:var(--cx-muted);cursor:pointer;padding:4px}
 
+/* Home on the boutique look (tokens from cart-ui.css) */
+#page-home.cx{background:var(--cx-bg)}
+#page-home .greet{padding:16px 22px 12px}
+#page-home .greet-main{font-family:var(--cx-serif);font-size:27px;font-weight:600;line-height:1.1;color:var(--cx-plum);letter-spacing:-.01em}
+#page-home .greet-main em{color:var(--cx-gold);font-style:italic;font-weight:500}
+
+/* Offers as quiet coupons instead of bright gradient banners */
+#page-home .promos{gap:12px;padding:2px 16px 8px}
+#page-home .promo{min-width:250px;padding:16px 18px;border-radius:20px;background:var(--cx-card);border:1px solid var(--cx-line);
+  box-shadow:0 10px 30px -20px rgba(58,10,70,.25)}
+#page-home .promo::after{display:none}
+#page-home .promo-a,#page-home .promo-b{background:var(--cx-card)}
+#page-home .promo-txt{font-size:9.5px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:var(--cx-gold)}
+#page-home .promo-big{font-family:var(--cx-serif);font-size:28px;font-weight:700;letter-spacing:0;line-height:1.05;color:var(--cx-plum);margin-top:2px}
+#page-home .promo-b .promo-big{color:#8a6a33}
+#page-home .promo-code{background:transparent;border:1px solid var(--cx-brand);color:var(--cx-brand);border-radius:999px;padding:6px 12px;font-size:10.5px;letter-spacing:.18em}
+#page-home .promo-b .promo-code{border-color:#b08d57;color:#8a6a33}
+
+/* Section header */
+.hm-sec{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:22px 20px 12px}
+.hm-eb{font-size:9.5px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--cx-gold)}
+.hm-t{font-family:var(--cx-serif);font-size:28px;font-weight:600;color:var(--cx-plum);line-height:1;margin-top:5px}
+.hm-t em{font-style:italic;color:var(--cx-gold);font-weight:500}
+.hm-all{flex:none;border:1px solid var(--cx-line);background:var(--cx-card);border-radius:999px;padding:8px 14px;font-family:'DM Sans',sans-serif;
+  font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--cx-brand);cursor:pointer}
+.hm-all:focus-visible{outline:2px solid var(--cx-gold);outline-offset:2px}
+
+/* Product cards */
+#featured-grid{display:flex;gap:14px;overflow-x:auto;padding:2px 16px 22px!important;scroll-snap-type:x mandatory;scroll-padding:0 16px;scrollbar-width:none}
+#featured-grid::-webkit-scrollbar{display:none}
+#featured-grid .feat-card{flex:0 0 168px;scroll-snap-align:start;background:var(--cx-card);border:1px solid var(--cx-line);border-radius:22px;overflow:hidden;cursor:pointer;
+  box-shadow:0 12px 28px -20px rgba(58,10,70,.35);transition:transform .25s,box-shadow .25s}
+@media (hover:hover){#featured-grid .feat-card:hover{transform:translateY(-4px);box-shadow:0 20px 36px -20px rgba(58,10,70,.45)}#featured-grid .feat-card:hover img{transform:scale(1.05)}}
+#featured-grid .feat-card:focus-visible{outline:2px solid var(--cx-gold);outline-offset:3px}
+.fc-img{position:relative;height:150px;overflow:hidden;background:linear-gradient(150deg,#f4e9ee,#efe2d4);display:flex;align-items:center;justify-content:center}
+.fc-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .5s}
+.fc-emoji{font-size:46px}
+.fc-tag{position:absolute;top:10px;left:10px;font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:4px 9px;border-radius:999px;
+  background:rgba(255,253,250,.9);color:#8a6a33;backdrop-filter:blur(6px)}
+.fc-body{padding:12px 13px 13px}
+.fc-name{font-family:var(--cx-serif);font-size:17px;font-weight:600;line-height:1.15;color:var(--cx-ink);min-height:2.3em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.fc-meta{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--cx-muted);margin-top:4px}
+.fc-veg{width:10px;height:10px;border-radius:2px;border:1.5px solid #2f7a4b;position:relative;box-sizing:border-box;flex:none}
+.fc-veg::after{content:"";position:absolute;inset:1.5px;border-radius:50%;background:#2f7a4b}
+.fc-veg.ee{border-color:#b4374f}.fc-veg.ee::after{background:#b4374f}
+.fc-foot{display:flex;align-items:flex-end;justify-content:space-between;gap:8px;margin-top:10px}
+.fc-price{display:block;font-family:var(--cx-serif);font-size:21px;font-weight:700;color:var(--cx-plum);line-height:1}
+.fc-rate{display:block;font-size:10.5px;font-weight:600;color:var(--cx-gold);margin-top:3px}
+#featured-grid .fc-add{width:34px;height:34px;border-radius:50%;border:1px solid #e3d3e3;background:#fff;color:var(--cx-brand);font-size:19px;font-weight:400;flex:none}
+#featured-grid .fc-add:active{background:var(--cx-brand-l);transform:scale(.92)}
+#featured-grid .fc-add:focus-visible{outline:2px solid var(--cx-gold);outline-offset:2px}
+
+/* Vibe Store teaser: rounded to match */
+#page-home > div[onclick="showPage('accessories')"]{border-radius:22px!important;box-shadow:0 14px 30px -20px rgba(36,5,45,.5);border:1px solid var(--cx-line)}
+
 /* Product detail on the boutique look (tokens from cart-ui.css) */
 #page-detail.cx{padding-bottom:var(--bnav-space)!important}
 #page-detail .dhero{height:340px;background:linear-gradient(160deg,#f7efe9,#efdcea,#f7efe9)}
@@ -1365,7 +1420,7 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
       </div>
     </nav>
     <!-- ═══ HOME ═══ -->
-    <div class="page active" id="page-home">
+    <div class="page active cx" id="page-home">
      <!-- <div class="hdr">
          <!--
           <div class="logo-eyebrow">Guilt-free desserts</div>
@@ -1539,18 +1594,12 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
         <div class="cat" onclick="selCat(this)"><div class="cat-i">🎂</div><div class="cat-l">Custom</div></div>
       </div> -->
 
-      <!-- FEATURED SECTION -->   
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 22px 8px">
-        <div>
-          <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--white);line-height:1">Our Brownies</div>
-          <div style="font-size:10px;color:var(--faint);margin-top:2px;letter-spacing:.5px">Freshly baked · No preservatives</div>
-        </div>
-        <div onclick="showPage('explore')" style="display:flex;align-items:center;gap:4px;background:rgba(110,9,119,.12);border:1px solid rgba(110,9,119,.25);border-radius:20px;padding:6px 12px;cursor:pointer">
-          <span style="font-size:11px;font-weight:700;color:var(--pl)">View all</span>
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4 2l4 4-4 4" stroke="var(--pl)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </div>
+      <!-- FEATURED SECTION -->
+      <div class="hm-sec">
+        <div><div class="hm-eb">Freshly baked daily</div><div class="hm-t">Our <em>Brownies</em></div></div>
+        <button type="button" class="hm-all" onclick="showPage('explore')">View all <span aria-hidden="true">→</span></button>
       </div>
-      <div id="featured-grid" style="display:flex;flex-direction:row;overflow-x:auto;gap:12px;padding:4px 22px 16px;scrollbar-width:none;">
+      <div id="featured-grid">
       <!-- loaded dynamically -->
       </div>
       <div id="pgrid-empty" style="display:none;text-align:center;padding:20px 22px 8px">
@@ -6922,93 +6971,38 @@ function renderFeaturedGrid(products) {
     return;
   }
 
-  // Override grid styles for horizontal scroll
-  grid.style.display       = 'flex';
-  grid.style.flexDirection = 'row';
-  grid.style.overflowX     = 'auto';
-  grid.style.gap           = '12px';
-  grid.style.padding       = '4px 22px 16px';
-  grid.style.scrollbarWidth = 'none';
 
-  grid.innerHTML = featured.map(function(p, i) {
+  grid.innerHTML = featured.map(function(p) {
     var sortedVariants = (p.product_variants || []).slice().sort(function(a,b){ return (a.price||0)-(b.price||0); });
     var price    = sortedVariants.length > 0 ? sortedVariants[0].price : 0;
     var pack     = sortedVariants.length > 0 ? sortedVariants[0].pack_label : '4pcs';
     var varIdx   = getVariantIndex(p.sku);
     var userPref = getUserEggPref();
-    var eggLabel = (userPref || p.egg_type) === 'eggless' ? '💚 Eggless' : '❤️ With Egg';
+    var eggless  = (userPref || p.egg_type) === 'eggless';
     var imgUrl   = getProductImage(p.sku);
-    var rating   = productRatingLabel(p.id, false);
-    var isBestSeller = i === 0;
-    var isNew        = i >= featured.length - 2;
+    var rating   = productRatingLabel(p.id, false); // real ratings only; '' when none
+    var emoji    = getEmojiForProduct(p.name);
+    var name     = ordEsc(p.name);
 
-    // Image section — real photo or gradient fallback
-    var imgSection = imgUrl
-      ? '<div style="width:100%;height:150px;position:relative;overflow:hidden;border-radius:0">'
-        + '<img src="' + imgUrl + '" alt="' + p.name + '" '
-        + 'style="width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s ease" '
-        + 'onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">'
-        // Fallback gradient behind image in case it fails
-        + '<div style="display:none;width:100%;height:100%;background:linear-gradient(135deg,#2D0060,#9c0ca1);align-items:center;justify-content:center;font-size:44px">'
-        + getEmojiForProduct(p.name) + '</div>'
-        // Gradient overlay for text readability
-        + '<div style="position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.05) 0%,rgba(0,0,0,.55) 100%)"></div>'
-        // Badges on image
-        + (isBestSeller ? '<div style="position:absolute;top:9px;left:9px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-size:9px;font-weight:800;padding:3px 8px;border-radius:10px;letter-spacing:.5px">🔥 BEST SELLER</div>' : '')
-        + (isNew && !isBestSeller ? '<div style="position:absolute;top:9px;left:9px;background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff;font-size:9px;font-weight:800;padding:3px 8px;border-radius:10px;letter-spacing:.5px">✨ NEW</div>' : '')
-        // Price on image bottom
-        + '<div style="position:absolute;bottom:9px;left:9px">'
-        + '<span style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:700;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.4)">₹' + price + '</span>'
-        + '<span style="font-size:9px;color:rgba(255,255,255,.7);margin-left:3px">/ ' + pack + '</span>'
-        + '</div>'
-        + '</div>'
-      // Pure gradient fallback if no image
-      : '<div style="width:100%;height:150px;background:linear-gradient(135deg,#2D0060,#9c0ca1);display:flex;align-items:center;justify-content:center;font-size:44px;position:relative">'
-        + getEmojiForProduct(p.name)
-        + (isBestSeller ? '<div style="position:absolute;top:9px;left:9px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-size:9px;font-weight:800;padding:3px 8px;border-radius:10px">🔥 BEST SELLER</div>' : '')
-        + '<div style="position:absolute;bottom:9px;left:9px"><span style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-weight:700;color:#fff">₹' + price + '</span><span style="font-size:9px;color:rgba(255,255,255,.7);margin-left:3px">/ ' + pack + '</span></div>'
-        + '</div>';
-
-    return '<div class="feat-card" '
-      + 'data-name="' + p.name + '" data-tier="' + (p.tier||'premium') + '" '
-      + 'data-egg="' + (p.egg_type||'eggless') + '" data-varidx="' + varIdx + '" '
-      + 'data-price="' + price + '" data-sku="' + (p.sku||'') + '" '
-      + 'data-cat="' + (p.category||'') + '" data-pack="' + pack + '" data-pid="' + (p.id||'') + '" '
-      + 'onclick="openDetail(this)" '
-      + 'style="flex-shrink:0;width:158px;background:var(--card);border-radius:20px;'
-      + 'overflow:hidden;border:1px solid var(--bdr);cursor:pointer;'
-      + 'transition:transform .25s,box-shadow .25s;position:relative">'
-
-      + imgSection
-
-      // Info below image
-      + '<div style="padding:10px 11px 11px">'
-      + '<div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:3px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + p.name + '</div>'
-      + '<div style="font-size:9px;color:var(--green);font-weight:600;margin-bottom:5px">' + eggLabel + ' · ' + (p.tier === 'couverture' ? '🌟 Couverture' : 'Premium') + '</div>'
-      + '<div style="display:flex;align-items:center;justify-content:space-between">'
-      + '<div style="font-size:10px;color:var(--gold)">' + rating + '</div>'
-      + '<button class="abtn" onclick="event.stopPropagation();quickAddCart(this)" '
-      + 'style="width:26px;height:26px;border-radius:8px;font-size:16px">+</button>'
-      + '</div>'
-      + '</div>'
-      + '</div>';
+    var img = imgUrl
+      ? '<img src="' + ordEsc(imgUrl) + '" alt="' + name + '" loading="lazy" decoding="async" '
+        + 'onerror="this.remove()">'
+      : '';
+    return '<div class="feat-card" role="button" tabindex="0" '
+      + 'data-name="' + name + '" data-tier="' + ordEsc(p.tier || 'premium') + '" '
+      + 'data-egg="' + ordEsc(p.egg_type || 'eggless') + '" data-varidx="' + varIdx + '" '
+      + 'data-price="' + price + '" data-sku="' + ordEsc(p.sku || '') + '" '
+      + 'data-cat="' + ordEsc(p.category || '') + '" data-pack="' + ordEsc(pack) + '" data-pid="' + ordEsc(p.id || '') + '" '
+      + 'onclick="openDetail(this)">'
+      + '<div class="fc-img"><span class="fc-emoji" aria-hidden="true">' + emoji + '</span>' + img
+      +   (p.tier === 'couverture' ? '<span class="fc-tag">Couverture</span>' : '') + '</div>'
+      + '<div class="fc-body">'
+      +   '<div class="fc-name">' + name + '</div>'
+      +   '<div class="fc-meta"><i class="fc-veg ' + (eggless ? 'eg' : 'ee') + '" aria-hidden="true"></i>' + (eggless ? 'Eggless' : 'With egg') + ' · ' + ordEsc(pack) + '</div>'
+      +   '<div class="fc-foot"><div><span class="fc-price">₹' + price + '</span>' + (rating ? '<span class="fc-rate">' + ordEsc(rating) + '</span>' : '') + '</div>'
+      +   '<button class="abtn fc-add" aria-label="Add ' + name + ' to cart" onclick="event.stopPropagation();quickAddCart(this)">+</button></div>'
+      + '</div></div>';
   }).join('');
-
-  // Add hover effect via event delegation
-  grid.querySelectorAll('.feat-card').forEach(function(card) {
-    card.addEventListener('mouseenter', function() {
-      this.style.transform  = 'translateY(-5px)';
-      this.style.boxShadow  = '0 16px 40px rgba(110,9,119,.3)';
-      var img = this.querySelector('img');
-      if (img) img.style.transform = 'scale(1.06)';
-    });
-    card.addEventListener('mouseleave', function() {
-      this.style.transform  = '';
-      this.style.boxShadow  = '';
-      var img = this.querySelector('img');
-      if (img) img.style.transform = '';
-    });
-  });
 }
 
 function renderExploreList(products) {
