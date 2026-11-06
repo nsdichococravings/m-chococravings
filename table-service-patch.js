@@ -669,130 +669,72 @@ function kPaidOnline(o) {
   return o.payment_status === 'paid' && ['upi', 'upi_qr', 'razorpay', 'gpay', 'phonepe'].indexOf(m) >= 0;
 }
 
+function kEsc(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
+}
+var K_ICON = {
+  recipe: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5.5c3-1.2 6-1 9 1 3-2 6-2.2 9-1V19c-3-1.2-6-1-9 1-3-2-6-2.2-9-1z"/><path d="M12 6.5V20"/></svg>',
+  coin: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M9.5 9h5M9.5 12h5M12 9c2 0 2 3 0 3l-2.5 3.5"/></svg>'
+};
+var K_STATUS = { pending: 'New', preparing: 'Preparing', ready: 'Ready', delivered: 'Served' };
+
 function renderKitchen(orders, loyaltyMap) {
   loyaltyMap = loyaltyMap || {};
   updateKitchenOrderCountBadge(orders.length);
   var list = document.getElementById('k-list');
-  if (!orders.length) { list.innerHTML = '<div class="k-empty">No pending orders</div>'; return; }
+  if (!orders.length) { list.innerHTML = '<div class="k-empty"><div class="k-empty-t">All caught up</div><div class="k-empty-s">New orders appear here the moment they come in.</div></div>'; return; }
   list.innerHTML = orders.map(function (o) {
     var rawItems = o.items;
     var itemsArr = Array.isArray(rawItems) ? rawItems : (typeof rawItems === 'string' ? JSON.parse(rawItems) : []);
     var age = ageStr(o.created_at);
-    var seat = kSeatLabel(o);
     var paidOnline = kPaidOnline(o);
+    var seat = o.customer_table ? (o.customer_table === 'TAKEAWAY' ? 'Takeaway' : 'Table ' + o.customer_table) : '';
     var headline = o.table_code
-      ? '🍽️ ' + o.table_code
-      : ('#' + o.token + (seat ? ' <span style="font-size:.8em;color:#f5c430">· ' + seat + '</span>' : ''));
+      ? '<div class="kt-tok">' + kEsc(o.table_code) + '</div><div class="kt-seat">Table service</div>'
+      : '<div class="kt-tok">#' + kEsc(o.token) + '</div>' + (seat ? '<div class="kt-seat">' + kEsc(seat) + '</div>' : '');
 
-    var metaLine;
+    var meta = [];
     if (o.table_code) {
-      var staffLine = o.staff_name ? ('👤 ' + o.staff_name) : '';
-      var timingBits = [];
-      if (o.preparing_at) {
-        var prepDuration = tsElapsedMin(o.preparing_at, o.ready_at || null);
-        timingBits.push('🔥 Prep ' + tsFormatDuration(prepDuration));
-      } else {
-        timingBits.push('⏳ Waiting ' + tsFormatDuration(tsElapsedMin(o.created_at, null)));
-      }
-      metaLine = [staffLine, timingBits.join(' · ')].filter(Boolean).join(' · ');
+      if (o.staff_name) meta.push('<span>' + kEsc(o.staff_name) + '</span>');
+      meta.push(o.preparing_at
+        ? '<span>Prep ' + tsFormatDuration(tsElapsedMin(o.preparing_at, o.ready_at || null)) + '</span>'
+        : '<span>Waiting ' + tsFormatDuration(tsElapsedMin(o.created_at, null)) + '</span>');
     } else {
-      var custBits = [];
-      if (o.customer_name) custBits.push('🙋 ' + o.customer_name);
-      if (o.customer_phone) custBits.push('📞 ' + o.customer_phone);
-      metaLine = custBits.length ? custBits.join('  ·  ') : '🙋 Walk-in (no details)';
+      if (o.customer_name) meta.push('<span>' + kEsc(o.customer_name) + '</span>');
+      if (o.customer_phone) meta.push('<span>' + kEsc(o.customer_phone) + '</span>');
+      if (!meta.length) meta.push('<span>Walk-in</span>');
     }
 
     var pmMap = { upi: 'UPI', upi_qr: 'UPI (QR)', cash: 'Cash', card: 'Card', razorpay: 'Razorpay', gpay: 'Google Pay', phonepe: 'PhonePe', split: 'Split Payment' };
-    var pmLabel = pmMap[(o.payment_method || '').toLowerCase()] || (o.payment_method || 'Cash');
-    var pay;
-    if (o.payment_status === 'paid') {
-      pay = { label: '✅ Paid · ' + pmLabel, bg: 'rgba(74,222,128,0.12)', color: '#4ade80', border: 'rgba(74,222,128,0.3)' };
-    } else if (o.payment_status === 'complimentary') {
-      pay = { label: '🎁 Complimentary', bg: 'rgba(192,132,252,0.12)', color: '#c084fc', border: 'rgba(192,132,252,0.3)' };
-    } else if ((o.payment_method || '').toLowerCase() === 'upi_qr') {
-      pay = { label: '📷 UPI QR · Check payment received', bg: 'rgba(245,158,11,0.12)', color: '#fb923c', border: 'rgba(245,158,11,0.3)' };
-    } else if ((o.payment_method || '').toLowerCase() === 'cash') {
-      pay = { label: '💵 COD · Pay at counter', bg: 'rgba(245,158,11,0.12)', color: '#fb923c', border: 'rgba(245,158,11,0.3)' };
-    } else {
-      pay = { label: '⏳ Payment Pending', bg: 'rgba(239,68,68,0.1)', color: '#f87171', border: 'rgba(239,68,68,0.3)' };
-    }
-    var payBadge = '<span style="display:inline-block;font-size:9.5px;font-weight:700;padding:3px 9px;'
-      + 'border-radius:20px;background:' + pay.bg + ';color:' + pay.color + ';border:1px solid ' + pay.border
-      + ';margin-left:8px;vertical-align:middle">' + pay.label + '</span>';
+    var pm = (o.payment_method || '').toLowerCase();
+    var pmLabel = pmMap[pm] || (o.payment_method || 'Cash');
+    var pay = o.payment_status === 'paid' ? ['ok', 'Paid · ' + pmLabel]
+      : o.payment_status === 'complimentary' ? ['plum', 'Complimentary']
+      : pm === 'upi_qr' ? ['warn', 'UPI QR · check payment received']
+      : pm === 'cash' ? ['warn', 'Cash · pay at counter']
+      : ['bad', 'Payment pending'];
 
-    var itemsHtml = o.table_code
-      ? (itemsArr || []).map(function (i, idx) {
-          var delivered = !!i.delivered;
-          var paidQty = i.complimentary ? i.qty : (i.paidQty || 0);
-          var fullyPaid = paidQty >= i.qty;
-          var partiallyPaid = paidQty > 0 && !fullyPaid;
-          var preparedTag = i.prepared_by
-            ? '<span style="font-size:9px;font-weight:700;color:#4ade80;background:rgba(74,222,128,0.12);'
-              + 'padding:2px 7px;border-radius:10px;margin-left:6px;flex-shrink:0">✅ ' + i.prepared_by + '</span>'
-            : '';
-          var compTag = i.complimentary
-            ? '<span style="font-size:9px;font-weight:700;color:#b87410;background:rgba(245,196,48,0.15);'
-              + 'padding:2px 7px;border-radius:10px;margin-left:6px;flex-shrink:0">🎁 FREE</span>'
-            : '';
-          var paidTag = fullyPaid && !i.complimentary
-            ? '<span style="font-size:9px;font-weight:700;color:#4ade80;background:rgba(74,222,128,0.15);'
-              + 'padding:2px 7px;border-radius:10px;margin-left:6px;flex-shrink:0">💰 PAID</span>'
-            : partiallyPaid
-              ? '<span style="font-size:9px;font-weight:700;color:#f5c430;background:rgba(245,196,48,0.15);'
-                + 'padding:2px 7px;border-radius:10px;margin-left:6px;flex-shrink:0">💰 ' + paidQty + '/' + i.qty + ' paid</span>'
-              : '';
-          var collectBtn = (!i.complimentary && !fullyPaid)
-            ? '<span onclick="openItemCollectPicker(\'' + o.id + '\',' + idx + ')" title="Collect payment for this item" '
-              + 'style="width:24px;height:24px;border-radius:7px;background:rgba(74,222,128,0.15);'
-              + 'border:1px solid rgba(74,222,128,0.35);display:flex;align-items:center;justify-content:center;'
-              + 'font-size:12px;cursor:pointer;flex-shrink:0">💰</span>'
-            : '';
-          var rowBg = fullyPaid && !i.complimentary
-            ? 'background:rgba(74,222,128,0.08);border-radius:8px;padding:5px 6px;margin:2px 0'
-            : partiallyPaid
-              ? 'background:rgba(245,196,48,0.08);border-radius:8px;padding:5px 6px;margin:2px 0'
-              : 'padding:5px 0';
-          return '<div style="display:flex;align-items:center;gap:9px;' + rowBg + '">'
-            + '<span onclick="kToggleItemDelivered(\'' + o.id + '\',' + idx + ')" style="width:18px;height:18px;border-radius:5px;flex-shrink:0;display:flex;'
-            + 'align-items:center;justify-content:center;font-size:11px;color:#0c0810;cursor:pointer;'
-            + 'border:1.5px solid ' + (delivered ? '#4ade80' : 'rgba(255,255,255,.25)') + ';'
-            + 'background:' + (delivered ? '#4ade80' : 'transparent') + '">' + (delivered ? '✓' : '') + '</span>'
-            + '<span onclick="kToggleItemDelivered(\'' + o.id + '\',' + idx + ')" style="flex:1;font-size:13px;font-weight:500;cursor:pointer;'
-            + 'color:' + (delivered ? 'rgba(245,234,220,.4)' : '#f5eadc') + ';'
-            + 'text-decoration:' + (delivered ? 'line-through' : 'none') + '">' + i.name + '</span>'
-            + preparedTag
-            + compTag
-            + paidTag
-            + '<span onclick="openItemRecipePopup(\'' + o.id + '\',' + idx + ')" style="width:24px;height:24px;border-radius:7px;'
-            + 'background:rgba(245,196,48,0.15);border:1px solid rgba(245,196,48,0.3);display:flex;align-items:center;'
-            + 'justify-content:center;font-size:12px;cursor:pointer;flex-shrink:0">📖</span>'
-            + collectBtn
-            + '<span style="font-size:12px;color:#c084fc;font-weight:700;background:rgba(192,132,252,0.12);'
-            + 'border-radius:8px;padding:2px 7px;flex-shrink:0">₹' + (i.price || 0) + '</span>'
-            + '<span style="font-size:12px;color:#f5c430;font-weight:700;flex-shrink:0">×' + i.qty + '</span>'
-            + '</div>';
-        }).join('')
-      : (itemsArr || []).map(function (i, idx) {
-          var preparedTag = i.prepared_by
-            ? '<span style="font-size:9px;font-weight:700;color:#4ade80;background:rgba(74,222,128,0.12);'
-              + 'padding:2px 7px;border-radius:10px;margin-left:6px;flex-shrink:0">✅ ' + i.prepared_by + '</span>'
-            : '';
-          var compTag = i.complimentary
-            ? '<span style="font-size:9px;font-weight:700;color:#b87410;background:rgba(245,196,48,0.15);'
-              + 'padding:2px 7px;border-radius:10px;margin-left:6px;flex-shrink:0">🎁 FREE</span>'
-            : '';
-          return '<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0">'
-            + '<span style="font-size:13px;color:#f5eadc;font-weight:500;flex:1">' + i.name + '</span>'
-            + preparedTag
-            + compTag
-            + '<span onclick="openItemRecipePopup(\'' + o.id + '\',' + idx + ')" style="width:24px;height:24px;border-radius:7px;'
-            + 'background:rgba(245,196,48,0.15);border:1px solid rgba(245,196,48,0.3);display:flex;align-items:center;'
-            + 'justify-content:center;font-size:12px;cursor:pointer;flex-shrink:0;margin-left:8px">📖</span>'
-            + '<span style="font-size:12px;color:#c084fc;font-weight:700;background:rgba(192,132,252,0.12);'
-            + 'border-radius:8px;padding:2px 7px;flex-shrink:0;margin-left:8px">₹' + (i.price || 0) + '</span>'
-            + '<span style="font-size:12px;color:#f5c430;font-weight:700;flex-shrink:0;margin-left:6px">×' + i.qty + '</span>'
-            + '</div>';
-        }).join('');
+    var tag = function (cls, t) { return '<span class="kt-tag ' + cls + '">' + t + '</span>'; };
+    var recipeBtn = function (idx) { return '<button type="button" class="kt-ic" title="Recipe" aria-label="Recipe" onclick="openItemRecipePopup(\'' + o.id + '\',' + idx + ')">' + K_ICON.recipe + '</button>'; };
+    var itemsHtml = (itemsArr || []).map(function (i, idx) {
+      var tags = (i.prepared_by ? tag('ok', '✓ ' + kEsc(i.prepared_by)) : '') + (i.complimentary ? tag('gold', 'Free') : '');
+      if (!o.table_code) {
+        return '<div class="kt-row"><span class="kt-qty">' + i.qty + '×</span><span class="kt-name">' + kEsc(i.name) + '</span>' + tags
+          + recipeBtn(idx) + '<span class="kt-price">₹' + (i.price || 0) + '</span></div>';
+      }
+      var delivered = !!i.delivered;
+      var paidQty = i.complimentary ? i.qty : (i.paidQty || 0);
+      var fullyPaid = paidQty >= i.qty, partiallyPaid = paidQty > 0 && !fullyPaid;
+      if (fullyPaid && !i.complimentary) tags += tag('ok', 'Paid');
+      else if (partiallyPaid) tags += tag('gold', paidQty + '/' + i.qty + ' paid');
+      var collect = (!i.complimentary && !fullyPaid)
+        ? '<button type="button" class="kt-ic ok" title="Collect payment for this item" aria-label="Collect payment" onclick="openItemCollectPicker(\'' + o.id + '\',' + idx + ')">' + K_ICON.coin + '</button>' : '';
+      return '<div class="kt-row' + (delivered ? ' done' : '') + (fullyPaid && !i.complimentary ? ' paid' : partiallyPaid ? ' part' : '') + '">'
+        + '<button type="button" class="kt-chk' + (delivered ? ' on' : '') + '" aria-label="Delivered" aria-pressed="' + delivered + '" onclick="kToggleItemDelivered(\'' + o.id + '\',' + idx + ')">' + (delivered ? '✓' : '') + '</button>'
+        + '<span class="kt-qty">' + i.qty + '×</span>'
+        + '<span class="kt-name" onclick="kToggleItemDelivered(\'' + o.id + '\',' + idx + ')">' + kEsc(i.name) + '</span>' + tags
+        + recipeBtn(idx) + collect + '<span class="kt-price">₹' + (i.price || 0) + '</span></div>';
+    }).join('');
 
     var primaryAction = kPrimaryActionFor(o);
 
@@ -803,18 +745,16 @@ function renderKitchen(orders, loyaltyMap) {
     if (typeof lcOrderPhones === 'function') lcOrderPhones(o).forEach(function(phone) {
       var loyaltyMember=loyaltyMap[lcLast10(phone)];
       if (!loyaltyMember) {
-        loyaltyBox += '<div style="padding:8px;color:#c9b5cf">NSDI card ' + lcMaskPhone(phone) + (loyaltyMap._pending ? ' · Checking card…' : loyaltyMap._unavailable ? ' · Lookup unavailable; refresh to retry' : ' · No card found') + '</div>';
+        loyaltyBox += '<div class="kt-card none">NSDI card ' + lcMaskPhone(phone) + (loyaltyMap._pending ? ' · Checking card…' : loyaltyMap._unavailable ? ' · Lookup unavailable; refresh to retry' : ' · No card found') + '</div>';
         return;
       }
       var lcAvailable = lcRewardsFor(loyaltyMember).filter(function (r) { return !loyaltyMember.suspended && r.status === 'available'; });
-      loyaltyBox += '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;'
-        + 'background:rgba(121,12,136,0.14);border:1.5px solid rgba(192,132,252,0.35);border-radius:12px;'
-        + 'padding:9px 14px;margin-bottom:10px">'
-        + '<div><span style="font-size:10px;font-weight:700;letter-spacing:1.5px;color:#c084fc">💳 ' + lcEsc(loyaltyMember.card_code) + '</span>'
-        + '<div style="font-size:10.5px;color:rgba(245,234,220,.6);margin-top:2px">' + lcEsc(loyaltyMember.name_pending ? 'Name needed' : loyaltyMember.name) + ' · Day ' + loyaltyMember.stamp_count + '/100 · ' + lcMaskPhone(loyaltyMember.phone) + (loyaltyMember.suspended ? ' · Suspended' : '') + '</div></div>'
-        + '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><button onclick="lcOpenPhone(&quot;' + lcEsc(loyaltyMember.phone) + '&quot;)" style="background:rgba(192,132,252,0.16);color:#e9d5ff;border:1px solid rgba(192,132,252,0.4);padding:7px 10px;border-radius:8px;font-size:10.5px;font-weight:600;cursor:pointer;white-space:nowrap">' + (loyaltyMember.name_pending ? 'Add name' : 'Edit name / card') + '</button>' + (!(loyaltyMember.schedule || []).length ? '<small style="background:rgba(245,196,48,0.16);color:#f5c430;border:1px solid rgba(245,196,48,0.4);border-radius:8px;padding:6px 10px;font-size:10.5px;font-weight:600;white-space:nowrap">⏳ Rewards pending admin setup</small>' : '') + lcAvailable.map(function (r) {
-            return '<button onclick="lcApplyRewardToOrder(\'' + o.id + '\',\'' + loyaltyMember.id + '\',' + r.day + ',\'' + String(r.item).replace(/'/g, "\\'") + '\')" '
-              + 'style="background:#c084fc;color:#1a0820;border:none;border-radius:8px;padding:7px 10px;font-size:10.5px;font-weight:700;cursor:pointer;white-space:nowrap">'
+      loyaltyBox += '<div class="kt-card">'
+        + '<div><div class="kt-card-code">' + lcEsc(loyaltyMember.card_code) + '</div>'
+        + '<div class="kt-card-s">' + lcEsc(loyaltyMember.name_pending ? 'Name needed' : loyaltyMember.name) + ' · Day ' + loyaltyMember.stamp_count + '/100 · ' + lcMaskPhone(loyaltyMember.phone) + (loyaltyMember.suspended ? ' · Suspended' : '') + '</div></div>'
+        + '<div class="kt-card-acts"><button class="kt-mini" onclick="lcOpenPhone(&quot;' + lcEsc(loyaltyMember.phone) + '&quot;)">' + (loyaltyMember.name_pending ? 'Add name' : 'Edit name / card') + '</button>'
+        + (!(loyaltyMember.schedule || []).length ? '<small class="kt-tag gold">Rewards pending admin setup</small>' : '') + lcAvailable.map(function (r) {
+            return '<button class="kt-mini on" onclick="lcApplyRewardToOrder(\'' + o.id + '\',\'' + loyaltyMember.id + '\',' + r.day + ',\'' + String(r.item).replace(/'/g, "\\'") + '\')">'
               + '🎁 ' + lcEsc(r.item) + '</button>';
           }).join('') + '</div>'
         + '</div>';
@@ -823,47 +763,19 @@ function renderKitchen(orders, loyaltyMap) {
     var collectedSoFar = o.table_code ? tsCollectedAmount(itemsArr) : 0;
     var remainingBill = Math.max(0, Math.round(((o.total || 0) - collectedSoFar) * 100) / 100);
     var totalBox = collectedSoFar > 0
-      ? '<div style="display:flex;justify-content:space-between;align-items:center;'
-        + 'background:linear-gradient(135deg,rgba(74,222,128,0.14),rgba(245,196,48,0.06));'
-        + 'border:1.5px solid rgba(74,222,128,0.4);border-radius:12px;padding:10px 14px;margin-bottom:10px">'
-        + '<div>'
-        + '<div style="font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(74,222,128,0.9)">REMAINING</div>'
-        + '<div style="font-size:10.5px;color:rgba(245,234,220,.6);margin-top:2px">💰 ₹' + collectedSoFar + ' collected of ₹' + (o.total || 0) + '</div>'
-        + '</div>'
-        + '<span style="font-family:Fraunces,Georgia,serif;font-size:26px;font-weight:900;color:#f5c430">₹' + remainingBill + '</span>'
-        + '</div>'
-      : '<div style="display:flex;justify-content:space-between;align-items:center;'
-        + 'background:linear-gradient(135deg,rgba(245,196,48,0.18),rgba(245,196,48,0.06));'
-        + 'border:1.5px solid rgba(245,196,48,0.4);border-radius:12px;padding:10px 14px;margin-bottom:10px">'
-        + '<span style="font-size:10px;font-weight:700;letter-spacing:2px;color:rgba(245,196,48,0.85)">TOTAL</span>'
-        + '<span style="font-family:Fraunces,Georgia,serif;font-size:26px;font-weight:900;color:#f5c430">₹' + (o.total || 0) + '</span>'
-        + '</div>';
+      ? '<div class="kt-total part"><div><div class="kt-total-l">Remaining</div><div class="kt-total-s">₹' + collectedSoFar + ' collected of ₹' + (o.total || 0) + '</div></div><b>₹' + remainingBill + '</b></div>'
+      : '<div class="kt-total"><div class="kt-total-l">Total</div><b>₹' + (o.total || 0) + '</b></div>';
 
-    var paidStyle = paidOnline
-      ? ' style="background:rgba(34,197,94,0.18);border:2px solid #22c55e;border-left:8px solid #22c55e;box-shadow:0 0 0 1px rgba(34,197,94,0.25)"'
-      : '';
-    var paidBanner = paidOnline
-      ? '<div style="background:#16a34a;color:#fff;font-size:12px;font-weight:800;letter-spacing:.5px;border-radius:9px;'
-        + 'padding:7px 10px;margin-bottom:9px;text-align:center">✅ PAID ONLINE · ' + pmLabel.toUpperCase() + ' · ₹' + (o.total || 0) + ' — do not collect</div>'
-      : '';
-    return '<div class="k-ticket" id="kt-' + o.id + '" data-s="' + o.status + '"' + paidStyle + '>'
-      + '<div class="k-top"><div class="k-tok">' + headline + '</div>'
-      + '<div class="k-badge">' + o.status.toUpperCase() + '</div>'
-      + '<div class="k-age">' + age + '</div></div>'
-      + paidBanner
-      + '<div style="font-size:11.5px;color:rgba(245,234,220,.65);margin-bottom:9px;font-weight:600">' + metaLine + payBadge + '</div>'
+    return '<div class="k-ticket' + (paidOnline ? ' kt-paid' : '') + '" id="kt-' + o.id + '" data-s="' + o.status + '">'
+      + '<div class="kt-head"><div class="kt-id">' + headline + '</div>'
+      + '<div class="kt-right"><span class="kt-st">' + (K_STATUS[o.status] || kEsc(o.status)) + '</span><span class="kt-age">' + age + '</span></div></div>'
+      + (paidOnline ? '<div class="kt-paidbar">Paid online · ' + pmLabel + ' · ₹' + (o.total || 0) + ' — do not collect</div>' : '')
+      + '<div class="kt-meta">' + meta.join('') + '<span class="kt-pay ' + pay[0] + '">' + pay[1] + '</span></div>'
       + loyaltyBox
-      + '<div style="background:rgba(0,0,0,0.22);border-radius:10px;padding:9px 12px;margin-bottom:10px">' + itemsHtml + '</div>'
+      + '<div class="kt-items">' + itemsHtml + '</div>'
       + totalBox
-      + '<div style="display:flex;gap:8px">'
-      + '<button class="k-btn" onclick="' + primaryAction.onclick + '" style="flex:1;padding:12px;'
-      + 'background:' + primaryAction.bg + ';border:1.5px solid ' + primaryAction.border + ';'
-      + 'color:' + primaryAction.color + ';font-size:12.5px;font-weight:700;border-radius:10px;cursor:pointer">'
-      + primaryAction.label + '</button>'
-      + '<button onclick="kToggleMoreActions(\'' + o.id + '\')" style="width:42px;flex-shrink:0;border-radius:10px;'
-      + 'background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:rgba(245,234,220,.6);'
-      + 'font-size:16px;cursor:pointer">⋯</button>'
-      + '</div>'
+      + '<div class="kt-acts"><button class="kt-go ' + (primaryAction.tone || '') + '" onclick="' + primaryAction.onclick + '">' + primaryAction.label + '</button>'
+      + '<button class="kt-more" aria-label="More actions" onclick="kToggleMoreActions(\'' + o.id + '\')">⋯</button></div>'
       + kMoreActionsRow(o)
       + '</div>';
   }).join('');
@@ -876,28 +788,28 @@ function renderKitchen(orders, loyaltyMap) {
 // obviously "next."
 function kPrimaryActionFor(o) {
   if (o.status === 'pending') {
-    return { label: '▶ Start Preparing', onclick: "kBump('" + o.id + "','preparing')",
+    return { tone: 'gold', label: 'Start preparing', onclick: "kBump('" + o.id + "','preparing')",
       bg: 'rgba(255,255,255,.05)', border: 'rgba(255,255,255,.09)', color: 'rgba(255,255,255,.4)' };
   }
   if (o.status === 'preparing') {
-    return { label: '✓ Mark Ready', onclick: "kBump('" + o.id + "','ready')",
+    return { tone: 'plum', label: 'Mark ready', onclick: "kBump('" + o.id + "','ready')",
       bg: 'rgba(192,132,252,.14)', border: 'rgba(192,132,252,.3)', color: '#c084fc' };
   }
   if (o.status === 'ready' && o.table_code) {
-    return { label: '🍽️ Mark All Delivered', onclick: "kMarkDelivered('" + o.id + "')",
+    return { tone: 'ok', label: 'Mark all delivered', onclick: "kMarkDelivered('" + o.id + "')",
       bg: 'rgba(74,222,128,.1)', border: 'rgba(74,222,128,.3)', color: '#4ade80' };
   }
   if (o.status === 'ready' && !o.table_code) {
-    return { label: '✓ Collected', onclick: "kCollectOrder('" + o.id + "','" + (o.payment_status || 'pending') + "'," + (o.total || 0) + ")",
+    return { tone: 'ok', label: 'Collected', onclick: "kCollectOrder('" + o.id + "','" + (o.payment_status || 'pending') + "'," + (o.total || 0) + ")",
       bg: 'rgba(74,222,128,.1)', border: 'rgba(74,222,128,.3)', color: '#4ade80' };
   }
   if (o.status === 'delivered' && o.table_code) {
     var remainingA = Math.max(0, Math.round(((o.total || 0) - tsCollectedAmount(tsParseItems(o.items))) * 100) / 100);
-    return { label: '💰 Mark Bill Collected', onclick: "openSplitPaymentPicker('" + o.id + "'," + remainingA + ",{type:'table',tableCode:'" + o.table_code + "'})",
+    return { tone: 'ok', label: 'Mark bill collected', onclick: "openSplitPaymentPicker('" + o.id + "'," + remainingA + ",{type:'table',tableCode:'" + o.table_code + "'})",
       bg: 'rgba(34,197,94,.12)', border: 'rgba(34,197,94,.35)', color: '#15803d' };
   }
   // fallback — shouldn't normally hit this, but keeps a safe default
-  return { label: 'Mark Ready', onclick: "kBump('" + o.id + "','ready')",
+  return { tone: 'plum', label: 'Mark ready', onclick: "kBump('" + o.id + "','ready')",
     bg: 'rgba(255,255,255,.05)', border: 'rgba(255,255,255,.09)', color: 'rgba(255,255,255,.4)' };
 }
 
@@ -921,13 +833,10 @@ function kMoreActionsRow(o) {
   items.push({ icon: '❌', label: 'Cancel', color: '#f87171', onclick: "kCancelOrder('" + o.id + "')" });
 
   var buttonsHtml = items.map(function (i) {
-    return '<div onclick="' + i.onclick + '" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;'
-      + 'padding:10px 4px;border-radius:9px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);'
-      + 'cursor:pointer;font-size:10.5px;font-weight:700;color:' + i.color + '">'
-      + '<span style="font-size:15px">' + i.icon + '</span>' + i.label + '</div>';
+    return '<button type="button" class="kt-act' + (i.label === 'Cancel' ? ' bad' : '') + '" onclick="' + i.onclick + '"><span>' + i.icon + '</span>' + i.label + '</button>';
   }).join('');
 
-  return '<div id="k-more-' + o.id + '" style="display:' + (isOpen ? 'flex' : 'none') + ';gap:6px;margin-top:8px">' + buttonsHtml + '</div>';
+  return '<div id="k-more-' + o.id + '" class="kt-acts-more" style="display:' + (isOpen ? 'grid' : 'none') + '">' + buttonsHtml + '</div>';
 }
 
 function kToggleMoreActions(orderId) {
@@ -936,7 +845,7 @@ function kToggleMoreActions(orderId) {
   // Toggle just this one row directly rather than re-rendering the whole
   // list — avoids losing scroll position or interrupting anything else
   // mid-update on a busy Kitchen screen.
-  if (row) row.style.display = (_kExpandedOrderId === orderId) ? 'flex' : 'none';
+  if (row) row.style.display = (_kExpandedOrderId === orderId) ? 'grid' : 'none';
   // Collapse any other order's row that might have been left open.
   document.querySelectorAll('[id^="k-more-"]').forEach(function (el) {
     if (el.id !== 'k-more-' + orderId) el.style.display = 'none';
@@ -1005,7 +914,7 @@ function injectKitchenOrderCountBadge() {
         + 'letter-spacing:.5px;padding:6px 14px;border-radius:20px;'
         + 'box-shadow:0 0 18px rgba(245,196,48,0.25),inset 0 1px 0 rgba(255,255,255,0.08);'
         + 'font-family:Fraunces,Georgia,serif';
-      badge.innerHTML = '🔥 <span id="k-order-count-num">0</span>';
+      badge.innerHTML = '<span id="k-order-count-num">0</span>';
       sub.parentElement.appendChild(badge);
     } else if (attempts >= 20) {
       clearInterval(poll);
@@ -1031,7 +940,7 @@ function injectKitchenRefreshButton() {
     + 'font-family:\'DM Sans\',sans-serif;transition:background .15s';
   btn.onmouseenter = function () { btn.style.background = 'rgba(255,255,255,.12)'; };
   btn.onmouseleave = function () { btn.style.background = 'rgba(255,255,255,.06)'; };
-  btn.innerHTML = '<span id="kitchen-refresh-icon" style="display:inline-block">🔄</span> Refresh';
+  btn.innerHTML = '<span id="kitchen-refresh-icon" style="display:inline-block">↻</span> Refresh';
 
   actionsGroup.appendChild(btn);
 

@@ -358,6 +358,86 @@ body{font-family:'DM Sans','Plus Jakarta Sans',system-ui,sans-serif;background:v
 .pd-page .btn:focus-visible,.pd-page .hbtn:focus-visible,.pd-page .step button:focus-visible{outline:2px solid var(--cx-gold);outline-offset:3px}
 #app:has(.cx-page){padding-bottom:0}
 .cx-page .cx-hdr{padding-top:calc(14px + env(safe-area-inset-top))}
+
+/* NSDI Store orders on the boutique look */
+.go-sec{margin:6px 22px 10px;font-size:10px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--cx-gold);display:flex;align-items:center;gap:10px}
+.go-sec::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--cx-line),transparent)}
+.go-card{display:block;margin:0 16px 12px;padding:16px 16px 14px;border-radius:22px;background:var(--cx-card);border:1px solid var(--cx-line);color:inherit;text-decoration:none;
+  box-shadow:0 1px 0 rgba(255,255,255,.8) inset,0 10px 30px -18px rgba(58,10,70,.18);transition:transform .15s}
+.go-card:active{transform:scale(.99)}
+.go-c-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.go-c-no{font-family:var(--cx-serif);font-size:20px;font-weight:700;color:var(--cx-plum);letter-spacing:.02em;line-height:1.1}
+.go-c-when{font-size:11.5px;color:var(--cx-muted);margin-top:3px}
+.go-c-amt{font-family:var(--cx-serif);font-size:22px;font-weight:700;color:var(--cx-plum);line-height:1.1}
+.go-c-mid{display:flex;align-items:center;gap:12px;margin:12px 0;padding:12px 0;border-top:1px solid var(--cx-line2);border-bottom:1px solid var(--cx-line2)}
+.go-ths{display:flex;flex:none}
+.go-th{width:38px;height:38px;border-radius:12px;overflow:hidden;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,#f4e9ee,#efe2d4);border:2px solid var(--cx-card);box-shadow:0 0 0 1px rgba(176,141,87,.18)}
+.go-th+.go-th{margin-left:-10px}
+.go-th img{width:100%;height:100%;object-fit:cover;display:block}
+.go-more{font-size:11px;font-weight:700;color:var(--cx-plum);background:var(--cx-gold-l)}
+.go-c-items{flex:1;min-width:0;font-size:12.5px;line-height:1.45;color:var(--cx-ink2);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.go-c-foot{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.go-st{display:inline-flex;align-items:center;gap:7px;padding:5px 11px 5px 9px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.03em;white-space:nowrap;border:1px solid}
+.go-st i{width:7px;height:7px;border-radius:50%;background:currentColor}
+.go-st.now{color:var(--cx-brand);background:var(--cx-brand-l);border-color:#ecd6ea}
+.go-st.now i{animation:goPulse 1.6s ease-in-out infinite}
+.go-st.ok{color:var(--cx-ok);background:var(--cx-ok-l);border-color:#d3e8da}
+.go-st.wait{color:#8a6a33;background:var(--cx-gold-l);border-color:#ecdcbf}
+.go-st.done{color:var(--cx-muted);background:#f6f1ec;border-color:var(--cx-line)}
+.go-st.bad{color:#a33a52;background:#fcf1f3;border-color:#f3dde2}
+@keyframes goPulse{0%,100%{box-shadow:0 0 0 0 rgba(110,9,119,.35)}50%{box-shadow:0 0 0 5px rgba(110,9,119,0)}}
+@media (prefers-reduced-motion:reduce){.go-st.now i{animation:none}}
+.go-view{font-size:12px;font-weight:600;color:var(--cx-brand);letter-spacing:.04em}
+.go-again{height:34px;padding:0 16px;border-radius:999px;border:1px solid var(--cx-brand);background:#fff;color:var(--cx-brand);font-family:inherit;font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+/* Order detail */
+.go-hero{position:relative;text-align:center;color:#fff;padding:calc(30px + env(safe-area-inset-top)) 24px 66px;border-radius:0 0 32px 32px;overflow:hidden;
+  background:radial-gradient(120% 90% at 50% 0%,rgba(255,233,194,.18),transparent 60%),linear-gradient(160deg,#2b0a35 0%,#5a0b63 55%,#1a0820 100%)}
+.go-hero.wait{background:radial-gradient(120% 90% at 50% 0%,rgba(255,233,194,.22),transparent 60%),linear-gradient(160deg,#3a2410 0%,#7a5520 55%,#2a1a08 100%)}
+.go-hero.bad{background:radial-gradient(120% 90% at 50% 0%,rgba(255,220,225,.14),transparent 60%),linear-gradient(160deg,#2b0a1c 0%,#6b1838 55%,#1a0810 100%)}
+.go-back{position:absolute;top:calc(12px + env(safe-area-inset-top));left:14px;width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:rgba(255,255,255,.1);color:#fff;font-size:22px;line-height:1;padding:0 0 2px;cursor:pointer}
+.go-check{width:76px;height:76px;margin:6px auto 14px}
+.go-check svg{width:100%;height:100%;overflow:visible}
+.go-ring{fill:rgba(255,233,194,.08);stroke:#d9b87a;stroke-width:2;stroke-dasharray:183;stroke-dashoffset:183;animation:goDraw .9s cubic-bezier(.65,0,.35,1) .1s forwards}
+.go-mark{fill:none;stroke:#ffe9c2;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:60;stroke-dashoffset:60;animation:goDraw .5s ease-out .85s forwards}
+@keyframes goDraw{to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){.go-ring,.go-mark{animation:none;stroke-dashoffset:0}}
+.go-eb{font-size:10px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:rgba(255,233,194,.75)}
+.go-title{font-family:var(--cx-serif);font-size:34px;font-weight:600;line-height:1.05;margin-top:6px}
+.go-title em{font-style:italic;color:#e8c98f;font-weight:500}
+.go-sub{font-size:13px;color:rgba(255,255,255,.72);margin-top:8px;line-height:1.5}
+.go-ticket{position:relative;margin:-42px 16px 0;padding:18px 20px;border-radius:22px;background:var(--cx-card);border:1px solid var(--cx-line);box-shadow:0 18px 36px -22px rgba(36,5,45,.5)}
+.go-tk-top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.go-lbl{font-size:9.5px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--cx-gold)}
+.go-no{font-family:var(--cx-serif);font-size:26px;font-weight:700;color:var(--cx-plum);letter-spacing:.03em;margin-top:3px;line-height:1.1}
+.go-amt{font-family:var(--cx-serif);font-size:26px;font-weight:700;color:var(--cx-plum);margin-top:3px;line-height:1.1}
+.go-tk-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-top:14px}
+.go-pay{font-size:12px;color:var(--cx-muted)}
+.go-perf{position:relative;border-top:1px dashed #e2d3c4;margin:16px -20px}
+.go-perf::before,.go-perf::after{content:"";position:absolute;top:-9px;width:16px;height:16px;border-radius:50%;background:var(--cx-bg);border:1px solid var(--cx-line)}
+.go-perf::before{left:-9px;clip-path:inset(0 0 0 50%)}.go-perf::after{right:-9px;clip-path:inset(0 50% 0 0)}
+.go-step{display:flex;gap:14px}
+.go-rail{display:flex;flex-direction:column;align-items:center}
+.go-dot{width:24px;height:24px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:1.5px solid var(--cx-line);background:#fff;color:#fff}
+.go-line{width:1.5px;flex:1;min-height:18px;margin:3px 0;background:var(--cx-line)}
+.go-step.done .go-dot{background:linear-gradient(135deg,#d9b87a,#b08d57);border-color:transparent}
+.go-step.done .go-line{background:linear-gradient(#d9b87a,#e8dccb)}
+.go-step.now .go-dot{border-color:var(--cx-brand)}
+.go-step.now .go-dot::after{content:"";width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,#3a0a46,#6e0977);animation:goPulse 1.6s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.go-step.now .go-dot::after{animation:none}}
+.go-txt{padding:2px 0 12px;flex:1;min-width:0}
+.go-step:last-child .go-txt{padding-bottom:0}
+.go-l{font-size:13.5px;font-weight:600;color:var(--cx-muted)}
+.go-step.done .go-l{color:var(--cx-ink)}
+.go-step.now .go-l{font-family:var(--cx-serif);font-size:18px;color:var(--cx-plum)}
+.go-s{font-size:11.5px;color:var(--cx-muted);margin-top:1px}
+.go-body{padding-top:16px}
+.go-note{margin:0 16px 14px;padding:12px 16px;border-radius:16px;background:var(--cx-gold-l);border:1px solid #ecdcbf;font-size:12.5px;line-height:1.5;color:#6b5228}
+.go-pin{color:var(--cx-gold);flex:none}
+.go-acts{display:flex;flex-direction:column;gap:10px;padding:4px 16px 0}
+.go-acts .cx-cta{flex:none;width:100%}
+.go-ghost{min-height:50px;border-radius:999px;border:1px solid var(--cx-line);background:var(--cx-card);color:var(--cx-plum);font-family:inherit;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;cursor:pointer}
+.go-cancel{min-height:44px;border:0;background:none;color:#a33a52;font-family:inherit;font-size:12.5px;font-weight:600;letter-spacing:.04em;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.go-cancel:disabled,.go-ghost:disabled{opacity:.5}
 </style>
 <link rel="stylesheet" href="/cart-ui.css?v=20261106b">
 </head>
@@ -715,54 +795,94 @@ function payText(o) {
 }
 function minsLeft(o) { if (!o.hold_until) return null; var m = Math.ceil((new Date(o.hold_until) - Date.now()) / 60000); return m > 0 ? m : 0; }
 
+// Shared header for the boutique screens.
+function cxHdr(t, sub, back) {
+  return '<div class="cx-hdr"><button class="cx-back" aria-label="Back" data-back="' + h(back) + '">‹</button><div><div class="cx-title">' + h(t).replace(/^(Your|My) (\w+)$/, '$1 <em>$2</em>') + '</div>'
+    + (sub ? '<div class="cx-sub">' + h(sub) + '</div>' : '') + '</div></div>';
+}
+var ORD_TONE = { awaiting_payment: 'wait', placed: 'now', ready: 'ok', picked_up: 'done', cancelled: 'bad', expired: 'bad' };
+function stChip(o) { var st = STATUS[o.status] || STATUS.placed; return '<span class="go-st ' + (ORD_TONE[o.status] || 'now') + '"><i></i>' + st.t + '</span>'; }
+function ordWhen(o) {
+  var d = new Date(o.created_at);
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) + ' · ' + d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }).toLowerCase();
+}
+var ORD_ICON = {
+  tick: '<svg viewBox="0 0 64 64" aria-hidden="true"><circle class="go-ring" cx="32" cy="32" r="29"/><path class="go-mark" d="M20 33.5l8 8 16-17"/></svg>',
+  wait: '<svg viewBox="0 0 64 64" aria-hidden="true"><circle class="go-ring" cx="32" cy="32" r="29"/><path class="go-mark" d="M32 18v15l9 6"/></svg>',
+  bad: '<svg viewBox="0 0 64 64" aria-hidden="true"><circle class="go-ring" cx="32" cy="32" r="29"/><path class="go-mark" d="M23 23l18 18M41 23L23 41"/></svg>'
+};
+
 function screenOrder(id) {
   var o = S.order && S.order.id === id ? S.order : null;
-  if (!o) return subHeader('Your order', '', '#/orders', true) + '<div style="padding:14px"><div class="skel" style="height:300px"></div></div>';
+  if (!o) return '<div class="cx cx-page">' + cxHdr('Your Order', '', '#/orders') + '<div style="padding:0 16px"><div class="skel" style="height:300px;border-radius:22px"></div></div></div>';
   var st = STATUS[o.status] || STATUS.placed, closed = o.status === 'cancelled' || o.status === 'expired';
   var waiting = o.status === 'awaiting_payment', s = (S.cat && S.cat.settings) || {}, m = minsLeft(o);
-  var head = closed ? ['bad', '✕', st.t, o.cancel_reason || ''] : (waiting ? ['wait', '⏳', 'Complete your payment', m > 0 ? 'Your items are held for ' + m + ' more min' : 'Time is up · items released']
-    : ['', null, o.status === 'ready' ? 'Ready for pickup!' : (o.status === 'picked_up' ? 'Enjoy your purchase' : 'Order placed'), o.status === 'picked_up' ? 'Thank you for shopping with NSDI Store' : 'We\'re packing it for you at the outlet']);
+  var head = closed ? ['bad', 'bad', 'Order closed', st.t, o.cancel_reason || 'Nothing was charged for this order.']
+    : (waiting ? ['wait', 'wait', 'Almost there', 'Complete your payment', m > 0 ? 'Your items are held for ' + m + ' more min' : 'Time is up · items released']
+      : ['', 'tick', o.status === 'picked_up' ? 'Thank you' : 'NSDI Store', o.status === 'ready' ? 'Ready for pickup' : (o.status === 'picked_up' ? 'Enjoy your purchase' : 'Order placed'),
+        o.status === 'ready' ? 'Your bag is waiting at the counter' : (o.status === 'picked_up' ? 'Thank you for shopping with NSDI Store' : 'We\'re packing it for you at the outlet')]);
+  var title = h(head[3]).replace(/ (\w+)$/, ' <em>$1</em>');
   var steps = [['Order placed', 'We got your order'], ['Packed & ready', 'Waiting at the counter'], ['Picked up', 'Collected from the outlet']];
   var at = ['placed', 'ready', 'picked_up'].indexOf(o.status);
   var canPay = waiting && o.payment_status === 'pending' && m > 0;
   var canCancel = ['awaiting_payment', 'placed', 'ready'].indexOf(o.status) >= 0 && o.payment_status === 'pending';
-  return '<div class="ok-hero ' + head[0] + '"><button class="hbtn" style="position:absolute;top:calc(10px + env(safe-area-inset-top));left:12px" aria-label="Back" data-back="#/orders">' + I.back + '</button>'
-    + '<div class="ok-ring">' + (head[1] ? '<span style="font-size:30px">' + head[1] + '</span>' : I.check) + '</div>'
-    + '<div style="font-size:22px;font-weight:800;letter-spacing:-.02em">' + h(head[2]) + '</div><div style="font-size:13px;opacity:.9;margin-top:4px">' + h(head[3]) + '</div></div>'
-    + '<div class="ticket"><div class="muted" style="font-size:12px;font-weight:600">Show this at the counter</div><div class="ono">' + h(o.order_no) + '</div>'
-    + '<span class="pill" style="background:' + st.b + ';color:' + st.c + ';margin-top:6px">' + st.t + '</span>'
-    + '<div class="muted" style="font-size:12.5px;margin-top:8px">' + h(payText(o)) + '</div>'
-    + (closed ? '' : '<div class="perf"></div><div class="tl">' + steps.map(function (x, i) {
-      var cls = waiting ? '' : (i <= at ? 'on' : '') + (i === at && o.status !== 'picked_up' ? ' now' : '');
-      return '<div class="tl-s ' + cls + '"><i></i><div><b>' + x[0] + '</b><br><span>' + x[1] + '</span></div></div>';
+  var count = o.items.reduce(function (n, i) { return n + (Number(i.qty) || 0); }, 0);
+  return '<div class="cx cx-page go">'
+    + '<div class="go-hero ' + head[0] + '"><button class="go-back" aria-label="Back" data-back="#/orders">‹</button>'
+    + '<div class="go-check">' + ORD_ICON[head[1]] + '</div>'
+    + '<div class="go-eb">' + h(head[2]) + '</div><div class="go-title">' + title + '</div><div class="go-sub">' + h(head[4]) + '</div></div>'
+    + '<div class="go-ticket"><div class="go-tk-top"><div><div class="go-lbl">' + (closed ? 'Order' : 'Show at the counter') + '</div><div class="go-no">' + h(o.order_no) + '</div></div>'
+    + '<div style="text-align:right"><div class="go-lbl">Total</div><div class="go-amt">' + money(o.total) + '</div></div></div>'
+    + '<div class="go-tk-row">' + stChip(o) + '<span class="go-pay">' + h(closed && o.payment_status === 'pending' ? 'No payment taken' : payText(o)) + '</span></div>'
+    + (closed ? '' : '<div class="go-perf"></div><div class="go-tl">' + steps.map(function (x, i) {
+      var cls = waiting ? 'next' : (i < at || o.status === 'picked_up' ? 'done' : (i === at ? 'now' : 'next'));
+      return '<div class="go-step ' + cls + '"><div class="go-rail"><span class="go-dot">' + (cls === 'done' ? '✓' : '') + '</span>' + (i < steps.length - 1 ? '<span class="go-line"></span>' : '') + '</div>'
+        + '<div class="go-txt"><div class="go-l">' + x[0] + '</div><div class="go-s">' + x[1] + '</div></div></div>';
     }).join('') + '</div>') + '</div>'
-    + (o.payment_status === 'refund_due' ? '<div class="notice info">We will refund ' + money(o.total) + ' to your original payment method.</div>' : '')
-    + '<div class="ck-card"><div class="h3">Items</div>' + o.items.map(function (i) {
-      return '<div class="ck-line"><div class="thumb">' + (i.thumb ? img(i.thumb, i.name) : packArt({ unit_label: i.unit_label }, 34)) + '</div><div class="grow"><div style="font-weight:700;font-size:13.5px">' + h(i.name) + '</div><div class="muted" style="font-size:12px">' + h(i.unit_label) + ' · Qty ' + i.qty + '</div></div><b>' + money(i.line_total) + '</b></div>';
-    }).join('') + '<div class="bill"><div class="tot"><span>Total</span><span>' + money(o.total) + '</span></div></div></div>'
-    + '<div class="ck-card"><div class="pick"><div class="pick-ico">🏪</div><div><b>' + h(s.outlet_name || 'Outlet pickup') + '</b><br><span class="muted">' + h(s.outlet_address || '') + ' · ' + h(s.pickup_hours || '') + '</span></div></div></div>'
-    + (S.error ? '<div class="notice err" role="alert">' + h(S.error) + '</div>' : '')
-    + '<div style="padding:14px 12px 0;display:flex;flex-direction:column;gap:10px">'
-    + (canPay ? '<button class="btn btn-y btn-block" id="paynow"' + (S.busy ? ' disabled' : '') + '>' + (S.busy ? 'Please wait…' : 'Pay ' + money(o.total) + ' now') + '</button>' : '')
-    + (canCancel ? '<button class="btn btn-o btn-block" id="cancel"' + (S.busy ? ' disabled' : '') + '>Cancel order</button>' : '')
-    + '<button class="btn btn-o btn-block" data-go="#/">Continue shopping</button></div>'
-    + '<p class="muted" style="font-size:12px;text-align:center;padding:14px">We\'ll send a notification when it\'s ready.</p>';
+    + '<div class="go-body">'
+    + (o.payment_status === 'refund_due' ? '<div class="go-note">We will refund ' + money(o.total) + ' to your original payment method.</div>' : '')
+    + '<div class="cx-card"><div class="cx-h">' + count + (count === 1 ? ' item' : ' items') + '</div>' + o.items.map(function (i) {
+      return '<div class="cx-line"><div class="cx-thumb" style="width:56px;height:56px;border-radius:16px">' + (i.thumb ? img(i.thumb, i.name) : packArt({ unit_label: i.unit_label }, 30)) + '</div>'
+        + '<div class="cx-info"><div class="cx-name" style="font-size:17px">' + h(i.name) + '</div><div class="cx-meta">' + h(i.unit_label) + ' · Qty ' + i.qty + '</div></div>'
+        + '<div class="cx-price" style="margin:0">' + money(i.line_total) + '</div></div>';
+    }).join('') + '<div class="cx-bill"><div class="cx-tot"><span>Total</span><span>' + money(o.total) + '</span></div></div></div>'
+    + '<div class="cx-card"><div class="cx-h">Pickup</div><div class="cx-note" style="font-size:13px"><span class="go-pin">' + I.store + '</span><span><b style="color:var(--cx-ink)">' + h(s.outlet_name || 'Outlet pickup') + '</b><br>'
+    + h(s.outlet_address || '') + (s.pickup_hours ? '<br>' + h(s.pickup_hours) : '') + '</span></div></div>'
+    + (S.error ? '<div class="notice err" role="alert" style="margin:0 16px">' + h(S.error) + '</div>' : '')
+    + '<div class="go-acts">'
+    + (canPay ? '<button class="cx-cta" id="paynow"' + (S.busy ? ' disabled' : '') + '>' + (S.busy ? 'Please wait…' : '<span>Pay ' + money(o.total) + ' now</span><span class="cx-arrow" aria-hidden="true">→</span>') + '</button>' : '')
+    + '<button class="' + (canPay ? 'go-ghost' : 'cx-cta') + '" data-go="#/">Continue shopping' + (canPay ? '' : ' <span class="cx-arrow" aria-hidden="true">→</span>') + '</button>'
+    + (canCancel ? '<button class="go-cancel" id="cancel"' + (S.busy ? ' disabled' : '') + '>Cancel order</button>' : '')
+    + '</div>'
+    + '<p class="cx-fine" style="text-align:center">We\'ll send a notification when it\'s ready.</p></div></div>';
 }
 
 function screenOrders() {
   var list = S.orders;
-  var body = !S.session ? '<div class="empty"><div style="font-size:44px">🧾</div><h2>Sign in to see your orders</h2><button class="btn btn-p" style="margin-top:12px" id="signin">Sign in</button></div>'
-    : (!list ? '<div style="padding:12px"><div class="skel" style="height:86px;margin-bottom:10px"></div><div class="skel" style="height:86px"></div></div>'
-      : (!list.length ? '<div class="empty"><div style="font-size:44px">🧾</div><h2>No orders yet</h2><p class="muted">Your NSDI Store orders will show here.</p><button class="btn btn-p" style="margin-top:14px" data-go="#/">Start shopping</button></div>'
-        : list.map(function (o) {
-          var st = STATUS[o.status] || STATUS.placed, first = o.items[0] || {};
-          return '<a class="oitem" href="#/o/' + o.id + '"><div class="thumb">' + (first.thumb ? img(first.thumb, first.name) : packArt({ unit_label: first.unit_label }, 34)) + '</div>'
-            + '<div class="grow"><div class="row" style="justify-content:space-between;gap:6px"><b>' + h(o.order_no) + '</b><b>' + money(o.total) + '</b></div>'
-            + '<div class="muted clamp2" style="font-size:12px;margin-top:2px">' + o.items.map(function (i) { return i.qty + ' × ' + h(i.name); }).join(', ') + '</div>'
-            + '<div class="row" style="justify-content:space-between;margin-top:8px"><span class="pill" style="background:' + st.b + ';color:' + st.c + '">' + st.t + '</span>'
-            + (o.status === 'picked_up' ? '<button class="addb" style="height:32px" data-again="' + o.id + '">Buy again</button>' : '<span class="muted" style="font-size:11px">' + new Date(o.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) + '</span>') + '</div></div></a>';
-        }).join('')));
-  return subHeader('My orders', 'NSDI Store', '#/') + body;
+  var empty = function (t, p, btn) {
+    return '<div class="cx-empty"><div class="cx-empty-ico">' + svg('<path d="M8 4h8l1 3H7z"/><rect x="4" y="7" width="16" height="13" rx="2"/><path d="M9 12h6M9 16h4"/>', 42, 1.4) + '</div><h2>' + t + '</h2><p>' + p + '</p>' + btn + '</div>';
+  };
+  var card = function (o) {
+    var thumbs = o.items.slice(0, 3).map(function (i) { return '<span class="go-th">' + (i.thumb ? img(i.thumb, i.name) : packArt({ unit_label: i.unit_label }, 22)) + '</span>'; }).join('')
+      + (o.items.length > 3 ? '<span class="go-th go-more">+' + (o.items.length - 3) + '</span>' : '');
+    return '<a class="go-card" href="#/o/' + o.id + '">'
+      + '<div class="go-c-top"><div><div class="go-c-no">' + h(o.order_no) + '</div><div class="go-c-when">' + ordWhen(o) + '</div></div><div class="go-c-amt">' + money(o.total) + '</div></div>'
+      + '<div class="go-c-mid"><div class="go-ths">' + thumbs + '</div><div class="go-c-items">' + o.items.map(function (i) { return i.qty + ' × ' + h(i.name); }).join(', ') + '</div></div>'
+      + '<div class="go-c-foot">' + stChip(o)
+      + (o.status === 'picked_up' ? '<button class="go-again" data-again="' + o.id + '">Buy again</button>' : '<span class="go-view">View <span aria-hidden="true">›</span></span>') + '</div></a>';
+  };
+  var body;
+  if (!S.session) body = empty('Sign in to see your orders', 'Your NSDI Store orders will show here.', '<button class="cx-cta" style="margin:18px auto 0;max-width:250px" id="signin">Sign in <span class="cx-arrow" aria-hidden="true">→</span></button>');
+  else if (!list) body = '<div style="padding:0 16px"><div class="skel" style="height:150px;border-radius:22px;margin-bottom:12px"></div><div class="skel" style="height:150px;border-radius:22px"></div></div>';
+  else if (!list.length) body = empty('No orders yet', 'Order in 3 taps and pick up at the outlet.', '<button class="cx-cta" style="margin:18px auto 0;max-width:250px" data-go="#/">Start shopping <span class="cx-arrow" aria-hidden="true">→</span></button>');
+  else {
+    var live = list.filter(function (o) { return ['awaiting_payment', 'placed', 'ready'].indexOf(o.status) >= 0; });
+    var past = list.filter(function (o) { return live.indexOf(o) < 0; });
+    body = (live.length ? '<div class="go-sec">In progress</div>' + live.map(card).join('') : '')
+      + (past.length ? '<div class="go-sec">Past orders</div>' + past.map(card).join('') : '');
+  }
+  var n = list && list.length;
+  return '<div class="cx cx-page go">' + cxHdr('My Orders', n ? n + (n === 1 ? ' order' : ' orders') + ' · NSDI Store' : 'NSDI Store · outlet pickup', '#/') + body + '<div style="height:24px"></div></div>';
 }
 
 var ASK = [['atta', 'Atta', '🌾'], ['rice', 'Rice', '🍚'], ['toor-dal', 'Toor dal', '🫘'], ['moong-dal', 'Moong dal', '🫛'], ['sugar', 'Sugar', '🍬'], ['oil', 'Cooking oil', '🫒'],
