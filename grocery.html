@@ -247,6 +247,31 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 @media (min-width:560px){.hs .pc{flex-basis:168px}}
 .btn-y{background:linear-gradient(135deg,#6e0977,#9c0ca1);color:#fff;box-shadow:0 8px 20px rgba(110,9,119,.25)} /* one purple, same as the app cart */
 .cx-page{min-height:100vh}
+/* Product page on the same boutique look as the app (cart-ui.css tokens) */
+.pd-page{min-height:100vh}
+.pd-page .pd-gal{border-radius:0 0 30px 30px;overflow:hidden;box-shadow:0 14px 30px -22px rgba(36,17,43,.45)}
+.pd-page .pd-track>div{background:linear-gradient(160deg,#f7efe9,#f1e4ec,#f7efe9)}
+.pd-page .pd-top .hbtn{border-radius:50%;background:rgba(255,253,250,.86);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:var(--cx-plum)}
+.pd-page .panel{background:var(--cx-card);border:1px solid var(--cx-line);border-radius:22px;margin:14px 14px 0;padding:18px;box-shadow:0 10px 30px -18px rgba(58,10,70,.18)}
+.pd-page .pd-brand{font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--cx-gold)}
+.pd-page .pd-name{font-family:var(--cx-serif);font-size:32px;font-weight:600;line-height:1.05;letter-spacing:-.01em;color:var(--cx-plum);margin-top:8px}
+.pd-page .pd-unit{border:1px solid var(--cx-line);background:#fff;color:var(--cx-ink2);border-radius:999px;font-weight:600;padding:6px 14px}
+.pd-page .pd-price b{font-family:var(--cx-serif);font-size:36px;font-weight:700;color:var(--cx-plum);letter-spacing:0}
+.pd-page .pd-price .pct{font-size:16px;font-weight:700;color:#b4374f;background:#fcf1f3;border-radius:999px;padding:3px 10px;align-self:center}
+.pd-page .pd-mrp{color:var(--cx-muted)}
+.pd-page .save{border-radius:999px;font-weight:700;background:var(--cx-ok-l);color:var(--cx-ok)}
+.pd-page .urg{border-radius:16px}
+.pd-page .feat div{border-color:var(--cx-line);border-radius:16px;background:#fff;color:var(--cx-ink2)}
+.pd-page .h3{font-size:10px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--cx-gold);display:flex;align-items:center;gap:10px}
+.pd-page .h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--cx-line),transparent)}
+.pd-page .pick-ico{background:var(--cx-gold-l);border-radius:12px}
+.pd-page .dock{background:rgba(250,246,240,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--cx-line);border-radius:18px 18px 0 0}
+.pd-page .step.lg,.pd-page .step.lg.soft{background:#fff;color:var(--cx-plum);border:1px solid #e3d3e3;border-radius:999px;height:52px}
+.pd-page .step.lg button{color:var(--cx-brand)}
+.pd-page .dock .btn{height:52px;border-radius:999px;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.pd-page .dock .btn-o{border:1px solid var(--cx-brand);color:var(--cx-brand);background:#fff}
+.pd-page .dock .btn-y,.pd-page .dock .btn-p{background:linear-gradient(135deg,var(--cx-plum) 0%,var(--cx-brand) 60%,var(--cx-brand2) 100%);box-shadow:0 0 0 1px rgba(176,141,87,.35) inset,0 12px 26px -10px rgba(58,10,70,.55)}
+.pd-page .btn:focus-visible,.pd-page .hbtn:focus-visible,.pd-page .step button:focus-visible{outline:2px solid var(--cx-gold);outline-offset:3px}
 #app:has(.cx-page){padding-bottom:0}
 .cx-page .cx-hdr{padding-top:calc(14px + env(safe-area-inset-top))}
 </style>
@@ -523,7 +548,7 @@ function screenProduct(id) {
     ['Best before', p.best_before], ['FSSAI licence', p.fssai_license], ['Sold by', 'NSDI ChocoCravings' + (s.outlet_address ? ', ' + s.outlet_address : '')]]
     .filter(function (r) { return r[1]; }).map(function (r) { return '<div>' + h(r[0]) + '</div><div>' + h(r[1]) + '</div>'; }).join('');
   var more = products().filter(function (x) { return x.id !== p.id; }).slice(0, 8);
-  return '<div class="pd-gal"><div class="pd-top"><button class="hbtn" aria-label="Back" data-back="#/">' + I.back + '</button>' + bagBtn() + '</div>'
+  return '<div class="pd-page cx"><div class="pd-gal"><div class="pd-top"><button class="hbtn" aria-label="Back" data-back="#/">' + I.back + '</button>' + bagBtn() + '</div>'
     + '<div class="pd-track gallery" id="gallery" data-keep="gal">' + pics + '</div>'
     + (p.images.length > 1 ? '<div class="pd-dots" id="pdots">' + p.images.map(function (g, i) { return '<span' + (i ? '' : ' class="on"') + '></span>'; }).join('') + '</div>' : '')
     + (o && !b.soldOut ? '<span class="off" style="top:auto;bottom:14px;left:14px;font-size:12px;padding:5px 9px">' + o + '% OFF</span>' : '')
@@ -546,7 +571,7 @@ function screenProduct(id) {
       : (inBag ? '<div class="step lg"><button aria-label="Fewer" data-qty="' + p.id + '" data-d="-1">−</button><span>' + inBag + '</span><button aria-label="More" data-qty="' + p.id + '" data-d="1">+</button></div><button class="btn btn-y grow" data-go="#/checkout">Go to cart · ' + money(bagTotal()) + '</button>'
         : '<div class="step lg soft"><button aria-label="Fewer" data-pq="-1">−</button><span>' + qty + '</span><button aria-label="More" data-pq="1">+</button></div>'
           + '<button class="btn btn-o grow" style="padding:0 8px" data-addn="' + p.id + '">Add to cart</button><button class="btn btn-y grow" style="padding:0 8px" data-buyn="' + p.id + '">Buy now</button>'))
-    + '</div></div>';
+    + '</div></div></div>';
 }
 
 function screenCheckout() {
