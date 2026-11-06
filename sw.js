@@ -1,10 +1,9 @@
 // NSDI ChocoCravings — Service Worker
-const CACHE_NAME = 'chococravings-v52-instant';
+const CACHE_NAME = 'chococravings-v53-onepage';
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache immediately on install
 const PRECACHE_URLS = [
-  '/',
   '/index.html',
   '/auth.html',
   '/offline.html',
@@ -149,11 +148,23 @@ function networkFirst(event) {
 // The latest version is always downloaded in the background and saved;
 // if it differs from what was shown, the open page is told so it can offer
 // "Update Now". With no saved copy yet, the network is used as normal.
+// One page can be opened at several addresses: "/" and "/index.html" are the
+// same file, as are "/grocery" and "/grocery.html". They share one saved copy,
+// so coming back to the app by another address never shows an older version.
+function pageKey(url) {
+  var u = new URL(url);
+  var path = u.pathname;
+  if (path.endsWith('/')) path += 'index.html';
+  else if (!/\.[a-z0-9]+$/i.test(path)) path += '.html';
+  return u.origin + path;
+}
+
 function savedPageFirst(event) {
   var request = event.request;
+  var key = pageKey(request.url);
   // The query string (?open=orders etc.) is read by the page itself; the
   // HTML file is the same, so any saved copy of the page will do.
-  return caches.match(request, { ignoreSearch: true }).then(function(cached) {
+  return caches.match(key, { ignoreSearch: true }).then(function(cached) {
     var cachedCopy = cached ? cached.clone() : null;
     var network = fetch(request).then(function(response) {
       if (response.ok && !response.redirected) {
@@ -161,11 +172,11 @@ function savedPageFirst(event) {
         var forCompare = response.clone();
         event.waitUntil(
           caches.open(CACHE_NAME)
-            .then(function(cache) { return cache.put(request, forCache); })
+            .then(function(cache) { return cache.put(key, forCache); })
             .then(function() {
               if (!cachedCopy) return;
               return Promise.all([cachedCopy.text(), forCompare.text()]).then(function(texts) {
-                if (texts[0] !== texts[1]) return tellPageUpdated(event, request.url);
+                if (texts[0] !== texts[1]) return tellPageUpdated(event, key);
               });
             })
             .catch(function() {})
@@ -183,11 +194,10 @@ function savedPageFirst(event) {
   });
 }
 
-function tellPageUpdated(event, pageUrl) {
-  var path = new URL(pageUrl).pathname;
+function tellPageUpdated(event, key) {
   return self.clients.matchAll({ type: 'window' }).then(function(list) {
     list.forEach(function(client) {
-      if (client.id === event.resultingClientId || new URL(client.url).pathname === path) {
+      if (client.id === event.resultingClientId || pageKey(client.url) === key) {
         client.postMessage({ type: 'cc-page-updated' });
       }
     });
