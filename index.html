@@ -1034,8 +1034,40 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
   0%,100% { opacity:.6; transform:scale(1); }
   50%      { opacity:0;  transform:scale(2.2); }
 }
+
+/* ── Bottom navigation: ivory glass bar, line icons, plum pill on the active tab ── */
+:root{--bnav-h:66px;--bnav-space:calc(66px + env(safe-area-inset-bottom))}
+.bnav{position:fixed;left:0;right:0;bottom:0;z-index:200;display:flex;align-items:stretch;justify-content:space-around;
+  height:calc(var(--bnav-h) + env(safe-area-inset-bottom));padding:0 6px env(safe-area-inset-bottom)!important;box-sizing:border-box;
+  background:rgba(255,253,250,.9);backdrop-filter:saturate(1.4) blur(18px);-webkit-backdrop-filter:saturate(1.4) blur(18px);
+  border-top:1px solid #ece2d8;box-shadow:0 -10px 30px -20px rgba(58,10,70,.35)}
+.bnav .ntab{flex:1;max-width:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:0;cursor:pointer;
+  color:#8d7f90;-webkit-tap-highlight-color:transparent;transition:color .2s;outline:none}
+.bnav .ntab:active{transform:none}
+.bnav .nicon{position:relative;display:flex;align-items:center;justify-content:center;width:52px;height:30px;border-radius:999px;font-size:0;
+  transition:background .25s,color .25s,transform .2s}
+.bnav .nicon svg{width:22px;height:22px}
+.bnav .ntab:active .nicon{transform:scale(.92)}
+.bnav .nlbl{font-family:'DM Sans',sans-serif;font-size:10.5px;font-weight:600;letter-spacing:.04em;color:inherit!important}
+.bnav .ntab.on{color:#3a0a46}
+.bnav .ntab.on .nicon{background:linear-gradient(135deg,#f3e3f1,#f8eee6);color:#6e0977;box-shadow:0 0 0 1px rgba(176,141,87,.22) inset}
+.bnav .ntab.on .nlbl{font-weight:700}
+.bnav .ntab:focus-visible .nicon{box-shadow:0 0 0 2px #b08d57}
+.bnav .ndot{display:none}
+.bnav .cart-badge-pill{top:-3px;right:6px;min-width:17px;height:17px;padding:0 5px;border-radius:999px;font-size:9.5px;font-weight:700;
+  background:linear-gradient(135deg,#6e0977,#9c0ca1);color:#fff;border:2px solid #fffdfa;box-sizing:border-box}
+.bnav .nlive{position:absolute;top:2px;right:12px;width:9px;height:9px;border-radius:50%;background:#22c55e;border:2px solid #fffdfa;box-sizing:border-box}
+.bnav .nlive #nstore-pulse{position:absolute;inset:-2px;border-radius:50%;background:inherit;animation:pulseLive 1.6s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.bnav .nlive #nstore-pulse{animation:none}}
+/* Wide screens: a floating pill bar instead of one stretched across the window */
+@media (min-width:600px){
+  :root{--bnav-space:calc(66px + 28px + env(safe-area-inset-bottom))}
+  .bnav{left:50%;right:auto;bottom:14px;transform:translateX(-50%);width:min(560px,calc(100% - 32px));border:1px solid #ece2d8;border-radius:24px;
+    box-shadow:0 18px 40px -18px rgba(58,10,70,.35)}
+}
+
 /* Product detail on the boutique look (tokens from cart-ui.css) */
-#page-detail.cx{padding-bottom:calc(84px + env(safe-area-inset-bottom))!important}
+#page-detail.cx{padding-bottom:var(--bnav-space)!important}
 #page-detail .dhero{height:340px;background:linear-gradient(160deg,#f7efe9,#efdcea,#f7efe9)}
 #page-detail .dhero::before{content:"";position:absolute;left:0;right:0;bottom:0;height:90px;z-index:1;background:linear-gradient(to top,rgba(36,17,43,.28),transparent);pointer-events:none}
 #page-detail .back{width:42px;height:42px;border-radius:50%;background:rgba(255,253,250,.86);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.7);box-shadow:0 6px 18px rgba(36,17,43,.15);z-index:3}
@@ -1118,7 +1150,7 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 #ck-tier-notice{margin-bottom:10px!important}
 #page-cart:not(.cx-is-empty) #cart-empty{display:none!important}
 /* The bar sits right on top of the bottom nav (84px tall). */
-#page-cart.cx,#page-checkout.cx{padding-bottom:calc(84px + env(safe-area-inset-bottom))!important}
+#page-cart.cx,#page-checkout.cx{padding-bottom:var(--bnav-space)!important}
 .cx .cx-dock{bottom:0;margin:6px 0 0;padding-bottom:12px;border-radius:18px 18px 0 0;box-shadow:0 -6px 18px rgba(26,8,32,.06)}
 </style>
 </head>
@@ -1177,38 +1209,24 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 
     </div>
     </div>
-    <div class="bnav" id="main-bnav">
-      <div class="ntab on" id="nav-home" onclick="setNav('home');showPage('home')">
-        <div class="nicon">🏠</div><div class="nlbl">Home</div><div class="ndot"></div>
+    <nav class="bnav" id="main-bnav" aria-label="Main">
+      <div class="ntab on" id="nav-home" role="button" tabindex="0" onclick="setNav('home');showPage('home')">
+        <span class="nicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.5 12 4l8.5 6.5"/><path d="M5.5 9v10.5h13V9"/><path d="M10 19.5v-5h4v5"/></svg></span><span class="nlbl">Home</span>
       </div>
-      <div class="ntab" id="nav-cart" onclick="setNav('cart');showPage('cart')">
-        <div class="nicon-wrap" style="position:relative;display:inline-flex;align-items:center;justify-content:center">
-          <span style="font-size:20px">🛒</span>
-          <span id="cart-badge" class="cart-badge-pill"></span>
-        </div>
-        <div class="nlbl">Cart</div>  
+      <div class="ntab" id="nav-cart" role="button" tabindex="0" onclick="setNav('cart');showPage('cart')">
+        <span class="nicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11h10.2L20 8H6.2"/><circle cx="9" cy="20" r="1.3"/><circle cx="17" cy="20" r="1.3"/></svg><span id="cart-badge" class="cart-badge-pill"></span></span><span class="nlbl">Cart</span>
       </div>
-      <div class="ntab" id="nav-profile" onclick="setNav('profile');checkAuth()">
-        <div class="nicon">👤</div><div class="nlbl">Profile</div><div class="ndot"></div>
+      <div class="ntab" id="nav-profile" role="button" tabindex="0" onclick="setNav('profile');checkAuth()">
+        <span class="nicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M4.8 20c1.2-3.6 4-5.4 7.2-5.4s6 1.8 7.2 5.4"/></svg></span><span class="nlbl">Profile</span>
       </div>
-      <div class="ntab" id="nav-nstore" onclick="window.location.href='/store'">
-      <div class="nicon" style="position:relative;display:inline-block">☕
-        <span id="nstore-dot" style="position:absolute;top:0;right:-4px;width:8px;height:8px;border-radius:50%;background:#22c55e;border:1.5px solid #fff;display:block">
-          <span id="nstore-pulse" style="display:block;width:5px;height:5px;border-radius:50%;background:#22c55e;animation:pulseLive 1.4s ease-in-out infinite;margin:auto;margin-top:0px"></span>
-        </span>
+      <div class="ntab" id="nav-nstore" role="button" tabindex="0" onclick="window.location.href='/store'">
+        <span class="nicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8.5 3.5c-.6.8-.6 1.7 0 2.5M12 3.5c-.6.8-.6 1.7 0 2.5"/></svg><span id="nstore-dot" class="nlive"><span id="nstore-pulse"></span></span></span><span class="nlbl">On Store</span>
       </div>
-      <div class="nlbl">On Store</div>
-    </div>
-    <!-- Staff only: one tab that opens Stall / Attendance (openStaffSheet). -->
-    <div class="ntab" id="nav-staff" style="display:none" onclick="openStaffSheet()" aria-label="Staff tools">
-      <div class="nicon nstaff-ico" aria-hidden="true">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="7" width="18" height="13" rx="3"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/><path d="M3 12.5h18"/><path d="M11 12.5h2v2h-2z"/>
-        </svg>
+      <!-- Staff only: one tab that opens Stall / Attendance (openStaffSheet). -->
+      <div class="ntab" id="nav-staff" role="button" tabindex="0" style="display:none" onclick="openStaffSheet()" aria-label="Staff tools">
+        <span class="nicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="3"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/><path d="M3 12.5h18"/></svg></span><span class="nlbl">Staff</span>
       </div>
-      <div class="nlbl">Staff</div><div class="ndot"></div>
-    </div>
-    </div>
+    </nav>
     <!-- ═══ HOME ═══ -->
     <div class="page active" id="page-home">
      <!-- <div class="hdr">
@@ -6920,6 +6938,10 @@ async function debugProducts() {
   if (ve) { console.error('variants error:', ve.message); }
   else { console.log('variants columns:', Object.keys(v[0])); console.log('variants row:', v[0]); }
 }
+document.addEventListener('keydown', function (e) {
+  var t = e.target && e.target.closest && e.target.closest('.ntab');
+  if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); t.click(); }
+});
 function setNav(name) {
   document.querySelectorAll('.ntab').forEach(function(t){ t.classList.remove('on'); });
   var el = document.getElementById('nav-' + name);
