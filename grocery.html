@@ -995,7 +995,10 @@ async function sendAsk() {
 }
 
 document.addEventListener('click', function (e) {
-  var t = e.target.closest('button,[data-go]'); if (!t) return;
+  // Some phone browsers / app webviews report the tapped text itself as the
+  // target; start from its element so every button still responds.
+  var el = e.target && e.target.nodeType === 3 ? e.target.parentNode : e.target;
+  var t = el && el.closest ? el.closest('button,[data-go]') : null; if (!t) return;
   var d = t.dataset;
   if (d.go) { e.preventDefault(); if (/\.html$/.test(d.go)) { location.href = d.go; } else go(d.go); return; }
   if (d.back) { e.preventDefault(); if (history.length > 1 && document.referrer.indexOf(location.origin) === 0) history.back(); else go(d.back); return; }
