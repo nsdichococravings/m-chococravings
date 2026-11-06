@@ -7,7 +7,7 @@
 <title>NSDI Store</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="preconnect" href="https://yjbfditboewwpgyqzryd.supabase.co" crossorigin/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-net.js?v=20261018"></script>
@@ -250,7 +250,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 #app:has(.cx-page){padding-bottom:0}
 .cx-page .cx-hdr{padding-top:calc(14px + env(safe-area-inset-top))}
 </style>
-<link rel="stylesheet" href="/cart-ui.css?v=20261106">
+<link rel="stylesheet" href="/cart-ui.css?v=20261106b">
 </head>
 <body>
 <div id="app" aria-live="polite"></div>
@@ -384,6 +384,10 @@ function needSignIn(back) {
 function svg(d, sz, sw) { return '<svg width="' + (sz || 20) + '" height="' + (sz || 20) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + (sw || 2) + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>'; }
 var I = {
   back: svg('<path d="M15 5l-7 7 7 7"/>', 20, 2.4),
+  upi: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/><path d="M10 8l2.5 3L10 14M13.5 8l2.5 3-2.5 3"/></svg>',
+  cash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v.01M18 14.5v.01"/></svg>',
+  store: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/><path d="M5 12v8h14v-8"/><path d="M10 20v-5h4v5"/></svg>',
+  cartLg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.4 11h10.2L20 8H6.2"/><circle cx="9" cy="20" r="1.3"/><circle cx="17" cy="20" r="1.3"/></svg>',
   bag: svg('<circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M3 4h2l2.4 11h10.2L20 8H6.2"/>'),
   search: '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#6e0977" stroke-width="2.3" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
   orders: svg('<path d="M8 4h8l1 3H7z"/><rect x="4" y="7" width="16" height="13" rx="2"/><path d="M9 12h6M9 16h4"/>'),
@@ -548,17 +552,17 @@ function screenProduct(id) {
 function screenCheckout() {
   var lines = bagLines(), s = (S.cat && S.cat.settings) || {};
   var hdr = function (t, sub) {
-    return '<div class="cx-hdr"><button class="cx-back" aria-label="Back" data-back="#/">‹</button><div><div class="cx-title">' + h(t) + '</div>'
+    return '<div class="cx-hdr"><button class="cx-back" aria-label="Back" data-back="#/">‹</button><div><div class="cx-title">' + h(t).replace(/^Your (\w+)$/, 'Your <em>$1</em>') + '</div>'
       + (sub ? '<div class="cx-sub">' + h(sub) + '</div>' : '') + '</div></div>';
   };
   if (!S.cat) return '<div class="cx cx-page">' + hdr('Your Cart', '') + '<div style="padding:14px"><div class="skel" style="height:220px"></div></div></div>';
   if (!lines.length) return '<div class="cx cx-page">' + hdr('Your Cart', 'NSDI Store · outlet pickup')
-    + '<div class="cx-empty"><div class="cx-empty-ico">🛒</div><h2>Your cart is empty</h2><p>Add essentials from NSDI Store.</p>'
-    + '<button class="cx-cta" style="margin:18px auto 0;max-width:240px" data-go="#/">Start shopping</button></div></div>';
+    + '<div class="cx-empty"><div class="cx-empty-ico">' + I.cartLg + '</div><h2>Your cart is empty</h2><p>Add essentials from NSDI Store.</p>'
+    + '<button class="cx-cta" style="margin:18px auto 0;max-width:250px" data-go="#/">Start shopping <span class="cx-arrow" aria-hidden="true">→</span></button></div></div>';
   if (!S.payBy || (S.payBy === 'online' && !s.online_enabled) || (S.payBy === 'cash' && !s.cash_enabled)) S.payBy = s.online_enabled ? 'online' : (s.cash_enabled ? 'cash' : null);
   var total = bagTotal(), mrp = bagMrp(), saved = mrp - total, n = bagCount();
   var name = (S.me && S.me.name) || '', phone = (S.me && S.me.phone) || '';
-  var payLabel = !S.session ? 'Sign in to place order' : (S.payBy === 'online' ? 'Pay ' + money(total) : 'Place order · ' + money(total));
+  var payLabel = !S.session ? 'Sign in to place order' : (S.payBy === 'online' ? 'Pay ' + money(total) : 'Place order');
   return '<div class="cx cx-page">' + hdr('Your Cart', n + (n === 1 ? ' item' : ' items') + ' · NSDI Store · outlet pickup') + staffStrip()
     + (saved > 0 ? '<div class="cx-saving">🎉 You\'re saving ' + money(saved) + ' on this order</div>' : '')
     + '<div class="cx-card"><div class="cx-h">Items</div>'
@@ -570,13 +574,13 @@ function screenCheckout() {
     }).join('')
     + '<button class="cx-link" data-go="#/">+ Add more items</button></div>'
     + '<div class="cx-card"><div class="cx-h">Pickup</div>'
-    + '<div class="cx-note" style="font-size:13px"><span style="font-size:20px">🏪</span><span><b>' + h(s.outlet_name || 'Our outlet') + '</b><br>' + h(s.outlet_address || '') + (s.pickup_hours ? '<br>' + h(s.pickup_hours) : '') + ' · ready in ~10 min</span></div>'
+    + '<div class="cx-note" style="font-size:13px"><span style="color:var(--cx-gold)">' + I.store + '</span><span><b>' + h(s.outlet_name || 'Our outlet') + '</b><br>' + h(s.outlet_address || '') + (s.pickup_hours ? '<br>' + h(s.pickup_hours) : '') + ' · ready in ~10 min</span></div>'
     + (S.session ? '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px"><label class="cx-field">Name for pickup<input id="ck-name" autocomplete="name" value="' + h(name) + '" maxlength="60"></label>'
       + '<label class="cx-field">Phone<input id="ck-phone" type="tel" inputmode="tel" autocomplete="tel" value="' + h(phone) + '" maxlength="15"></label></div>' : '')
     + '</div>'
     + '<div class="cx-card" role="radiogroup" aria-label="Payment method"><div class="cx-h">Payment</div>'
-    + '<button class="cx-pay" role="radio" data-pay="online" aria-checked="' + (S.payBy === 'online') + '"' + (s.online_enabled ? '' : ' disabled') + '><span class="cx-radio"></span><span class="cx-pay-ico">📱</span><span class="cx-pay-t">UPI / Card<small>' + (s.online_enabled ? 'GPay · PhonePe · Paytm · Cards' : 'Coming soon') + '</small></span></button>'
-    + '<button class="cx-pay" role="radio" data-pay="cash" aria-checked="' + (S.payBy === 'cash') + '"' + (s.cash_enabled ? '' : ' disabled') + '><span class="cx-radio"></span><span class="cx-pay-ico">💵</span><span class="cx-pay-t">Cash at pickup<small>Pay at the counter when you collect</small></span></button></div>'
+    + '<button class="cx-pay" role="radio" data-pay="online" aria-checked="' + (S.payBy === 'online') + '"' + (s.online_enabled ? '' : ' disabled') + '><span class="cx-radio"></span><span class="cx-pay-ico">' + I.upi + '</span><span class="cx-pay-t">UPI / Card<small>' + (s.online_enabled ? 'GPay · PhonePe · Paytm · Cards' : 'Coming soon') + '</small></span></button>'
+    + '<button class="cx-pay" role="radio" data-pay="cash" aria-checked="' + (S.payBy === 'cash') + '"' + (s.cash_enabled ? '' : ' disabled') + '><span class="cx-radio"></span><span class="cx-pay-ico">' + I.cash + '</span><span class="cx-pay-t">Cash at pickup<small>Pay at the counter when you collect</small></span></button></div>'
     + '<div class="cx-card"><div class="cx-h">Bill details</div><div class="cx-bill">'
     + '<div><span>Item total (M.R.P.)</span><span>' + money(mrp) + '</span></div>'
     + (saved > 0 ? '<div class="ok"><span>Product discount</span><span>−' + money(saved) + '</span></div>' : '')
@@ -584,8 +588,8 @@ function screenCheckout() {
     + '<div class="cx-tot"><span>To pay</span><span>' + money(total) + '</span></div></div></div>'
     + (S.error ? '<div class="notice err" role="alert" style="margin:0 14px 12px">' + h(S.error) + '</div>' : '')
     + '<p class="cx-fine">Price and stock are checked again when you place the order. Your items are held for ' + (S.payBy === 'online' ? (s.hold_minutes || 15) + ' minutes while you pay' : (s.cash_hold_hours || 24) + ' hours for pickup') + '. Cancel any time before you pay.</p>'
-    + '<div class="cx-dock"><div><div class="cx-dock-amt">' + money(total) + '</div>' + (saved > 0 ? '<div class="cx-dock-sub ok">Saved ' + money(saved) + '</div>' : '<div class="cx-dock-sub">' + (S.payBy === 'cash' ? '💵 Pay at pickup' : '🔒 Secured by Razorpay') + '</div>') + '</div>'
-    + '<button class="cx-cta" id="place"' + (S.busy || !S.payBy ? ' disabled' : '') + '>' + (S.busy ? 'Please wait…' : h(payLabel) + ' ›') + '</button></div></div>';
+    + '<div class="cx-dock"><div><div class="cx-dock-amt">' + money(total) + '</div>' + (saved > 0 ? '<div class="cx-dock-sub ok">Saved ' + money(saved) + '</div>' : '<div class="cx-dock-sub">' + (S.payBy === 'cash' ? 'Pay at pickup' : 'Secured by Razorpay') + '</div>') + '</div>'
+    + '<button class="cx-cta" id="place"' + (S.busy || !S.payBy ? ' disabled' : '') + '>' + (S.busy ? 'Please wait…' : '<span>' + h(payLabel) + '</span><span class="cx-arrow" aria-hidden="true">→</span>') + '</button></div></div>';
 }
 
 var STATUS = {

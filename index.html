@@ -9,7 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <link rel="preconnect" href="https://yjbfditboewwpgyqzryd.supabase.co" crossorigin>
 <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
-<link rel="stylesheet" href="/cart-ui.css?v=20261106">
+<link rel="stylesheet" href="/cart-ui.css?v=20261106b">
 <title>NSDI ChocoCravings</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"> </script>
 <script src="supabase-net.js?v=20261018"></script>
@@ -1037,8 +1037,16 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 /* Cart + checkout on the shared cart look (cart-ui.css) */
 #page-cart.cx,#page-checkout.cx{background:var(--cx-bg)}
 #page-cart.cx-is-empty .cx-filled{display:none}
-#page-checkout.cx .ck-field{display:block;width:100%;box-sizing:border-box;padding:12px 13px;border-radius:12px;border:1.5px solid var(--cx-line);background:#fff;color:var(--cx-ink);font-size:14px;margin:0}
-#page-checkout.cx .ck-field:focus{border-color:var(--cx-brand);outline:none}
+#page-checkout.cx .ck-field{display:block;width:100%;box-sizing:border-box;padding:13px 14px;border-radius:14px;border:1px solid var(--cx-line);background:#fff;color:var(--cx-ink);font-family:'DM Sans',sans-serif;font-size:14px;margin:0;transition:border-color .15s,box-shadow .15s}
+#page-checkout.cx .ck-field::placeholder{color:#a99dab}
+#page-checkout.cx .ck-field:focus{border-color:var(--cx-brand);box-shadow:0 0 0 3px rgba(110,9,119,.08);outline:none}
+#page-checkout.cx #ck-saved-addrs>div:first-child{font-size:10px!important;letter-spacing:.16em;color:var(--cx-muted)!important}
+#page-checkout.cx #ck-addr-list>div{background:#fff!important;border:1px solid var(--cx-line)!important;border-radius:16px!important;padding:13px 15px!important}
+#page-checkout.cx #ck-addr-list>div>div:first-child>div:first-child{font-family:var(--cx-serif);font-size:16px!important;color:var(--cx-plum)!important}
+#page-checkout.cx #ck-addr-list>div>div:last-child,#page-checkout.cx #ck-addr-list div[style*="font-size:10px"]{color:var(--cx-muted)!important}
+#page-checkout.cx #ck-saved-addrs>div:last-child{color:var(--cx-brand)!important;font-size:13px!important}
+#page-checkout.cx #ck-tier-notice{border-radius:14px!important;font-size:12px!important}
+#page-checkout.cx .ck-err{border-radius:14px}
 #page-checkout.cx .ck-field-wrap{margin-bottom:10px}
 #page-checkout.cx .ck-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 #page-checkout.cx .ck-row .ck-field{min-width:0}
@@ -1046,7 +1054,6 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 #page-cart:not(.cx-is-empty) #cart-empty{display:none!important}
 /* The bar sits right on top of the bottom nav (84px tall). */
 #page-cart.cx,#page-checkout.cx{padding-bottom:calc(84px + env(safe-area-inset-bottom))!important}
-#rzp-btn{gap:0}
 .cx .cx-dock{bottom:0;margin:6px 0 0;padding-bottom:12px;border-radius:18px 18px 0 0;box-shadow:0 -6px 18px rgba(26,8,32,.06)}
 </style>
 </head>
@@ -1528,15 +1535,15 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
     <div class="page cx" id="page-cart">
       <div class="cx-hdr">
         <div class="cx-back" role="button" aria-label="Back" onclick="goBack()">‹</div>
-        <div><div class="cx-title">Your Cart</div><div class="cx-sub"><span id="cart-count-lbl">0 items</span> · ChocoCravings home delivery</div></div>
+        <div><div class="cx-title">Your <em>Cart</em></div><div class="cx-sub"><span id="cart-count-lbl">0 items</span> · ChocoCravings home delivery</div></div>
       </div>
 
       <!-- Empty -->
       <div id="cart-empty" class="cx-empty">
-        <div class="cx-empty-ico">🛒</div>
+        <div class="cx-empty-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.4 11h10.2L20 8H6.2"/><circle cx="9" cy="20" r="1.3"/><circle cx="17" cy="20" r="1.3"/></svg></div>
         <div class="cx-empty-t">Your cart is empty</div>
         <p>Add brownies and treats to get started.</p>
-        <button class="cx-cta" style="margin:18px auto 0;max-width:240px" onclick="showPage('home')">Browse menu</button>
+        <button class="cx-cta" style="margin:22px auto 0;max-width:250px" onclick="showPage('home')">Browse menu <span class="cx-arrow" aria-hidden="true">→</span></button>
       </div>
 
       <div class="cx-filled">
@@ -1570,14 +1577,14 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
         </div>
 
         <div class="cx-card">
-          <div class="cx-note"><span>🚚</span><span><b>Regular brownies:</b> 24 hrs to 3 days</span></div>
-          <div class="cx-note"><span>🎂</span><span><b>Custom / theme cakes:</b> book 7 days ahead</span></div>
-          <div class="cx-note"><span>⚠️</span><span>Orders can't be cancelled once confirmed</span></div>
+          <div class="cx-note"><span><i class="cx-dot"></i></span><span><b>Regular brownies:</b> 24 hrs to 3 days</span></div>
+          <div class="cx-note"><span><i class="cx-dot"></i></span><span><b>Custom / theme cakes:</b> book 7 days ahead</span></div>
+          <div class="cx-note"><span><i class="cx-dot warn"></i></span><span>Orders can't be cancelled once confirmed</span></div>
         </div>
 
         <div class="cx-dock">
           <div><div class="cx-dock-amt" id="cart-dock-total">₹0</div><div class="cx-dock-sub ok">Free delivery</div></div>
-          <button class="cx-cta" id="checkout-btn" onclick="goToCheckout()" disabled>Checkout <span aria-hidden="true">›</span></button>
+          <button class="cx-cta" id="checkout-btn" onclick="goToCheckout()" disabled>Checkout <span class="cx-arrow" aria-hidden="true">→</span></button>
         </div>
       </div>
     </div><!-- /cart -->
@@ -1723,11 +1730,11 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
     <div class="page cx" id="page-checkout">
       <div class="cx-hdr">
         <div class="cx-back" role="button" aria-label="Back" onclick="goBack()">‹</div>
-        <div><div class="cx-title" id="ck-title-text">Checkout</div><div class="cx-sub" id="ck-sub-text">Home delivery across Tamil Nadu</div></div>
+        <div><div class="cx-title" id="ck-title-text">Secure <em>Checkout</em></div><div class="cx-sub" id="ck-sub-text">Home delivery across Tamil Nadu</div></div>
       </div>
 
       <div class="cx-card">
-        <div class="cx-h"><span id="ck-details-label">📍 Delivery details</span></div>
+        <div class="cx-h"><span id="ck-details-label">Delivery details</span></div>
           <!-- SAVED ADDRESSES PICKER -->
           <div id="ck-saved-addrs" style="display:none;margin-bottom:12px">
             <div style="font-size:11px;color:var(--dim);margin-bottom:8px;font-weight:600">SAVED ADDRESSES</div>
@@ -1763,11 +1770,11 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
         <div id="ck-tier-notice" style="display:none"></div>
         <div id="ck-wallet"></div>
         <button type="button" class="cx-pay" id="tab-upi" role="radio" aria-checked="true" onclick="selPayTab('upi')">
-          <span class="cx-radio"></span><span class="cx-pay-ico">📱</span>
+          <span class="cx-radio"></span><span class="cx-pay-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/><path d="M10 8l2.5 3L10 14M13.5 8l2.5 3-2.5 3"/></svg></span>
           <span class="cx-pay-t">UPI / Card<small>GPay · PhonePe · Paytm · Cards</small></span>
         </button>
         <button type="button" class="cx-pay" id="tab-cod" role="radio" aria-checked="false" onclick="selPayTab('cod')" style="display:none">
-          <span class="cx-radio"></span><span class="cx-pay-ico">💵</span>
+          <span class="cx-radio"></span><span class="cx-pay-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v.01M18 14.5v.01"/></svg></span>
           <span class="cx-pay-t">Cash on delivery<small>Pay <b id="cod-amt-display">₹0</b> when your order arrives</small></span>
           <span class="cx-tag">GOLD+</span>
         </button>
@@ -1781,16 +1788,16 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
       </div>
 
       <div class="cx-card">
-        <div class="cx-note"><span>🍫</span><span><b>Regular brownies:</b> 24 hrs to 3 days</span></div>
-        <div class="cx-note"><span>🎂</span><span><b>Theme / custom cakes:</b> book 7 days ahead</span></div>
-        <div class="cx-note"><span>⚠️</span><span>Orders can't be cancelled once confirmed</span></div>
+        <div class="cx-note"><span><i class="cx-dot"></i></span><span><b>Regular brownies:</b> 24 hrs to 3 days</span></div>
+        <div class="cx-note"><span><i class="cx-dot"></i></span><span><b>Theme / custom cakes:</b> book 7 days ahead</span></div>
+        <div class="cx-note"><span><i class="cx-dot warn"></i></span><span>Orders can't be cancelled once confirmed</span></div>
       </div>
 
       <div class="ck-err" id="ck-err" style="margin:0 14px 10px">⚠️ Please fill all required fields</div>
 
       <div class="cx-dock">
-        <div><div class="cx-dock-amt" id="ck-dock-total">₹0</div><div class="cx-dock-sub" id="ck-dock-sub">🔒 Secured by Razorpay</div></div>
-        <button type="button" class="cx-cta" id="rzp-btn" onclick="ckPay()">Pay ₹<span id="rzp-amt-btn">0</span></button>
+        <div><div class="cx-dock-amt" id="ck-dock-total">₹0</div><div class="cx-dock-sub" id="ck-dock-sub">Secured by Razorpay</div></div>
+        <button type="button" class="cx-cta" id="rzp-btn" onclick="ckPay()"><span>Pay ₹<span id="rzp-amt-btn">0</span></span><span class="cx-arrow" aria-hidden="true">→</span></button>
       </div>
     </div><!-- /checkout -->
 
@@ -8700,14 +8707,14 @@ function selPayTab(tab) {
 // Checkout bottom bar: amount, line under it, and the button label.
 function ckPayLabel() {
   return currentPayTab === 'cod'
-    ? 'Place order · ₹' + currentOrderTotal
-    : 'Pay ₹<span id="rzp-amt-btn">' + currentOrderTotal + '</span>';
+    ? 'Place order <span class="cx-arrow" aria-hidden="true">→</span>'
+    : '<span>Pay ₹<span id="rzp-amt-btn">' + currentOrderTotal + '</span></span><span class="cx-arrow" aria-hidden="true">→</span>';
 }
 function ckRefreshDock() {
   var amt = document.getElementById('ck-dock-total');
   if (amt) amt.textContent = '₹' + currentOrderTotal;
   var sub = document.getElementById('ck-dock-sub');
-  if (sub) sub.textContent = currentPayTab === 'cod' ? '💵 Pay cash on delivery' : '🔒 Secured by Razorpay';
+  if (sub) sub.textContent = currentPayTab === 'cod' ? 'Pay cash on delivery' : 'Secured by Razorpay';
   var btn = document.getElementById('rzp-btn');
   if (btn && !btn.disabled && !btn.dataset.wl) btn.innerHTML = ckPayLabel();
 }
