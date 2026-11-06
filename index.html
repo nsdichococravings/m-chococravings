@@ -1326,6 +1326,64 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 .ck-trust span{display:inline-flex;align-items:center;gap:5px}
 .ck-trust span+span::before{content:"·";margin-right:10px;color:var(--cx-gold)}
 
+/* Order success on the boutique look (tokens from cart-ui.css) */
+/* An older rule centred this page as a flex column, which squashed the header
+   and pushed the top off-screen when the content was taller than the phone. */
+#page-success.cx{background:var(--cx-bg);display:block;min-height:0}
+.sc-hero{position:relative;text-align:center;color:#fff;padding:34px 24px 64px;border-radius:0 0 32px 32px;overflow:hidden;
+  background:radial-gradient(120% 90% at 50% 0%,rgba(255,233,194,.18),transparent 60%),linear-gradient(160deg,#2b0a35 0%,#5a0b63 55%,#1a0820 100%)}
+.sc-check{width:84px;height:84px;margin:0 auto 16px}
+.sc-check svg{width:100%;height:100%;overflow:visible}
+.sc-ring{fill:rgba(255,233,194,.08);stroke:#d9b87a;stroke-width:2;stroke-dasharray:183;stroke-dashoffset:183;animation:scDraw .9s cubic-bezier(.65,0,.35,1) .1s forwards}
+.sc-tick{fill:none;stroke:#ffe9c2;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:40;stroke-dashoffset:40;animation:scDraw .45s ease-out .85s forwards}
+@keyframes scDraw{to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){.sc-ring,.sc-tick{animation:none;stroke-dashoffset:0}}
+.sc-eb{font-size:10px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:rgba(255,233,194,.75)}
+.sc-title{font-family:var(--cx-serif);font-size:38px;font-weight:600;line-height:1.05;margin-top:6px}
+.sc-title em{font-style:italic;color:#e8c98f;font-weight:500}
+.sc-sub{font-size:13px;color:rgba(255,255,255,.72);margin-top:8px;line-height:1.5}
+.sc-ticket{position:relative;display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin:-40px 18px 0;padding:18px 20px;border-radius:20px;
+  background:var(--cx-card);border:1px solid var(--cx-line);box-shadow:0 18px 36px -22px rgba(36,5,45,.5)}
+.sc-ticket::before,.sc-ticket::after{content:"";position:absolute;top:50%;width:16px;height:16px;border-radius:50%;background:var(--cx-bg);transform:translateY(-50%);border:1px solid var(--cx-line)}
+.sc-ticket::before{left:-9px;clip-path:inset(0 0 0 50%)}.sc-ticket::after{right:-9px;clip-path:inset(0 50% 0 0)}
+.sc-lbl{font-size:9.5px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--cx-gold)}
+.sc-no{font-family:var(--cx-serif);font-size:24px;font-weight:700;color:var(--cx-plum);margin-top:3px;letter-spacing:.02em}
+.sc-amt{font-family:var(--cx-serif);font-size:28px;font-weight:700;color:var(--cx-plum);margin-top:1px}
+.sc-body{display:flex;flex-direction:column;gap:14px;padding:18px 0 24px}
+.sc-body .cx-card{margin-bottom:0}
+.sc-body>.cx-cta,.sc-body>.succ-wa-btn{margin:0 16px;width:auto!important}
+.sc-push{margin:0 16px;padding:16px 18px;border-radius:22px;background:linear-gradient(135deg,#fbf3fa,#fffdfa);border:1px solid #efdcef}
+.sc-push-top{display:flex;gap:12px;align-items:flex-start}
+.sc-push-ico{flex:none;width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#6e0977;background:#fff;border:1px solid #efdcef}
+.sc-push-t{font-family:var(--cx-serif);font-size:19px;font-weight:600;color:var(--cx-plum)}
+.sc-push-s{font-size:12px;color:var(--cx-muted);margin-top:2px;line-height:1.45}
+.sc-later{display:block;margin:8px auto 0;border:0;background:none;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--cx-muted);cursor:pointer}
+.sc-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:8px 0;font-size:13px;color:var(--cx-muted)}
+.sc-row+.sc-row{border-top:1px solid var(--cx-line2)}
+.sc-row b{font-weight:600;color:var(--cx-ink);text-align:right}
+.sc-row b.sc-gold{color:#8a6a33}
+.sc-note{margin:0 16px;padding:12px 16px;border-radius:16px;background:var(--cx-gold-l);border:1px solid #ecdcbf;font-size:12px;line-height:1.55;color:#6b5228}
+.sc-note b{color:#5a4320}
+#page-success .succ-wa-btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:50px;padding:0 18px;border-radius:999px;background:#fff;
+  border:1px solid #bfe3cc;color:#128c4e;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;letter-spacing:.04em;box-shadow:none}
+/* Tracking timeline */
+.tr-step{display:flex;gap:14px}
+.tr-rail{display:flex;flex-direction:column;align-items:center}
+.tr-dot{width:24px;height:24px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:1.5px solid var(--cx-line);background:#fff;color:#fff}
+.tr-line{width:1.5px;flex:1;min-height:22px;margin:3px 0;background:var(--cx-line)}
+.tr-step.done .tr-dot{background:linear-gradient(135deg,#d9b87a,#b08d57);border-color:transparent}
+.tr-step.done .tr-line{background:linear-gradient(#d9b87a,#e8dccb)}
+.tr-step.now .tr-dot{border-color:#6e0977;background:#fff;position:relative}
+.tr-step.now .tr-dot::after{content:"";width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,#3a0a46,#6e0977);animation:trPulse 1.6s ease-in-out infinite}
+@keyframes trPulse{0%,100%{box-shadow:0 0 0 0 rgba(110,9,119,.35)}50%{box-shadow:0 0 0 6px rgba(110,9,119,0)}}
+@media (prefers-reduced-motion:reduce){.tr-step.now .tr-dot::after{animation:none}}
+.tr-txt{padding:2px 0 14px;flex:1;min-width:0}
+.tr-step:last-child .tr-txt{padding-bottom:0}
+.tr-l{font-size:13.5px;font-weight:600;color:var(--cx-muted)}
+.tr-step.done .tr-l{color:var(--cx-ink)}
+.tr-step.now .tr-l{font-family:var(--cx-serif);font-size:18px;color:var(--cx-plum)}
+.tr-s{font-size:11.5px;color:var(--cx-muted);margin-top:1px}
+
 /* Product detail on the boutique look (tokens from cart-ui.css) */
 #page-detail.cx{padding-bottom:var(--bnav-space)!important}
 #page-detail .dhero{height:340px;background:linear-gradient(160deg,#f7efe9,#efdcea,#f7efe9)}
@@ -2110,76 +2168,48 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
     </div><!-- /checkout -->
 
     <!-- ═══ TRACKING / SUCCESS ═══ -->
-    <div class="page" id="page-success">
-      <!-- Gradient header -->
-      <div style="background:linear-gradient(160deg,#0D002A,#1C003A,#2D0060);padding:52px 22px 24px">
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
-          <div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--green),#16a34a);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;box-shadow:0 0 0 6px rgba(34,197,94,.15)">✓</div>
-          <div>
-            <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;color:var(--white)">Order Confirmed!</div>
-            <div style="font-size:11px;color:var(--green);font-weight:600;margin-top:2px">✅ Successfully placed · Cannot be cancelled</div>
-          </div>
+    <div class="page cx" id="page-success">
+      <div class="sc-hero">
+        <div class="sc-check" aria-hidden="true">
+          <svg viewBox="0 0 64 64"><circle class="sc-ring" cx="32" cy="32" r="29"/><path class="sc-tick" d="M20 33.5l8 8 16-17"/></svg>
         </div>
-
-        <!-- Order ID + Total -->
-        <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <div style="font-size:10px;color:var(--faint);margin-bottom:3px">ORDER ID</div>
-            <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:var(--pl)" id="succ-order-id">CC-000001</div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-size:10px;color:var(--faint);margin-bottom:3px">TOTAL PAID</div>
-            <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:var(--white)" id="succ-total">₹300</div>
-          </div>
-        </div>
+        <div class="sc-eb">Thank you</div>
+        <div class="sc-title">Order <em>placed</em></div>
+        <div class="sc-sub">We've received your order and will confirm it shortly.</div>
       </div>
 
-      <div style="padding:18px 22px;display:flex;flex-direction:column;gap:14px">
+      <div class="sc-ticket">
+        <div><div class="sc-lbl">Order</div><div class="sc-no" id="succ-order-id">CC-000001</div></div>
+        <div style="text-align:right"><div class="sc-lbl">Total</div><div class="sc-amt" id="succ-total">₹300</div></div>
+      </div>
 
+      <div class="sc-body">
         <!-- PUSH OPT-IN (shown by pushRefreshUI until notifications are on) -->
-        <div id="succ-push" style="display:none;background:linear-gradient(135deg,rgba(107,47,206,.22),rgba(107,47,206,.08));border:1px solid rgba(107,47,206,.4);border-radius:16px;padding:14px 16px">
-          <div style="font-size:14px;font-weight:800;color:var(--white);margin-bottom:4px">🔔 Know the moment it's ready</div>
-          <div id="succ-push-hint" style="font-size:12px;color:var(--dim);margin-bottom:10px">We'll tell you when it's baking, ready and delivered — plus members-only offers.</div>
-          <button id="succ-push-btn" onclick="enablePushNotifications()" style="width:100%;padding:11px;border:0;border-radius:12px;background:var(--p);color:#fff;font-weight:700;font-size:13px;cursor:pointer">🔔 Turn on notifications</button>
-          <button onclick="pushLater()" style="width:100%;margin-top:6px;padding:6px;border:0;background:transparent;color:var(--dim);font-size:11px;cursor:pointer">Not now</button>
+        <div id="succ-push" class="sc-push" style="display:none">
+          <div class="sc-push-top"><span class="sc-push-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></span>
+            <div><div class="sc-push-t">Know the moment it's ready</div>
+            <div id="succ-push-hint" class="sc-push-s">We'll tell you when it's baking, ready and delivered — plus members-only offers.</div></div></div>
+          <button id="succ-push-btn" class="cx-cta" style="width:100%;margin-top:12px;min-height:46px" onclick="enablePushNotifications()">Turn on notifications</button>
+          <button class="sc-later" onclick="pushLater()">Not now</button>
         </div>
 
-        <!-- ORDER DETAILS CARD -->
-        <div style="background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:14px 16px">
-          <div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:10px">📋 Order Details</div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:7px">
-            <span style="font-size:12px;color:var(--dim)">Customer</span>
-            <span style="font-size:12px;font-weight:600;color:var(--white)" id="succ-name">—</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:7px">
-            <span style="font-size:12px;color:var(--dim)">Payment</span>
-            <span style="font-size:12px;font-weight:600;color:var(--white)" id="succ-pay">COD</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;margin-bottom:7px">
-            <span style="font-size:12px;color:var(--dim)">Placed on</span>
-            <span style="font-size:12px;font-weight:600;color:var(--white)" id="succ-time">—</span>
-          </div>
-          <div style="display:flex;justify-content:space-between">
-            <span style="font-size:12px;color:var(--dim)">Expected Delivery</span>
-            <span style="font-size:12px;font-weight:600;color:var(--gold)" id="succ-delivery">24 hrs – 3 days</span>
-          </div>
+        <div class="cx-card sc-card">
+          <div class="cx-h">Order details</div>
+          <div class="sc-row"><span>Customer</span><b id="succ-name">—</b></div>
+          <div class="sc-row"><span>Payment</span><b id="succ-pay">COD</b></div>
+          <div class="sc-row"><span>Placed on</span><b id="succ-time">—</b></div>
+          <div class="sc-row"><span>Expected delivery</span><b id="succ-delivery" class="sc-gold">24 hrs – 3 days</b></div>
         </div>
 
-        <!-- LIVE TRACKING -->
-        <div style="background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:16px" id="tracking-card">
-          <div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:16px">Live Tracking</div>
+        <div class="cx-card sc-card" id="tracking-card">
+          <div class="cx-h">Live tracking</div>
           <div id="tracking-steps"></div>
         </div>
 
-        <!-- CANCELLATION POLICY -->
-        <div style="background:rgba(244,114,182,.06);border:1px solid rgba(244,114,182,.18);border-radius:12px;padding:12px 14px;font-size:11px;color:var(--dim);line-height:1.7">
-          <span style="color:var(--pink);font-weight:700">⚠️ No Cancellation</span><br>
-          Brownies are freshly baked on every order and cannot be cancelled once placed. For urgent queries, WhatsApp us within 1 hour.
-        </div>
+        <div class="sc-note"><b>Freshly baked for you.</b> Orders can't be cancelled once placed. For anything urgent, WhatsApp us within an hour.</div>
 
-        <!-- WHATSAPP + HOME BUTTONS -->
-        <button class="succ-wa-btn" id="succ-wa-btn" style="margin-top:4px">📲 Send WhatsApp Confirmation</button>
-        <button class="succ-home-btn" onclick="showPage('home');cartItems=[];localStorage.removeItem('cc_cart');renderCart();" style="margin-bottom:20px">🏠 Continue Shopping</button>
+        <button class="cx-cta" style="width:100%" onclick="showPage('home');cartItems=[];localStorage.removeItem('cc_cart');renderCart();">Continue shopping <span class="cx-arrow" aria-hidden="true">→</span></button>
+        <button class="succ-wa-btn" id="succ-wa-btn"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1.3-4A8 8 0 1 1 8 18.7z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 1c-1-.4-2-1.4-2.5-2.5l1-1-1-2z"/></svg><span>Send WhatsApp confirmation</span></button>
       </div>
     </div><!-- /success -->
 
@@ -5042,32 +5072,11 @@ function renderTrackingSteps(currentStatus, history, isAccessory) {
     var ts       = doneMap[stage.status] || (stage.status === 'pending' && doneMap['confirmed']) || null;
     var timeStr  = ts ? fmtTrackTime(ts) : (isActive ? 'In progress...' : '—');
 
-    var circleStyle, labelColor, iconInner;
-    if (isDone && !isActive) {
-      circleStyle = 'background:linear-gradient(135deg,var(--green),#16a34a);color:#fff';
-      labelColor  = 'var(--green)';
-      iconInner   = '✓';
-    } else if (isActive) {
-      circleStyle = 'background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;animation:pulse 1.5s infinite;box-shadow:0 0 0 4px rgba(107,47,206,.2)';
-      labelColor  = 'var(--pl)';
-      iconInner   = stage.icon;
-    } else {
-      circleStyle = 'background:var(--card);border:2px solid var(--bdr);color:var(--faint)';
-      labelColor  = 'var(--faint)';
-      iconInner   = stage.icon;
-    }
-
-    var lineColor = (isDone && !isActive) ? 'linear-gradient(var(--green),var(--p))' : 'var(--bdr)';
-
-    html += '<div style="display:flex;gap:12px;margin-bottom:' + (isLast?'0':'14px') + '">';
-    html += '<div style="display:flex;flex-direction:column;align-items:center">';
-    html += '<div style="width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;' + circleStyle + '">' + iconInner + '</div>';
-    if (!isLast) html += '<div style="width:2px;flex:1;background:' + lineColor + ';margin:3px 0;min-height:20px"></div>';
-    html += '</div>';
-    html += '<div style="padding-top:5px;flex:1">';
-    html += '<div style="font-size:12px;font-weight:700;color:' + labelColor + '">' + stage.label + '</div>';
-    html += '<div style="font-size:10px;color:var(--faint);margin-top:2px">' + (isActive ? stage.sub : timeStr) + '</div>';
-    html += '</div></div>';
+    var state = (isDone && !isActive) ? 'done' : (isActive ? 'now' : 'next');
+    html += '<div class="tr-step ' + state + '">'
+      + '<div class="tr-rail"><span class="tr-dot">' + (state === 'done' ? '✓' : '') + '</span>' + (isLast ? '' : '<span class="tr-line"></span>') + '</div>'
+      + '<div class="tr-txt"><div class="tr-l">' + stage.label + '</div>' + (isActive ? '<div class="tr-s">' + stage.sub + '</div>' : (timeStr !== '—' ? '<div class="tr-s">' + timeStr + '</div>' : '')) + '</div>'
+      + '</div>';
   });
 
   el.innerHTML = html;
@@ -6247,7 +6256,7 @@ if (currentPayTab === 'upi' && currentUtrValue) {
     document.getElementById('succ-order-id').textContent = orderNum;
     document.getElementById('succ-total').textContent = '₹' + currentOrderTotal;
     document.getElementById('succ-name').textContent = name;
-    document.getElementById('succ-pay').textContent = currentPayMethod.toUpperCase();
+    document.getElementById('succ-pay').textContent = ({ razorpay: 'UPI / Card', upi: 'UPI / Card', cod: 'Cash on delivery', wallet: 'NSDI Wallet' })[String(currentPayMethod).toLowerCase()] || currentPayMethod;
     document.getElementById('succ-time').textContent = fmtDate(orderData.created_at);
     var trackTime = document.getElementById('track-confirmed-time');
     if (trackTime) trackTime.textContent = fmtDate(orderData.created_at);
@@ -6293,7 +6302,7 @@ setTimeout(async () => {
 
 // Keep button as fallback (in case browser blocked popups)
 const ownerWA = document.getElementById('succ-wa-btn');
-ownerWA.textContent = '📲 Resend WhatsApp Confirmation';
+ownerWA.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1.3-4A8 8 0 1 1 8 18.7z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 1c-1-.4-2-1.4-2.5-2.5l1-1-1-2z"/></svg><span>Resend WhatsApp confirmation</span>';
 ownerWA.onclick = () => {
   window.open(`https://wa.me/${NSDI_PHONE}?text=${buildOwnerMsg(orderData)}`, '_blank');
   setTimeout(() => {
