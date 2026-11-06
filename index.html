@@ -1384,6 +1384,59 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 .tr-step.now .tr-l{font-family:var(--cx-serif);font-size:18px;color:var(--cx-plum)}
 .tr-s{font-size:11.5px;color:var(--cx-muted);margin-top:1px}
 
+
+/* Live tracking (boutique) */
+#page-tracking.cx{background:var(--cx-bg)}
+.lt-list{display:flex;flex-direction:column;gap:12px;padding:0 16px 24px}
+.lt-skel{height:170px;border-radius:22px;background:linear-gradient(90deg,#f3ece4 25%,#faf6f0 50%,#f3ece4 75%);background-size:200% 100%;animation:ltSk 1.2s infinite;margin:0}
+@keyframes ltSk{to{background-position:-200% 0}}
+.lt-card{padding:16px 16px 14px;border-radius:22px;background:var(--cx-card);border:1px solid var(--cx-line);cursor:pointer;box-shadow:0 1px 0 rgba(255,255,255,.8) inset,0 10px 30px -18px rgba(58,10,70,.18);transition:transform .15s}
+.lt-card:active{transform:scale(.99)}
+.lt-top,.lt-sh-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.lt-no{font-family:var(--cx-serif);font-size:21px;font-weight:700;color:var(--cx-plum);letter-spacing:.02em;line-height:1.1}
+.lt-date{font-size:11.5px;color:var(--cx-muted);margin-top:3px}
+.lt-st{flex:none;display:inline-flex;align-items:center;gap:7px;padding:5px 11px 5px 9px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.03em;border:1px solid;white-space:nowrap}
+.lt-st i{width:7px;height:7px;border-radius:50%;background:currentColor}
+.lt-st.now{color:var(--cx-brand);background:var(--cx-brand-l);border-color:#ecd6ea}
+.lt-st.now i{animation:trPulse 1.6s ease-in-out infinite}
+.lt-st.ok{color:var(--cx-ok);background:var(--cx-ok-l);border-color:#d3e8da}
+.lt-st.wait{color:#8a6a33;background:var(--cx-gold-l);border-color:#ecdcbf}
+.lt-item{font-family:var(--cx-serif);font-size:18px;font-weight:600;color:var(--cx-ink);margin-top:14px;line-height:1.2}
+.lt-desc{font-size:12px;color:var(--cx-muted);margin-top:3px}
+.lt-bar{height:5px;border-radius:999px;background:var(--cx-line2);overflow:hidden;margin-top:14px}
+.lt-bar span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#b08d57,#6e0977);transition:width .5s}
+.lt-ends{display:flex;justify-content:space-between;font-size:10px;letter-spacing:.06em;color:var(--cx-muted);margin-top:6px}
+.lt-foot{display:flex;align-items:center;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--cx-line2)}
+.lt-amt{font-family:var(--cx-serif);font-size:20px;font-weight:700;color:var(--cx-plum)}
+.lt-pay{flex:1;font-size:11.5px;color:var(--cx-muted)}
+.lt-go{font-size:12px;font-weight:600;color:var(--cx-brand);letter-spacing:.04em}
+.lt-acts{display:flex;gap:8px;margin-top:12px}
+.lt-act{flex:1;min-height:40px;display:flex;align-items:center;justify-content:center;border-radius:999px;border:1px solid var(--cx-line);background:#fff;color:var(--cx-ink2);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.lt-act.on{border-color:var(--cx-brand);color:var(--cx-brand)}
+.lt-act.lock{background:var(--cx-ok-l);border-color:#d3e8da;color:var(--cx-ok);cursor:default}
+#tracking-detail-overlay{background:rgba(26,8,32,.5)!important}
+.lt-sheet{position:absolute;left:0;right:0;bottom:0;z-index:2001;max-height:88%;overflow-y:auto;border-radius:28px 28px 0 0;border-top:1px solid var(--cx-line);padding:0 0 calc(26px + env(safe-area-inset-bottom));box-shadow:0 -20px 50px -20px rgba(26,8,32,.45)}
+.lt-grab{width:42px;height:4px;border-radius:2px;background:#e2d6cb;margin:12px auto 4px}
+.lt-sh-hd{padding:12px 20px 4px}
+.lt-eb{font-size:10px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--cx-gold)}
+.lt-sh-no{font-family:var(--cx-serif);font-size:30px;font-weight:700;color:var(--cx-plum);line-height:1.05;margin-top:2px}
+.lt-sh-item{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:14px;padding:14px 16px;border-radius:18px;background:var(--cx-card);border:1px solid var(--cx-line)}
+.lt-sh-item .lt-item{margin-top:0}
+.lt-sh-amt{font-family:var(--cx-serif);font-size:24px;font-weight:700;color:var(--cx-plum);flex:none}
+.lt-sh-body{margin:14px 16px 0;padding:18px;border-radius:22px;background:var(--cx-card);border:1px solid var(--cx-line)}
+.lt-sh-body [style*="grid-template-columns:1fr 1fr"]{gap:8px!important}
+.lt-tile{padding:10px 12px;border-radius:14px;background:var(--cx-bg);border:1px solid var(--cx-line2)}
+.lt-tile-l{font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--cx-muted)}
+.lt-tile-v{font-size:13px;font-weight:600;color:var(--cx-ink);margin-top:4px}
+.lt-lines{display:flex;flex-direction:column}
+.lt-line{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--cx-line2)}
+.lt-line:first-child{border-top:0;padding-top:0}
+.lt-line-n{font-family:var(--cx-serif);font-size:17px;font-weight:600;color:var(--cx-ink)}
+.lt-line-p{font-family:var(--cx-serif);font-size:18px;font-weight:700;color:var(--cx-plum)}
+.lt-note{display:flex;flex-direction:column;gap:3px;margin:12px 16px 0;padding:12px 16px;border-radius:16px;background:var(--cx-gold-l);border:1px solid #ecdcbf;font-size:12px;color:#6b5228}
+.lt-note b{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8a6a33}
+.lt-wa{width:100%;min-height:50px;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:999px;border:1px solid #bfe3cc;background:#fff;color:#128c4e;font-family:inherit;font-size:13px;font-weight:600;letter-spacing:.04em;cursor:pointer}
+
 /* Product detail on the boutique look (tokens from cart-ui.css) */
 #page-detail.cx{padding-bottom:var(--bnav-space)!important}
 #page-detail .dhero{height:340px;background:linear-gradient(160deg,#f7efe9,#efdcea,#f7efe9)}
@@ -2469,7 +2522,8 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
     </div>
 
     <!-- ═══ LIVE TRACKING PAGE ═══ -->
-    <div class="page" id="page-tracking">
+    <div class="page cx" id="page-tracking">
+      <div class="cx-hdr"><button class="cx-back" aria-label="Back" onclick="goBack()">‹</button><div><div class="cx-title">Live <em>Tracking</em></div><div class="cx-sub">Your orders on their way</div></div></div>
       <!--<div style="background:linear-gradient(160deg,var(--d3),var(--d2));padding:5px 22px 18px;position:relative">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
           <div class="back" style="position:static;width:36px;height:36px;flex-shrink:0" onclick="goBack()">
@@ -2484,8 +2538,8 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
         </div>
       </div> -->
 
-      <div id="tracking-orders-list" style="padding:16px 22px;display:flex;flex-direction:column;gap:12px">
-        <div style="text-align:center;padding:40px 20px;color:var(--dim)">Loading...</div>
+      <div id="tracking-orders-list" class="lt-list">
+        <div class="lt-skel"></div><div class="lt-skel"></div>
       </div>
   </div>
 
@@ -2684,41 +2738,21 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
   style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;
   background:rgba(0,0,0,.65);z-index:2000;backdrop-filter:blur(4px)"></div>
 
-    <div id="tracking-detail-sheet"
-      style="display:none;position:absolute;bottom:0;left:0;right:0;
-      background:var(--d2);border-radius:22px 22px 0 0;
-      border-top:1px solid var(--bdr2);z-index:2001;
-      padding:0 0 32px;max-height:85%;overflow-y:auto">
-      <div style="width:40px;height:4px;border-radius:2px;background:var(--faint);margin:14px auto 6px"></div>
-      <div style="padding:12px 22px 16px;border-bottom:1px solid var(--bdr)">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:var(--white)" id="td-order-num">—</div>
-          <div id="td-status-badge" style="font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;background:rgba(107,47,206,.15);color:var(--pl)">Pending</div>
-        </div>
-        <div style="font-size:11px;color:var(--dim);margin-top:2px" id="td-order-date">—</div>
-        <div style="margin-top:10px;padding:10px 12px;background:var(--card);border-radius:12px;border:1px solid var(--bdr)">
-          <div style="font-size:12px;font-weight:600;color:var(--white)" id="td-item-name">—</div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
-            <div style="font-size:11px;color:var(--dim)" id="td-item-desc">—</div>
-            <div style="font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:700;color:var(--pl)" id="td-total">—</div>
-          </div>
-        </div>
+    <div id="tracking-detail-sheet" class="cx lt-sheet" style="display:none">
+      <div class="lt-grab"></div>
+      <div class="lt-sh-hd">
+        <div class="lt-sh-top"><div><div class="lt-eb">Order</div><div class="lt-sh-no" id="td-order-num">—</div></div>
+          <span id="td-status-badge" class="lt-st now"><i></i>Pending</span></div>
+        <div class="lt-date" id="td-order-date">—</div>
+        <div class="lt-sh-item"><div><div class="lt-item" id="td-item-name">—</div><div class="lt-desc" id="td-item-desc">—</div></div>
+          <div class="lt-sh-amt" id="td-total">—</div></div>
       </div>
-      <div style="padding:18px 22px">
-        <div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:16px"></div>
-        <div id="td-tracking-steps"></div>
-      </div>
-      <div id="td-delivery-info" style="margin:0 22px;background:rgba(107,47,206,.08);border:1px solid rgba(107,47,206,.2);border-radius:14px;padding:12px 14px">
-        <div style="font-size:11px;font-weight:700;color:var(--pl);margin-bottom:4px">🚚 Expected Delivery</div>
-        <div style="font-size:11px;color:var(--dim)" id="td-delivery-est">24 hrs – 3 days from confirmation</div>
-      </div>
-      <div style="padding:16px 22px 0">
-        <div onclick="window.open('https://wa.me/+918015989522','_blank')"
-          style="width:100%;padding:13px;background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;
-          font-size:13px;font-weight:700;border-radius:14px;cursor:pointer;
-          display:flex;align-items:center;justify-content:center;gap:8px">
-          📲 Contact on WhatsApp
-        </div>
+      <div class="lt-sh-body"><div id="td-tracking-steps"></div></div>
+      <div id="td-delivery-info" class="lt-note"><b>Expected delivery</b><span id="td-delivery-est">24 hrs – 3 days from confirmation</span></div>
+      <div style="padding:14px 20px 0">
+        <button type="button" class="lt-wa" onclick="window.open('https://wa.me/+918015989522','_blank')">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1.3-4A8 8 0 1 1 8 18.7z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 1c-1-.4-2-1.4-2.5-2.5l1-1-1-2z"/></svg>
+          Contact on WhatsApp</button>
       </div>
     </div>
     <!-- CUSTOM ORDER DETAIL SHEET -->
@@ -5055,8 +5089,8 @@ function buildStepsFromHistory(history, currentStatus, useAccessoryStages) {
   return { stages: stages, doneMap: doneMap, currentIdx: dedupIdx };
 }
 
-function renderTrackingSteps(currentStatus, history, isAccessory) {
-  var el = document.getElementById('tracking-steps');
+function renderTrackingSteps(currentStatus, history, isAccessory, target) {
+  var el = target || document.getElementById('tracking-steps');
   if (!el) return;
 
   var built = buildStepsFromHistory(history, currentStatus, isAccessory);
@@ -6356,16 +6390,25 @@ setTimeout(function() {
 function openLiveTracking() {
   showPage('tracking'); // showPage will trigger loadLiveTrackingData automatically
 }
+var LT_ICON = {
+  lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9.5" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>',
+  box: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 7.5L12 3l8.5 4.5v9L12 21l-8.5-4.5z"/><path d="M3.5 7.5L12 12l8.5-4.5M12 12v9"/></svg>',
+  warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17h0"/></svg>'
+};
+function ltEmpty(icon, title, sub, btn) {
+  return '<div class="cx-empty"><div class="cx-empty-ico">' + LT_ICON[icon] + '</div><h2>' + title + '</h2><p>' + sub + '</p>' + (btn || '') + '</div>';
+}
+
 async function loadLiveTrackingData() {
   var listEl = document.getElementById('tracking-orders-list');
   if (!listEl) return;
 
   if (!currentUser || !currentUser.db_id) {
-    listEl.innerHTML = '<div style="text-align:center;padding:40px 20px"><div style="font-size:40px;margin-bottom:12px">🔒</div><div style="font-size:14px;font-weight:600;color:var(--white)">Please sign in</div><div style="font-size:12px;color:var(--dim);margin-top:6px">Sign in to track your orders</div></div>';
+    listEl.innerHTML = ltEmpty('lock', 'Please sign in', 'Sign in to follow your orders live.');
     return;
   }
 
-  listEl.innerHTML = '<div style="text-align:center;padding:40px;color:var(--dim)">Loading orders...</div>';
+  listEl.innerHTML = '<div class="lt-skel"></div><div class="lt-skel"></div>';
 
   var orders, error;
   try {
@@ -6377,12 +6420,13 @@ async function loadLiveTrackingData() {
     orders = result.data;
     error  = result.error;
   } catch(e) {
-    listEl.innerHTML = '<div style="text-align:center;padding:40px 20px"><div style="font-size:40px;margin-bottom:12px">⚠️</div><div style="font-size:14px;font-weight:600;color:var(--white)">Could not load orders</div><div style="font-size:12px;color:var(--dim);margin-top:6px">' + (e.message || 'Please try again') + '</div></div>';
+    listEl.innerHTML = ltEmpty('warn', 'Could not load orders', ordEsc(e.message || 'Please try again'));
     return;
   }
 
   if (error || !orders || orders.length === 0) {
-    listEl.innerHTML = '<div style="text-align:center;padding:40px 20px"><div style="font-size:48px;margin-bottom:12px">✅</div><div style="font-size:14px;font-weight:600;color:var(--white)">No active orders</div><div style="font-size:12px;color:var(--dim);margin-top:6px">All your orders have been delivered!</div><div onclick="showPage(\'explore\')" style="margin-top:16px;display:inline-block;padding:10px 20px;background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer">Order Now 🍫</div></div>';
+    listEl.innerHTML = ltEmpty('box', 'No orders on the way', 'Everything you ordered has been delivered.',
+      '<button class="cx-cta" style="margin:18px auto 0;max-width:240px" onclick="showPage(\'explore\')">Order now <span class="cx-arrow" aria-hidden="true">→</span></button>');
     return;
   }
 
@@ -6390,95 +6434,53 @@ async function loadLiveTrackingData() {
   var badge = document.getElementById('tracking-badge');
   if (badge && orders.length > 0) { badge.style.display = 'block'; badge.textContent = orders.length; }
 
-  var statusColors = {
-    pending:'rgba(255,180,0,.15)', confirmed:'rgba(107,47,206,.15)',
-    baking:'rgba(255,140,0,.15)', packed:'rgba(34,197,94,.15)',
-    out_for_delivery:'rgba(59,130,246,.15)', ready_for_baking:'rgba(255,140,0,.1)',
-    ready_to_dispatch:'rgba(34,197,94,.1)', shipped:'rgba(59,130,246,.15)'
-  };
   var statusLabels = {
-    pending:'⏳ Pending', confirmed:'✅ Confirmed', baking:'🍫 Baking',
-    packed:'📦 Packed', out_for_delivery:'🚚 Out for Delivery',
-    ready_for_baking:'🍫 Ready to Bake', ready_to_dispatch:'📦 Ready to Dispatch',
-    shipped:'🚚 Shipped'
+    pending:'Pending', confirmed:'Confirmed', baking:'Baking',
+    packed:'Packed', out_for_delivery:'Out for delivery',
+    ready_for_baking:'Ready to bake', ready_to_dispatch:'Ready to dispatch',
+    shipped:'Shipped'
   };
   var statusProgress = {
     pending:1, confirmed:2, ready_for_baking:3, baking:4,
     ready_to_dispatch:5, packed:5, shipped:6, out_for_delivery:6
   };
-
-  var accStatusLabels = {
-    pending:'⏳ Pending', confirmed:'✅ Confirmed',
-    packed:'📦 Packed', shipped:'🚚 Shipped', delivered:'🎉 Delivered'
-  };
-  var accStatusProgress = {
-    pending:1, confirmed:2, packed:3, shipped:4, delivered:5
-  };
+  var accStatusLabels = { pending:'Pending', confirmed:'Confirmed', packed:'Packed', shipped:'Shipped', delivered:'Delivered' };
+  var accStatusProgress = { pending:1, confirmed:2, packed:3, shipped:4, delivered:5 };
+  var payLabels = { razorpay:'UPI / Card', upi:'UPI / Card', cod:'Cash on delivery', wallet:'NSDI Wallet' };
 
   listEl.innerHTML = orders.map(function(o) {
     var items = o.order_items || [];
     var itemName = items.length > 0 ? items[0].product_name : 'Order';
-    var itemDesc = items.length > 0 ? (items[0].egg_type === 'eggless' ? '💚 Eggless' : '❤️ Egg') + ' · ' + (items[0].pack_label || '4pcs') : '';
-    if (items.length > 1) itemDesc += ' +' + (items.length-1) + ' more';
+    var itemDesc = items.length > 0 ? (items[0].egg_type === 'eggless' ? 'Eggless' : 'With egg') + ' · ' + (items[0].pack_label || '4pcs') : '';
+    if (items.length > 1) itemDesc += ' · +' + (items.length-1) + ' more';
     var isAcc = isAccessoryOrder(o.order_items);
-    var statusBg  = statusColors[o.status]  || 'rgba(255,255,255,.05)';
     var statusLbl = (isAcc ? accStatusLabels[o.status] : statusLabels[o.status]) || o.status;
     var progress  = isAcc ? (accStatusProgress[o.status] || 1) : (statusProgress[o.status] || 1);
     var totalSteps = isAcc ? 5 : 6;
     var pct = Math.round((progress / totalSteps) * 100);
     var date = o.created_at ? new Date(o.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short'}) : '';
+    var tone = o.status === 'pending' ? 'wait' : (/shipped|out_for_delivery|packed|ready_to_dispatch/.test(o.status) ? 'ok' : 'now');
+    var jsq = function (v) { return String(v == null ? '' : v).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;'); };
 
-    console.log('Order row — id:', o.id, 'order_number:', o.order_number);
-    return '<div onclick="openTrackingDetail(\'' + o.order_number + '\',\'' + o.order_number + '\',\'' + o.status + '\',\'' + o.total + '\',\'' + date + '\',\'' + itemName.replace(/'/g,"\\'") + '\',\'' + itemDesc.replace(/'/g,"\\'") + '\')" style="background:var(--card);border:1px solid var(--bdr);border-radius:18px;padding:16px;cursor:pointer;transition:all .2s" >'
-      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">'
-      + '<div>'
-      + '<div style="font-size:13px;font-weight:700;color:var(--pl)">' + o.order_number + '</div>'
-      + '<div style="font-size:11px;color:var(--dim);margin-top:2px">' + date + '</div>'
-      + '</div>'
-      + '<div style="font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;background:' + statusBg + ';color:var(--white)">' + statusLbl + '</div>'
-      + '</div>'
-      + '<div style="font-size:12px;font-weight:600;color:var(--white);margin-bottom:3px">' + itemName + '</div>'
-      + '<div style="font-size:11px;color:var(--dim);margin-bottom:12px">' + itemDesc + '</div>'
-      // Progress bar
-      + '<div style="height:4px;background:rgba(0,0,0,.08);border-radius:2px;overflow:hidden;margin-bottom:6px">'
-      + '<div style="height:100%;width:' + pct + '%;background:linear-gradient(90deg,var(--p),var(--pl));border-radius:2px;transition:width .5s"></div>'
-      + '</div>'
-      + '<div style="display:flex;justify-content:space-between">'
-      + '<span style="font-size:10px;color:var(--faint)">Placed</span>'
-      + '<span style="font-size:10px;color:var(--faint)">Delivered</span>'
-      + '</div>'
-      + '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center">'
-      + '<span style="font-size:11px;color:var(--dim)">₹' + o.total + ' · ' + (o.payment_method||'').toUpperCase() + '</span>'
-      + '<span style="font-size:11px;font-weight:700;color:var(--pl)">Tap Details</span>'
-      + (o.status === 'pending' && o.order_items && o.order_items.length === 0  ? '<div onclick="event.stopPropagation();openCustomOrderEdit(\'' + o.order_number  + '\',\'\')" '
-      + 'style="margin-top:10px;padding:10px;background:rgba(107,47,206,.12);'
-      + 'border:1.5px solid rgba(107,47,206,.35);border-radius:12px;'
-      + 'font-size:12px;font-weight:700;color:var(--pl);text-align:center;cursor:pointer">'
-      + '</div>'
-      : '')
-      + '</div>'
-      + (o.is_custom
-          ? o.status === 'pending'
-            ? '<div style="display:flex;gap:8px;margin-top:10px">'
-            + '<div onclick="event.stopPropagation();openCustomOrderSheet(\'' + o.order_number + '\',false)" '
-            + 'style="flex:1;padding:10px;background:rgba(107,47,206,.1);border:1.5px solid rgba(107,47,206,.3);border-radius:12px;display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer">'
-            + '<span style="font-size:13px">✏️</span><span style="font-size:11px;font-weight:700;color:var(--pl)">Edit Order</span>'
-            + '</div>'
-            + '<div onclick="event.stopPropagation();openCustomOrderSheet(\'' + o.order_number + '\',true)" '
-            + 'style="flex:1;padding:10px;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer">'
-            + '<span style="font-size:13px">👁</span><span style="font-size:11px;font-weight:700;color:var(--dim)">View Details</span>'
-            + '</div>'
-            + '</div>'
-            : '<div style="display:flex;gap:8px;margin-top:10px">'
-            + '<div onclick="event.stopPropagation();openCustomOrderSheet(\'' + o.order_number + '\',true)" '
-            + 'style="flex:1;padding:10px;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;display:flex;align-items:center;justify-content:center;gap:5px;cursor:pointer">'
-            + '<span style="font-size:13px">👁</span><span style="font-size:11px;font-weight:700;color:var(--dim)">View Details</span>'
-            + '</div>'
-            + '<div style="flex:1;padding:10px;background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2);border-radius:12px;display:flex;align-items:center;justify-content:center;gap:5px">'
-            + '<span style="font-size:12px">🔒</span><span style="font-size:11px;font-weight:600;color:var(--green)">Locked · Confirmed</span>'
-            + '</div>'
-            + '</div>'
-          : '')
+    var actions = '';
+    if (o.is_custom) {
+      actions = '<div class="lt-acts">'
+        + (o.status === 'pending'
+          ? '<button type="button" class="lt-act on" onclick="event.stopPropagation();openCustomOrderSheet(\'' + jsq(o.order_number) + '\',false)">Edit order</button>'
+          : '<span class="lt-act lock">Locked · confirmed</span>')
+        + '<button type="button" class="lt-act" onclick="event.stopPropagation();openCustomOrderSheet(\'' + jsq(o.order_number) + '\',true)">View details</button>'
+        + '</div>';
+    }
+
+    return '<div class="lt-card" role="button" tabindex="0" onclick="openTrackingDetail(\'' + jsq(o.order_number) + '\',\'' + jsq(o.order_number) + '\',\'' + jsq(o.status) + '\',\'' + jsq(o.total) + '\',\'' + jsq(date) + '\',\'' + jsq(itemName) + '\',\'' + jsq(itemDesc) + '\')">'
+      + '<div class="lt-top"><div><div class="lt-no">' + ordEsc(o.order_number) + '</div><div class="lt-date">' + ordEsc(date) + '</div></div>'
+      + '<span class="lt-st ' + tone + '"><i></i>' + ordEsc(statusLbl) + '</span></div>'
+      + '<div class="lt-item">' + ordEsc(itemName) + '</div>'
+      + (itemDesc ? '<div class="lt-desc">' + ordEsc(itemDesc) + '</div>' : '')
+      + '<div class="lt-bar"><span style="width:' + pct + '%"></span></div>'
+      + '<div class="lt-ends"><span>Placed</span><span>Step ' + progress + ' of ' + totalSteps + '</span><span>Delivered</span></div>'
+      + '<div class="lt-foot"><span class="lt-amt">₹' + ordEsc(o.total) + '</span><span class="lt-pay">' + ordEsc(payLabels[(o.payment_method || '').toLowerCase()] || (o.payment_method || '').toUpperCase()) + '</span><span class="lt-go">Details ›</span></div>'
+      + actions
       + '</div>';
   }).join('');
 }
@@ -6504,18 +6506,17 @@ async function openTrackingDetail(orderId, orderNum, status, total, date, itemNa
     ready_for_baking:'🍫 Ready to Bake', ready_to_dispatch:'📦 Ready to Dispatch',
     shipped:'🚚 Shipped', delivered:'🎉 Delivered'
   };
-  document.getElementById('td-status-badge').textContent = statusLabels[status] || status;
-  document.getElementById('td-tracking-steps').innerHTML =
-    '<div style="text-align:center;padding:20px;color:var(--dim)">Loading...</div>';
+  var tdBadge = document.getElementById('td-status-badge');
+  tdBadge.className = 'lt-st ' + (status === 'pending' ? 'wait' : (status === 'delivered' || /shipped|out_for_delivery|packed|ready_to_dispatch/.test(status) ? 'ok' : 'now'));
+  tdBadge.innerHTML = '<i></i>' + ordEsc((statusLabels[status] || status).replace(/^[^A-Za-z]+/, ''));
+  document.getElementById('td-tracking-steps').innerHTML = '<div class="lt-skel" style="height:160px;margin:0"></div>';
 
   // ── HELPER ──
   var tdItem = function(icon, label, value, full) {
     if (!value || value === 'null' || value === 'undefined' || value === 'None' || value === 'none') return '';
-    return '<div style="background:var(--card);border:0.5px solid var(--bdr);border-radius:12px;padding:10px 12px'
-      + (full ? ';grid-column:1/-1' : '') + '">'
-      + '<div style="font-size:15px;margin-bottom:3px">' + icon + '</div>'
-      + '<div style="font-size:9px;color:var(--dim);letter-spacing:.5px;text-transform:uppercase;margin-bottom:3px">' + label + '</div>'
-      + '<div style="font-size:13px;font-weight:600;color:var(--white)">' + value + '</div>'
+    return '<div class="lt-tile"' + (full ? ' style="grid-column:1/-1"' : '') + '>'
+      + '<div class="lt-tile-l">' + label + '</div>'
+      + '<div class="lt-tile-v">' + value + '</div>'
       + '</div>';
   };
 
@@ -6674,41 +6675,26 @@ try {
     } else if (items && items.length > 0) {
       // ══ REGULAR BROWNIE ORDER ══
       itemsHtml =
-        '<div style="margin-bottom:18px">'
-        + '<div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:10px">🛒 Order Items</div>'
+        '<div class="cx-h">Items</div><div class="lt-lines">'
         + items.map(function(item) {
-            var egg   = item.egg_type === 'eggless' ? '💚 Eggless' : '❤️ With Egg';
-            var tier  = item.tier === 'couverture'  ? '🌟 Couverture' : '🍫 Premium';
             var qty   = item.quantity || 1;
             var price = item.line_total || ((item.unit_price || 0) * qty);
-            return '<div style="background:var(--card);border:1px solid var(--bdr);border-radius:12px;padding:12px;margin-bottom:8px">'
-              + '<div style="display:flex;justify-content:space-between;align-items:flex-start">'
-              + '<div style="flex:1">'
-              + '<div style="font-size:13px;font-weight:600;color:var(--white)">' + (item.product_name || 'Brownie') + '</div>'
-              + '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">'
-              + '<span style="font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(34,197,94,.12);color:var(--green)">' + egg + '</span>'
-              + '<span style="font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(107,47,206,.12);color:var(--pl)">' + tier + '</span>'
-              + '<span style="font-size:10px;padding:2px 8px;border-radius:8px;background:rgba(255,255,255,.07);color:var(--dim)">Qty: ' + qty + '</span>'
-              + '</div>'
-              + '</div>'
-              + '<div style="font-size:16px;font-weight:700;color:var(--pl);margin-left:12px">₹' + price + '</div>'
-              + '</div>'
-              + '</div>';
+            return '<div class="lt-line"><div><div class="lt-line-n">' + ordEsc(item.product_name || 'Brownie') + '</div>'
+              + '<div class="lt-desc">' + (item.egg_type === 'eggless' ? 'Eggless' : 'With egg') + ' · ' + (item.tier === 'couverture' ? 'Couverture' : 'Premium') + ' · Qty ' + qty + '</div></div>'
+              + '<div class="lt-line-p">₹' + price + '</div></div>';
           }).join('')
         + '</div>';
     }
 
     // ── BUILD TRACKING STEPS ──
+    // Drawn into a detached element: the order success page owns #tracking-steps.
     var tempEl = document.createElement('div');
-    tempEl.id  = 'tracking-steps';
-    document.body.appendChild(tempEl);
-    renderTrackingSteps(status, history, isAccessory);
+    renderTrackingSteps(status, history, isAccessory, tempEl);
     var stepsContent = tempEl.innerHTML;
-    tempEl.remove();
 
     document.getElementById('td-tracking-steps').innerHTML =
       itemsHtml
-      + '<div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:16px;margin-top:4px">📍 Order Journey</div>'
+      + '<div class="cx-h" style="margin-top:18px">Order journey</div>'
       + stepsContent;
 
   } catch(e) {
