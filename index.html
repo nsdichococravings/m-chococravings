@@ -1437,6 +1437,42 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 .lt-note b{font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8a6a33}
 .lt-wa{width:100%;min-height:50px;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:999px;border:1px solid #bfe3cc;background:#fff;color:#128c4e;font-family:inherit;font-size:13px;font-weight:600;letter-spacing:.04em;cursor:pointer}
 
+
+/* Notifications drop-down (boutique) */
+#notif-overlay{background:rgba(26,8,32,.18)}
+.nf-sheet{position:absolute;top:62px;right:10px;width:calc(100% - 20px);max-width:420px;height:min(60vh,520px);z-index:2000;flex-direction:column;overflow:hidden;
+  border-radius:24px;background:#faf6f0;border:1px solid #ece2d8;font-family:'DM Sans',sans-serif;
+  box-shadow:0 24px 50px -20px rgba(26,8,32,.5);transform:translateY(-8px);opacity:0;transition:transform .25s cubic-bezier(.16,1,.3,1),opacity .25s}
+.nf-hd{flex-shrink:0;padding:16px 18px 16px;color:#fff;border-radius:0 0 22px 22px;
+  background:radial-gradient(120% 90% at 100% 0%,rgba(255,233,194,.18),transparent 60%),linear-gradient(160deg,#2b0a35 0%,#5a0b63 55%,#1a0820 100%)}
+.nf-eb{font-size:9.5px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:rgba(255,233,194,.75)}
+.nf-row{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:6px}
+.nf-t{font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:600;line-height:1}
+.nf-t em{font-style:italic;color:#e8c98f;font-weight:500}
+.nf-r{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+#notif-unread-lbl{font-size:11px;color:rgba(255,255,255,.7)}
+.nf-all{border:1px solid rgba(255,233,194,.35);background:rgba(255,255,255,.08);color:#ffe9c2;border-radius:999px;padding:6px 12px;font-family:inherit;font-size:10.5px;font-weight:600;letter-spacing:.06em;cursor:pointer}
+.nf-list{flex:1;overflow-y:auto;scrollbar-width:none;padding:6px 10px 12px}
+.nf-list::-webkit-scrollbar{display:none}
+.nf-day{display:flex;align-items:center;gap:10px;padding:12px 8px 8px;font-size:9.5px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:#b08d57}
+.nf-day::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,#ece2d8,transparent)}
+.nf-item{position:relative;display:flex;gap:12px;align-items:flex-start;padding:12px;margin-bottom:6px;border-radius:18px;cursor:pointer;background:#fffdfa;border:1px solid #f3ece4;transition:transform .12s}
+.nf-item:active{transform:scale(.99)}
+.nf-item.unread{background:linear-gradient(135deg,#fbf3fa,#fffdfa);border-color:#ecd6ea}
+.nf-ico{flex:none;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;background:radial-gradient(circle at 50% 40%,#fff,#f6eedf);box-shadow:0 0 0 1px #ecdcbf}
+.nf-body{flex:1;min-width:0}
+.nf-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+.nf-subj{font-size:13.5px;font-weight:600;color:#24112b;line-height:1.3}
+.nf-item:not(.unread) .nf-subj{font-weight:500;color:#4a3a50}
+.nf-time{flex:none;font-size:10.5px;color:#8d7f90;white-space:nowrap}
+.nf-msg{font-size:12px;color:#8d7f90;line-height:1.5;margin-top:3px}
+.nf-dot{position:absolute;top:14px;right:12px;width:7px;height:7px;border-radius:50%;background:#6e0977;box-shadow:0 0 0 3px rgba(110,9,119,.12)}
+.nf-item.unread .nf-time{margin-right:12px}
+.nf-empty{text-align:center;padding:46px 20px}
+.nf-empty-ico{width:64px;height:64px;margin:0 auto 14px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#3a0a46;background:radial-gradient(circle at 50% 40%,#fff,#f6eedf);box-shadow:0 0 0 1px #ecdcbf,0 0 0 8px rgba(176,141,87,.08)}
+.nf-empty-t{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;color:#3a0a46}
+.nf-empty-s{font-size:12px;color:#8d7f90;margin-top:4px}
+
 /* Product detail on the boutique look (tokens from cart-ui.css) */
 #page-detail.cx{padding-bottom:var(--bnav-space)!important}
 #page-detail .dhero{height:340px;background:linear-gradient(160deg,#f7efe9,#efdcea,#f7efe9)}
@@ -2636,39 +2672,15 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
     <div id="notif-overlay" onclick="closeNotificationSheet()"
       style="display:none;position:absolute;inset:0;z-index:1999"></div>
 
-    <div id="notif-sheet"
-      style="display:none;position:absolute;top:62px;right:10px;width:calc(100% - 20px);
-      height:50vh;background:#faf8fc;border-radius:16px;
-      border:1px solid #e8d8f0;z-index:2000;
-      display:none;flex-direction:column;
-      box-shadow:0 8px 40px rgba(110,9,119,.18),0 2px 8px rgba(0,0,0,.08);
-      overflow:hidden;font-family:'DM Sans',sans-serif;
-      transform:translateY(-8px);opacity:0;
-      transition:transform .25s cubic-bezier(.16,1,.3,1),opacity .25s">
-
-      <!-- HEADER -->
-      <div style="padding:14px 16px 10px;border-bottom:1px solid #ede0f5;flex-shrink:0;position:relative;overflow:hidden;background:#faf8fc">
-        <svg style="position:absolute;top:-20px;right:-10px;width:90px;height:90px;opacity:.06;pointer-events:none" viewBox="0 0 100 100" fill="none">
-          <circle cx="80" cy="20" r="70" stroke="#6e0977" stroke-width="0.5"/>
-          <circle cx="80" cy="20" r="50" stroke="#6e0977" stroke-width="0.5"/>
-          <circle cx="80" cy="20" r="30" stroke="#6e0977" stroke-width="0.5"/>
-        </svg>
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-          <div style="width:16px;height:1px;background:#6e0977"></div>
-          <span style="font-size:8px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#9c0ca1">NSDI ChocoCravings</span>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300;color:#1a0820;letter-spacing:-.5px;line-height:1">Your <em style="font-style:italic;color:#6e0977">Updates</em></div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <div style="font-size:10px;color:#a090b0" id="notif-unread-lbl"></div>
-            <div onclick="markAllNotifsRead()" style="font-size:8px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#6e0977;cursor:pointer;padding:4px 10px;border:1px solid #ddd0ea">All read</div>
-          </div>
+    <div id="notif-sheet" class="nf-sheet" role="dialog" aria-label="Notifications" style="display:none">
+      <div class="nf-hd">
+        <div class="nf-eb">NSDI ChocoCravings</div>
+        <div class="nf-row">
+          <div class="nf-t">Your <em>Updates</em></div>
+          <div class="nf-r"><span id="notif-unread-lbl"></span><button type="button" class="nf-all" onclick="markAllNotifsRead()">Mark all read</button></div>
         </div>
       </div>
-
-      <!-- LIST -->
-      <div id="notif-list" style="overflow-y:auto;flex:1;scrollbar-width:none;padding-bottom:12px">
-      </div>
+      <div id="notif-list" class="nf-list"></div>
     </div>
     <!-- VIBE STORE PRODUCT DETAIL SHEET -->
     <div id="vs-detail-overlay" onclick="closeVsDetail()"
@@ -8396,16 +8408,16 @@ async function showOffer(id) {
   var wrap = document.createElement('div');
   wrap.id = 'offer-view';
   wrap.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(10,0,20,.6);display:flex;align-items:center;justify-content:center;padding:20px';
-  wrap.innerHTML = '<div role="dialog" aria-modal="true" aria-labelledby="offer-view-title" style="width:100%;max-width:400px;border-radius:24px;overflow:hidden;background:#fffaf3;color:#1a0820;box-shadow:0 20px 60px rgba(0,0,0,.45)">'
-    + '<div style="position:relative;padding:26px 22px 20px;background:linear-gradient(140deg,#3b1a08,#6e0977 60%,#9c0ca1);color:#fff">'
+  wrap.innerHTML = '<div role="dialog" aria-modal="true" aria-labelledby="offer-view-title" style="width:100%;max-width:400px;border-radius:24px;overflow:hidden;background:#fffdfa;color:#24112b;box-shadow:0 24px 60px -20px rgba(26,8,32,.7)">'
+    + '<div style="position:relative;padding:26px 22px 20px;background:radial-gradient(120% 90% at 100% 0%,rgba(255,233,194,.2),transparent 60%),linear-gradient(160deg,#2b0a35 0%,#5a0b63 55%,#1a0820 100%);color:#fff">'
     +   '<button type="button" onclick="document.getElementById(\'offer-view\').remove()" aria-label="Close" style="position:absolute;top:12px;right:12px;width:34px;height:34px;border-radius:50%;border:0;background:rgba(255,255,255,.16);color:#fff;font-size:16px;cursor:pointer">✕</button>'
-    +   '<div style="font-size:10px;font-weight:700;letter-spacing:2.5px;opacity:.75">🏷️ CHOCOCRAVINGS OFFER · ' + offerEsc(when) + '</div>'
-    +   '<div id="offer-view-title" style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:28px;font-weight:700;line-height:1.15;margin-top:8px">' + offerEsc(b.title) + '</div>'
+    +   '<div style="font-size:10px;font-weight:700;letter-spacing:.24em;color:rgba(255,233,194,.8)">CHOCOCRAVINGS OFFER · ' + offerEsc(when) + '</div>'
+    +   '<div id="offer-view-title" style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:32px;font-weight:600;line-height:1.1;margin-top:8px">' + offerEsc(b.title) + '</div>'
     + '</div>'
     + '<div style="padding:20px 22px 22px">'
     +   '<div style="font-size:15px;line-height:1.6;white-space:pre-wrap">' + offerEsc(b.body) + '</div>'
     +   '<div style="font-size:11px;color:#8c647f;margin-top:12px">Show this screen at the counter, or order in the app.</div>'
-    +   '<button type="button" id="offer-view-go" style="margin-top:16px;width:100%;padding:13px;border:0;border-radius:14px;background:#6e0977;color:#fff;font-weight:700;font-size:14px;cursor:pointer">' + (/open=orders/.test(b.target || '') ? 'View my orders' : '🛍️ Order now') + '</button>'
+    +   '<button type="button" id="offer-view-go" style="margin-top:18px;width:100%;min-height:52px;border:0;border-radius:999px;background:linear-gradient(135deg,#3a0a46,#6e0977 60%,#8e1a8f);color:#fff;font-weight:600;font-size:13.5px;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;box-shadow:0 0 0 1px rgba(176,141,87,.35) inset,0 12px 26px -12px rgba(58,10,70,.55)">' + (/open=orders/.test(b.target || '') ? 'View my orders' : 'Order now') + '</button>'
     + '</div></div>';
   wrap.addEventListener('click', function (e) { if (e.target === wrap) wrap.remove(); });
   document.body.appendChild(wrap);
@@ -8496,14 +8508,11 @@ function renderNotifList() {
   if (!list) return;
 
   var unread = _notifData.filter(function(n){ return !n.read_at; }).length;
-  if (lbl) lbl.textContent = unread > 0 ? unread + ' unread' : 'All caught up ✦';
+  if (lbl) lbl.textContent = unread > 0 ? unread + ' unread' : 'All caught up';
 
   if (_notifData.length === 0) {
-    list.innerHTML = '<div style="text-align:center;padding:52px 20px">'
-      + '<div style="width:56px;height:56px;border-radius:50%;border:1px solid #ddd0ea;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 14px">🔔</div>'
-      + '<div style="font-family:\'Cormorant Garamond\',serif;font-size:20px;font-style:italic;color:#6e0977;margin-bottom:5px">All quiet</div>'
-      + '<div style="font-size:11px;color:#a090b0;letter-spacing:.3px">Order updates will appear here</div>'
-      + '</div>';
+    list.innerHTML = '<div class="nf-empty"><div class="nf-empty-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></div>'
+      + '<div class="nf-empty-t">All quiet</div><div class="nf-empty-s">Order updates and offers will appear here</div></div>';
     return;
   }
 
@@ -8536,46 +8545,17 @@ function renderNotifList() {
 
   var html = '';
   Object.keys(groups).forEach(function(dateLabel) {
-    html += '<div style="padding:12px 22px 4px;font-size:8px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#c0a0d0">'
-      + dateLabel + '</div>';
-
-    groups[dateLabel].forEach(function(n, gi) {
+    html += '<div class="nf-day">' + dateLabel + '</div>';
+    groups[dateLabel].forEach(function(n) {
       var isRead = !!n.read_at;
       var ic = iconColor[n.template_name] || iconColor[n.type] || iconColor.system;
-      var timeStr = n.sent_at ? new Date(n.sent_at).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}) : '';
-      var orderLink = n.order_id
-        ? '<div style="font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#6e0977;margin-top:5px"></div>'
-        : '';
-
-      html += '<div onclick="markNotifRead(\'' + n.id + '\')" '
-        + 'style="display:flex;gap:12px;padding:14px 22px;cursor:pointer;'
-        + 'background:' + (isRead ? 'transparent' : 'rgba(110,9,119,.03)') + ';'
-        + 'border-bottom:1px solid #f5eeff;transition:background .2s">'
-
-        // Icon
-        + '<div style="width:42px;height:42px;border-radius:50%;flex-shrink:0;'
-        + 'background:' + ic[1] + ';border:1px solid ' + ic[2] + ';'
-        + 'display:flex;align-items:center;justify-content:center;font-size:18px">' + ic[0] + '</div>'
-
-        // Body
-        + '<div style="flex:1;min-width:0">'
-        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2px">'
-        + '<div style="font-size:13px;font-weight:' + (isRead?'500':'600') + ';color:#1a0820;line-height:1.3;flex:1;margin-right:8px">' + (n.subject||'') + '</div>'
-        + '<div style="font-size:10px;color:#c0a0d0;white-space:nowrap;flex-shrink:0">' + timeStr + '</div>'
-        + '</div>'
-        + '<div style="font-size:11px;color:#7a6080;line-height:1.6">' + (n.message||'') + '</div>'
-        + orderLink
-        + '</div>'
-
-        // Unread dot
-        + (isRead
-          ? '<div style="width:7px;flex-shrink:0"></div>'
-          : '<div style="width:7px;height:7px;border-radius:50%;background:#9c0ca1;flex-shrink:0;margin-top:6px"></div>')
-
+      var timeStr = n.sent_at ? new Date(n.sent_at).toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'}).toLowerCase() : '';
+      html += '<div class="nf-item' + (isRead ? '' : ' unread') + '" role="button" tabindex="0" onclick="markNotifRead(\'' + n.id + '\')">'
+        + '<span class="nf-ico">' + ic[0] + '</span>'
+        + '<div class="nf-body"><div class="nf-top"><div class="nf-subj">' + (n.subject||'') + '</div><div class="nf-time">' + timeStr + '</div></div>'
+        + '<div class="nf-msg">' + (n.message||'') + '</div></div>'
+        + (isRead ? '' : '<span class="nf-dot" aria-label="Unread"></span>')
         + '</div>';
-
-      // Thin gradient divider
-      html += '<div style="height:1px;background:linear-gradient(90deg,transparent,#e8d0f5,transparent);margin:0 22px"></div>';
     });
   });
 
