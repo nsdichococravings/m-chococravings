@@ -9,6 +9,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <link rel="preconnect" href="https://yjbfditboewwpgyqzryd.supabase.co" crossorigin>
 <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
+<link rel="stylesheet" href="/cart-ui.css?v=20261106b">
 <title>NSDI ChocoCravings</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"> </script>
 <script src="supabase-net.js?v=20261018"></script>
@@ -1033,6 +1034,27 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
   0%,100% { opacity:.6; transform:scale(1); }
   50%      { opacity:0;  transform:scale(2.2); }
 }
+/* Cart + checkout on the shared cart look (cart-ui.css) */
+#page-cart.cx,#page-checkout.cx{background:var(--cx-bg)}
+#page-cart.cx-is-empty .cx-filled{display:none}
+#page-checkout.cx .ck-field{display:block;width:100%;box-sizing:border-box;padding:13px 14px;border-radius:14px;border:1px solid var(--cx-line);background:#fff;color:var(--cx-ink);font-family:'DM Sans',sans-serif;font-size:14px;margin:0;transition:border-color .15s,box-shadow .15s}
+#page-checkout.cx .ck-field::placeholder{color:#a99dab}
+#page-checkout.cx .ck-field:focus{border-color:var(--cx-brand);box-shadow:0 0 0 3px rgba(110,9,119,.08);outline:none}
+#page-checkout.cx #ck-saved-addrs>div:first-child{font-size:10px!important;letter-spacing:.16em;color:var(--cx-muted)!important}
+#page-checkout.cx #ck-addr-list>div{background:#fff!important;border:1px solid var(--cx-line)!important;border-radius:16px!important;padding:13px 15px!important}
+#page-checkout.cx #ck-addr-list>div>div:first-child>div:first-child{font-family:var(--cx-serif);font-size:16px!important;color:var(--cx-plum)!important}
+#page-checkout.cx #ck-addr-list>div>div:last-child,#page-checkout.cx #ck-addr-list div[style*="font-size:10px"]{color:var(--cx-muted)!important}
+#page-checkout.cx #ck-saved-addrs>div:last-child{color:var(--cx-brand)!important;font-size:13px!important}
+#page-checkout.cx #ck-tier-notice{border-radius:14px!important;font-size:12px!important}
+#page-checkout.cx .ck-err{border-radius:14px}
+#page-checkout.cx .ck-field-wrap{margin-bottom:10px}
+#page-checkout.cx .ck-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+#page-checkout.cx .ck-row .ck-field{min-width:0}
+#ck-tier-notice{margin-bottom:10px!important}
+#page-cart:not(.cx-is-empty) #cart-empty{display:none!important}
+/* The bar sits right on top of the bottom nav (84px tall). */
+#page-cart.cx,#page-checkout.cx{padding-bottom:calc(84px + env(safe-area-inset-bottom))!important}
+.cx .cx-dock{bottom:0;margin:6px 0 0;padding-bottom:12px;border-radius:18px 18px 0 0;box-shadow:0 -6px 18px rgba(26,8,32,.06)}
 </style>
 </head>
 <body>
@@ -1510,84 +1532,61 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
     </div><!-- /detail -->
 
     <!-- ═══ CART ═══ -->
-    <div class="page" id="page-cart">
-      <!--<div class="cart-hdr">
-        <div class="back" style="position:static;width:36px;height:36px" onclick="goBack()">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-        </div>
-        <div><div class="cart-title">My Cart</div><div class="cart-count" id="cart-count-lbl">0 items</div></div>
-      </div>-->
-      <div class="citems" id="cart-items-list">
-        <!-- empty state -->
-        <div id="cart-empty" style="text-align:center;padding:60px 20px;color:#aaa">
-          <div style="font-size:48px;margin-bottom:12px">🛒</div>
-          <div style="font-size:16px;font-weight:600;margin-bottom:6px">Your cart is empty</div>
-          <div style="font-size:13px">Add brownies from the menu to get started!</div>
-        </div>
-      </div>
-      <div class="promo-row"><span style="font-size:17px">🏷️</span><input class="promo-in" id="promo-input" type="text" placeholder="Enter promo code"><div class="promo-apply" onclick="applyPromo()">Apply</div></div>
-      <div id="points-redeem-bar" style="display:none;margin:0 22px 10px;
-        background:linear-gradient(135deg,rgba(107,47,206,.12),rgba(168,85,247,.08));
-        border:1px solid rgba(107,47,206,.25);border-radius:14px;
-        padding:12px 14px;align-items:center;justify-content:space-between">
-        <div>
-            <div style="font-size:12px;font-weight:700;color:var(--white)">⭐ Your Points</div>
-            <div style="font-size:11px;color:var(--dim);margin-top:2px" id="points-redeem-lbl">0 points available</div>
-        </div>
-        <div onclick="redeemPoints()"
-            style="background:linear-gradient(135deg,var(--p),var(--p2));color:#fff;
-            font-size:11px;font-weight:700;padding:8px 14px;border-radius:10px;cursor:pointer">
-            Redeem →
-        </div>
-       </div>
-
-      <!-- TIER DISCOUNT BAR -->
-      <div id="tier-discount-bar" style="display:none;margin:0 22px 10px;
-        background:linear-gradient(135deg,rgba(201,166,51,.12),rgba(201,166,51,.06));
-        border:1px solid rgba(201,166,51,.3);border-radius:14px;
-        padding:12px 14px;align-items:center;justify-content:space-between">
-        <div>
-          <div style="font-size:12px;font-weight:700;color:var(--gold)">🏅 Member Benefit</div>
-          <div style="font-size:11px;color:var(--dim);margin-top:2px" id="tier-discount-lbl">Silver member — 5% extra off!</div>
-        </div>
-        <div onclick="applyTierDiscount()"
-          style="background:linear-gradient(135deg,var(--gold),#b8952a);color:#fff;
-          font-size:11px;font-weight:700;padding:8px 14px;border-radius:10px;cursor:pointer">
-          Apply →
-        </div>
+    <div class="page cx" id="page-cart">
+      <div class="cx-hdr">
+        <div class="cx-back" role="button" aria-label="Back" onclick="goBack()">‹</div>
+        <div><div class="cx-title">Your <em>Cart</em></div><div class="cx-sub"><span id="cart-count-lbl">0 items</span> · ChocoCravings home delivery</div></div>
       </div>
 
-      <div class="summary">
-        <div class="srow"><span class="slbl" id="cart-subtotal-lbl">Subtotal (0 items)</span><span class="sval" id="cart-subtotal">₹0</span></div>
-        <div class="srow"><span class="slbl">Delivery</span><span class="sval" style="color:var(--green)">FREE</span></div>
-        <div class="srow" id="promo-row-display" style="display:none"><span class="slbl" id="promo-lbl">Promo</span><span class="sval" style="color:var(--pink)" id="promo-disc"></span></div>
-        <hr class="sdiv">
-        <div class="srow"><span class="stlbl">Total</span><span class="stval" id="cart-total-display">₹0</span></div>
+      <!-- Empty -->
+      <div id="cart-empty" class="cx-empty">
+        <div class="cx-empty-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.4 11h10.2L20 8H6.2"/><circle cx="9" cy="20" r="1.3"/><circle cx="17" cy="20" r="1.3"/></svg></div>
+        <div class="cx-empty-t">Your cart is empty</div>
+        <p>Add brownies and treats to get started.</p>
+        <button class="cx-cta" style="margin:22px auto 0;max-width:250px" onclick="showPage('home')">Browse menu <span class="cx-arrow" aria-hidden="true">→</span></button>
       </div>
-      <!-- PAYMENT METHOD IN CART -->
-      <div id="cart-payment-section" style="display:none;margin:0 22px 10px">
-        <div style="font-size:12px;font-weight:700;color:var(--white);margin-bottom:8px;letter-spacing:.3px">💳 Payment Method</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-          <div class="cart-pay-opt on" onclick="selCartPay(this,'cod')" style="padding:10px;background:rgba(107,47,206,.12);border:1.5px solid var(--p);border-radius:12px;cursor:pointer;text-align:center">
-            <div style="font-size:18px;margin-bottom:3px">💵</div>
-            <div style="font-size:11px;font-weight:600;color:var(--pl)">Cash on Delivery</div>
+
+      <div class="cx-filled">
+        <div class="cx-card">
+          <div class="cx-h">Items</div>
+          <div id="cart-items-list"></div>
+          <button class="cx-link" onclick="showPage('explore')">+ Add more items</button>
+        </div>
+
+        <div class="cx-card">
+          <div class="cx-h">Offers &amp; savings</div>
+          <div class="cx-promo"><span aria-hidden="true">🏷️</span><input id="promo-input" type="text" placeholder="Enter promo code" autocomplete="off"><button class="cx-pbtn promo-apply" onclick="applyPromo()">Apply</button></div>
+          <div id="points-redeem-bar" class="cx-offer" style="display:none">
+            <div class="cx-offer-t">⭐ Your points<small id="points-redeem-lbl">0 points available</small></div>
+            <button class="cx-offer-b" onclick="redeemPoints()">Redeem</button>
           </div>
-          <div class="cart-pay-opt" onclick="selCartPay(this,'upi')" style="padding:10px;background:var(--card);border:1.5px solid var(--bdr);border-radius:12px;cursor:pointer;text-align:center">
-            <div style="font-size:18px;margin-bottom:3px">📱</div>
-            <div style="font-size:11px;font-weight:600;color:var(--dim)">UPI / GPay</div>
+          <div id="tier-discount-bar" class="cx-offer gold" style="display:none">
+            <div class="cx-offer-t">🏅 Member benefit<small id="tier-discount-lbl">Silver member — 5% extra off!</small></div>
+            <button class="cx-offer-b" onclick="applyTierDiscount()">Apply</button>
           </div>
         </div>
-        <!-- DELIVERY INFO -->
-        <div style="background:rgba(107,47,206,.08);border:1px solid rgba(107,47,206,.2);border-radius:12px;padding:11px 14px;margin-bottom:10px;font-size:11px;color:var(--dim);line-height:1.7">
-          🚚 <strong style="color:var(--white)">Regular brownies:</strong> Min 24 hrs · max 3 days<br>
-          🎂 <strong style="color:var(--white)">Custom / theme cakes:</strong> Book 7 days in advance<br>
-          <span style="color:var(--gold)">⚠️ Orders cannot be cancelled once confirmed</span>
+
+        <div class="cx-card">
+          <div class="cx-h">Bill details</div>
+          <div class="cx-bill">
+            <div><span id="cart-subtotal-lbl">Item total (0 items)</span><span id="cart-subtotal">₹0</span></div>
+            <div id="promo-row-display" style="display:none" class="ok"><span id="promo-lbl">Promo</span><span id="promo-disc"></span></div>
+            <div><span>Delivery</span><span class="ok">FREE</span></div>
+            <div class="cx-tot"><span>To pay</span><span id="cart-total-display">₹0</span></div>
+          </div>
+        </div>
+
+        <div class="cx-card">
+          <div class="cx-note"><span><i class="cx-dot"></i></span><span><b>Regular brownies:</b> 24 hrs to 3 days</span></div>
+          <div class="cx-note"><span><i class="cx-dot"></i></span><span><b>Custom / theme cakes:</b> book 7 days ahead</span></div>
+          <div class="cx-note"><span><i class="cx-dot warn"></i></span><span>Orders can't be cancelled once confirmed</span></div>
+        </div>
+
+        <div class="cx-dock">
+          <div><div class="cx-dock-amt" id="cart-dock-total">₹0</div><div class="cx-dock-sub ok">Free delivery</div></div>
+          <button class="cx-cta" id="checkout-btn" onclick="goToCheckout()" disabled>Checkout <span class="cx-arrow" aria-hidden="true">→</span></button>
         </div>
       </div>
-      <button class="checkout-btn" id="checkout-btn" onclick="goToCheckout()" disabled style="opacity:0.5">🎉 Proceed to Checkout — ₹0</button>
-      
     </div><!-- /cart -->
 
     <!-- ═══ PROFILE ═══ -->
@@ -1728,26 +1727,14 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
     <!-- Login handled by auth.html -->
 
     <!-- ═══ CHECKOUT ═══ -->
-    <div class="page" id="page-checkout">
-      <div class="ck-hdr">
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-          <div class="back" style="position:static;width:36px;height:36px" onclick="goBack()">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <div>
-            <div class="ck-title" id="ck-title-text">Checkout</div>
-            <div class="ck-sub" id="ck-sub-text">Complete your order · Delivery across Tamil Nadu</div>
-          </div>
-        </div>
+    <div class="page cx" id="page-checkout">
+      <div class="cx-hdr">
+        <div class="cx-back" role="button" aria-label="Back" onclick="goBack()">‹</div>
+        <div><div class="cx-title" id="ck-title-text">Secure <em>Checkout</em></div><div class="cx-sub" id="ck-sub-text">Home delivery across Tamil Nadu</div></div>
       </div>
-      <div class="ck-body">
 
-        <!-- DELIVERY INFO -->
-        <div class="ck-section">
-          <div class="ck-label" id="ck-details-label">📍 Delivery Details</div>
-
+      <div class="cx-card">
+        <div class="cx-h"><span id="ck-details-label">Delivery details</span></div>
           <!-- SAVED ADDRESSES PICKER -->
           <div id="ck-saved-addrs" style="display:none;margin-bottom:12px">
             <div style="font-size:11px;color:var(--dim);margin-bottom:8px;font-weight:600">SAVED ADDRESSES</div>
@@ -1776,112 +1763,42 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
           <div class="ck-field-wrap" style="margin-top:8px">
             <textarea class="ck-field" id="ck-notes" rows="2" placeholder="Special instructions (optional)…" style="resize:none"></textarea>
           </div>
-        </div>
-
-        <!-- PAYMENT -->
-        <div class="ck-section">
-          <div class="ck-label">💳 Payment Method</div>
-
-          <!-- TIER NOTICE -->
-          <div id="ck-tier-notice" style="display:none;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;line-height:1.6;border:0.5px solid"></div>
-          <!-- NSDI Wallet (wallet.js): "Use wallet" switch -->
-          <div id="ck-wallet"></div>
-
-          <!-- PAYMENT TABS -->
-          <div style="display:flex;gap:8px;margin-bottom:16px">
-            <div id="tab-upi" onclick="selPayTab('upi')"
-              style="flex:1;padding:11px 8px;border-radius:12px;border:1px solid #6e0977;background:rgba(110,9,119,.06);text-align:center;cursor:pointer;transition:all .2s">
-              <div style="font-size:16px;margin-bottom:4px">📱</div>
-              <div style="font-size:11px;font-weight:600;color:#6e0977">UPI / QR</div>
-              <div style="font-size:9px;color:rgba(110,9,119,.6);font-family:'Cinzel',serif;letter-spacing:.5px;margin-top:2px">Preferred</div>
-            </div>
-            <div id="tab-cod" onclick="selPayTab('cod')"
-              style="flex:1;padding:11px 8px;border-radius:12px;border:0.5px solid rgba(110,9,119,.15);background:#fff;text-align:center;cursor:pointer;transition:all .2s;display:none">
-              <div style="font-size:16px;margin-bottom:4px">💵</div>
-              <div style="font-size:11px;font-weight:600;color:#1a0820">Cash on Delivery</div>
-              <div style="font-size:9px;color:#b89abf;font-family:'Cinzel',serif;letter-spacing:.5px;margin-top:2px">Gold+ only</div>
-            </div>
-          </div>
-
-          <!-- Razorpay Pay Button -->
-          <button onclick="openRazorpay()"
-            style="width:100%;padding:18px;
-            background:linear-gradient(135deg,#1a0030 0%,#6e0977 50%,#9c0ca1 100%);
-            background-size:200% 100%;
-            color:#fff;font-family:'Cormorant Garamond',serif;
-            font-size:16px;font-weight:700;letter-spacing:1px;
-            border:none;border-radius:16px;cursor:pointer;
-            display:flex;align-items:center;justify-content:center;
-            gap:10px;
-            box-shadow:0 8px 32px rgba(110,9,119,.5),inset 0 1px 0 rgba(255,255,255,.15);
-            transition:all .3s" id="rzp-btn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" stroke="white" stroke-width="1.8" stroke-linecap="round"/>
-            </svg>
-            Pay ₹<span id="rzp-amt-btn">0</span>
-            </button>
-            <div style="font-size:10px;color:#b89abf;text-align:center;margin-top:6px;letter-spacing:.5px">
-            🔒 Secured by Razorpay · GPay · PhonePe · Cards · UPI
-            </div>
-          </div>
-
-          <!-- COD PANEL -->
-          <div id="cod-panel" style="display:none">
-            <div style="background:#fff;border:0.5px solid rgba(34,197,94,.2);border-radius:14px;padding:16px;text-align:center">
-              <div style="font-size:32px;margin-bottom:10px">💵</div>
-              <div style="font-family:'Cormorant Garamond',serif;font-size:18px;color:#1a0820;margin-bottom:6px">Cash on Delivery</div>
-              <div style="font-size:12px;color:#7a4a80;line-height:1.7">
-                Pay <strong style="font-family:'Cormorant Garamond',serif;font-size:16px;color:#6e0977" id="cod-amt-display">₹0</strong> in cash when your order arrives.<br>
-                Our delivery partner will collect the amount.
-              </div>
-            </div>
-          </div>
-
-        </div>
-
-        <!-- ORDER SUMMARY -->
-        <div class="ck-section">
-          <div class="ck-label">🧾 Order Summary</div>
-          <div class="order-summary-box" id="ck-summary">
-            <div class="os-item">
-              <div><div class="os-name" id="ck-item-name">Classic Fudge Brownie</div><div class="os-desc" id="ck-item-desc">💚 Eggless · Premium · 4pcs · Qty: 1</div></div>
-              <div class="os-price" id="ck-item-price">₹300</div>
-            </div>
-          </div>
-          <div class="os-total-row">
-            <div class="os-total-lbl">Total to Pay</div>
-            <div class="os-total-val" id="ck-total">₹300</div>
-          </div>
-        </div>
-
-        <!-- DELIVERY TIME INFO -->
-        <div style="background:rgba(107,47,206,.1);border:1px solid rgba(107,47,206,.3);border-radius:14px;padding:14px 16px;margin-bottom:4px">
-          <div style="font-size:12px;font-weight:700;color:var(--pl);margin-bottom:8px">🚚 Expected Delivery</div>
-          <div style="display:flex;flex-direction:column;gap:6px">
-            <div style="display:flex;align-items:flex-start;gap:8px">
-              <span style="font-size:15px">🍫</span>
-              <div>
-                <div style="font-size:12px;font-weight:600;color:var(--white)">Regular Brownies</div>
-                <div style="font-size:11px;color:var(--dim)">Min 24 hrs · delivered within 3 days</div>
-              </div>
-            </div>
-            <div style="display:flex;align-items:flex-start;gap:8px">
-              <span style="font-size:15px">🎂</span>
-              <div>
-                <div style="font-size:12px;font-weight:600;color:var(--white)">Theme / Custom Cakes</div>
-                <div style="font-size:11px;color:var(--dim)">Book at least 7 days in advance</div>
-              </div>
-            </div>
-          </div>
-          <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(107,47,206,.2);font-size:11px;color:var(--gold);display:flex;align-items:center;gap:5px">
-            ⚠️ Orders cannot be cancelled once confirmed
-          </div>
-        </div>
-
-        <div class="ck-err" id="ck-err">⚠️ Please fill all required fields</div>
-       
       </div>
-      <div style="height:20px"></div>
+
+      <div class="cx-card" role="radiogroup" aria-label="Payment method">
+        <div class="cx-h">Payment</div>
+        <div id="ck-tier-notice" style="display:none"></div>
+        <div id="ck-wallet"></div>
+        <button type="button" class="cx-pay" id="tab-upi" role="radio" aria-checked="true" onclick="selPayTab('upi')">
+          <span class="cx-radio"></span><span class="cx-pay-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/><path d="M10 8l2.5 3L10 14M13.5 8l2.5 3-2.5 3"/></svg></span>
+          <span class="cx-pay-t">UPI / Card<small>GPay · PhonePe · Paytm · Cards</small></span>
+        </button>
+        <button type="button" class="cx-pay" id="tab-cod" role="radio" aria-checked="false" onclick="selPayTab('cod')" style="display:none">
+          <span class="cx-radio"></span><span class="cx-pay-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v.01M18 14.5v.01"/></svg></span>
+          <span class="cx-pay-t">Cash on delivery<small>Pay <b id="cod-amt-display">₹0</b> when your order arrives</small></span>
+          <span class="cx-tag">GOLD+</span>
+        </button>
+      </div>
+
+      <div class="cx-card">
+        <div class="cx-h">Order summary <a href="#" onclick="event.preventDefault();showPage('cart')">Edit cart</a></div>
+        <div id="ck-summary"></div>
+        <div class="cx-bill" id="ck-bill" style="margin-top:6px"></div>
+        <div class="cx-bill"><div class="cx-tot"><span>To pay</span><span id="ck-total">₹0</span></div></div>
+      </div>
+
+      <div class="cx-card">
+        <div class="cx-note"><span><i class="cx-dot"></i></span><span><b>Regular brownies:</b> 24 hrs to 3 days</span></div>
+        <div class="cx-note"><span><i class="cx-dot"></i></span><span><b>Theme / custom cakes:</b> book 7 days ahead</span></div>
+        <div class="cx-note"><span><i class="cx-dot warn"></i></span><span>Orders can't be cancelled once confirmed</span></div>
+      </div>
+
+      <div class="ck-err" id="ck-err" style="margin:0 14px 10px">⚠️ Please fill all required fields</div>
+
+      <div class="cx-dock">
+        <div><div class="cx-dock-amt" id="ck-dock-total">₹0</div><div class="cx-dock-sub" id="ck-dock-sub">Secured by Razorpay</div></div>
+        <button type="button" class="cx-cta" id="rzp-btn" onclick="ckPay()"><span>Pay ₹<span id="rzp-amt-btn">0</span></span><span class="cx-arrow" aria-hidden="true">→</span></button>
+      </div>
     </div><!-- /checkout -->
 
     <!-- ═══ TRACKING / SUCCESS ═══ -->
@@ -4856,6 +4773,12 @@ function updateCartDots() {
   document.querySelectorAll('.cart-ndot').forEach(function(d){ d.style.display = 'none'; });
 }
 
+// Cart bottom bar: amount + button label (cart-ui.css).
+function setCartTotal(amt) {
+  var d = document.getElementById('cart-dock-total');
+  if (d) d.textContent = '₹' + (Number(amt) || 0);
+}
+
 function renderCart() {
   // Always update dots — even if cart page is not visible
   updateCartDots();
@@ -4872,13 +4795,15 @@ function renderCart() {
   // Remove old dynamic items (keep empty div)
   list.querySelectorAll('.citem-dynamic').forEach(function(el){ el.remove(); });
 
+  var cartPage = document.getElementById('page-cart');
+  if (cartPage) cartPage.classList.toggle('cx-is-empty', !cartItems || cartItems.length === 0);
   if (!cartItems || cartItems.length === 0) {
     if (empty) empty.style.display = 'block';
     if (countLbl) countLbl.textContent = '0 items';
     if (subtotalEl) subtotalEl.textContent = '₹0';
-    if (subtotalLbl) subtotalLbl.textContent = 'Subtotal (0 items)';
+    if (subtotalLbl) subtotalLbl.textContent = 'Item total (0 items)';
     if (totalEl) totalEl.textContent = '₹0';
-    if (checkoutBtn) { checkoutBtn.disabled = true; checkoutBtn.style.opacity = '0.5'; checkoutBtn.textContent = '🎉 Proceed to Checkout — ₹0'; }
+    if (checkoutBtn) checkoutBtn.disabled = true; setCartTotal(0);
   var paySection = document.getElementById('cart-payment-section');
   if (paySection) paySection.style.display = 'none';
     return;
@@ -4904,34 +4829,33 @@ function renderCart() {
 
     var cartImgUrl = getProductImage(item.sku);
     var div = document.createElement('div');
-    div.className = 'citem citem-dynamic';
+    div.className = 'cx-line citem-dynamic';
+    var itemName = String(item.product_name || item.name || 'Item').replace(/[<>&"]/g, '');
     div.innerHTML =
-      '<div class="cimg" style="overflow:hidden;padding:0;background:#1a0030">'
+      '<div class="cx-thumb">'
       + (cartImgUrl
-          ? '<img src="' + cartImgUrl + '" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\';this.parentElement.style.fontSize=\'38px\';this.parentElement.innerHTML=\'' + emoji + '\'">'
+          ? '<img src="' + cartImgUrl + '" alt="" onerror="this.parentElement.textContent=\'' + emoji + '\'">'
           : emoji)
-      + '</div>' +
-      '<div class="cinfo">' +
-        '<div class="cname">' + (item.product_name || item.product_name) + '</div>' +
-        '<div class="csize">' + eggLabel + ' · ' + packLabel + ' · ' + tierLabel + toppingStr + '</div>' +
-        '<div class="cfoot">' +
-          '<span class="cprice">₹' + price + '</span>' +
-          '<div class="cqty">' +
-            '<div class="cqbtn" onclick="changeQty(' + idx + ',-1)">−</div>' +
-            '<div class="cqnum" id="qty-' + idx + '">' + (item.qty || 1) + '</div>' +
-            '<div class="cqbtn" onclick="changeQty(' + idx + ',1)">+</div>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
+      + '</div>'
+      + '<div class="cx-info">'
+      +   '<div class="cx-name">' + itemName + '</div>'
+      +   '<div class="cx-meta">' + eggLabel + ' · ' + packLabel + ' · ' + tierLabel + toppingStr + '</div>'
+      +   '<div class="cx-price">₹' + price + '</div>'
+      + '</div>'
+      + '<div class="cx-step">'
+      +   '<button type="button" aria-label="Fewer" onclick="changeQty(' + idx + ',-1)">−</button>'
+      +   '<span id="qty-' + idx + '">' + (item.qty || 1) + '</span>'
+      +   '<button type="button" aria-label="More" onclick="changeQty(' + idx + ',1)">+</button>'
+      + '</div>';
     list.appendChild(div);
   });
 
   var itemWord = totalQty === 1 ? 'item' : 'items';
   if (countLbl) countLbl.textContent = totalQty + ' ' + itemWord;
-  if (subtotalLbl) subtotalLbl.textContent = 'Subtotal (' + totalQty + ' ' + itemWord + ')';
+  if (subtotalLbl) subtotalLbl.textContent = 'Item total (' + totalQty + ' ' + itemWord + ')';
   if (subtotalEl) subtotalEl.textContent = '₹' + subtotal;
   if (totalEl) totalEl.textContent = '₹' + subtotal;
-  if (checkoutBtn) { checkoutBtn.disabled = false; checkoutBtn.style.opacity = '1'; checkoutBtn.textContent = '🎉 Proceed to Checkout — ₹' + subtotal; }
+  if (checkoutBtn) checkoutBtn.disabled = false; setCartTotal(subtotal);
   var paySection = document.getElementById('cart-payment-section');
   if (paySection) paySection.style.display = cartItems.length > 0 ? 'block' : 'none';
   currentOrderTotal = subtotal;
@@ -5008,7 +4932,7 @@ function showPage(name){
       var orderNumEl = document.getElementById('upi-order-num');
       if (orderNumEl) orderNumEl.textContent = genOrderNum().slice(0, 10) + '…';
       updateAdvanceAmounts();
-      updatePlaceBtn();
+      selPayTab('upi'); // also refreshes the bottom bar
     }, 300);
   }
   if (name === 'tracking') {
@@ -5272,7 +5196,7 @@ async function applyPromo() {
   if (promoLbl)  promoLbl.textContent    = (offer.emoji || '🏷️') + ' ' + code;
   if (promoDisc) promoDisc.textContent   = '−₹' + discount;
   if (totalEl)   totalEl.textContent     = '₹' + currentOrderTotal;
-  if (checkoutBtn) checkoutBtn.textContent = '🎉 Proceed to Checkout — ₹' + currentOrderTotal;
+  setCartTotal(currentOrderTotal);
 
   if (input) { input.style.borderColor = 'var(--green)'; input.disabled = true; }
 
@@ -5553,32 +5477,28 @@ function goToCheckout() {
   var discountedTotal = appliedPromo ? totalAmt - appliedPromo.discount : totalAmt;
   currentOrderTotal = discountedTotal;
 
-  // Show first item name + count in summary header
-  var firstName = cartItems[0].name || cartItems[0].product_name || 'Brownie';
-  var extraCount = cartItems.length > 1 ? ' + ' + (cartItems.length - 1) + ' more' : '';
-  var firstDesc = (cartItems[0].egg === 'eggless' ? '💚 Eggless' : '❤️ With Egg') +
-    ' · ' + (cartItems[0].pack || cartItems[0].pack_label || '4pcs') +
-    ' · ' + (cartItems[0].tier === 'couverture' ? 'Couverture' : 'Premium');
-
-  document.getElementById('ck-item-name').textContent = firstName + extraCount;
-  document.getElementById('ck-item-desc').textContent = firstDesc;
-  document.getElementById('ck-item-price').textContent = '₹' + totalAmt;
+  // Order summary: every item, then the bill.
+  var esc = function (v) { return String(v == null ? '' : v).replace(/[<>&"]/g, ''); };
+  var summaryBox = document.getElementById('ck-summary');
+  if (summaryBox) summaryBox.innerHTML = cartItems.map(function (i) {
+    var qty = i.qty || i.quantity || 1;
+    var line = (i.base_price || 0) * qty + (i.topping_price || 0);
+    var egg = i.egg || i.egg_type;
+    var meta = [egg === 'na' ? 'Accessory' : (egg === 'eggless' ? '💚 Eggless' : '❤️ With egg'), i.pack || i.pack_label || '', i.tier === 'couverture' ? 'Belgian' : 'Premium']
+      .filter(Boolean).join(' · ');
+    var img = typeof getProductImage === 'function' ? getProductImage(i.sku) : '';
+    return '<div class="cx-line"><div class="cx-thumb">' + (img ? '<img src="' + img + '" alt="" onerror="this.parentElement.textContent=\'🍫\'">' : '🍫') + '</div>'
+      + '<div class="cx-info"><div class="cx-name">' + esc(i.product_name || i.name) + '</div><div class="cx-meta">' + esc(meta) + '</div></div>'
+      + '<div style="text-align:right"><div class="cx-price" style="margin:0">₹' + line + '</div><div class="cx-qtytag">× ' + qty + '</div></div></div>';
+  }).join('');
+  var bill = document.getElementById('ck-bill');
+  if (bill) bill.innerHTML = '<div><span>Item total</span><span>₹' + totalAmt + '</span></div>'
+    + (appliedPromo ? '<div class="ok"><span>🏷️ ' + esc(appliedPromo.label || appliedPromo.code) + '</span><span>−₹' + appliedPromo.discount + '</span></div>' : '')
+    + '<div><span>Delivery</span><span class="ok">FREE</span></div>';
   document.getElementById('ck-total').textContent = '₹' + discountedTotal;
-
-  // Show promo line in checkout summary
-  var existingPromoRow = document.getElementById('ck-promo-row');
-  if (existingPromoRow) existingPromoRow.remove();
-  if (appliedPromo) {
-    var summaryBox = document.getElementById('ck-summary');
-    if (summaryBox) {
-      summaryBox.insertAdjacentHTML('beforeend',
-        '<div id="ck-promo-row" class="os-item" style="border-top:1px solid var(--bdr);border-bottom:none;margin-top:8px;padding-top:8px">'
-        + '<div><div class="os-name" style="color:var(--green)">🏷️ ' + appliedPromo.code + ' applied</div></div>'
-        + '<div class="os-price" style="color:var(--green)">−₹' + appliedPromo.discount + '</div>'
-        + '</div>'
-      );
-    }
-  }
+  var codAmt = document.getElementById('cod-amt-display');
+  if (codAmt) codAmt.textContent = '₹' + discountedTotal;
+  ckRefreshDock();
 
   showPage('checkout');
 }
@@ -8696,7 +8616,7 @@ async function redeemPoints() {
   if (promoLbl)    promoLbl.textContent      = '⭐ ' + pts + ' points redeemed';
   if (promoDisc)   promoDisc.textContent     = '−₹' + redeemDiscount;
   if (totalEl)     totalEl.textContent       = '₹' + currentOrderTotal;
-  if (checkoutBtn) checkoutBtn.textContent   = '🎉 Proceed to Checkout — ₹' + currentOrderTotal;
+  setCartTotal(currentOrderTotal);
 
   // Hide redeem bar after use
   var bar = document.getElementById('points-redeem-bar');
@@ -8732,7 +8652,7 @@ async function applyTierDiscount() {
   if (promoLbl)    promoLbl.textContent    = '🏅 ' + tier.charAt(0).toUpperCase()+tier.slice(1) + ' Member ' + pct + '% off';
   if (promoDisc)   promoDisc.textContent   = '−₹' + discount;
   if (totalEl)     totalEl.textContent     = '₹' + currentOrderTotal;
-  if (checkoutBtn) checkoutBtn.textContent = '🎉 Proceed to Checkout — ₹' + currentOrderTotal;
+  setCartTotal(currentOrderTotal);
 
   var tierBar = document.getElementById('tier-discount-bar');
   if (tierBar) tierBar.style.display = 'none';
@@ -8774,28 +8694,59 @@ function copyUpiId() {
 function selPayTab(tab) {
   currentPayTab    = tab;
   currentPayMethod = tab;
-
-  var upiPanel = document.getElementById('upi-panel');
-  var codPanel = document.getElementById('cod-panel');
-  var tabUpi   = document.getElementById('tab-upi');
-  var tabCod   = document.getElementById('tab-cod');
-
-  if (tab === 'upi') {
-    if (upiPanel) upiPanel.style.display = 'block';
-    if (codPanel) codPanel.style.display = 'none';
-    if (tabUpi) { tabUpi.style.border = '1px solid #6e0977'; tabUpi.style.background = 'rgba(110,9,119,.06)'; }
-    if (tabCod) { tabCod.style.border = '0.5px solid rgba(110,9,119,.15)'; tabCod.style.background = '#fff'; }
-  } else {
-    if (codPanel) codPanel.style.display = 'block';
-    if (upiPanel) upiPanel.style.display = 'none';
-    if (tabCod) { tabCod.style.border = '1px solid #6e0977'; tabCod.style.background = 'rgba(110,9,119,.06)'; }
-    if (tabUpi) { tabUpi.style.border = '0.5px solid rgba(110,9,119,.15)'; tabUpi.style.background = '#fff'; }
-    var codAmt = document.getElementById('cod-amt-display');
-    if (codAmt) codAmt.textContent = '₹' + currentOrderTotal;
-  }
-
-  console.log('selPayTab called — tab:', tab, 'currentPayTab:', currentPayTab);
+  ['upi', 'cod'].forEach(function (t) {
+    var el = document.getElementById('tab-' + t);
+    if (el) el.setAttribute('aria-checked', t === tab ? 'true' : 'false');
+  });
+  var codAmt = document.getElementById('cod-amt-display');
+  if (codAmt) codAmt.textContent = '₹' + currentOrderTotal;
+  ckRefreshDock();
   updatePlaceBtn();
+}
+
+// Checkout bottom bar: amount, line under it, and the button label.
+function ckPayLabel() {
+  return currentPayTab === 'cod'
+    ? 'Place order <span class="cx-arrow" aria-hidden="true">→</span>'
+    : '<span>Pay ₹<span id="rzp-amt-btn">' + currentOrderTotal + '</span></span><span class="cx-arrow" aria-hidden="true">→</span>';
+}
+function ckRefreshDock() {
+  var amt = document.getElementById('ck-dock-total');
+  if (amt) amt.textContent = '₹' + currentOrderTotal;
+  var sub = document.getElementById('ck-dock-sub');
+  if (sub) sub.textContent = currentPayTab === 'cod' ? 'Pay cash on delivery' : 'Secured by Razorpay';
+  var btn = document.getElementById('rzp-btn');
+  if (btn && !btn.disabled && !btn.dataset.wl) btn.innerHTML = ckPayLabel();
+}
+
+// One button for every way to pay: Cash on Delivery places the order now;
+// UPI / card (and the wallet, see wallet.js) go through openRazorpay().
+var _ckPlacing = false;
+async function ckPay() {
+  if (currentPayTab !== 'cod') return openRazorpay();
+  if (_ckPlacing) return;
+  var need = ['ck-name', 'ck-phone', 'ck-address', 'ck-city'];
+  for (var i = 0; i < need.length; i++) {
+    var el = document.getElementById(need[i]);
+    if (el && !el.value.trim()) {
+      var err = document.getElementById('ck-err'); if (err) err.style.display = 'block';
+      el.focus();
+      return;
+    }
+  }
+  var err2 = document.getElementById('ck-err'); if (err2) err2.style.display = 'none';
+  var btn = document.getElementById('rzp-btn');
+  _ckPlacing = true;
+  if (btn) { btn.disabled = true; btn.textContent = 'Placing your order…'; }
+  try {
+    currentUtrValue = '';
+    await placeOrder();
+  } catch (e) {
+    showToast('Order error: ' + (e.message || e));
+  } finally {
+    _ckPlacing = false;
+    if (btn) { btn.disabled = false; ckRefreshDock(); }
+  }
 }
 
 // ── UTR INPUT HANDLER ──
@@ -9222,7 +9173,7 @@ async function openRazorpay() {
     var city    = document.getElementById('ck-city').value.trim();
     if (!name || !phone || !address || !city) {
       document.getElementById('ck-err').style.display = 'block';
-      if (btn) { btn.disabled = false; btn.innerHTML = 'Pay ₹<span id="rzp-amt-btn">' + currentOrderTotal + '</span> · GPay · PhonePe · Card · UPI'; }
+      if (btn) { btn.disabled = false; btn.innerHTML = ckPayLabel(); }
       return;
     }
     document.getElementById('ck-err').style.display = 'none';
@@ -9277,7 +9228,7 @@ async function openRazorpay() {
         ondismiss: function() {
           if (btn) {
             btn.disabled = false;
-            btn.innerHTML = 'Pay ₹<span id="rzp-amt-btn">' + currentOrderTotal + '</span> · GPay · PhonePe · Card · UPI';
+            btn.innerHTML = ckPayLabel();
           }
           showToast('Payment cancelled');
         }
@@ -9402,7 +9353,7 @@ async function openRazorpay() {
         var rzpBtn = document.getElementById('rzp-btn');
         if (rzpBtn) {
           rzpBtn.disabled = false;
-          rzpBtn.innerHTML = 'Pay ₹<span id="rzp-amt-btn">' + currentOrderTotal + '</span> · PhonePe · Card · UPI';
+          rzpBtn.innerHTML = ckPayLabel();
         }  
 
       }, 5000);
@@ -9415,7 +9366,7 @@ async function openRazorpay() {
       showToast('❌ Payment failed — ' + (resp.error.description || 'Try again'));
       if (btn) {
         btn.disabled = false;
-        btn.innerHTML = 'Pay ₹<span id="rzp-amt-btn">' + currentOrderTotal + '</span> · PhonePe · Card · UPI';
+        btn.innerHTML = ckPayLabel();
       }
     });
 
@@ -9439,7 +9390,7 @@ async function openRazorpay() {
     showToast('Error: ' + e.message);
     if (btn) {
       btn.disabled = false;
-      btn.innerHTML = 'Pay ₹<span id="rzp-amt-btn">' + currentOrderTotal + '</span> · GPay · PhonePe · Card · UPI';
+      btn.innerHTML = ckPayLabel();
     }
   }
 }
@@ -9477,6 +9428,7 @@ goToCheckout = function() {
   setTimeout(function(){
     var el = document.getElementById('rzp-amt-btn');
     if (el) el.textContent = currentOrderTotal;
+    if (typeof ckRefreshDock === 'function') ckRefreshDock();
   }, 400);
 };
 

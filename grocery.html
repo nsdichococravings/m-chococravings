@@ -7,7 +7,7 @@
 <title>NSDI Store</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="preconnect" href="https://yjbfditboewwpgyqzryd.supabase.co" crossorigin/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-net.js?v=20261018"></script>
@@ -245,7 +245,12 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:2px solid var(-
 .empty h2{font-size:20px;font-weight:800;letter-spacing:-.02em;margin:10px 0 6px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 @media (min-width:560px){.hs .pc{flex-basis:168px}}
+.btn-y{background:linear-gradient(135deg,#6e0977,#9c0ca1);color:#fff;box-shadow:0 8px 20px rgba(110,9,119,.25)} /* one purple, same as the app cart */
+.cx-page{min-height:100vh}
+#app:has(.cx-page){padding-bottom:0}
+.cx-page .cx-hdr{padding-top:calc(14px + env(safe-area-inset-top))}
 </style>
+<link rel="stylesheet" href="/cart-ui.css?v=20261106b">
 </head>
 <body>
 <div id="app" aria-live="polite"></div>
@@ -337,7 +342,7 @@ function add(id, qty, then) {
   var cur = S.bag[id] || 0, want = cur + (qty || 1), max = maxQty(p);
   if (max <= 0) return toast('Sold out right now');
   if (want > max) { want = max; toast(limitMsg(max)); }
-  else if (!then) toast('Added to bag');
+  else if (!then) toast('Added to cart');
   S.bag[id] = want; writeJSON(BAG_KEY, S.bag);
   if (then) go(then); else render();
 }
@@ -379,7 +384,11 @@ function needSignIn(back) {
 function svg(d, sz, sw) { return '<svg width="' + (sz || 20) + '" height="' + (sz || 20) + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="' + (sw || 2) + '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>'; }
 var I = {
   back: svg('<path d="M15 5l-7 7 7 7"/>', 20, 2.4),
-  bag: svg('<path d="M6 7h12l-1 13H7z"/><path d="M9 7a3 3 0 0 1 6 0"/>'),
+  upi: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/><path d="M10 8l2.5 3L10 14M13.5 8l2.5 3-2.5 3"/></svg>',
+  cash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="12" rx="2.5"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v.01M18 14.5v.01"/></svg>',
+  store: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/><path d="M5 12v8h14v-8"/><path d="M10 20v-5h4v5"/></svg>',
+  cartLg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.4 11h10.2L20 8H6.2"/><circle cx="9" cy="20" r="1.3"/><circle cx="17" cy="20" r="1.3"/></svg>',
+  bag: svg('<circle cx="9" cy="20" r="1.4"/><circle cx="17" cy="20" r="1.4"/><path d="M3 4h2l2.4 11h10.2L20 8H6.2"/>'),
   search: '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#6e0977" stroke-width="2.3" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>',
   orders: svg('<path d="M8 4h8l1 3H7z"/><rect x="4" y="7" width="16" height="13" rx="2"/><path d="M9 12h6M9 16h4"/>'),
   pin: svg('<path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>', 15, 2.2),
@@ -388,7 +397,7 @@ var I = {
 };
 
 // Pieces
-function bagBtn() { var n = bagCount(); return '<button class="hbtn" aria-label="Bag, ' + n + ' items" data-go="#/checkout">' + I.bag + (n ? '<span class="count">' + n + '</span>' : '') + '</button>'; }
+function bagBtn() { var n = bagCount(); return '<button class="hbtn" aria-label="Cart, ' + n + ' items" data-go="#/checkout">' + I.bag + (n ? '<span class="count">' + n + '</span>' : '') + '</button>'; }
 function mainHeader() {
   var s = (S.cat && S.cat.settings) || {};
   return '<header class="hdr"><div class="hdr-top">'
@@ -464,7 +473,7 @@ function bagBar() {
   var save = bagMrp() - bagTotal();
   return '<div class="bagbar"><a href="#/checkout"><span class="bb-ico">' + I.bag + '</span>'
     + '<span><div class="bb-t">' + n + (n === 1 ? ' item' : ' items') + ' · ' + money(bagTotal()) + '</div><div class="bb-s">' + (save > 0 ? 'You save ' + money(save) : 'Outlet pickup') + '</div></span>'
-    + '<span class="bb-go">View bag ' + I.chev + '</span></a></div>';
+    + '<span class="bb-go">View cart ' + I.chev + '</span></a></div>';
 }
 function footer() {
   var s = (S.cat && S.cat.settings) || {};
@@ -534,46 +543,53 @@ function screenProduct(id) {
     + (more.length ? '<div class="panel" style="padding-left:0;padding-right:0"><div class="h3" style="padding:0 14px">You may also like</div><div class="hs" data-keep="more">' + more.map(productCard).join('') + '</div></div>' : '')
     + '<div class="dock"><div class="dock-in">'
     + (b.soldOut ? '<button class="btn btn-p btn-block" data-go="#/ask">Sold out · notify me when it\'s back</button>'
-      : (inBag ? '<div class="step lg"><button aria-label="Fewer" data-qty="' + p.id + '" data-d="-1">−</button><span>' + inBag + '</span><button aria-label="More" data-qty="' + p.id + '" data-d="1">+</button></div><button class="btn btn-y grow" data-go="#/checkout">Go to bag · ' + money(bagTotal()) + '</button>'
+      : (inBag ? '<div class="step lg"><button aria-label="Fewer" data-qty="' + p.id + '" data-d="-1">−</button><span>' + inBag + '</span><button aria-label="More" data-qty="' + p.id + '" data-d="1">+</button></div><button class="btn btn-y grow" data-go="#/checkout">Go to cart · ' + money(bagTotal()) + '</button>'
         : '<div class="step lg soft"><button aria-label="Fewer" data-pq="-1">−</button><span>' + qty + '</span><button aria-label="More" data-pq="1">+</button></div>'
-          + '<button class="btn btn-o grow" style="padding:0 8px" data-addn="' + p.id + '">Add to bag</button><button class="btn btn-y grow" style="padding:0 8px" data-buyn="' + p.id + '">Buy now</button>'))
+          + '<button class="btn btn-o grow" style="padding:0 8px" data-addn="' + p.id + '">Add to cart</button><button class="btn btn-y grow" style="padding:0 8px" data-buyn="' + p.id + '">Buy now</button>'))
     + '</div></div>';
 }
 
 function screenCheckout() {
   var lines = bagLines(), s = (S.cat && S.cat.settings) || {};
-  if (!S.cat) return subHeader('Checkout', '', '#/', true) + '<div style="padding:14px"><div class="skel" style="height:220px"></div></div>';
-  if (!lines.length) return subHeader('Your bag', '', '#/', true) + '<div class="empty"><div style="font-size:54px">🛍️</div><h2>Your bag is empty</h2><p class="muted">Add essentials from NSDI Store.</p><button class="btn btn-p" style="margin-top:16px" data-go="#/">Start shopping</button></div>';
+  var hdr = function (t, sub) {
+    return '<div class="cx-hdr"><button class="cx-back" aria-label="Back" data-back="#/">‹</button><div><div class="cx-title">' + h(t).replace(/^Your (\w+)$/, 'Your <em>$1</em>') + '</div>'
+      + (sub ? '<div class="cx-sub">' + h(sub) + '</div>' : '') + '</div></div>';
+  };
+  if (!S.cat) return '<div class="cx cx-page">' + hdr('Your Cart', '') + '<div style="padding:14px"><div class="skel" style="height:220px"></div></div></div>';
+  if (!lines.length) return '<div class="cx cx-page">' + hdr('Your Cart', 'NSDI Store · outlet pickup')
+    + '<div class="cx-empty"><div class="cx-empty-ico">' + I.cartLg + '</div><h2>Your cart is empty</h2><p>Add essentials from NSDI Store.</p>'
+    + '<button class="cx-cta" style="margin:18px auto 0;max-width:250px" data-go="#/">Start shopping <span class="cx-arrow" aria-hidden="true">→</span></button></div></div>';
   if (!S.payBy || (S.payBy === 'online' && !s.online_enabled) || (S.payBy === 'cash' && !s.cash_enabled)) S.payBy = s.online_enabled ? 'online' : (s.cash_enabled ? 'cash' : null);
   var total = bagTotal(), mrp = bagMrp(), saved = mrp - total, n = bagCount();
   var name = (S.me && S.me.name) || '', phone = (S.me && S.me.phone) || '';
   var payLabel = !S.session ? 'Sign in to place order' : (S.payBy === 'online' ? 'Pay ' + money(total) : 'Place order');
-  return subHeader('Checkout', n + (n === 1 ? ' item' : ' items') + ' · outlet pickup', '#/', true) + staffStrip()
-    + (saved > 0 ? '<div class="saving">🎉 You\'re saving ' + money(saved) + ' on this order</div>' : '')
-    + '<div class="ck-card"><div class="h3" style="margin-bottom:2px">Items</div>'
+  return '<div class="cx cx-page">' + hdr('Your Cart', n + (n === 1 ? ' item' : ' items') + ' · NSDI Store · outlet pickup') + staffStrip()
+    + (saved > 0 ? '<div class="cx-saving">🎉 You\'re saving ' + money(saved) + ' on this order</div>' : '')
+    + '<div class="cx-card"><div class="cx-h">Items</div>'
     + lines.map(function (l) {
-      return '<div class="ck-line"><a class="thumb" href="#/p/' + l.p.id + '">' + (l.p.images[0] ? img(l.p.images[0].thumb, l.p.name) : packArt(l.p, 34)) + '</a>'
-        + '<div class="grow"><div style="font-weight:700;font-size:13.5px" class="clamp2">' + h(l.p.name) + '</div><div class="muted" style="font-size:12px">' + h(l.p.unit_label) + '</div>'
-        + '<div style="margin-top:3px"><b>' + money(l.p.price * l.qty) + '</b>' + (l.p.mrp > l.p.price ? ' <s class="muted" style="font-size:12px">' + money(l.p.mrp * l.qty) + '</s>' : '') + '</div></div>'
-        + '<div class="step"><button aria-label="Fewer" data-qty="' + l.p.id + '" data-d="-1">−</button><span>' + l.qty + '</span><button aria-label="More" data-qty="' + l.p.id + '" data-d="1">+</button></div></div>';
+      return '<div class="cx-line"><a class="cx-thumb" href="#/p/' + l.p.id + '">' + (l.p.images[0] ? img(l.p.images[0].thumb, l.p.name) : packArt(l.p, 34)) + '</a>'
+        + '<div class="cx-info"><div class="cx-name">' + h(l.p.name) + '</div><div class="cx-meta">' + h(l.p.unit_label) + '</div>'
+        + '<div class="cx-price">' + money(l.p.price * l.qty) + (l.p.mrp > l.p.price ? '<s>' + money(l.p.mrp * l.qty) + '</s>' : '') + '</div></div>'
+        + '<div class="cx-step"><button aria-label="Fewer" data-qty="' + l.p.id + '" data-d="-1">−</button><span>' + l.qty + '</span><button aria-label="More" data-qty="' + l.p.id + '" data-d="1">+</button></div></div>';
     }).join('')
-    + '<button class="sec-a" style="margin-top:6px" data-go="#/">+ Add more items</button></div>'
-    + '<div class="ck-card"><div class="pick"><div class="pick-ico">🏪</div><div class="grow"><b>Pickup from ' + h(s.outlet_name || 'our outlet') + '</b><br><span class="muted">' + h(s.outlet_address || '') + '<br>' + h(s.pickup_hours || '') + ' · ready in ~10 min</span></div></div>'
-    + (S.session ? '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px"><label class="field">Name for pickup<input id="ck-name" autocomplete="name" value="' + h(name) + '" maxlength="60"></label>'
-      + '<label class="field">Phone<input id="ck-phone" type="tel" inputmode="tel" autocomplete="tel" value="' + h(phone) + '" maxlength="15"></label></div>' : '')
+    + '<button class="cx-link" data-go="#/">+ Add more items</button></div>'
+    + '<div class="cx-card"><div class="cx-h">Pickup</div>'
+    + '<div class="cx-note" style="font-size:13px"><span style="color:var(--cx-gold)">' + I.store + '</span><span><b>' + h(s.outlet_name || 'Our outlet') + '</b><br>' + h(s.outlet_address || '') + (s.pickup_hours ? '<br>' + h(s.pickup_hours) : '') + ' · ready in ~10 min</span></div>'
+    + (S.session ? '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px"><label class="cx-field">Name for pickup<input id="ck-name" autocomplete="name" value="' + h(name) + '" maxlength="60"></label>'
+      + '<label class="cx-field">Phone<input id="ck-phone" type="tel" inputmode="tel" autocomplete="tel" value="' + h(phone) + '" maxlength="15"></label></div>' : '')
     + '</div>'
-    + '<div class="ck-card" role="radiogroup" aria-label="Payment method"><div class="h3">Payment</div>'
-    + '<button class="pay-opt" role="radio" data-pay="online" aria-checked="' + (S.payBy === 'online') + '"' + (s.online_enabled ? '' : ' disabled') + '><span class="radio"></span><span class="pay-ico">📱</span><span class="grow"><b>UPI / Card</b><br><span class="muted" style="font-size:12px">' + (s.online_enabled ? 'GPay · PhonePe · Paytm · Cards · Netbanking' : 'Coming soon') + '</span></span></button>'
-    + '<button class="pay-opt" role="radio" data-pay="cash" aria-checked="' + (S.payBy === 'cash') + '"' + (s.cash_enabled ? '' : ' disabled') + '><span class="radio"></span><span class="pay-ico">💵</span><span class="grow"><b>Cash at pickup</b><br><span class="muted" style="font-size:12px">Pay at the counter when you collect</span></span></button></div>'
-    + '<div class="ck-card"><div class="h3">Bill details</div><div class="bill">'
+    + '<div class="cx-card" role="radiogroup" aria-label="Payment method"><div class="cx-h">Payment</div>'
+    + '<button class="cx-pay" role="radio" data-pay="online" aria-checked="' + (S.payBy === 'online') + '"' + (s.online_enabled ? '' : ' disabled') + '><span class="cx-radio"></span><span class="cx-pay-ico">' + I.upi + '</span><span class="cx-pay-t">UPI / Card<small>' + (s.online_enabled ? 'GPay · PhonePe · Paytm · Cards' : 'Coming soon') + '</small></span></button>'
+    + '<button class="cx-pay" role="radio" data-pay="cash" aria-checked="' + (S.payBy === 'cash') + '"' + (s.cash_enabled ? '' : ' disabled') + '><span class="cx-radio"></span><span class="cx-pay-ico">' + I.cash + '</span><span class="cx-pay-t">Cash at pickup<small>Pay at the counter when you collect</small></span></button></div>'
+    + '<div class="cx-card"><div class="cx-h">Bill details</div><div class="cx-bill">'
     + '<div><span>Item total (M.R.P.)</span><span>' + money(mrp) + '</span></div>'
-    + (saved > 0 ? '<div style="color:var(--ok)"><span>Product discount</span><span>−' + money(saved) + '</span></div>' : '')
-    + '<div><span>Pickup charge</span><span style="color:var(--ok);font-weight:800">FREE</span></div>'
-    + '<div class="tot"><span>To pay</span><span>' + money(total) + '</span></div></div></div>'
-    + (S.error ? '<div class="notice err" role="alert">' + h(S.error) + '</div>' : '')
-    + '<p class="muted" style="font-size:11.5px;padding:12px 16px;line-height:1.5">Price and stock are checked again when you place the order. Your items are held for ' + (S.payBy === 'online' ? (s.hold_minutes || 15) + ' minutes while you pay' : (s.cash_hold_hours || 24) + ' hours for pickup') + '. Cancel any time before you pay.</p>'
-    + '<div class="dock"><div class="dock-in"><div><div style="font-weight:800;font-size:17px">' + money(total) + '</div>' + (saved > 0 ? '<div style="font-size:11.5px;color:var(--ok);font-weight:700">Saved ' + money(saved) + '</div>' : '<div class="muted" style="font-size:11.5px">incl. taxes</div>') + '</div>'
-    + '<button class="btn btn-y grow" id="place"' + (S.busy || !S.payBy ? ' disabled' : '') + '>' + (S.busy ? 'Please wait…' : h(payLabel) + ' ' + I.chev) + '</button></div></div>';
+    + (saved > 0 ? '<div class="ok"><span>Product discount</span><span>−' + money(saved) + '</span></div>' : '')
+    + '<div><span>Pickup</span><span class="ok">FREE</span></div>'
+    + '<div class="cx-tot"><span>To pay</span><span>' + money(total) + '</span></div></div></div>'
+    + (S.error ? '<div class="notice err" role="alert" style="margin:0 14px 12px">' + h(S.error) + '</div>' : '')
+    + '<p class="cx-fine">Price and stock are checked again when you place the order. Your items are held for ' + (S.payBy === 'online' ? (s.hold_minutes || 15) + ' minutes while you pay' : (s.cash_hold_hours || 24) + ' hours for pickup') + '. Cancel any time before you pay.</p>'
+    + '<div class="cx-dock"><div><div class="cx-dock-amt">' + money(total) + '</div>' + (saved > 0 ? '<div class="cx-dock-sub ok">Saved ' + money(saved) + '</div>' : '<div class="cx-dock-sub">' + (S.payBy === 'cash' ? 'Pay at pickup' : 'Secured by Razorpay') + '</div>') + '</div>'
+    + '<button class="cx-cta" id="place"' + (S.busy || !S.payBy ? ' disabled' : '') + '>' + (S.busy ? 'Please wait…' : '<span>' + h(payLabel) + '</span><span class="cx-arrow" aria-hidden="true">→</span>') + '</button></div></div>';
 }
 
 var STATUS = {
