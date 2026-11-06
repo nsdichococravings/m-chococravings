@@ -1,0 +1,113 @@
+/*
+ * cart-ui.css — one look for every cart and checkout.
+ * Used by the ChocoCravings cart + checkout (index.html) and the NSDI Store
+ * cart + checkout (grocery.html), so both feel like the same app:
+ * white cards on a soft background, one bill layout, radio-list payment,
+ * and a sticky bottom bar with the total and one purple button.
+ */
+.cx{
+  --cx-brand:#6e0977; --cx-brand2:#9c0ca1; --cx-brand-l:#f6ecf8;
+  --cx-ink:#1a0820; --cx-ink2:#3d3342; --cx-muted:#7a6a80; --cx-line:#efe6f1;
+  --cx-bg:#f6f2f8; --cx-card:#ffffff; --cx-ok:#0a7c3e; --cx-ok-l:#e8f6ee; --cx-gold:#a77a00;
+  --cx-r:18px; --cx-shadow:0 1px 2px rgba(26,8,32,.05),0 6px 18px rgba(26,8,32,.06);
+  background:var(--cx-bg); color:var(--cx-ink);
+  font-family:'DM Sans','Instrument Sans',system-ui,sans-serif;
+}
+
+/* Header */
+.cx-hdr{display:flex;align-items:center;gap:12px;padding:14px 16px 10px}
+.cx-back{flex:none;width:38px;height:38px;border-radius:12px;border:1px solid var(--cx-line);background:#fff;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--cx-ink);font-size:20px;line-height:1}
+.cx-title{font-family:'Cormorant Garamond',Fraunces,Georgia,serif;font-size:26px;font-weight:700;line-height:1.05;color:var(--cx-ink)}
+.cx-sub{font-size:12px;color:var(--cx-muted);margin-top:2px}
+
+/* Cards */
+.cx-card{background:var(--cx-card);border-radius:var(--cx-r);box-shadow:var(--cx-shadow);margin:0 14px 12px;padding:14px 16px}
+.cx-h{display:flex;align-items:center;justify-content:space-between;font-size:11px;font-weight:800;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--cx-muted);margin-bottom:10px}
+.cx-h a,.cx-h button{font-size:12px;letter-spacing:0;text-transform:none;font-weight:700;color:var(--cx-brand);background:none;border:0;cursor:pointer;text-decoration:none}
+
+/* Item rows */
+.cx-line{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--cx-line)}
+.cx-line:first-of-type{border-top:0;padding-top:2px}
+.cx-thumb{flex:none;width:58px;height:58px;border-radius:14px;overflow:hidden;background:var(--cx-brand-l);
+  display:flex;align-items:center;justify-content:center;font-size:26px}
+.cx-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.cx-info{flex:1;min-width:0}
+.cx-name{font-size:14px;font-weight:700;color:var(--cx-ink);line-height:1.25;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.cx-meta{font-size:11.5px;color:var(--cx-muted);margin-top:2px}
+.cx-price{font-size:14px;font-weight:800;color:var(--cx-ink);margin-top:4px}
+.cx-price s{font-weight:500;color:var(--cx-muted);font-size:12px;margin-left:4px}
+.cx-qtytag{flex:none;font-size:12px;font-weight:700;color:var(--cx-muted)}
+
+/* Quantity stepper */
+.cx-step{flex:none;display:flex;align-items:center;height:34px;border-radius:11px;background:var(--cx-brand);color:#fff;overflow:hidden}
+.cx-step button,.cx-step .cx-sb{width:32px;height:34px;border:0;background:transparent;color:#fff;font-size:18px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-family:inherit;padding:0}
+.cx-step span,.cx-step .cx-sn{min-width:20px;text-align:center;font-size:14px;font-weight:800}
+
+/* Inline link button */
+.cx-link{display:block;width:100%;margin-top:6px;padding:10px 0 2px;border:0;border-top:1px dashed var(--cx-line);background:none;
+  color:var(--cx-brand);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;text-align:center}
+
+/* Offers */
+.cx-promo{display:flex;align-items:center;gap:8px;border:1.5px dashed #d9c2df;border-radius:14px;padding:4px 4px 4px 12px;background:#fdfafe}
+.cx-promo input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-family:inherit;font-size:14px;color:var(--cx-ink);padding:9px 0;text-transform:uppercase}
+.cx-promo input::placeholder{text-transform:none;color:#a497aa}
+.cx-promo button,.cx-promo .cx-pbtn{flex:none;border:0;border-radius:10px;background:var(--cx-brand);color:#fff;font-family:inherit;font-weight:700;font-size:13px;padding:9px 14px;cursor:pointer}
+.cx-offer{display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 12px;border-radius:14px;background:var(--cx-brand-l)}
+.cx-offer.gold{background:#fff6dc}
+.cx-offer-t{flex:1;min-width:0;font-size:12.5px;font-weight:700;color:var(--cx-ink)}
+.cx-offer-t small{display:block;font-weight:500;color:var(--cx-muted);font-size:11.5px;margin-top:1px}
+.cx-offer-b{flex:none;border:0;border-radius:10px;padding:8px 12px;font-family:inherit;font-weight:700;font-size:12px;cursor:pointer;background:#fff;color:var(--cx-brand)}
+
+/* Bill */
+.cx-bill>div{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;color:var(--cx-ink2);padding:5px 0}
+.cx-bill .ok{color:var(--cx-ok);font-weight:700}
+.cx-bill .cx-tot{border-top:1px dashed var(--cx-line);margin-top:6px;padding-top:11px;font-size:16px;font-weight:800;color:var(--cx-ink)}
+.cx-saving{margin:0 14px 12px;padding:10px 14px;border-radius:14px;background:var(--cx-ok-l);color:var(--cx-ok);font-size:13px;font-weight:700;text-align:center}
+
+/* Payment / choice rows (radio list) */
+.cx-pay{display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px;margin-top:8px;border-radius:14px;
+  border:1.5px solid var(--cx-line);background:#fff;cursor:pointer;font-family:inherit;color:var(--cx-ink);box-sizing:border-box}
+.cx-pay:first-of-type{margin-top:0}
+.cx-pay[aria-checked="true"],.cx-pay.on{border-color:var(--cx-brand);background:var(--cx-brand-l)}
+.cx-pay[disabled]{opacity:.5;cursor:not-allowed}
+.cx-radio{flex:none;width:20px;height:20px;border-radius:50%;border:2px solid #cdbfd2;position:relative}
+.cx-pay[aria-checked="true"] .cx-radio,.cx-pay.on .cx-radio{border-color:var(--cx-brand)}
+.cx-pay[aria-checked="true"] .cx-radio::after,.cx-pay.on .cx-radio::after{content:"";position:absolute;inset:3px;border-radius:50%;background:var(--cx-brand)}
+.cx-pay-ico{flex:none;width:36px;height:36px;border-radius:11px;background:var(--cx-bg);display:flex;align-items:center;justify-content:center;font-size:18px}
+.cx-pay-t{flex:1;min-width:0;font-size:14px;font-weight:700}
+.cx-pay-t small{display:block;font-weight:500;font-size:11.5px;color:var(--cx-muted);margin-top:1px}
+.cx-tag{flex:none;font-size:10px;font-weight:800;letter-spacing:.06em;padding:3px 8px;border-radius:999px;background:#fff6dc;color:var(--cx-gold)}
+
+/* Note / info rows */
+.cx-note{display:flex;gap:10px;align-items:flex-start;font-size:12px;color:var(--cx-muted);line-height:1.5}
+.cx-note+.cx-note{margin-top:8px}
+.cx-note b{color:var(--cx-ink2)}
+.cx-fine{font-size:11.5px;color:var(--cx-muted);padding:2px 18px 12px;line-height:1.5}
+
+/* Empty state */
+.cx-empty{text-align:center;padding:40px 24px 24px}
+.cx-empty-ico{width:84px;height:84px;margin:0 auto 14px;border-radius:26px;background:var(--cx-brand-l);display:flex;align-items:center;justify-content:center;font-size:40px}
+.cx-empty h2,.cx-empty .cx-empty-t{font-family:'Cormorant Garamond',Fraunces,Georgia,serif;font-size:24px;font-weight:700;margin:0 0 4px;color:var(--cx-ink)}
+.cx-empty p{font-size:13px;color:var(--cx-muted);margin:0}
+
+/* Sticky bottom bar */
+.cx-dock{position:sticky;bottom:0;z-index:20;margin-top:6px;padding:10px 14px calc(12px + env(safe-area-inset-bottom));
+  background:rgba(255,255,255,.96);backdrop-filter:blur(12px);border-top:1px solid var(--cx-line);
+  display:flex;align-items:center;gap:12px}
+.cx-dock-amt{font-size:19px;font-weight:800;color:var(--cx-ink);line-height:1.1}
+.cx-dock-sub{font-size:11.5px;color:var(--cx-muted)}
+.cx-dock-sub.ok{color:var(--cx-ok);font-weight:700}
+.cx-cta{flex:1;min-height:52px;border:0;border-radius:15px;padding:0 18px;cursor:pointer;
+  background:linear-gradient(135deg,var(--cx-brand),var(--cx-brand2));color:#fff;font-family:inherit;font-size:15px;font-weight:800;
+  display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 8px 20px rgba(110,9,119,.28)}
+.cx-cta:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+.cx-cta:active:not(:disabled){transform:scale(.98)}
+
+/* Form fields */
+.cx-field{display:block;font-size:12px;font-weight:700;color:var(--cx-muted)}
+.cx-field input,.cx-field textarea{display:block;width:100%;box-sizing:border-box;margin-top:5px;padding:12px 13px;border-radius:12px;
+  border:1.5px solid var(--cx-line);background:#fff;font-family:inherit;font-size:14px;color:var(--cx-ink);outline:none}
+.cx-field input:focus,.cx-field textarea:focus{border-color:var(--cx-brand)}
