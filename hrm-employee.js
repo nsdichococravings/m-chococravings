@@ -123,10 +123,10 @@ function renderStats(monthAtt, leaveBal, emp) {
   const hoursBox = document.getElementById("statHours").parentElement;
   if (isPartTime && monthAtt) {
     hoursBox.querySelector(".num").textContent = money(monthAtt.estimated_earnings || 0);
-    hoursBox.querySelector(".lbl").textContent = "Est. Pay (Month)";
+    hoursBox.querySelector(".lbl").textContent = "Est. pay";
   } else {
     hoursBox.querySelector(".num").textContent = monthAtt ? Math.round(monthAtt.total_hours) : 0;
-    hoursBox.querySelector(".lbl").textContent = "Hrs This Month";
+    hoursBox.querySelector(".lbl").textContent = "Hours";
   }
 
   const left = leaveBal ? (leaveBal.casual_left + leaveBal.sick_left + leaveBal.paid_left) : 0;

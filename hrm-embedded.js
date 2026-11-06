@@ -26,7 +26,7 @@
     const link = document.createElement("link");
     link.id = "hrmEmbCss";
     link.rel = "stylesheet";
-    link.href = "css/hrm.css";
+    link.href = "/hrm.css";
     document.head.appendChild(link);
   }
 

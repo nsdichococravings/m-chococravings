@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <title>My HRM — NSDI ChocoCravings</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/hrm.css" />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/hrm.css?v=20261114" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -17,18 +17,18 @@
     <div class="logo-dot">CC</div>
     <div class="brand-text">
       <div class="b1">NSDI ChocoCravings</div>
-      <div class="b2">My Workspace</div>
+      <div class="b2">My <em>Workspace</em></div>
     </div>
   </div>
 
   <!-- ================= LOGIN VIEW ================= -->
   <div id="loginView" class="login-wrap">
     <div class="cc-card">
-      <h2>Welcome back</h2>
+      <h2>Welcome <em>back</em></h2>
       <p class="tag">Sign in with your Employee ID and PIN</p>
-      <input id="loginCode" class="cc-input" placeholder="Employee ID (e.g. EMP001)" autocomplete="off" />
-      <input id="loginPin" class="cc-input" placeholder="4-digit PIN" type="password" inputmode="numeric" maxlength="6" />
-      <button class="cc-btn" id="loginBtn">Sign In</button>
+      <label class="cc-field">Employee ID<input id="loginCode" class="cc-input" placeholder="e.g. EMP001" autocomplete="username" autocapitalize="characters" /></label>
+      <label class="cc-field">PIN<input id="loginPin" class="cc-input" placeholder="4-digit PIN" type="password" inputmode="numeric" maxlength="6" autocomplete="current-password" /></label>
+      <button class="cc-btn" id="loginBtn">Sign in</button>
       <div class="cc-error" id="loginError"></div>
     </div>
   </div>
@@ -45,9 +45,9 @@
         </div>
       </div>
       <div class="stat-grid">
-        <div class="stat-box"><div class="num" id="statPresent">0</div><div class="lbl">Days Present</div></div>
-        <div class="stat-box"><div class="num" id="statHours">0</div><div class="lbl">Hrs This Month</div></div>
-        <div class="stat-box"><div class="num" id="statLeaveLeft">0</div><div class="lbl">Leaves Left</div></div>
+        <div class="stat-box"><div class="num" id="statPresent">0</div><div class="lbl">Days present</div></div>
+        <div class="stat-box"><div class="num" id="statHours">0</div><div class="lbl">Hours</div></div>
+        <div class="stat-box"><div class="num" id="statLeaveLeft">0</div><div class="lbl">Leaves left</div></div>
       </div>
     </div>
 
@@ -65,7 +65,7 @@
         <div id="todayBlock" class="hrm-empty">Loading…</div>
       </div>
       <div class="cc-card">
-        <h3>Leave Balance</h3>
+        <h3>Leave balance</h3>
         <div class="leave-grid" id="leaveGridOverview"></div>
       </div>
     </div>
@@ -73,7 +73,7 @@
     <!-- ATTENDANCE -->
     <div class="hrm-panel" id="panel-attendance">
       <div class="cc-card">
-        <h3>This Month's Attendance</h3>
+        <h3>This month</h3>
         <div id="attendanceList" class="hrm-empty">Loading…</div>
       </div>
     </div>
@@ -81,24 +81,24 @@
     <!-- LEAVES -->
     <div class="hrm-panel" id="panel-leaves">
       <div class="cc-card">
-        <h3>Apply for Leave</h3>
-        <select class="cc-select" id="leaveType">
+        <h3>Apply for leave</h3>
+        <label class="cc-field">Leave type<select class="cc-select" id="leaveType">
           <option value="casual">Casual Leave</option>
           <option value="sick">Sick Leave</option>
           <option value="paid">Paid Leave</option>
           <option value="unpaid">Unpaid Leave</option>
-        </select>
+        </select></label>
         <div class="date-row">
-          <input class="cc-input" type="date" id="leaveStart" />
-          <input class="cc-input" type="date" id="leaveEnd" />
+          <label class="cc-field" style="flex:1">From<input class="cc-input" type="date" id="leaveStart" /></label>
+          <label class="cc-field" style="flex:1">To<input class="cc-input" type="date" id="leaveEnd" /></label>
         </div>
-        <input class="cc-input" id="leaveReason" placeholder="Reason (optional)" />
-        <button class="cc-btn" id="applyLeaveBtn">Submit Request</button>
+        <label class="cc-field">Reason<input class="cc-input" id="leaveReason" placeholder="Optional" /></label>
+        <button class="cc-btn" id="applyLeaveBtn">Submit request</button>
         <div class="cc-error" id="leaveError"></div>
         <div class="cc-success-msg" id="leaveSuccess"></div>
       </div>
       <div class="cc-card">
-        <h3>My Leave History</h3>
+        <h3>My requests</h3>
         <div id="leaveHistoryList" class="hrm-empty">Loading…</div>
       </div>
     </div>
@@ -106,7 +106,7 @@
     <!-- BENEFITS -->
     <div class="hrm-panel" id="panel-benefits">
       <div class="cc-card">
-        <h3>Salary, Bonuses &amp; Perks</h3>
+        <h3>Salary, bonuses &amp; perks</h3>
         <div id="benefitsList" class="hrm-empty">Loading…</div>
       </div>
     </div>
@@ -118,6 +118,6 @@
 
 <div class="hrm-toast" id="toast"></div>
 
-<script src="js/hrm-employee.js"></script>
+<script src="/hrm-employee.js?v=20261114"></script>
 </body>
 </html>
