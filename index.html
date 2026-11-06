@@ -1258,6 +1258,43 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 /* Vibe Store teaser: rounded to match */
 #page-home > div[onclick="showPage('accessories')"]{border-radius:22px!important;box-shadow:0 14px 30px -20px rgba(36,5,45,.5);border:1px solid var(--cx-line)}
 
+/* Explore on the boutique look (tokens from cart-ui.css) */
+#page-explore.cx{background:var(--cx-bg)}
+#page-explore .ex-search{display:flex;align-items:center;gap:10px;margin:0 16px;padding:0 8px 0 16px;height:50px;border-radius:999px;background:var(--cx-card);
+  border:1px solid var(--cx-line);color:var(--cx-muted);box-shadow:0 10px 26px -20px rgba(58,10,70,.3);transition:border-color .15s,box-shadow .15s}
+#page-explore .ex-search:focus-within{border-color:var(--cx-brand);box-shadow:0 0 0 3px rgba(110,9,119,.08)}
+#page-explore .ex-search input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-family:'DM Sans',sans-serif;font-size:14.5px;color:var(--cx-ink);-webkit-appearance:none;appearance:none}
+#page-explore .ex-search input::placeholder{color:#ab9fae}
+#page-explore .ex-search input::-webkit-search-cancel-button{display:none}
+#page-explore #search-clear{flex:none;width:32px;height:32px;border-radius:50%;border:0;background:var(--cx-bg);color:var(--cx-muted);font-size:13px;cursor:pointer}
+#page-explore .ftags{display:flex;flex-wrap:nowrap;gap:8px;margin:0;padding:14px 16px 6px;overflow-x:auto;scrollbar-width:none}
+#page-explore .ftags::-webkit-scrollbar{display:none}
+#page-explore .ftag{display:flex;align-items:center;gap:7px;flex:none;padding:9px 16px;border-radius:999px;border:1px solid var(--cx-line);background:var(--cx-card);
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;letter-spacing:.01em;text-transform:none;color:var(--cx-ink2);cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+#page-explore .ftag.on{background:var(--cx-plum);border-color:var(--cx-plum);color:#fff;box-shadow:0 8px 18px -10px rgba(58,10,70,.6)}
+#page-explore .ftag.on .fc-veg{border-color:#fff}
+#page-explore .ftag.on .fc-veg::after{background:#fff}
+#page-explore .ftag:focus-visible{outline:2px solid var(--cx-gold);outline-offset:2px}
+#page-explore .plist{padding:12px 16px 16px;gap:12px}
+#page-explore .plcard{gap:14px;padding:10px;background:var(--cx-card);border:1px solid var(--cx-line);border-radius:22px;box-shadow:0 10px 28px -20px rgba(58,10,70,.3);transition:transform .2s,box-shadow .2s}
+@media (hover:hover){#page-explore .plcard:hover{transform:translateY(-2px);box-shadow:0 16px 32px -20px rgba(58,10,70,.4);border-color:var(--cx-line)}}
+#page-explore .plcard:focus-visible{outline:2px solid var(--cx-gold);outline-offset:3px}
+#page-explore .plimg{position:relative;width:108px;height:auto;min-height:108px;align-self:stretch;border-radius:16px;background:linear-gradient(150deg,#f4e9ee,#efe2d4);font-size:40px}
+#page-explore .plimg img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+#page-explore .plimg .fc-tag{top:8px;left:8px;font-size:8px;padding:3px 7px}
+#page-explore .plinfo{padding:4px 4px 2px 0;gap:4px;justify-content:flex-start}
+#page-explore .plname{font-family:var(--cx-serif);font-size:19px;font-weight:600;line-height:1.15;color:var(--cx-ink)}
+#page-explore .pltag{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:500;color:var(--cx-muted);margin:0}
+#page-explore .pldesc{font-size:12px;line-height:1.45;color:var(--cx-ink2);opacity:.85;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+#page-explore .pldesc:empty{display:none}
+#page-explore .plfoot{display:flex;align-items:flex-end;justify-content:space-between;margin-top:auto;padding-top:6px}
+#page-explore .plfrom{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--cx-gold);font-weight:700}
+#page-explore .plprice{font-family:var(--cx-serif);font-size:22px;font-weight:700;color:var(--cx-plum)}
+#page-explore .plrat{font-size:11px;font-weight:600;color:var(--cx-gold);margin-top:1px}
+#page-explore .fc-add{width:36px;height:36px;border-radius:50%;border:1px solid #e3d3e3;background:#fff;color:var(--cx-brand);font-size:19px;font-weight:400;flex:none}
+#page-explore .fc-add:active{background:var(--cx-brand-l);transform:scale(.92)}
+#page-explore .fc-add:focus-visible{outline:2px solid var(--cx-gold);outline-offset:2px}
+
 /* Product detail on the boutique look (tokens from cart-ui.css) */
 #page-detail.cx{padding-bottom:var(--bnav-space)!important}
 #page-detail .dhero{height:340px;background:linear-gradient(160deg,#f7efe9,#efdcea,#f7efe9)}
@@ -1660,31 +1697,24 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
     </div><!-- /home -->
 
     <!-- ═══ EXPLORE ═══ -->
-    <div class="page" id="page-explore">
-      <div class="exp-top"  style="position:relative;">
-        <!--<div class="back" onclick="goBack()" style="top:16px;left:16px;">
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M10 3L5 8L10 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>-->
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-          <div>
-            <div class="exp-title">Explore</div>
-            <div class="exp-sub" style="margin-bottom:12px">Premium Handcrafted Brownies</div>
-          </div>
-        </div>
-        <div class="exp-srch"><span style="font-size:17px;color:var(--faint)">🔍</span><input id="explore-search" type="text" placeholder="Search products…" oninput="searchProducts(this.value)"><span id="search-clear" style="font-size:16px;color:var(--faint);cursor:pointer;display:none" onclick="clearSearch()">✕</span></div>
+    <div class="page cx" id="page-explore">
+      <div class="cx-hdr">
+        <div class="cx-back" role="button" tabindex="0" aria-label="Back" onclick="goBack()">‹</div>
+        <div><div class="cx-title">Explore <em>the menu</em></div><div class="cx-sub">Handcrafted brownies, baked fresh</div></div>
       </div>
-      <div class="ftags">
-        <div class="ftag on" onclick="selTag(this)">All</div>
-        <div class="ftag" onclick="selTag(this)">💚 Eggless</div>
-        <div class="ftag" onclick="selTag(this)">❤️ With Egg</div>
-        <div class="ftag" onclick="selTag(this)">🌟 Couverture</div>
+      <div class="ex-search">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
+        <input id="explore-search" type="search" placeholder="Search brownies, flavours…" autocomplete="off" oninput="searchProducts(this.value)" aria-label="Search products">
+        <button type="button" id="search-clear" aria-label="Clear search" onclick="clearSearch()" style="display:none">✕</button>
       </div>
-      <div class="plist"  id="explore-list"></div>
-      
+      <div class="ftags" role="tablist" aria-label="Filter">
+        <div class="ftag on" role="tab" tabindex="0" onclick="selTag(this)">All</div>
+        <div class="ftag" role="tab" tabindex="0" onclick="selTag(this)"><i class="fc-veg eg" aria-hidden="true"></i>Eggless</div>
+        <div class="ftag" role="tab" tabindex="0" onclick="selTag(this)"><i class="fc-veg ee" aria-hidden="true"></i>With egg</div>
+        <div class="ftag" role="tab" tabindex="0" onclick="selTag(this)">Couverture</div>
+      </div>
+      <div class="plist" id="explore-list"></div>
       <div style="height:8px"></div>
-      
     </div><!-- /explore -->
 
     <!-- ═══ DETAIL ═══ -->
@@ -7010,50 +7040,43 @@ function renderExploreList(products) {
   if (!list) return;
 
   if (products.length === 0) {
-    list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--dim)">No products found</div>';
+    list.innerHTML = '<div class="ord-loading">No brownies match this filter.</div>';
     return;
   }
 
-  list.innerHTML = products.map(function(p, i) {
+  list.innerHTML = products.map(function(p) {
     var price = getLowestPrice(p.product_variants);
     var emoji = getEmojiForProduct(p.name);
-    var piClass = getPiClass(i);
-    var userPref = getUserEggPref();
-    var eggLabel = p.egg_type === 'eggless' ? '💚 Eggless' : '❤️ With Egg';
-    var tierLabel = p.tier === 'couverture' ? 'Couverture' : 'Premium';
+    var eggless = p.egg_type === 'eggless';
     var rating = productRatingLabel(p.id, true);
     var sortedVariants = (p.product_variants || []).slice().sort(function(a,b){ return (a.price||0) - (b.price||0); });
     var pack = sortedVariants.length > 0 ? sortedVariants[0].pack_label : '4pcs';
     var varIdx = getVariantIndex(p.sku);
     var tags = (p.category || '') + ' ' + (p.egg_type || '') + ' ' + (p.tier || '');
+    var img = getProductImage(p.sku);
+    var name = ordEsc(p.name);
 
-    return '<div class="plcard"'
-      + ' data-tags="' + tags.trim() + '"'
-      + ' data-name="' + p.name + '"'
-      + ' data-tier="' + (p.tier || 'premium') + '"'
-      + ' data-egg="' + (getUserEggPref() || p.egg_type || 'eggless')  + '"'
+    return '<div class="plcard" role="button" tabindex="0"'
+      + ' data-tags="' + ordEsc(tags.trim()) + '"'
+      + ' data-name="' + name + '"'
+      + ' data-tier="' + ordEsc(p.tier || 'premium') + '"'
+      + ' data-egg="' + ordEsc(getUserEggPref() || p.egg_type || 'eggless') + '"'
       + ' data-varidx="' + varIdx + '"'
       + ' data-price="' + price + '"'
-      + ' data-sku="' + (p.sku || '') + '"'
-      + ' data-pack="' + pack + '"'
-      + ' data-pid="' + (p.id || '') + '"'
+      + ' data-sku="' + ordEsc(p.sku || '') + '"'
+      + ' data-pack="' + ordEsc(pack) + '"'
+      + ' data-pid="' + ordEsc(p.id || '') + '"'
       + ' onclick="openDetail(this)">'
-      + '<div class="plimg ' + piClass + '" style="overflow:hidden">'
-      + (getProductImage(p.sku)
-          ? '<img src="' + getProductImage(p.sku) + '" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\'">'
-          : emoji)
-      + '</div>'
+      + '<div class="plimg"><span aria-hidden="true">' + emoji + '</span>'
+      +   (img ? '<img src="' + ordEsc(img) + '" alt="" loading="lazy" decoding="async" onerror="this.remove()">' : '')
+      +   (p.tier === 'couverture' ? '<span class="fc-tag">Couverture</span>' : '') + '</div>'
       + '<div class="plinfo">'
-      + '<div>'
-      + '<div class="plname">' + p.name + '</div>'
-      + '<div class="pltag">' + eggLabel + ' · ' + tierLabel + '</div>'
-      + '<div class="pldesc">' + (p.description || '') + '</div>'
-      + (rating ? '<div class="plrat">' + rating + '</div>' : '')
-      + '</div>'
-      + '<div class="plfoot">'
-      + '<span class="plprice">from ₹' + price + '</span>'
-      + '<button class="abtn" onclick="event.stopPropagation();quickAddCart(this)">+</button>'
-      + '</div>'
+      +   '<div class="plname">' + name + '</div>'
+      +   '<div class="pltag"><i class="fc-veg ' + (eggless ? 'eg' : 'ee') + '" aria-hidden="true"></i>' + (eggless ? 'Eggless' : 'With egg') + ' · ' + (p.tier === 'couverture' ? 'Couverture' : 'Premium') + '</div>'
+      +   (p.description ? '<div class="pldesc">' + ordEsc(p.description) + '</div>' : '<div class="pldesc"></div>')
+      +   '<div class="plfoot"><div><span class="plfrom">from</span> <span class="plprice">₹' + price + '</span>'
+      +     (rating ? '<div class="plrat">' + ordEsc(rating) + '</div>' : '') + '</div>'
+      +   '<button class="abtn fc-add" aria-label="Add ' + name + ' to cart" onclick="event.stopPropagation();quickAddCart(this)">+</button></div>'
       + '</div>'
       + '</div>';
   }).join('');
@@ -7083,7 +7106,7 @@ async function debugProducts() {
   else { console.log('variants columns:', Object.keys(v[0])); console.log('variants row:', v[0]); }
 }
 document.addEventListener('keydown', function (e) {
-  var t = e.target && e.target.closest && e.target.closest('.ntab,[role="button"][tabindex]');
+  var t = e.target && e.target.closest && e.target.closest('.ntab,[role="button"][tabindex],.ftag[tabindex]');
   if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); t.click(); }
 });
 function setNav(name) {
