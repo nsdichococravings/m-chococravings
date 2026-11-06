@@ -1295,6 +1295,37 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 #page-explore .fc-add:active{background:var(--cx-brand-l);transform:scale(.92)}
 #page-explore .fc-add:focus-visible{outline:2px solid var(--cx-gold);outline-offset:2px}
 
+
+/* Checkout: progress steps, saved-address cards, trust line */
+.ck-steps{display:flex;align-items:center;gap:8px;list-style:none;margin:0 16px 16px;padding:0;counter-reset:none}
+.ck-steps li{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;letter-spacing:.04em;color:var(--cx-muted)}
+.ck-steps li+li::before{content:"";width:22px;height:1px;background:var(--cx-line);margin-right:1px}
+.ck-steps span{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;border:1px solid var(--cx-line);background:#fff;color:var(--cx-muted)}
+.ck-steps .done span{background:var(--cx-gold-l);border-color:#ecdcbf;color:#8a6a33}
+.ck-steps .now{color:var(--cx-plum)}
+.ck-steps .now span{background:linear-gradient(135deg,#3a0a46,#6e0977);border-color:transparent;color:#fff}
+#page-checkout .cx-field+.ck-row,#page-checkout .ck-row .cx-field{margin:0}
+#page-checkout .ck-row{margin-bottom:0}
+#page-checkout .cx-field .ck-field{margin-top:6px}
+.ck-addrs{display:flex;flex-direction:column;gap:10px}
+.ck-addr-card{display:flex;align-items:flex-start;gap:12px;padding:14px;border:1px solid var(--cx-line);border-radius:18px;background:#fff;cursor:pointer;transition:border-color .15s,background .15s}
+.ck-addr-card .cx-radio{margin-top:10px}
+.ck-addr-card.on{border-color:var(--cx-brand);background:linear-gradient(135deg,#fbf3fa,#fffdfa);box-shadow:0 0 0 3px rgba(110,9,119,.07)}
+.ck-addr-card.on .cx-radio{border-color:var(--cx-brand)}
+.ck-addr-card.on .cx-radio::after{content:"";position:absolute;inset:3.5px;border-radius:50%;background:var(--cx-brand)}
+.ck-addr-card .adr-ico{flex:none;width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--cx-plum);background:var(--cx-bg);border:1px solid var(--cx-line2)}
+.ck-addr-t{flex:1;min-width:0;font-size:12.5px;line-height:1.5;color:var(--cx-ink2)}
+.ck-addr-t b{display:flex;align-items:center;gap:8px;font-family:var(--cx-serif);font-size:18px;font-weight:600;color:var(--cx-ink);text-transform:capitalize;margin-bottom:1px}
+.ck-addr-t i{font-family:'DM Sans',sans-serif;font-style:normal;font-size:9px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--cx-gold-l);color:#8a6a33;border:1px solid #ecdcbf}
+.ck-addr-card:focus-visible{outline:2px solid var(--cx-gold);outline-offset:2px}
+.ck-other{display:block;width:100%;margin:12px 0 4px;padding:12px;border-radius:999px;border:1px dashed #d8c3d8;background:transparent;color:var(--cx-brand);font-family:'DM Sans',sans-serif;font-size:12.5px;font-weight:600;letter-spacing:.04em;cursor:pointer}
+#ck-manual-form{margin-top:4px}
+#page-checkout #ck-tier-notice{background:var(--cx-gold-l)!important;border:1px solid #ecdcbf!important;color:#6b5228!important;border-radius:14px!important}
+#page-checkout .ck-err{background:#fcf1f3;color:#a33a52;border:1px solid #f3dde2;border-radius:14px;padding:10px 14px;font-size:12.5px}
+.ck-trust{display:flex;justify-content:center;flex-wrap:wrap;gap:6px 16px;margin:2px 16px 6px;font-size:11px;letter-spacing:.06em;color:var(--cx-muted)}
+.ck-trust span{display:inline-flex;align-items:center;gap:5px}
+.ck-trust span+span::before{content:"·";margin-right:10px;color:var(--cx-gold)}
+
 /* Product detail on the boutique look (tokens from cart-ui.css) */
 #page-detail.cx{padding-bottom:var(--bnav-space)!important}
 #page-detail .dhero{height:340px;background:linear-gradient(160deg,#f7efe9,#efdcea,#f7efe9)}
@@ -1366,11 +1397,6 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 #page-checkout.cx .ck-field{display:block;width:100%;box-sizing:border-box;padding:13px 14px;border-radius:14px;border:1px solid var(--cx-line);background:#fff;color:var(--cx-ink);font-family:'DM Sans',sans-serif;font-size:14px;margin:0;transition:border-color .15s,box-shadow .15s}
 #page-checkout.cx .ck-field::placeholder{color:#a99dab}
 #page-checkout.cx .ck-field:focus{border-color:var(--cx-brand);box-shadow:0 0 0 3px rgba(110,9,119,.08);outline:none}
-#page-checkout.cx #ck-saved-addrs>div:first-child{font-size:10px!important;letter-spacing:.16em;color:var(--cx-muted)!important}
-#page-checkout.cx #ck-addr-list>div{background:#fff!important;border:1px solid var(--cx-line)!important;border-radius:16px!important;padding:13px 15px!important}
-#page-checkout.cx #ck-addr-list>div>div:first-child>div:first-child{font-family:var(--cx-serif);font-size:16px!important;color:var(--cx-plum)!important}
-#page-checkout.cx #ck-addr-list>div>div:last-child,#page-checkout.cx #ck-addr-list div[style*="font-size:10px"]{color:var(--cx-muted)!important}
-#page-checkout.cx #ck-saved-addrs>div:last-child{color:var(--cx-brand)!important;font-size:13px!important}
 #page-checkout.cx #ck-tier-notice{border-radius:14px!important;font-size:12px!important}
 #page-checkout.cx .ck-err{border-radius:14px}
 #page-checkout.cx .ck-field-wrap{margin-bottom:10px}
@@ -2013,36 +2039,37 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
         <div><div class="cx-title" id="ck-title-text">Secure <em>Checkout</em></div><div class="cx-sub" id="ck-sub-text">Home delivery across Tamil Nadu</div></div>
       </div>
 
+      <ol class="ck-steps" aria-label="Checkout progress">
+        <li class="done"><span>✓</span>Cart</li>
+        <li class="now"><span>2</span>Details</li>
+        <li><span>3</span>Payment</li>
+      </ol>
+
       <div class="cx-card">
-        <div class="cx-h"><span id="ck-details-label">Delivery details</span></div>
-          <!-- SAVED ADDRESSES PICKER -->
-          <div id="ck-saved-addrs" style="display:none;margin-bottom:12px">
-            <div style="font-size:11px;color:var(--dim);margin-bottom:8px;font-weight:600">SAVED ADDRESSES</div>
-            <div id="ck-addr-list" style="display:flex;flex-direction:column;gap:8px"></div>
-            <div onclick="toggleManualForm()" style="font-size:12px;color:var(--p3);font-weight:600;cursor:pointer;margin-top:10px;text-align:center">+ Enter a different address</div>
-          </div>
+        <div class="cx-h"><span id="ck-details-label">Contact</span></div>
+        <label class="cx-field">Full name *<input class="ck-field" id="ck-name" type="text" autocomplete="name" required></label>
+        <div class="ck-row" style="margin-top:12px">
+          <label class="cx-field">Phone *<input class="ck-field" id="ck-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+91" required></label>
+          <label class="cx-field">Email<input class="ck-field" id="ck-email" type="email" autocomplete="email" placeholder="Optional"></label>
+        </div>
+      </div>
 
-          <!-- MANUAL FORM -->
-          <div id="ck-manual-form">
-            <div class="ck-field-wrap">
-              <input class="ck-field" id="ck-name" type="text" placeholder="Your full name *" required>
-            </div>
-            <div class="ck-row">
-              <input class="ck-field" id="ck-phone" type="tel" placeholder="+91 phone *" required>
-              <input class="ck-field" id="ck-email" type="email" placeholder="Email (optional)">
-            </div>
-            <div class="ck-field-wrap">
-              <input class="ck-field" id="ck-address" type="text" placeholder="Door no, Street, Area *" required>
-            </div>
-            <div class="ck-row">
-              <input class="ck-field" id="ck-city" type="text" placeholder="City *" required>
-              <input class="ck-field" id="ck-pin" type="text" placeholder="Pincode">
-            </div>
+      <div class="cx-card">
+        <div class="cx-h">Deliver to</div>
+        <!-- SAVED ADDRESSES PICKER -->
+        <div id="ck-saved-addrs" style="display:none">
+          <div id="ck-addr-list" class="ck-addrs" role="radiogroup" aria-label="Saved addresses"></div>
+          <button type="button" class="ck-other" onclick="toggleManualForm()">+ Use a different address</button>
+        </div>
+        <!-- ADDRESS FIELDS (shown when there is no saved address, or for a different one) -->
+        <div id="ck-manual-form">
+          <label class="cx-field">Door no, street, area *<input class="ck-field" id="ck-address" type="text" autocomplete="street-address" required></label>
+          <div class="ck-row" style="margin-top:12px">
+            <label class="cx-field">City *<input class="ck-field" id="ck-city" type="text" autocomplete="address-level2" required></label>
+            <label class="cx-field">Pincode<input class="ck-field" id="ck-pin" type="text" inputmode="numeric" maxlength="6" autocomplete="postal-code"></label>
           </div>
-
-          <div class="ck-field-wrap" style="margin-top:8px">
-            <textarea class="ck-field" id="ck-notes" rows="2" placeholder="Special instructions (optional)…" style="resize:none"></textarea>
-          </div>
+        </div>
+        <label class="cx-field" style="margin-top:14px">Note for our kitchen<textarea class="ck-field" id="ck-notes" rows="2" placeholder="Message on the cake, delivery time, gate code… (optional)" style="resize:none"></textarea></label>
       </div>
 
       <div class="cx-card" role="radiogroup" aria-label="Payment method">
@@ -2073,7 +2100,8 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
         <div class="cx-note"><span><i class="cx-dot warn"></i></span><span>Orders can't be cancelled once confirmed</span></div>
       </div>
 
-      <div class="ck-err" id="ck-err" style="margin:0 14px 10px">⚠️ Please fill all required fields</div>
+      <div class="ck-err" id="ck-err" style="margin:0 14px 10px">Please fill the fields marked *</div>
+      <div class="ck-trust"><span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10.5" width="14" height="9.5" rx="2.5"/><path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5"/></svg>Secure payment</span><span>Freshly baked</span><span>Free delivery</span></div>
 
       <div class="cx-dock">
         <div><div class="cx-dock-amt" id="ck-dock-total">₹0</div><div class="cx-dock-sub" id="ck-dock-sub">Secured by Razorpay</div></div>
@@ -4352,10 +4380,19 @@ async function deleteAddress(addrId) {
 
 function toggleManualForm() {
   var f = document.getElementById('ck-manual-form');
-  if (f) f.style.display = f.style.display === 'none' ? 'block' : 'none';
+  if (!f) return;
+  var open = f.style.display === 'none';
+  f.style.display = open ? 'block' : 'none';
+  if (open) {
+    // A different address: start empty and unselect the saved ones.
+    ['ck-address', 'ck-city', 'ck-pin'].forEach(function (id) { var el = document.getElementById(id); if (el) el.value = ''; });
+    document.querySelectorAll('.ck-addr-card').forEach(function (c) { c.classList.remove('on'); c.setAttribute('aria-checked', 'false'); });
+    var first = document.getElementById('ck-address'); if (first) first.focus();
+  }
 }
 
-function selectCheckoutAddress(a) {
+function selectCheckoutAddress(a, card) {
+  if (!a) return;
   // Populate checkout fields from selected saved address
   document.getElementById('ck-address').value = [a.address_line1, a.address_line2].filter(Boolean).join(', ');
   document.getElementById('ck-city').value    = a.city || '';
@@ -4367,19 +4404,14 @@ function selectCheckoutAddress(a) {
   if (nameEl  && !nameEl.value  && currentUser) nameEl.value  = currentUser.name  || '';
   if (phoneEl && !phoneEl.value && currentUser) phoneEl.value = currentUser.phone || '';
 
-  // Highlight selected card
+  // Highlight the chosen card; the address fields stay folded away.
   document.querySelectorAll('.ck-addr-card').forEach(function(c) {
-    c.style.borderColor = 'var(--bdr)';
-    c.style.background  = 'var(--card)';
+    var on = c === card;
+    c.classList.toggle('on', on);
+    c.setAttribute('aria-checked', on ? 'true' : 'false');
   });
-  event.currentTarget.style.borderColor = 'var(--p)';
-  event.currentTarget.style.background  = 'rgba(107,47,206,.1)';
-
-  // Show filled manual form so user can see/edit what was filled
   var f = document.getElementById('ck-manual-form');
-  if (f) f.style.display = 'block';
-
-  showToast('Address selected ✅');
+  if (f) f.style.display = 'none';
 }
 
 async function loadCheckoutAddresses() {
@@ -4395,22 +4427,25 @@ async function loadCheckoutAddresses() {
   var listEl       = document.getElementById('ck-addr-list');
   if (!savedSection || !listEl) return;
 
+  window._ckAddrById = {};
+  var def = addrs.find(function(a){ return a.is_default; }) || addrs[0];
   listEl.innerHTML = addrs.map(function(a) {
-    var full = [a.address_line1, a.address_line2, a.landmark, a.city, a.pincode].filter(Boolean).join(', ');
-    return '<div class="ck-addr-card" onclick="selectCheckoutAddress(' + JSON.stringify(a).replace(/"/g,'&quot;') + ')" '
-      + 'style="background:var(--card);border:1.5px solid ' + (a.is_default ? 'var(--p)' : 'var(--bdr)') + ';border-radius:14px;padding:12px 14px;cursor:pointer">'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">'
-      + '<div style="font-size:12px;font-weight:700;color:var(--pl)">' + (a.label||'Address') + (a.is_default?' ⭐':'') + '</div>'
-      + '<div style="font-size:10px;color:var(--dim)">Tap to select</div>'
-      + '</div>'
-      + '<div style="font-size:11px;color:var(--dim);line-height:1.5">' + full + '</div>'
+    window._ckAddrById[a.id] = a;
+    var full = [a.address_line1, a.address_line2, a.landmark, a.city, a.pincode].filter(Boolean).map(ordEsc).join(', ');
+    var kind = /office|work/i.test(a.label || '') ? 'Office' : (/home/i.test(a.label || '') ? 'Home' : 'Other');
+    var on = def && a.id === def.id;
+    return '<div class="ck-addr-card' + (on ? ' on' : '') + '" role="radio" tabindex="0" aria-checked="' + on + '" data-id="' + ordEsc(a.id) + '" '
+      + 'onclick="selectCheckoutAddress(window._ckAddrById[this.dataset.id], this)">'
+      + '<span class="cx-radio"></span><span class="adr-ico">' + ADDR_ICONS[kind] + '</span>'
+      + '<span class="ck-addr-t"><b>' + ordEsc(a.label || 'Address') + (a.is_default ? ' <i>Default</i>' : '') + '</b>' + full + '</span>'
       + '</div>';
   }).join('');
 
   savedSection.style.display = 'block';
+  // With a saved address chosen, the address fields stay folded away.
+  var mf = document.getElementById('ck-manual-form'); if (mf) mf.style.display = 'none';
 
   // Auto-select default address
-  var def = addrs.find(function(a){ return a.is_default; }) || addrs[0];
   if (def) {
     document.getElementById('ck-address').value = [def.address_line1, def.address_line2].filter(Boolean).join(', ');
     document.getElementById('ck-city').value    = def.city    || '';
@@ -8991,6 +9026,8 @@ async function ckPay() {
     var el = document.getElementById(need[i]);
     if (el && !el.value.trim()) {
       var err = document.getElementById('ck-err'); if (err) err.style.display = 'block';
+      var mf = document.getElementById('ck-manual-form');
+      if (mf && mf.contains(el)) mf.style.display = 'block';
       el.focus();
       return;
     }
