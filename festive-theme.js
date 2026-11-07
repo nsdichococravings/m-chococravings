@@ -330,13 +330,13 @@
         + (sub ? '<br><span style="font-size:11.5px;color:#8a7a90">' + sub + '</span>' : '') + '</span>' + (on ? '<span style="color:#6e0977;font-weight:800">✓</span>' : '') + '</button>';
     };
     var list = opt('auto', '📅', 'Automatic', auto ? 'Today: ' + THEMES[auto].name : 'Changes by festival date · nothing today')
-      + opt('off', '⚪', 'Off', 'Plain On Store, no decorations')
+      + opt('off', '⚪', 'Off', 'Plain NSDI Cafe, no decorations')
       + Object.keys(THEMES).map(function (k) { return opt(k, THEMES[k].icon, THEMES[k].name, 'Show now'); }).join('');
     ov.innerHTML = '<div style="width:100%;max-width:480px;max-height:85vh;overflow-y:auto;background:#fffaf5;border-radius:24px 24px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom));font-family:\'Instrument Sans\',sans-serif">'
       + '<div style="width:38px;height:4px;border-radius:2px;background:#e3d3e6;margin:0 auto 12px"></div>'
       + '<div style="font-size:9px;font-weight:700;letter-spacing:2.5px;color:#c2607a">ADMIN</div>'
       + '<div style="font-family:Fraunces,Georgia,serif;font-size:22px;font-weight:900;color:#1a0820;margin:2px 0 4px">Festive Theme</div>'
-      + '<div style="font-size:12px;color:#8a7a90;margin-bottom:14px">Decorates On Store for everyone (customers and staff). The Kitchen screen stays plain.</div>'
+      + '<div style="font-size:12px;color:#8a7a90;margin-bottom:14px">Decorates NSDI Cafe for everyone (customers and staff). The Kitchen screen stays plain.</div>'
       + list + '</div>';
     ov.addEventListener('click', async function (e) {
       if (e.target === ov) { ov.remove(); return; }

@@ -454,7 +454,7 @@
       + (owner ? '' : '<div class="ga-info" style="margin-top:8px">Only the owner can open the store or turn on online payment.</div>')
       + sw('enabled', 'Open NSDI Store', 'Off: only staff can see it (preview).', true)
       + sw('pilot_only', 'Pilot: only listed customers', 'Try it with a few customers first.', true)
-      + sw('online_enabled', 'Online payment (Razorpay)', 'Uses the same Razorpay account as On Store. Leave off until tested.', true)
+      + sw('online_enabled', 'Online payment (Razorpay)', 'Uses the same Razorpay account as NSDI Cafe. Leave off until tested.', true)
       + sw('cash_enabled', 'Cash at pickup', 'Customer pays at the counter.', false) + '</div>'
       + '<div class="ga-card"><div class="ga-h" style="font-size:17px;margin-bottom:10px">Outlet &amp; rules</div><div style="display:flex;flex-direction:column;gap:10px">'
       + inp('outlet_name', 'Outlet name') + inp('outlet_address', 'Outlet address') + inp('pickup_hours', 'Pickup hours')
