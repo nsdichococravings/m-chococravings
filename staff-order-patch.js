@@ -452,13 +452,13 @@ function buildManageStaffUI() {
     + '</div>'
     + '<div style="padding:18px 20px;display:flex;flex-direction:column;gap:14px">'
     +   '<div style="display:flex;gap:8px">'
-    +     '<input id="mstaff-name" placeholder="Staff name" style="flex:2;padding:12px 14px;'
+    +     '<input id="mstaff-name" placeholder="Staff name" style="flex:2;min-width:0;padding:12px 14px;'
     +       'border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);font-family:inherit;'
     +       'font-size:13px;outline:none;box-sizing:border-box">'
-    +     '<input id="mstaff-pin" placeholder="PIN" maxlength="6" style="flex:1;padding:12px 14px;'
+    +     '<input id="mstaff-pin" placeholder="PIN" maxlength="6" style="flex:1;min-width:0;padding:12px 14px;'
     +       'border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);font-family:inherit;'
     +       'font-size:13px;outline:none;box-sizing:border-box">'
-    +     '<select id="mstaff-role" style="flex:1;padding:12px 10px;border-radius:12px;'
+    +     '<select id="mstaff-role" style="flex:1;min-width:0;padding:12px 10px;border-radius:12px;'
     +       'border:1.5px solid rgba(18,10,30,0.12);font-family:inherit;font-size:13px;'
     +       'outline:none;box-sizing:border-box;background:#fff;cursor:pointer">'
     +       '<option value="Employee">Employee</option>'
@@ -469,6 +469,20 @@ function buildManageStaffUI() {
     +     '#6e0977,#9c0ca1);color:#fff;font-size:13px;font-weight:700;border:none;border-radius:12px;'
     +     'cursor:pointer">➕ Add Staff</button>'
     +   '<div id="mstaff-list" style="display:flex;flex-direction:column;gap:8px;margin-top:6px"></div>'
+    // Staff tab in the app: customer accounts flagged as employee / admin.
+    // Separate from the PIN list above, so removing a PIN does not remove this.
+    +   '<div style="margin-top:14px;padding-top:16px;border-top:1px solid #f0e8f8">'
+    +     '<div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:#9c0ca1">Staff tab in the app</div>'
+    +     '<div style="font-size:11.5px;color:#7a6080;margin:4px 0 10px;line-height:1.5">These customer accounts see the Staff tab (Stall, Attendance) in the ChocoCravings app. '
+    +       'Removing a PIN above does not remove this — switch it off here too.</div>'
+    +     '<div style="display:flex;gap:8px">'
+    +       '<input id="mstaff-phone" type="tel" inputmode="numeric" maxlength="14" placeholder="Customer mobile number" style="flex:1;padding:12px 14px;'
+    +         'border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);font-family:inherit;font-size:13px;outline:none;box-sizing:border-box">'
+    +       '<button onclick="mstaffGrantPhone()" style="padding:0 16px;border-radius:12px;border:1.5px solid #6e0977;background:#fff;color:#6e0977;'
+    +         'font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Give access</button>'
+    +     '</div>'
+    +     '<div id="mstaff-access" style="display:flex;flex-direction:column;gap:8px;margin-top:10px"></div>'
+    +   '</div>'
     + '</div>';
   document.body.appendChild(sheet);
 }
@@ -477,6 +491,7 @@ function openManageStaff() {
   document.getElementById('mstaff-overlay').style.display = 'block';
   document.getElementById('mstaff-sheet').style.display   = 'block';
   mstaffLoadList();
+  mstaffLoadAccess();
 }
 function closeManageStaff() {
   document.getElementById('mstaff-overlay').style.display = 'none';
@@ -542,8 +557,57 @@ async function mstaffToggle(id, current) {
 }
 
 async function mstaffDelete(id) {
-  if (!confirm('Remove this staff member? They will no longer be able to sign in.')) return;
+  if (!confirm('Remove this staff member? Their PIN stops working. If they also see the Staff tab in the app, switch that off under "Staff tab in the app".')) return;
   await db.from('store_staff').delete().eq('id', id);
   showStoreToast('Staff removed');
   mstaffLoadList();
+}
+
+// ── Staff tab in the app (customers.is_employee / is_admin) ──
+function mstaffEsc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function mstaffRenderAccess(data) {
+  var box = document.getElementById('mstaff-access');
+  if (!box) return;
+  var accts = (data && data.accounts) || [];
+  var isSuper = data && data.caller === 'super';
+  if (!accts.length) { box.innerHTML = '<div style="text-align:center;padding:14px;color:#b090c0;font-size:12px">No accounts have the Staff tab</div>'; return; }
+  box.innerHTML = accts.map(function (a) {
+    var kind = a.super ? ['Super admin', '#b87410', 'rgba(184,116,16,0.12)'] : a.admin ? ['Admin', '#6e0977', 'rgba(110,9,119,0.1)'] : ['Employee', '#15803d', 'rgba(34,197,94,0.1)'];
+    var action = a.super ? '<span style="font-size:10.5px;color:#b090c0">Change in Supabase</span>'
+      : a.admin ? (isSuper ? '<button onclick="mstaffSetAccess(\'' + mstaffEsc(a.id) + '\',\'admin\',false)" style="padding:6px 12px;border-radius:20px;border:1px solid rgba(220,38,38,0.3);background:#fff;color:#c24545;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Remove admin</button>'
+                          : '<span style="font-size:10.5px;color:#b090c0">Super admin only</span>')
+      : '<button onclick="mstaffSetAccess(\'' + mstaffEsc(a.id) + '\',\'employee\',false)" style="padding:6px 12px;border-radius:20px;border:1px solid rgba(220,38,38,0.3);background:#fff;color:#c24545;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">Remove access</button>';
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;border:1px solid #efe4f3;border-radius:12px;padding:10px 12px">'
+      + '<div style="min-width:0"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><span style="font-size:13px;font-weight:700;color:#1a0820">' + mstaffEsc(a.name || 'No name') + '</span>'
+      + '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:' + kind[2] + ';color:' + kind[1] + '">' + kind[0] + '</span></div>'
+      + '<div style="font-size:11px;color:#9a8aaa;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + mstaffEsc(a.phone || a.email || '') + '</div></div>'
+      + action + '</div>';
+  }).join('');
+}
+function mstaffAccessError(e) {
+  var m = (e && e.message) || String(e);
+  if (/function .*does not exist|schema cache/i.test(m)) return 'Run migrations/20261113_staff_app_access.sql in Supabase first.';
+  return m;
+}
+async function mstaffLoadAccess() {
+  var box = document.getElementById('mstaff-access');
+  if (box) box.innerHTML = '<div style="text-align:center;padding:14px;color:#b090c0;font-size:12px">Loading…</div>';
+  var res = await db.rpc('cc_admin_staff_accounts');
+  if (res.error) { if (box) box.innerHTML = '<div style="padding:12px;color:#c24545;font-size:12px">' + mstaffEsc(mstaffAccessError(res.error)) + '</div>'; return; }
+  mstaffRenderAccess(res.data);
+}
+async function mstaffSetAccess(id, flag, on) {
+  if (!on && !confirm(flag === 'admin' ? 'Remove admin access from this account?' : 'Remove the Staff tab from this account?')) return;
+  var res = await db.rpc('cc_admin_set_staff_access', { p_customer_id: id, p_flag: flag, p_on: on });
+  if (res.error) { showStoreToast(mstaffAccessError(res.error)); return; }
+  mstaffRenderAccess(res.data);
+  showStoreToast(on ? 'Access given' : 'Access removed · they lose the Staff tab next time the app opens');
+}
+async function mstaffGrantPhone() {
+  var el = document.getElementById('mstaff-phone');
+  var res = await db.rpc('cc_admin_grant_staff_by_phone', { p_phone: (el && el.value) || '' });
+  if (res.error) { showStoreToast(mstaffAccessError(res.error)); return; }
+  if (el) el.value = '';
+  mstaffRenderAccess(res.data);
+  showStoreToast('Staff tab given');
 }
