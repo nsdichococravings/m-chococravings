@@ -11,6 +11,9 @@
 //     and cc_winback_send (migrations/20260970), same header:
 //       { type: 'winback', messages: [{ customer_id, title, body }] }
 //     -> one personal "we miss you" message per customer.
+//     and grocery_staff_push (migrations/20261114), same header:
+//       { type: 'staff_alert', messages: [{ customer_id, title, body, url, count }] }
+//     -> "New NSDI Store order" to every staff device, with the to-pack count.
 //  2. An admin in the app (Command Center > Send Notification), with their
 //     normal sign-in token:
 //       { type: 'broadcast', title, body, url? }
@@ -101,6 +104,23 @@ Deno.serve(async (req) => {
       sent += r.sent; removed += r.removed;
     }
     return json({ sent, removed, customers: messages.length });
+  } else if (body.type === "staff_alert") {
+    // New NSDI Store order for staff, from grocery_staff_push (migrations/20261114), via pg_net.
+    // Not added to anyone's "Your Updates" list; it opens Manage NSDI Store → Orders.
+    const secret = env("PUSH_WEBHOOK_SECRET");
+    if (!secret || req.headers.get("x-cc-push-secret") !== secret) return json({ error: "Forbidden" }, 403);
+    const messages = Array.isArray(body.messages) ? (body.messages as Record<string, unknown>[]).slice(0, 200) : [];
+    let sent = 0, removed = 0;
+    for (const m of messages) {
+      const title = String(m.title || "").trim().slice(0, 80), text = String(m.body || "").trim().slice(0, 300);
+      if (!title || !m.customer_id) continue;
+      const url = typeof m.url === "string" && m.url.startsWith("/") ? m.url : "/grocery-admin.html#orders";
+      const count = Math.max(0, Math.min(999, Number(m.count) || 0));
+      const { data: subs } = await admin.from("cc_push_subscriptions").select("endpoint,p256dh,auth").eq("customer_id", String(m.customer_id));
+      const r = await deliver(admin, subs || [], { title, body: text, url, tag: "grocery-order", count, urgent: true });
+      sent += r.sent; removed += r.removed;
+    }
+    return json({ sent, removed, staff: messages.length });
   } else if (body.type === "broadcast") {
     const token = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "");
     const { data: userData } = await admin.auth.getUser(token);

@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
-<meta name="theme-color" content="#09010F"/>
+<meta name="theme-color" content="#2b0a35"/>
 <meta name="robots" content="noindex"/>
 <title>NSDI Store · Manage</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <link rel="preconnect" href="https://yjbfditboewwpgyqzryd.supabase.co" crossorigin/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-net.js?v=20261018"></script>
@@ -15,28 +15,39 @@
 /* Same colours as the admin dashboard, so the NSDI Store tools look the same in both places. */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --p:#6B2FCE;--p2:#8B44E8;--pl:#C084FC;--pg:rgba(107,47,206,.12);
-  --dark:#09010F;--d2:#110020;--d3:#1C003A;--d4:#0F0018;
-  --white:#FAF5FF;--off:#E9D5FF;--dim:#9F7ABA;--faint:#4A3060;
-  --green:#22C55E;--gold:#F59E0B;--red:#EF4444;
-  --card:rgba(255,255,255,.035);--bdr:rgba(255,255,255,.07);--bdr2:rgba(107,47,206,.25);
+  --p:#9b3aa6;--p2:#c56fd0;--pl:#e6b5ec;--pg:rgba(197,111,208,.12);
+  --dark:#12071a;--d2:#1b0a22;--d3:#24102c;--d4:#160920;
+  --white:#fff7ea;--off:#f1e3cf;--dim:#bfa9b8;--faint:#86708a;
+  --green:#7fd1a0;--gold:#e8c98f;--red:#f08296;
+  --card:rgba(255,255,255,.045);--bdr:rgba(217,184,122,.14);--bdr2:rgba(217,184,122,.32);
 }
-html,body{background:var(--dark);color:var(--white);font-family:'DM Sans',system-ui,sans-serif;min-height:100vh}
-a{color:var(--pl)}
-.top{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;background:var(--d4);border-bottom:1px solid var(--bdr)}
-.top a{width:38px;height:38px;border-radius:11px;background:var(--card);border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;color:var(--white);text-decoration:none;font-size:18px}
-.top .t{font-family:'Cormorant Garamond',serif;font-size:21px;font-weight:700;flex:1}
-.top .shop{width:auto;padding:0 12px;font-size:13px;font-weight:700}
+html,body{background:radial-gradient(70% 40% at 60% 0%,rgba(176,141,87,.10),transparent 60%),linear-gradient(180deg,#1b0a22,#12071a);background-attachment:fixed;color:var(--white);font-family:'DM Sans',system-ui,sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased}
+a{color:var(--gold)}
+.top{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:10px;padding:calc(12px + env(safe-area-inset-top)) 16px 12px;color:#fff;
+  background:radial-gradient(120% 120% at 100% 0%,rgba(255,233,194,.16),transparent 55%),linear-gradient(135deg,#2b0a35 0%,#5a0b63 60%,#1a0820 100%);
+  border-bottom:1px solid rgba(217,184,122,.2);box-shadow:0 14px 30px -18px rgba(0,0,0,.8)}
+.top a,.top .bell{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;justify-content:center;color:#fff;text-decoration:none;font-size:18px;flex:none;position:relative}
+.top .t{flex:1;min-width:0}
+.top .t small{display:block;font-size:9.5px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,233,194,.75)}
+.top .t b{display:block;font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top .shop{width:auto;padding:0 14px;border-radius:999px;font-size:12.5px;font-weight:600;color:#ffe9c2;border-color:rgba(255,233,194,.3)}
+.top .bell svg{width:19px;height:19px}
+.top .bell .n{display:none;position:absolute;top:-4px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#e88aa6;color:#fff;font:700 11px 'DM Sans',sans-serif;align-items:center;justify-content:center;border:2px solid #3a0a46}
+.top .bell.on .n{display:flex}
+.top .bell.on{background:rgba(255,233,194,.16);border-color:rgba(255,233,194,.45);color:#ffe9c2}
 #view-grocery{max-width:980px;margin:0 auto}
-#notif-toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(140%);transition:transform .25s;z-index:1000;background:#1d1030;border:1px solid var(--bdr2);border-radius:14px;padding:12px 16px;min-width:240px;max-width:92vw;box-shadow:0 12px 30px rgba(0,0,0,.4)}
+#notif-toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(140%);transition:transform .25s;z-index:1000;background:#1b0a22;border:1px solid var(--bdr2);border-radius:999px;padding:12px 18px;min-width:240px;max-width:92vw;box-shadow:0 18px 40px -14px rgba(0,0,0,.8)}
 #notif-toast.show{transform:translateX(-50%) translateY(0)}
-#nt-title{font-weight:700;font-size:14px}#nt-body{font-size:12.5px;color:var(--dim);margin-top:2px}
+#nt-title{font-weight:700;font-size:13.5px}#nt-body{font-size:12.5px;color:var(--dim);margin-top:2px}
 </style>
 </head>
 <body data-grocery-admin>
 <div class="top">
   <a href="index.html" aria-label="Back to the app">‹</a>
-  <div class="t">Manage NSDI Store</div>
+  <div class="t"><small>NSDI Store</small><b>Manage <i style="font-style:italic;color:#e8c98f;font-weight:500">store</i></b></div>
+  <a class="bell" id="ga-bell" href="#orders" aria-label="Orders to pack">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
+    <span class="n" id="ga-bell-n">0</span></a>
   <a class="shop" href="grocery.html">View store ↗</a>
 </div>
 <div id="view-grocery"></div>
@@ -54,6 +65,20 @@ function showToast(title, body) {
   clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove('show'); }, 3500);
 }
 </script>
-<script src="grocery-admin.js?v=20261105"></script>
+<script src="grocery-admin.js?v=20261114"></script>
+<script src="grocery-alerts.js?v=20261114"></script>
+<script>
+// Orders waiting to be packed: bell count, page title, chime on a new order.
+(function () {
+  var bell = document.getElementById('ga-bell'), n = document.getElementById('ga-bell-n');
+  bell.addEventListener('click', function (e) { e.preventDefault(); if (window.ccGroceryAdmin) ccGroceryAdmin.showOrders(); window.scrollTo(0, 0); });
+  GroceryAlerts.start(db, { onCount: function (c) {
+    bell.classList.toggle('on', c > 0);
+    n.textContent = c > 99 ? '99+' : c;
+    bell.setAttribute('aria-label', c + (c === 1 ? ' order' : ' orders') + ' to pack');
+    document.title = (c > 0 ? '(' + c + ') ' : '') + 'NSDI Store · Manage';
+  } });
+})();
+</script>
 </body>
 </html>
