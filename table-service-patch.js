@@ -594,6 +594,59 @@ function kPaidOnline(o) {
   return o.payment_status === 'paid' && ['upi', 'upi_qr', 'razorpay', 'gpay', 'phonepe'].indexOf(m) >= 0;
 }
 
+var _kPhoneGroups = {};
+var _kTableUse = {}; // table -> phones of the open orders there
+function kPhone10(p) { var d = String(p || '').replace(/\D/g, ''); return d.length >= 10 ? d.slice(-10) : ''; }
+function kMergeNote(o) {
+  var ph = kPhone10(o.customer_phone), g = ph && _kPhoneGroups[ph];
+  if (!g) return '';
+  var admin = typeof isAdmin !== 'undefined' && isAdmin;
+  return '<div class="kt-merge"><span><b>Same number</b> · ' + g.orders.length + ' open orders at ' + g.tables.map(kEsc).join(', ') + '</span>'
+    + (admin ? '<button type="button" class="kt-mini on" onclick="kOpenMergePhone(\'' + ph + '\')">Merge to one table</button>' : '<span class="kt-merge-s">Ask an admin to merge</span>')
+    + '</div>';
+}
+function kCloseMergePhone() { var el = document.getElementById('kt-merge-ov'); if (el) el.remove(); }
+function kOpenMergePhone(ph) {
+  var g = _kPhoneGroups[ph];
+  if (!g) return;
+  kCloseMergePhone();
+  var counts = {};
+  g.orders.forEach(function (o) { var t = o.table_code ? String(o.table_code).toUpperCase() : (o.customer_table || ''); counts[t] = (counts[t] || 0) + 1; });
+  var bill = g.orders.filter(function (o) { return o.table_code; })[0];
+  var choices = g.tables.concat(TABLE_CODES.filter(function (t) { return g.tables.indexOf(t) < 0; }));
+  var ov = document.createElement('div');
+  ov.id = 'kt-merge-ov'; ov.className = 'kt-merge-ov';
+  ov.innerHTML = '<div class="kt-merge-sh" role="dialog" aria-label="Merge to one table">'
+    + '<div class="kt-merge-eb">Same number · ' + kEsc(ph.slice(0, 2) + '••••••' + ph.slice(-2)) + '</div>'
+    + '<div class="kt-merge-t">Bring ' + g.orders.length + ' orders to <em>one table</em></div>'
+    + '<div class="kt-merge-p">Pick the table. All open orders from this number move there and the other tables are freed. Payments and tickets stay as they are.'
+    + (bill ? ' This customer has a table bill at <b>' + kEsc(String(bill.table_code).toUpperCase()) + '</b>; that bill stays there.' : '') + '</div>'
+    + '<div class="kt-merge-grid">' + choices.map(function (t) {
+        // A table where someone else has an open order can't be chosen.
+        var others = (_kTableUse[t] || []).filter(function (x) { return x !== ph; }).length;
+        var here = counts[t] ? '<small>' + counts[t] + (counts[t] === 1 ? ' order' : ' orders') + ' here</small>' : (others ? '<small>Other customer</small>' : '<small>Free</small>');
+        return '<button type="button" class="kt-merge-c' + (counts[t] ? ' has' : '') + (bill && String(bill.table_code).toUpperCase() === t ? ' best' : '') + '"'
+          + (others && !counts[t] ? ' disabled' : '') + ' onclick="kMergePhoneTo(\'' + ph + '\',\'' + t + '\')"><b>' + kEsc(t) + '</b>' + here + '</button>';
+      }).join('') + '</div>'
+    + '<button type="button" class="kt-merge-x" onclick="kCloseMergePhone()">Cancel</button></div>';
+  ov.addEventListener('click', function (e) { if (e.target === ov) kCloseMergePhone(); });
+  document.body.appendChild(ov);
+}
+async function kMergePhoneTo(ph, table) {
+  var btns = document.querySelectorAll('.kt-merge-c'); btns.forEach(function (b) { b.disabled = true; });
+  try {
+    var res = await db.rpc('cc_admin_merge_phone_table', { p_phone: ph, p_table: table });
+    if (res.error) throw res.error;
+    kCloseMergePhone();
+    showStoreToast('All orders from this number are now at ' + table + (res.data && res.data.moved ? ' · ' + res.data.moved + ' moved' : ''));
+    if (typeof kitchenRefresh === 'function') kitchenRefresh(true);
+  } catch (e) {
+    btns.forEach(function (b) { b.disabled = false; });
+    var m = (e && e.message) || String(e);
+    showStoreToast(/function .*does not exist|schema cache/i.test(m) ? 'Run migrations/20261116_admin_merge_phone_table.sql in Supabase first.' : m);
+  }
+}
+
 function kEsc(v) {
   return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
 }
@@ -608,6 +661,26 @@ function renderKitchen(orders, loyaltyMap) {
   updateKitchenOrderCountBadge(orders.length);
   var list = document.getElementById('k-list');
   if (!orders.length) { list.innerHTML = '<div class="k-empty"><div class="k-empty-t">All caught up</div><div class="k-empty-s">New orders appear here the moment they come in.</div></div>'; return; }
+  // Open orders from the same mobile number at different tables: flag them so
+  // an admin can bring them to one table (migrations/20261116).
+  var byPhone = {};
+  orders.forEach(function (o) {
+    var ph = kPhone10(o.customer_phone);
+    if (!ph) return;
+    (byPhone[ph] = byPhone[ph] || []).push(o);
+  });
+  _kPhoneGroups = {};
+  _kTableUse = {};
+  orders.forEach(function (o) {
+    var t = o.table_code ? String(o.table_code).toUpperCase() : (o.customer_table || '');
+    if (t && t !== 'TAKEAWAY') (_kTableUse[t] = _kTableUse[t] || []).push(kPhone10(o.customer_phone));
+  });
+  Object.keys(byPhone).forEach(function (ph) {
+    var g = byPhone[ph];
+    var tables = [];
+    g.forEach(function (o) { var t = o.table_code ? String(o.table_code).toUpperCase() : (o.customer_table || ''); if (t && tables.indexOf(t) < 0) tables.push(t); });
+    if (g.length > 1 && tables.length > 1) _kPhoneGroups[ph] = { orders: g, tables: tables };
+  });
   list.innerHTML = orders.map(function (o) {
     var rawItems = o.items;
     var itemsArr = Array.isArray(rawItems) ? rawItems : (typeof rawItems === 'string' ? JSON.parse(rawItems) : []);
@@ -696,6 +769,7 @@ function renderKitchen(orders, loyaltyMap) {
       + '<div class="kt-right"><span class="kt-st">' + (K_STATUS[o.status] || kEsc(o.status)) + '</span><span class="kt-age">' + age + '</span></div></div>'
       + (paidOnline ? '<div class="kt-paidbar">Paid online · ' + pmLabel + ' · ₹' + (o.total || 0) + ' — do not collect</div>' : '')
       + '<div class="kt-meta">' + meta.join('') + '<span class="kt-pay ' + pay[0] + '">' + pay[1] + '</span></div>'
+      + kMergeNote(o)
       + loyaltyBox
       + '<div class="kt-items">' + itemsHtml + '</div>'
       + totalBox
