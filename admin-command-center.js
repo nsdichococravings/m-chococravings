@@ -28,7 +28,9 @@ function ccSetAccess(allowed) {
     var body=document.getElementById('acc-body'); if(body) body.innerHTML='';
   }
   var tab=document.getElementById('acc-tab'), sheet=document.getElementById('acc-sheet');
-  if(tab) tab.style.display=_ccAccessGranted?'flex':'none';
+  // The Command Center lives on Home now (left sidebar); NSDI Cafe keeps the
+  // tools working for its links but shows no side handle.
+  if(tab) tab.style.display='none';
   if(sheet) sheet.style.display=_ccAccessGranted?'block':'none';
   var pill=document.getElementById('admin-fab-pill'); if(pill) pill.style.display='none';
 }
@@ -75,7 +77,8 @@ var _ccDeepLinkUntil = Date.now() + 20000;
 function ccTryDeepLink() {
   if (!_ccDeepLink || !_ccAccessGranted || Date.now() > _ccDeepLinkUntil) return;
   var want = _ccDeepLink, tool = null;
-  if (want !== 'open') {
+  if (want === 'open') { _ccDeepLink = null; return; } // the side panel was removed from NSDI Cafe
+  {
     CC_CATEGORIES.forEach(function (cat) {
       (_ccTools[cat] || []).forEach(function (t) {
         if (tool || (t.superAdminOnly && !t._allowedSuper)) return;
@@ -88,9 +91,7 @@ function ccTryDeepLink() {
   _ccDeepLink = null;
   try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {}
   setTimeout(function () {
-    if (!tool) { ccSlideOpen(); return; }
-    if (tool.keepOpen) { ccSlideOpen(); tool.onClick(); renderCommandCenter(); }
-    else tool.onClick();
+    if (tool) tool.onClick();
   }, 300);
 }
 
