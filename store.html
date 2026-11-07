@@ -331,6 +331,29 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 .kt-act{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border-radius:14px;border:1px solid rgba(217,184,122,.18);background:rgba(255,255,255,.04);color:#f1e3cf;font-family:inherit;font-size:10.5px;font-weight:600;letter-spacing:.04em;cursor:pointer}
 .kt-act span{font-size:15px}
 .kt-act.bad{color:#f4a3b3;border-color:rgba(240,130,150,.3)}
+/* Same mobile number at several tables (Kitchen) */
+.kt-merge{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px;padding:10px 12px;border-radius:14px;
+  background:rgba(217,184,122,.1);border:1px dashed rgba(217,184,122,.5);font-size:12px;color:#f1e3cf}
+.kt-merge b{color:#e8c98f}.kt-merge-s{font-size:11px;color:rgba(245,234,220,.55)}
+.kt-merge-ov{position:fixed;inset:0;z-index:3200;background:rgba(10,3,14,.72);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;padding:12px}
+.kt-merge-sh{width:100%;max-width:460px;border-radius:26px;padding:22px 18px 18px;background:#1b0a22;border:1px solid rgba(217,184,122,.3);color:#f5eadc;
+  box-shadow:0 -20px 60px -20px rgba(0,0,0,.8);font-family:'DM Sans',sans-serif}
+@media(min-width:700px){.kt-merge-ov{align-items:center}}
+.kt-merge-eb{font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:rgba(217,184,122,.85)}
+.kt-merge-t{font-family:'Cormorant Garamond',Georgia,serif;font-size:28px;font-weight:600;color:#fff7ea;line-height:1.1;margin-top:6px}
+.kt-merge-t em{font-style:italic;color:#e8c98f;font-weight:500}
+.kt-merge-p{font-size:12.5px;color:rgba(245,234,220,.7);line-height:1.5;margin:8px 0 14px}
+.kt-merge-p b{color:#e8c98f}
+.kt-merge-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kt-merge-c{display:flex;flex-direction:column;align-items:center;gap:3px;padding:12px 6px;border-radius:16px;border:1px solid rgba(217,184,122,.2);
+  background:rgba(255,255,255,.04);color:#f1e3cf;font-family:inherit;cursor:pointer}
+.kt-merge-c b{font-family:'Cormorant Garamond',Georgia,serif;font-size:24px;font-weight:700;line-height:1}
+.kt-merge-c small{font-size:10.5px;color:rgba(245,234,220,.55)}
+.kt-merge-c.has{border-color:rgba(217,184,122,.55);background:rgba(217,184,122,.1)}
+.kt-merge-c.has small{color:#e8c98f}
+.kt-merge-c.best{box-shadow:0 0 0 2px #e8c98f}
+.kt-merge-c:disabled{opacity:.5}
+.kt-merge-x{width:100%;min-height:46px;margin-top:12px;border-radius:999px;border:1px solid rgba(217,184,122,.25);background:transparent;color:#f1e3cf;font-family:inherit;font-weight:600;cursor:pointer}
 
 
 /* ── TABLE SERVICE sheets (table-service-patch.js) on the boutique look ── */
@@ -3706,7 +3729,7 @@ async function toggleStoreOpenStatus() {
 <script src="menu-art.js?v=20260956"></script>
 <script src="menu-search-patch.js?v=20261106-boutique"></script>
 <script src="remember-phone-patch.js?v=20260952-table"></script>
-<script src="checkadminbadge-override.js?v=20261115-t4"></script>
+<script src="checkadminbadge-override.js?v=20261116-merge"></script>
 <script src="production-purchases-patch.js?v=20261018"></script>
 <link rel="stylesheet" href="production-dashboard.css?v=20260970-count">
 <script src="production-dashboard.js?v=20261113-collections"></script>
