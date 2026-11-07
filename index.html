@@ -1053,6 +1053,40 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 .bnav .ntab.on .nicon{background:linear-gradient(135deg,#f3e3f1,#f8eee6);color:#6e0977;box-shadow:0 0 0 1px rgba(176,141,87,.22) inset}
 .bnav .ntab.on .nlbl{font-weight:700}
 .bnav .ntab:focus-visible .nicon{box-shadow:0 0 0 2px #b08d57}
+/* Command Center on Home (admins): header button + left sidebar */
+.hcc-btn{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:40px;height:40px;border-radius:50%;border:1px solid #ecdcbf;cursor:pointer;
+  background:radial-gradient(circle at 30% 25%,#fff,#f6eedf);color:#3a0a46;align-items:center;justify-content:center;box-shadow:0 6px 16px -10px rgba(58,10,70,.5)}
+.hcc-btn:active{transform:translateY(-50%) scale(.95)}
+.hcc-ov{position:fixed;inset:0;z-index:3000;background:rgba(26,8,32,0);transition:background .3s;pointer-events:none}
+.hcc-ov.on{background:rgba(26,8,32,.5);pointer-events:auto;backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.hcc-sb{position:fixed;top:0;left:0;bottom:0;width:340px;max-width:88vw;z-index:3001;overflow-y:auto;background:#faf6f0;color:#24112b;
+  transform:translateX(-100%);transition:transform .32s cubic-bezier(.4,0,.2,1);box-shadow:18px 0 50px -20px rgba(26,8,32,.55);font-family:'DM Sans',sans-serif}
+.hcc-ov.on .hcc-sb{transform:translateX(0)}
+.hcc-hd{position:sticky;top:0;z-index:2;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;color:#fff;
+  padding:calc(22px + env(safe-area-inset-top)) 20px 22px;border-radius:0 0 26px 0;
+  background:radial-gradient(120% 90% at 100% 0%,rgba(255,233,194,.18),transparent 60%),linear-gradient(160deg,#2b0a35 0%,#5a0b63 60%,#1a0820 100%)}
+.hcc-eb{font-size:10px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:rgba(255,233,194,.75)}
+.hcc-t{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:600;line-height:1;margin-top:6px}
+.hcc-t em{font-style:italic;color:#e8c98f;font-weight:500}
+.hcc-x{flex:none;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:14px;cursor:pointer}
+.hcc-body{padding:16px 16px calc(28px + env(safe-area-inset-bottom))}
+.hcc-h{display:flex;align-items:center;gap:10px;font-size:10px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:#b08d57;margin:16px 4px 10px}
+.hcc-h:first-child{margin-top:4px}
+.hcc-h::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,#ece2d8,transparent)}
+.hcc-quick{display:flex;flex-direction:column;gap:8px}
+.hcc-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:18px;background:#fffdfa;border:1px solid #ece2d8;color:#24112b;text-decoration:none;cursor:pointer;
+  box-shadow:0 10px 24px -22px rgba(58,10,70,.45)}
+.hcc-row .ic{flex:none;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:17px;color:#3a0a46;
+  background:radial-gradient(circle at 50% 40%,#fff,#f6eedf);box-shadow:0 0 0 1px #ecdcbf}
+.hcc-row b{display:block;font-size:13.5px;font-weight:600}.hcc-row small{display:block;font-size:11px;color:#8d7f90;margin-top:2px}
+.hcc-row .go{margin-left:auto;color:#b08d57;font-size:18px}
+.hcc-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hcc-card{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:13px 12px;border-radius:18px;background:#fffdfa;border:1px solid #ece2d8;color:#24112b;text-decoration:none;
+  box-shadow:0 10px 24px -20px rgba(58,10,70,.35)}
+.hcc-card .ic{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:7px;
+  background:radial-gradient(circle at 50% 40%,#fff,#f6eedf);box-shadow:0 0 0 1px #ecdcbf}
+.hcc-card b{font-size:12.5px;font-weight:600;line-height:1.25}.hcc-card small{font-size:10.5px;color:#8d7f90;line-height:1.35}
+.hcc-note{font-size:12px;color:#8d7f90;line-height:1.5;padding:12px 14px;border-radius:16px;border:1px dashed #e2d3c4;margin-top:4px}
 /* Staff tab: NSDI Store orders waiting to be packed (grocery-alerts.js) */
 .nstaff-n{display:none;position:absolute;top:-6px;right:2px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;align-items:center;justify-content:center;
   background:linear-gradient(135deg,#a33a52,#c25b74);color:#fff;font:700 10px 'DM Sans',sans-serif;box-shadow:0 0 0 2px #fffdfa}
@@ -1580,6 +1614,11 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
         onerror="this.style.display='none';this.nextElementSibling.style.display='block'"
         style="height:46px;object-fit:contain;max-width:160px">
     <div style="display:none;font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:600;color:#6e0977">NSDI ChocoCravings</div>
+
+    <!-- LEFT: Command Center (admins only) — opens the left sidebar -->
+    <button type="button" id="hcc-btn" class="hcc-btn" aria-label="Command Center" onclick="openHomeCC()" style="display:none">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+    </button>
 
     <!-- RIGHT ACTIONS — absolutely positioned, logo unaffected -->
     <div style="position:absolute;right:10px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:2px">
@@ -3691,6 +3730,56 @@ function applyStaffNav(admin, staff) {
   if (tab) tab.style.display = _staffNav.staff ? 'flex' : 'none';
   if (!_staffNav.staff) closeStaffSheet();
   else startStaffGroceryAlerts();
+  var hcc = document.getElementById('hcc-btn');
+  if (hcc) hcc.style.display = _staffNav.admin ? 'flex' : 'none';
+  if (!_staffNav.admin) closeHomeCC(true);
+}
+
+// ── Command Center on Home (admins) ──
+// The tools themselves run in NSDI Cafe (store.html). This sidebar lists the
+// tools that NSDI Cafe saved for this admin, and opens one with ?cc=<title>.
+function hccEsc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function openHomeCC() {
+  if (!_staffNav.admin) return;
+  closeHomeCC(true);
+  var saved = null;
+  try { saved = JSON.parse(localStorage.getItem('cc_command_tools_v1')); } catch (e) {}
+  var tools = (saved && saved.tools) || [];
+  var cats = [];
+  tools.forEach(function (t) { if (cats.indexOf(t.cat) < 0) cats.push(t.cat); });
+  var quick = function (href, ic, title, sub, onclick) {
+    return '<a class="hcc-row" ' + (onclick ? 'href="#" onclick="' + onclick + ';return false"' : 'href="' + href + '"') + '><span class="ic">' + ic + '</span><span><b>' + title + '</b><small>' + sub + '</small></span><span class="go">›</span></a>';
+  };
+  var html = '<div class="hcc-h">Quick open</div><div class="hcc-quick">'
+    + quick('/store.html#pg-kitchen', '🍳', 'Kitchen', 'Live order queue')
+    + quick('/grocery-admin.html#orders', '🛍️', 'Manage NSDI Store', 'Pickup orders, items & stock')
+    + quick('', '⚙️', 'Admin panel', 'Orders, products & customers', 'closeHomeCC(true);openAdminPanel()')
+    + '</div>';
+  if (cats.length) {
+    cats.forEach(function (cat) {
+      html += '<div class="hcc-h">' + hccEsc(cat) + '</div><div class="hcc-grid">'
+        + tools.filter(function (t) { return t.cat === cat; }).map(function (t) {
+          return '<a class="hcc-card" href="/store.html?cc=' + encodeURIComponent(t.key || t.title) + '"><span class="ic">' + hccEsc(t.icon) + '</span><b>' + hccEsc(t.title) + '</b>' + (t.sub ? '<small>' + hccEsc(t.sub) + '</small>' : '') + '</a>';
+        }).join('') + '</div>';
+    });
+  } else {
+    html += '<div class="hcc-h">All tools</div><div class="hcc-note">Your full tool list appears here after you open the Command Center in NSDI Cafe once on this phone.</div>';
+  }
+  html += '<div class="hcc-h">NSDI Cafe</div><div class="hcc-quick">' + quick('/store.html?cc=open', '☕', 'Open Command Center in NSDI Cafe', 'Every tool, with live counts') + '</div>';
+  var ov = document.createElement('div');
+  ov.id = 'hcc-ov'; ov.className = 'hcc-ov';
+  ov.innerHTML = '<aside class="hcc-sb" role="dialog" aria-label="Command Center"><div class="hcc-hd"><div><div class="hcc-eb">Admin</div><div class="hcc-t">Command <em>Center</em></div></div>'
+    + '<button type="button" class="hcc-x" aria-label="Close" onclick="closeHomeCC()">✕</button></div><div class="hcc-body">' + html + '</div></aside>';
+  ov.addEventListener('click', function (e) { if (e.target === ov) closeHomeCC(); });
+  document.body.appendChild(ov);
+  requestAnimationFrame(function () { requestAnimationFrame(function () { ov.classList.add('on'); }); });
+}
+function closeHomeCC(now) {
+  var ov = document.getElementById('hcc-ov');
+  if (!ov) return;
+  if (now) { ov.remove(); return; }
+  ov.classList.remove('on');
+  setTimeout(function () { if (ov.parentNode) ov.remove(); }, 320);
 }
 
 // Staff only: NSDI Store orders waiting to be packed, on the Staff tab, with
@@ -4727,7 +4816,7 @@ async function confirmLogout() {
   await db.auth.signOut();
   currentUser = null;
   localStorage.removeItem('cc_user');
-  try { localStorage.removeItem(LC_CACHE_KEY); localStorage.removeItem(PROFILE_CACHE_KEY); localStorage.removeItem(ORDERS_CACHE_KEY); localStorage.removeItem('cc_staff_role_v1'); localStorage.removeItem('cc_admin_orders_v1'); localStorage.removeItem(STAFF_NAV_KEY); localStorage.removeItem('cc_wallet_v1'); } catch (e) {}
+  try { localStorage.removeItem(LC_CACHE_KEY); localStorage.removeItem(PROFILE_CACHE_KEY); localStorage.removeItem(ORDERS_CACHE_KEY); localStorage.removeItem('cc_staff_role_v1'); localStorage.removeItem('cc_admin_orders_v1'); localStorage.removeItem(STAFF_NAV_KEY); localStorage.removeItem('cc_wallet_v1'); localStorage.removeItem('cc_command_tools_v1'); } catch (e) {}
   applyStaffNav(false, false);
   showToast('Signed out successfully');
   setTimeout(function(){ window.location.href = 'auth.html'; }, 800);
