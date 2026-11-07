@@ -74,7 +74,7 @@ function injectKitchenBookingsButton() {
         + 'font-family:\'DM Sans\',sans-serif;transition:background .15s';
       btn.onmouseenter = function () { btn.style.background = 'rgba(214,51,108,0.2)'; };
       btn.onmouseleave = function () { btn.style.background = 'rgba(214,51,108,0.12)'; };
-      btn.innerHTML = '🎂 Bookings <span id="kitchen-bookings-badge" style="display:none;background:#dc2626;'
+      btn.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16v-7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2z"/><path d="M4 15c2 1.5 4 1.5 6 0s4-1.5 6 0 3 1.2 4 .5"/><path d="M12 11V7"/></svg> Bookings <span id="kitchen-bookings-badge" style="display:none;background:#dc2626;'
         + 'color:#fff;font-size:9px;font-weight:700;border-radius:20px;padding:1px 6px;margin-left:2px">0</span>';
 
       actionsGroup.appendChild(btn);
