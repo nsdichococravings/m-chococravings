@@ -4,105 +4,130 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
 <title>NSDI ChocoCravings — Attendance</title>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,400&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-net.js?v=20261018"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
-body{font-family:'Instrument Sans',system-ui,sans-serif;background:#fdf5e3;color:#120a1e}
+body{font-family:'DM Sans','Instrument Sans',system-ui,sans-serif;background:#faf6f0;color:#24112b;-webkit-font-smoothing:antialiased}
 button{font-family:inherit;cursor:pointer;border:none;background:none}
-input,select{font-family:inherit}
+input,select,textarea{font-family:inherit}
 
-:root{--p:#6e0977;--amber:#b87410;--rose:#c2607a;--ink:#120a1e;--muted:#9a8aaa}
+/* Boutique tokens (same as the app) — legacy names kept for inline styles */
+:root{--p:#6e0977;--plum:#3a0a46;--gold:#b08d57;--gold-l:#f6eedf;--amber:#8a6a33;--rose:#a33a52;--ink:#24112b;--ink2:#4a3a50;--muted:#8d7f90;
+  --line:#ece2d8;--line2:#f3ece4;--card:#fffdfa;--ok:#2f7a4b;--serif:'Cormorant Garamond',Georgia,serif}
 
 .page{position:fixed;inset:0;overflow-y:auto;display:none}
 .page.show{display:block}
 
-#login-page.show{display:flex;align-items:center;justify-content:center;padding:20px}
-.login-card{background:#fff;border-radius:24px;padding:32px 26px;max-width:380px;width:100%;
-  box-shadow:0 20px 60px rgba(110,9,119,0.15)}
-.login-emoji{font-size:40px;text-align:center;margin-bottom:6px}
-.login-title{font-family:'Fraunces',serif;font-size:24px;font-weight:900;color:var(--p);text-align:center}
-.login-sub{font-size:12px;color:var(--muted);text-align:center;margin-bottom:22px}
-.login-input{width:100%;padding:14px 16px;border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);
-  font-size:15px;outline:none;margin-bottom:12px;background:#fff}
-.login-btn{width:100%;padding:15px;background:linear-gradient(135deg,#6e0977,#9c0ca1);color:#fff;
-  font-size:14px;font-weight:700;border-radius:14px;letter-spacing:.5px}
-.login-err{color:#dc2626;font-size:12px;text-align:center;min-height:16px;margin-top:8px}
+/* Sign in */
+#login-page.show{display:flex;align-items:center;justify-content:center;padding:20px;
+  background:radial-gradient(120% 60% at 50% 0%,rgba(255,233,194,.18),transparent 60%),linear-gradient(160deg,#2b0a35 0%,#5a0b63 55%,#1a0820 100%)}
+.login-card{background:var(--card);border-radius:28px;padding:30px 24px 26px;max-width:380px;width:100%;border:1px solid var(--line);
+  box-shadow:0 30px 60px -24px rgba(0,0,0,.55)}
+.login-emoji{width:64px;height:64px;margin:0 auto 14px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0;
+  background:radial-gradient(circle at 30% 25%,#ffe9c2,#d9b87a);box-shadow:0 0 0 6px rgba(176,141,87,.12)}
+.login-emoji::after{content:"";width:26px;height:26px;background:var(--plum);
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='12' cy='13' r='8'/%3E%3Cpath d='M12 9v4l2.5 2M9 2h6'/%3E%3C/svg%3E") center/contain no-repeat;
+          mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round'%3E%3Ccircle cx='12' cy='13' r='8'/%3E%3Cpath d='M12 9v4l2.5 2M9 2h6'/%3E%3C/svg%3E") center/contain no-repeat}
+.login-title{font-family:var(--serif);font-size:34px;font-weight:600;color:var(--plum);text-align:center;line-height:1}
+.login-title em{font-style:italic;color:var(--gold);font-weight:500}
+.login-sub{font-size:10px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);text-align:center;margin:10px 0 22px}
+.login-input{width:100%;padding:13px 14px;border-radius:14px;border:1px solid var(--line);font-size:15px;outline:none;margin-bottom:12px;background:#fff;color:var(--ink);transition:border-color .15s,box-shadow .15s}
+.login-input:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(110,9,119,.08)}
+.login-btn{width:100%;min-height:52px;padding:0 20px;border-radius:999px;color:#fff;font-size:13.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  background:linear-gradient(135deg,#3a0a46 0%,#6e0977 60%,#8e1a8f 100%);box-shadow:0 0 0 1px rgba(176,141,87,.35) inset,0 12px 26px -12px rgba(58,10,70,.55)}
+.login-btn:active{transform:scale(.985)}
+.login-err{color:var(--rose);font-size:12.5px;text-align:center;min-height:16px;margin-top:8px}
 
-.topbar{background:#fff;border-bottom:2px solid rgba(110,9,119,0.1);padding:14px 16px;
-  display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20}
-.brand{display:flex;align-items:center;gap:8px}
-.back-btn{width:34px;height:34px;border-radius:50%;background:#f5eeff;display:flex;align-items:center;
-  justify-content:center;cursor:pointer;font-size:16px;color:var(--p);margin-right:4px}
-.brand-sub{font-size:9px;letter-spacing:3px;color:var(--rose);font-weight:700}
-.brand-title{font-family:'Fraunces',serif;font-size:17px;font-weight:900;color:var(--p);line-height:1.1}
-.staff-pill{background:#f5eeff;border-radius:20px;padding:6px 12px;font-size:11px;font-weight:700;color:var(--p)}
+/* Header */
+.topbar{padding:calc(14px + env(safe-area-inset-top)) 16px 14px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:20;color:#fff;
+  background:radial-gradient(120% 120% at 100% 0%,rgba(255,233,194,.16),transparent 55%),linear-gradient(135deg,#2b0a35 0%,#5a0b63 60%,#1a0820 100%);
+  box-shadow:0 14px 30px -18px rgba(36,5,45,.7)}
+.brand{display:flex;align-items:center;gap:10px}
+.back-btn{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);display:flex;align-items:center;
+  justify-content:center;cursor:pointer;font-size:16px;color:#fff;margin-right:2px}
+.brand-sub{font-size:9.5px;letter-spacing:.26em;color:rgba(255,233,194,.75);font-weight:700}
+.brand-title{font-family:var(--serif);font-size:26px;font-weight:600;color:#fff;line-height:1.05}
+.staff-pill{background:rgba(255,233,194,.14);border:1px solid rgba(255,233,194,.3);border-radius:999px;padding:7px 13px;font-size:11.5px;font-weight:600;color:#ffe9c2}
+#notif-bell{background:rgba(255,255,255,.08)!important;border:1px solid rgba(255,255,255,.16)}
 
-.tabbar{display:flex;background:#fff;border-bottom:1px solid rgba(18,10,30,0.06)}
-.tabbtn{flex:1;padding:13px;text-align:center;font-size:13px;font-weight:700;color:var(--muted);
-  border-bottom:3px solid transparent}
-.tabbtn.on{color:var(--p);border-bottom-color:var(--p)}
+/* Tabs */
+.tabbar{display:flex;gap:4px;margin:14px 16px 0;padding:5px;border-radius:999px;background:var(--card);border:1px solid var(--line);box-shadow:0 10px 26px -20px rgba(58,10,70,.35)}
+.tabbtn{flex:1;padding:10px;text-align:center;font-size:12.5px;font-weight:600;color:var(--ink2);border-radius:999px;cursor:pointer;border:0}
+.tabbtn.on{color:#fff;background:linear-gradient(135deg,#3a0a46,#6e0977)}
 
-.clock-view{padding:48px 24px 32px;text-align:center;position:relative}
-.clock-status{display:inline-flex;align-items:center;gap:6px;font-size:10px;font-weight:700;letter-spacing:2.5px;
-  color:var(--muted);margin-bottom:14px;padding:6px 16px;border-radius:20px;background:rgba(18,10,30,0.04)}
+/* Clock */
+.clock-view{padding:30px 24px 26px;text-align:center;position:relative}
+.clock-status{display:inline-flex;align-items:center;gap:7px;font-size:10px;font-weight:700;letter-spacing:.22em;
+  color:var(--muted);margin-bottom:12px;padding:6px 14px;border-radius:999px;background:var(--card);border:1px solid var(--line)}
 .status-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
-.clock-time{font-family:'Fraunces',serif;font-size:44px;font-weight:900;color:var(--ink);margin-bottom:28px;
-  letter-spacing:-1px;font-variant-numeric:tabular-nums}
-.clock-btn-wrap{position:relative;width:196px;height:196px;margin:0 auto}
-.clock-btn-ring{position:absolute;inset:-8px;border-radius:50%;opacity:.35}
-.clock-in-ring{background:conic-gradient(from 0deg,#22c55e,#15803d,#22c55e)}
-.clock-out-ring{background:conic-gradient(from 0deg,#ef4444,#b91c1c,#ef4444)}
-.clock-btn{position:relative;width:180px;height:180px;border-radius:50%;margin:8px;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:5px;font-size:15px;font-weight:700;color:#fff;letter-spacing:.3px;
-  transition:transform .15s ease}
+.clock-time{font-family:var(--serif);font-size:58px;font-weight:600;color:var(--plum);margin-bottom:24px;line-height:1;font-variant-numeric:tabular-nums}
+.clock-btn-wrap{position:relative;width:204px;height:204px;margin:0 auto}
+.clock-btn-ring{position:absolute;inset:-6px;border-radius:50%;opacity:1;padding:2px;
+  background:conic-gradient(from 210deg,#e8c98f,#b08d57,#f6eedf,#b08d57,#e8c98f)}
+.clock-btn-ring::after{content:"";position:absolute;inset:2px;border-radius:50%;background:#faf6f0}
+.clock-in-ring,.clock-out-ring{}
+.clock-btn{position:relative;z-index:1;width:188px;height:188px;border-radius:50%;margin:8px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:8px;color:#fff;transition:transform .15s ease}
 .clock-btn:active{transform:scale(.97)}
-.clock-in-btn{background:radial-gradient(circle at 35% 30%,#2fbf5f,#15803d 70%);box-shadow:0 16px 36px rgba(21,128,61,0.35),inset 0 2px 6px rgba(255,255,255,0.25)}
-.clock-out-btn{background:radial-gradient(circle at 35% 30%,#f04b4b,#b91c1c 70%);box-shadow:0 16px 36px rgba(185,28,28,0.35),inset 0 2px 6px rgba(255,255,255,0.25)}
-.clock-icon{font-size:34px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.15))}
-.clock-btn-label{font-family:'Fraunces',serif;font-size:19px;font-weight:900}
-.elapsed{margin-top:26px;display:inline-flex;flex-direction:column;align-items:center;gap:2px;padding:12px 24px;
-  border-radius:16px;background:#fff;border:1px solid rgba(18,10,30,0.06);box-shadow:0 4px 14px rgba(18,10,30,0.04)}
-.elapsed-lbl{font-size:9px;font-weight:700;letter-spacing:1.5px;color:var(--muted)}
-.elapsed-val{font-family:'Fraunces',serif;font-size:24px;font-weight:900;color:var(--p);margin-top:2px}
+.clock-in-btn{background:radial-gradient(circle at 35% 28%,#4aa874,#2f7a4b 62%,#1f5634);box-shadow:0 0 0 1px rgba(255,255,255,.2) inset,0 22px 40px -16px rgba(47,122,75,.65)}
+.clock-out-btn{background:radial-gradient(circle at 35% 28%,#c25b74,#a33a52 62%,#6f2135);box-shadow:0 0 0 1px rgba(255,255,255,.2) inset,0 22px 40px -16px rgba(163,58,82,.65)}
+.clock-icon{display:flex;width:44px;height:44px;border-radius:50%;align-items:center;justify-content:center;background:rgba(255,255,255,.16);font-size:20px}
+.clock-icon svg{width:22px;height:22px}
+.clock-btn-label{font-family:var(--serif);font-size:26px;font-weight:600;letter-spacing:.01em}
+.elapsed{margin-top:24px;display:inline-flex;flex-direction:column;align-items:center;gap:2px;padding:12px 26px;
+  border-radius:20px;background:var(--card);border:1px solid var(--line);box-shadow:0 10px 26px -20px rgba(58,10,70,.35)}
+.elapsed-lbl{font-size:9.5px;font-weight:700;letter-spacing:.22em;color:var(--gold)}
+.elapsed-val{font-family:var(--serif);font-size:30px;font-weight:700;color:var(--plum);margin-top:2px}
 
-.today-log{padding:0 22px 40px}
-.log-hdr{font-size:10px;letter-spacing:2.5px;color:var(--rose);font-weight:700;margin-bottom:12px}
-.log-row{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid rgba(224,200,240,0.6);
-  border-radius:14px;padding:13px 16px;margin-bottom:8px;box-shadow:0 2px 8px rgba(18,10,30,0.03)}
-.log-name{font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px}
-.log-avatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--p),#9c0ca1);color:#fff;
-  display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+/* Today */
+.today-log{padding:0 16px 40px}
+.log-hdr{display:flex;align-items:center;gap:10px;font-size:10px;letter-spacing:.22em;color:var(--gold);font-weight:700;margin:0 4px 12px}
+.log-hdr::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+.log-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border:1px solid var(--line);
+  border-radius:18px;padding:12px 14px;margin-bottom:8px;box-shadow:0 10px 24px -22px rgba(58,10,70,.4)}
+.log-name{font-family:var(--serif);font-size:18px;font-weight:600;color:var(--ink);display:flex;align-items:center;gap:10px}
+.log-avatar{width:34px;height:34px;border-radius:50%;color:var(--plum);font-family:var(--serif);font-size:16px;font-weight:700;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 40%,#fff,var(--gold-l));box-shadow:0 0 0 1px #ecdcbf}
+.log-row>span:last-child{font-variant-numeric:tabular-nums}
 
-.payroll-view{padding:20px}
-.month-picker{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:20px}
-.month-nav{width:36px;height:36px;border-radius:50%;background:#f5eeff;display:flex;align-items:center;
-  justify-content:center;cursor:pointer;font-size:16px;color:var(--p)}
-.month-label{font-family:'Fraunces',serif;font-size:18px;font-weight:900;color:var(--ink);min-width:140px;text-align:center}
-.payroll-card{background:#fff;border:1.5px solid #e0c8f0;border-radius:16px;padding:16px;margin-bottom:10px}
-.payroll-name{font-size:14px;font-weight:700;color:var(--ink)}
-.payroll-detail{font-size:11px;color:var(--muted);margin-top:2px}
-.payroll-pay{font-family:'Fraunces',serif;font-size:20px;font-weight:900;color:#15803d;margin-top:6px}
+/* Payroll */
+.payroll-view{padding:18px 16px}
+.month-picker{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:16px}
+.month-nav{width:40px;height:40px;border-radius:50%;background:var(--card);border:1px solid var(--line);display:flex;align-items:center;
+  justify-content:center;cursor:pointer;font-size:18px;color:var(--plum)}
+.month-label{font-family:var(--serif);font-size:24px;font-weight:600;color:var(--plum);min-width:160px;text-align:center}
+.payroll-card{background:var(--card)!important;border:1px solid var(--line)!important;border-radius:22px!important;padding:18px!important;margin-bottom:12px;
+  box-shadow:0 1px 0 rgba(255,255,255,.8) inset,0 10px 30px -18px rgba(58,10,70,.18)}
+.payroll-name{font-family:var(--serif);font-size:20px;font-weight:600;color:var(--plum)}
+.payroll-detail{font-size:12px;color:var(--muted);margin-top:3px}
+.payroll-pay{font-family:var(--serif);font-size:28px;font-weight:700;color:var(--ok);margin-top:6px}
 
-.leave-type-btn{flex:1;padding:13px 10px;border-radius:14px;border:1.5px solid rgba(18,10,30,0.1);
-  background:#fff;text-align:center;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;transition:all .15s}
-.leave-type-btn.on{background:linear-gradient(135deg,#6e0977,#9c0ca1);border-color:transparent;color:#fff;
-  box-shadow:0 6px 16px rgba(110,9,119,0.3)}
+/* Leave sheet */
+#leave-overlay>div,#leave-status-card{background:#faf6f0!important;border:1px solid var(--line)}
+#leave-overlay>div>div:nth-child(2){font-family:var(--serif)!important;font-size:30px!important;font-weight:600!important;color:var(--plum)!important}
+#leave-overlay textarea{border:1px solid var(--line)!important;border-radius:14px!important;background:#fff}
+#half-day-row{background:var(--card)!important;border:1px solid var(--line)}
+.leave-type-btn{flex:1;padding:13px 10px;border-radius:999px;border:1px solid var(--line);background:#fff;text-align:center;font-size:13px;font-weight:600;color:var(--ink2);cursor:pointer;transition:all .15s}
+.leave-type-btn.on{background:linear-gradient(135deg,#3a0a46,#6e0977);border-color:transparent;color:#fff;box-shadow:0 8px 18px -10px rgba(58,10,70,.6)}
+#notif-panel{border-radius:20px!important;border-color:var(--line)!important;background:var(--card)!important;box-shadow:0 24px 50px -20px rgba(26,8,32,.5)!important}
+#notif-panel>div:first-child{color:var(--gold)!important;letter-spacing:.22em;font-size:10px!important}
 @keyframes slideUp{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
 
-.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#120a1e;color:#fff;
-  padding:12px 22px;border-radius:24px;font-size:13px;font-weight:600;z-index:200;display:none;box-shadow:0 8px 24px rgba(0,0,0,0.3)}
+.toast{position:fixed;bottom:calc(30px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);background:var(--plum);color:#fff;
+  padding:12px 22px;border-radius:999px;font-size:13px;font-weight:600;z-index:200;display:none;box-shadow:0 12px 30px -10px rgba(36,5,45,.6)}
 </style>
 </head>
 <body>
 
 <div class="page show" id="login-page">
   <div class="login-card">
-    <div class="login-emoji">⏰</div>
-    <div class="login-title">Attendance</div>
-    <div class="login-sub">NSDI ChocoCravings — Staff Sign In</div>
+    <div class="login-emoji" aria-hidden="true">⏰</div>
+    <div class="login-title">Staff <em>Attendance</em></div>
+    <div class="login-sub">NSDI ChocoCravings · Sign in</div>
     <select class="login-input" id="login-name"><option value="">Loading staff…</option></select>
     <input class="login-input" id="login-pin" type="password" inputmode="numeric" maxlength="6" placeholder="PIN">
     <div class="login-err" id="login-err"></div>
@@ -113,7 +138,7 @@ input,select{font-family:inherit}
 <div class="page" id="app-page">
   <div class="topbar">
     <div class="brand">
-      <div class="back-btn" onclick="window.location.href='/'">←</div>
+      <div class="back-btn" role="button" aria-label="Back to the app" onclick="window.location.href='/'">‹</div>
       <div><div class="brand-sub">CHOCOCRAVINGS</div><div class="brand-title">Attendance</div></div>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
@@ -185,8 +210,8 @@ input,select{font-family:inherit}
   </div>
 
   <div class="tabbar">
-    <div class="tabbtn on" id="tab-clock" onclick="setTab('clock')">⏰ Clock In/Out</div>
-    <div class="tabbtn" id="tab-payroll" onclick="setTab('payroll')" style="display:none">💵 Payroll</div>
+    <div class="tabbtn on" id="tab-clock" onclick="setTab('clock')">Clock in / out</div>
+    <div class="tabbtn" id="tab-payroll" onclick="setTab('payroll')" style="display:none">Payroll</div>
   </div>
 
   <div id="clock-view">
@@ -206,7 +231,7 @@ input,select{font-family:inherit}
       </div>
     </div>
     <div class="today-log">
-      <div class="log-hdr">TODAY'S ATTENDANCE — ALL STAFF</div>
+      <div class="log-hdr">TODAY · ALL STAFF</div>
       <div id="today-log-list"></div>
     </div>
   </div>
@@ -283,7 +308,7 @@ async function doLogin() {
       isSuperAdmin = !!(row && row.is_super_admin);
     } catch (e) { staffRole = 'Employee'; isSuperAdmin = false; }
 
-    document.getElementById('staff-pill').textContent = '👤 ' + staffName;
+    document.getElementById('staff-pill').textContent = staffName;
     // Payroll is now visible to EVERY staff member — each person sees
     // their own salary breakdown. Only the notification bell stays
     // Admin-role gated (check-in alerts are an admin-only concern).
@@ -344,16 +369,16 @@ function renderClockButton() {
   if (openAttendanceRow) {
     btn.className = 'clock-btn clock-out-btn';
     ring.className = 'clock-btn-ring clock-out-ring';
-    icon.textContent = '🔴';
-    label.textContent = 'Clock Out';
+    icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 12H4M8 8l-4 4 4 4"/><path d="M13 4h5a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-5"/></svg>';
+    label.textContent = 'Clock out';
     status.innerHTML = '<span class="status-dot"></span>CURRENTLY CLOCKED IN';
-    status.style.color = '#b91c1c';
+    status.style.color = '#a33a52';
     elapsedWrap.style.display = 'inline-flex';
   } else {
     btn.className = 'clock-btn clock-in-btn';
     ring.className = 'clock-btn-ring clock-in-ring';
-    icon.textContent = '🟢';
-    label.textContent = 'Clock In';
+    icon.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h11M11 8l4 4-4 4"/><path d="M13 4h5a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-5"/></svg>';
+    label.textContent = 'Clock in';
     status.innerHTML = '<span class="status-dot"></span>NOT CLOCKED IN';
     status.style.color = 'var(--muted)';
     elapsedWrap.style.display = 'none';
