@@ -21,6 +21,7 @@ var _ccOpen = false;
 var _ccAccessGranted = false;
 function ccSetAccess(allowed) {
   _ccAccessGranted = allowed === true;
+  if (_ccAccessGranted) setTimeout(function () { ccSaveToolList(); ccTryDeepLink(); }, 0);
   if (!_ccAccessGranted) {
     ccSlideClosed();
     _ccCallbacks = [];
@@ -39,7 +40,59 @@ window.registerAdminTool = function (category, opts) {
   if (!_ccTools[category]) _ccTools[category] = [];
   _ccTools[category].push(opts);
   if (_ccOpen) renderCommandCenter(); // live-update if already open (e.g. late-registering tool)
+  ccSaveToolList();
+  ccTryDeepLink();
 };
+
+// ── Home page sidebar support ──
+// The tools only work on this page, so Home (index.html) shows a saved copy
+// of this admin's tool list and links back here with ?cc=<tool title>.
+var CC_TOOLS_KEY = 'cc_command_tools_v1';
+var _ccSaveTimer = null;
+function ccVisibleTools() {
+  var out = [];
+  CC_CATEGORIES.forEach(function (cat) {
+    (_ccTools[cat] || []).forEach(function (t) {
+      if (t.superAdminOnly && !t._allowedSuper) return;
+      var v = function (x) { try { return typeof x === 'function' ? x() : x; } catch (e) { return ''; } };
+      out.push({ cat: cat, title: String(v(t.title) || ''), sub: String(v(t.subtitle) || ''), icon: String(v(t.icon) || ''), key: String(t.ccKey || v(t.title) || '') });
+    });
+  });
+  return out;
+}
+function ccSaveToolList() {
+  if (!_ccAccessGranted) return;
+  try {
+    clearTimeout(_ccSaveTimer);
+    _ccSaveTimer = setTimeout(function () {
+      try { localStorage.setItem(CC_TOOLS_KEY, JSON.stringify({ at: Date.now(), tools: ccVisibleTools() })); } catch (e) {}
+    }, 800);
+  } catch (e) {}
+}
+// store.html?cc=<title> opens that tool once it is registered (or the panel for cc=open).
+var _ccDeepLink = (function () { try { return new URLSearchParams(location.search).get('cc'); } catch (e) { return null; } })();
+var _ccDeepLinkUntil = Date.now() + 20000;
+function ccTryDeepLink() {
+  if (!_ccDeepLink || !_ccAccessGranted || Date.now() > _ccDeepLinkUntil) return;
+  var want = _ccDeepLink, tool = null;
+  if (want !== 'open') {
+    CC_CATEGORIES.forEach(function (cat) {
+      (_ccTools[cat] || []).forEach(function (t) {
+        if (tool || (t.superAdminOnly && !t._allowedSuper)) return;
+        var title = typeof t.title === 'function' ? t.title() : t.title;
+        if (t.ccKey === want || title === want) tool = t;
+      });
+    });
+    if (!tool) return; // not registered yet; tried again as tools register
+  }
+  _ccDeepLink = null;
+  try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {}
+  setTimeout(function () {
+    if (!tool) { ccSlideOpen(); return; }
+    if (tool.keepOpen) { ccSlideOpen(); tool.onClick(); renderCommandCenter(); }
+    else tool.onClick();
+  }, 300);
+}
 
 function _ccInit() {
   buildCommandCenterUI();
@@ -176,6 +229,7 @@ function renderCommandCenter() {
   });
 
   body.innerHTML = html || '<div class="acc-none">No tools available.</div>';
+  ccSaveToolList();
 }
 
 function ccToolCard(t) {
