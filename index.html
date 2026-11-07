@@ -3703,10 +3703,14 @@ function checkAndShowAdminTab() {
         .from('customers')
         .select('is_admin, is_employee, name')
         .eq('id', uid)
-        .single();
-      if (error || !cust || !currentUser || currentUser.db_id !== uid) return;
-      var admin = cust.is_admin === true;
-      var staff = admin || cust.is_employee === true;
+        .maybeSingle();
+      if (!currentUser || currentUser.db_id !== uid) return;
+      // No answer from the server (offline, timeout): keep what was saved.
+      // Any real answer wins, so a removed staff member loses the tab even if
+      // the saved copy still says staff.
+      if (error && !error.code) return;
+      var admin = !error && !!cust && cust.is_admin === true;
+      var staff = admin || (!error && !!cust && cust.is_employee === true);
       currentUser.is_admin = admin;
       try { localStorage.setItem(STAFF_NAV_KEY, JSON.stringify({ uid: uid, admin: admin, staff: staff })); } catch (e) {}
       applyStaffNav(admin, staff);
@@ -3719,7 +3723,19 @@ function checkAndShowAdminTab() {
   return _adminTabPending;
 }
 
+// Staff access can be removed while the app is open in the background, so
+// check again whenever it comes back to the screen (at most once a minute).
+var _staffNavCheckedAt = 0;
+document.addEventListener('visibilitychange', function () {
+  if (document.hidden || !currentUser || !currentUser.db_id) return;
+  if (Date.now() - _staffNavCheckedAt < 60000) return;
+  _staffNavCheckedAt = Date.now();
+  checkAndShowAdminTab();
+});
+
 function openStaffSheet() {
+  // Confirm with the server too; if access was removed the sheet closes itself.
+  if (currentUser && currentUser.db_id) checkAndShowAdminTab();
   if (!_staffNav.staff) return;
   closeStaffSheet(true);
   var ic = {
