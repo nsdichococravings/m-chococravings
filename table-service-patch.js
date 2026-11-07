@@ -991,9 +991,8 @@ async function kLoadDayStats(force) {
       badge.parentNode.insertBefore(el, badge.nextSibling);
     }
     el.innerHTML = '<span class="k-day-l">Today</span><span><b>' + n + '</b> ' + (n === 1 ? 'order' : 'orders') + '</span>'
-      + '<span class="k-day-dot">·</span><span>Avg <b>' + (n ? kMoney(sum / n) : '—') + '</b></span>'
-      + '<span class="k-day-dot">·</span><span>Sales <b>' + kMoney(sum) + '</b></span>';
-    el.title = n + ' orders since midnight, ' + kMoney(sum) + ' in total (cancelled orders not counted)';
+      + '<span class="k-day-dot">·</span><span>Avg <b>' + (n ? kMoney(sum / n) : '—') + '</b></span>';
+    el.title = n + ' orders since midnight; average order value (cancelled orders not counted)';
   } catch (e) {
     // Keep the last numbers; try again with the next refresh.
   } finally {
