@@ -6,7 +6,7 @@
     if (typeof window.registerAdminTool !== 'function') return false;
     window.registerAdminTool('Daily Operations', {
       icon: '🛍️', iconBg: 'rgba(110,9,119,0.12)',
-      title: 'NSDI Store', subtitle: 'Add items, stock, pickup orders',
+      title: 'NSDI Store', subtitle: 'Pickup orders · owner manages items',
       onClick: function () { window.location.href = 'grocery-admin.html'; }
     });
     return true;
