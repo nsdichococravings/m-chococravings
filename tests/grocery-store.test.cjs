@@ -284,6 +284,59 @@ const { PGlite } = require('../.production-test-runtime/node_modules/@electric-s
   assert.equal(await rpc('grocery_admin_notify_request', ['atta', null]), 1);
   assert.equal(await rpc('grocery_admin_notify_request', ['atta', null]), 0, 'nobody is told twice');
 
+  // ── Owner-only management (20261112) ──
+  const ownerSql = fs.readFileSync(path.join(__dirname, '../migrations/20261112_grocery_owner_manages.sql'), 'utf8');
+  await db.exec('reset role'); await db.exec(ownerSql); await db.exec(ownerSql); // runs twice
+  await raw('update grocery_products set is_published=true where id=$1', [rice.id]);
+  await raw("update grocery_stock set on_hand=10 where product_id=$1", [rice.id]);
+  for (const who of ['admin', 'staff']) {
+    await as(who);
+    for (const [fn, args] of [
+      ['grocery_admin_products', [false]],
+      ['grocery_admin_save_product', [JSON.stringify({ id: rice.id, name: 'Sona Masoori Rice', mrp: 520, price: 1 })]],
+      ['grocery_admin_adjust_stock', [rice.id, 100, 'restock', null]],
+      ['grocery_admin_stock_history', [rice.id, 10]],
+      ['grocery_admin_delete_product', [rice.id]],
+      ['grocery_admin_settings', []],
+      ['grocery_admin_save_settings', [JSON.stringify({ enabled: true })]],
+      ['grocery_admin_set_pilot', ['9000000006', true]],
+      ['grocery_admin_requests', [30]],
+      ['grocery_admin_notify_request', ['rice', null]],
+      ['grocery_admin_analytics', [30]],
+    ]) await assert.rejects(rpc(fn, args), /do not have access/, who + ' cannot call ' + fn);
+  }
+  assert.equal(Number((await raw('select price from grocery_products where id=$1', [rice.id]))[0].price) > 1, true, 'price unchanged');
+  // Counter work still works for admin and staff.
+  await as('b');
+  const counter = await rpc('grocery_place_order', [items(rice.id, 1), 'cash', 'Bala', '9000000005', key(), null]);
+  for (const who of ['admin', 'staff']) {
+    await as(who);
+    assert.ok((await rpc('grocery_admin_orders', ['open', 50])).some(o => o.id === counter.id), who + ' sees pickup orders');
+  }
+  await as('staff');
+  assert.equal((await rpc('grocery_admin_set_status', [counter.id, 'ready'])).status, 'ready');
+  await as('admin');
+  assert.equal((await rpc('grocery_admin_set_status', [counter.id, 'picked_up'])).status, 'picked_up', 'admin hands over a cash order');
+  await assert.rejects(rpc('grocery_admin_record_refund', [counter.id, 1, 'x', null]), /do not have access/, 'refunds are owner-only');
+  // The owner still has everything.
+  await as('owner');
+  assert.ok((await rpc('grocery_admin_products', [false])).products.length >= 1);
+  assert.equal((await rpc('grocery_admin_settings')).role, 'owner');
+  await rpc('grocery_admin_adjust_stock', [rice.id, 1, 'restock', 'owner check']);
+  // Customers are unaffected.
+  await as('a');
+  assert.ok((await rpc('grocery_catalog')).products.some(p => p.id === rice.id), 'customers still see published items');
+
+  // ── Launch check script runs and changes nothing ──
+  const checkSql = fs.readFileSync(path.join(__dirname, '../scripts/grocery-launch-check.sql'), 'utf8');
+  const before = JSON.stringify(await raw('select * from grocery_settings'));
+  const rows = (await db.query(checkSql)).rows;
+  assert.equal(rows.length, 16, 'one row per check');
+  const res = Object.fromEntries(rows.map(r => [r['#'], r.Result]));
+  assert.equal(res[1], 'PASS'); assert.equal(res[2], 'PASS', 'detects the owner-only update'); assert.equal(res[3], 'PASS');
+  assert.equal(res[4], 'FAIL', 'no White Sugar in the test data');
+  assert.equal(JSON.stringify(await raw('select * from grocery_settings')), before, 'read only');
+
   // ── On Store untouched ──
   assert.deepEqual((await raw('select item_name from store_orders')).map(r => r.item_name), ['Brownie']);
   const touched = sql.match(/\b(?:insert into|update|delete from|alter table|drop table)\s+(?:if exists\s+)?public\.(\w+)/gi) || [];

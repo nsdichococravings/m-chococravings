@@ -556,7 +556,7 @@ async function loadMe() {
   if (!db || !S.session) return;
   try {
     var r = await db.from('customers').select('name,phone,is_admin,is_employee,is_super_user').eq('email', S.session.user.email).maybeSingle();
-    if (r.data) { S.me = { name: r.data.name, phone: r.data.phone }; S.staff = !!(r.data.is_admin || r.data.is_employee || r.data.is_super_user); }
+    if (r.data) { S.me = { name: r.data.name, phone: r.data.phone }; S.staff = !!(r.data.is_admin || r.data.is_employee || r.data.is_super_user); S.owner = !!r.data.is_super_user; }
   } catch (e) {}
 }
 async function signedIn() {
@@ -605,8 +605,10 @@ function subHeader(title, sub, backTo, noBag) {
 }
 function staffStrip() {
   if (!S.cat) return '';
-  if (S.cat.preview) return '<div class="notice staff"><span>👀</span><span><b>Staff preview.</b> Customers can\'t see NSDI Store yet. Drafts are shown.' + (S.cat.settings && S.cat.settings.online_enabled ? '' : ' Test with Cash at pickup.') + '</span><a class="act" href="grocery-admin.html">Manage store</a></div>';
-  if (S.staff) return '<div class="notice staff"><span>🛠️</span><span>Staff tools</span><a class="act" href="grocery-admin.html">Manage store</a></div>';
+  // Only the super admin manages the store; other staff get the pickup orders list.
+  var act = S.owner ? '<a class="act" href="grocery-admin.html">Manage store</a>' : '<a class="act" href="grocery-admin.html#orders">Pickup orders</a>';
+  if (S.cat.preview) return '<div class="notice staff"><span>👀</span><span><b>Staff preview.</b> Customers can\'t see NSDI Store yet. Drafts are shown.' + (S.cat.settings && S.cat.settings.online_enabled ? '' : ' Test with Cash at pickup.') + '</span>' + act + '</div>';
+  if (S.staff) return '<div class="notice staff"><span>🛠️</span><span>Staff tools</span>' + act + '</div>';
   return '';
 }
 
@@ -1156,7 +1158,7 @@ document.addEventListener('visibilitychange', function () { if (!document.hidden
   route = parse(); render();
   if (!db) { S.error = 'Could not connect. Please check your internet.'; return render(); }
   await signedIn();
-  db.auth.onAuthStateChange(function (ev, sess) { S.session = sess; if (ev === 'SIGNED_OUT') { S.me = null; S.staff = false; S.orders = null; S.myReq = null; } });
+  db.auth.onAuthStateChange(function (ev, sess) { S.session = sess; if (ev === 'SIGNED_OUT') { S.me = null; S.staff = false; S.owner = false; S.orders = null; S.myReq = null; } });
   try { await loadCatalog(); } catch (e) { if (!S.cat) { S.cat = { open: false, products: [], settings: {} }; toast(cleanErr(e)); } }
   onRoute();
   if (S.session) loadMe().then(render);
