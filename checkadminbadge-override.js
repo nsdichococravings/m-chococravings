@@ -163,7 +163,7 @@ function applyStaffRole(admin, employee) {
   // flag, for staff PIN login to the Tables board) — everything else
   // is admin-only.
   if (admin || employee) {
-    loadScriptsSequentially(['table-service-patch.js?v=20261117-kitchen', 'staff-order-patch.js?v=20261113-access', 'birthday-report-patch.js?v=20261102-io', 'ratings-report-patch.js?v=20261102-io', 'grocery-alerts.js?v=20261114', 'grocery-cafe-alerts.js?v=20261114']);
+    loadScriptsSequentially(['table-service-patch.js?v=20261117b-kitchen', 'staff-order-patch.js?v=20261113-access', 'birthday-report-patch.js?v=20261102-io', 'ratings-report-patch.js?v=20261102-io', 'grocery-alerts.js?v=20261114', 'grocery-cafe-alerts.js?v=20261114']);
   }
   if (admin) {
     loadScriptsSequentially([

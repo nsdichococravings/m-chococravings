@@ -960,7 +960,45 @@ function injectKitchenOrderCountBadge() {
 
 function updateKitchenOrderCountBadge(count) {
   var num = document.getElementById('k-order-count-num');
-  if (num) num.textContent = count + (count === 1 ? ' order' : ' orders');
+  if (num) num.textContent = count + ' in queue';
+}
+
+// ── Today's totals, next to the queue count ──
+// Orders since midnight (India time), all statuses except cancelled, and the
+// average order value worked out from their totals. Refreshed with the
+// Kitchen list, at most every 30 seconds.
+var _kDayStatsAt = 0, _kDayStatsBusy = false;
+function kDayStartIso() {
+  var ist = new Date(Date.now() + 330 * 60000); // shift to India time
+  return ist.toISOString().slice(0, 10) + 'T00:00:00+05:30';
+}
+function kMoney(n) { return '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN'); }
+async function kLoadDayStats(force) {
+  if (_kDayStatsBusy || (!force && Date.now() - _kDayStatsAt < 30000)) return;
+  var badge = document.getElementById('k-order-count');
+  if (!badge || typeof db === 'undefined' || !db) return;
+  _kDayStatsBusy = true;
+  try {
+    var res = await db.from('store_orders').select('total').gte('created_at', kDayStartIso()).neq('status', 'cancelled');
+    if (res.error) throw res.error;
+    var rows = res.data || [], n = rows.length, sum = 0;
+    rows.forEach(function (r) { sum += Number(r.total) || 0; });
+    _kDayStatsAt = Date.now();
+    var el = document.getElementById('k-day-stats');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'k-day-stats'; el.className = 'k-day';
+      badge.parentNode.insertBefore(el, badge.nextSibling);
+    }
+    el.innerHTML = '<span class="k-day-l">Today</span><span><b>' + n + '</b> ' + (n === 1 ? 'order' : 'orders') + '</span>'
+      + '<span class="k-day-dot">·</span><span>Avg <b>' + (n ? kMoney(sum / n) : '—') + '</b></span>'
+      + '<span class="k-day-dot">·</span><span>Sales <b>' + kMoney(sum) + '</b></span>';
+    el.title = n + ' orders since midnight, ' + kMoney(sum) + ' in total (cancelled orders not counted)';
+  } catch (e) {
+    // Keep the last numbers; try again with the next refresh.
+  } finally {
+    _kDayStatsBusy = false;
+  }
 }
 
 function injectKitchenRefreshButton() {
@@ -1095,6 +1133,7 @@ async function kitchenFetchOrders(showFeedback) {
       kRememberLoyalty(loyaltyMap);
     }
     renderKitchen(orders, loyaltyMap);
+    if (typeof kLoadDayStats === 'function') kLoadDayStats(showFeedback);
     if (typeof loadProductionRequests === 'function') loadProductionRequests();
     if (showFeedback) showStoreToast('🔄 Refreshed');
   } catch (e) {
