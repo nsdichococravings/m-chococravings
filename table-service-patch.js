@@ -655,23 +655,63 @@ var K_ICON = {
   coin: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M9.5 9h5M9.5 12h5M12 9c2 0 2 3 0 3l-2.5 3.5"/></svg>'
 };
 var K_STATUS = { pending: 'New', preparing: 'Preparing', ready: 'Ready', delivered: 'Served' };
+// A function (not a var) so it works even when called before this line runs.
+function kHdrIcon(name) {
+  var d = {
+    tables: '<rect x="3" y="8" width="18" height="4" rx="1.5"/><path d="M6 12v7M18 12v7M9 5h6"/>',
+    refresh: '<path d="M20 11a8 8 0 0 0-14.5-4.5L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14.5 4.5L20 16"/><path d="M20 20v-4h-4"/>',
+    history: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>'
+  }[name] || '';
+  return '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>';
+}
+// Status filter for the Kitchen list (New / Preparing / Ready / All).
+var _kFilter = 'all', _kLast = { orders: [], loyalty: {} };
+function kSetFilter(f) { _kFilter = f; renderKitchen(_kLast.orders, _kLast.loyalty); }
+function kStrip(orders) {
+  var el = document.getElementById('k-strip');
+  if (!el) {
+    var list = document.getElementById('k-list');
+    if (!list || !list.parentNode) return;
+    el = document.createElement('div'); el.id = 'k-strip'; el.className = 'k-strip';
+    list.parentNode.insertBefore(el, list);
+  }
+  var n = { all: orders.length, pending: 0, preparing: 0, ready: 0 };
+  orders.forEach(function (o) { if (n[o.status] !== undefined) n[o.status]++; else if (o.status === 'delivered') n.ready++; });
+  var tables = {};
+  orders.forEach(function (o) { var t = o.table_code ? String(o.table_code).toUpperCase() : (o.customer_table && o.customer_table !== 'TAKEAWAY' ? o.customer_table : ''); if (t) tables[t] = 1; });
+  var tb = document.getElementById('kitchen-tables-n');
+  if (tb) { var tn = Object.keys(tables).length; tb.textContent = tn; tb.style.display = tn ? '' : 'none'; }
+  el.innerHTML = [['all', 'All'], ['pending', 'New'], ['preparing', 'Preparing'], ['ready', 'Ready']].map(function (x) {
+    return '<button type="button" class="k-chip k-' + x[0] + (_kFilter === x[0] ? ' on' : '') + '" onclick="kSetFilter(\'' + x[0] + '\')"><b>' + n[x[0]] + '</b><span>' + x[1] + '</span></button>';
+  }).join('');
+}
 
 function renderKitchen(orders, loyaltyMap) {
   loyaltyMap = loyaltyMap || {};
+  orders = orders || [];
   updateKitchenOrderCountBadge(orders.length);
+  _kLast = { orders: orders, loyalty: loyaltyMap };
+  kStrip(orders);
+  var allOrders = orders;
+  if (_kFilter !== 'all') orders = orders.filter(function (o) { return o.status === _kFilter || (_kFilter === 'ready' && o.status === 'delivered'); });
   var list = document.getElementById('k-list');
-  if (!orders.length) { list.innerHTML = '<div class="k-empty"><div class="k-empty-t">All caught up</div><div class="k-empty-s">New orders appear here the moment they come in.</div></div>'; return; }
+  if (!orders.length) {
+    list.innerHTML = allOrders.length
+      ? '<div class="k-empty"><div class="k-empty-t">Nothing ' + (K_STATUS[_kFilter] || '').toLowerCase() + '</div><div class="k-empty-s"><button type="button" class="kt-mini on" onclick="kSetFilter(\'all\')">Show all ' + allOrders.length + ' orders</button></div></div>'
+      : '<div class="k-empty"><div class="k-empty-t">All caught up</div><div class="k-empty-s">New orders appear here the moment they come in.</div></div>';
+    return;
+  }
   // Open orders from the same mobile number at different tables: flag them so
   // an admin can bring them to one table (migrations/20261116).
   var byPhone = {};
-  orders.forEach(function (o) {
+  allOrders.forEach(function (o) {
     var ph = kPhone10(o.customer_phone);
     if (!ph) return;
     (byPhone[ph] = byPhone[ph] || []).push(o);
   });
   _kPhoneGroups = {};
   _kTableUse = {};
-  orders.forEach(function (o) {
+  allOrders.forEach(function (o) {
     var t = o.table_code ? String(o.table_code).toUpperCase() : (o.customer_table || '');
     if (t && t !== 'TAKEAWAY') (_kTableUse[t] = _kTableUse[t] || []).push(kPhone10(o.customer_phone));
   });
@@ -898,10 +938,7 @@ function injectKitchenOrderCountBadge() {
 
       // Give the "Kitchen" title itself a richer, more premium treatment —
       // subtle glow behind the serif type instead of flat white text.
-      if (titleEl) {
-        titleEl.style.textShadow = '0 0 24px rgba(245,196,48,0.35), 0 0 2px rgba(255,255,255,0.4)';
-        titleEl.style.letterSpacing = '.5px';
-      }
+      // (The title's look comes from store.html's Kitchen styles.)
 
       if (document.getElementById('k-order-count')) return;
 
@@ -923,7 +960,44 @@ function injectKitchenOrderCountBadge() {
 
 function updateKitchenOrderCountBadge(count) {
   var num = document.getElementById('k-order-count-num');
-  if (num) num.textContent = count + (count === 1 ? ' order' : ' orders');
+  if (num) num.textContent = count + ' in queue';
+}
+
+// ── Today's totals, next to the queue count ──
+// Orders since midnight (India time), all statuses except cancelled, and the
+// average order value worked out from their totals. Refreshed with the
+// Kitchen list, at most every 30 seconds.
+var _kDayStatsAt = 0, _kDayStatsBusy = false;
+function kDayStartIso() {
+  var ist = new Date(Date.now() + 330 * 60000); // shift to India time
+  return ist.toISOString().slice(0, 10) + 'T00:00:00+05:30';
+}
+function kMoney(n) { return '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN'); }
+async function kLoadDayStats(force) {
+  if (_kDayStatsBusy || (!force && Date.now() - _kDayStatsAt < 30000)) return;
+  var badge = document.getElementById('k-order-count');
+  if (!badge || typeof db === 'undefined' || !db) return;
+  _kDayStatsBusy = true;
+  try {
+    var res = await db.from('store_orders').select('total').gte('created_at', kDayStartIso()).neq('status', 'cancelled');
+    if (res.error) throw res.error;
+    var rows = res.data || [], n = rows.length, sum = 0;
+    rows.forEach(function (r) { sum += Number(r.total) || 0; });
+    _kDayStatsAt = Date.now();
+    var el = document.getElementById('k-day-stats');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'k-day-stats'; el.className = 'k-day';
+      badge.parentNode.insertBefore(el, badge.nextSibling);
+    }
+    el.innerHTML = '<span class="k-day-l">Today</span><span><b>' + n + '</b> ' + (n === 1 ? 'order' : 'orders') + '</span>'
+      + '<span class="k-day-dot">·</span><span>Avg <b>' + (n ? kMoney(sum / n) : '—') + '</b></span>';
+    el.title = n + ' orders since midnight; average order value (cancelled orders not counted)';
+  } catch (e) {
+    // Keep the last numbers; try again with the next refresh.
+  } finally {
+    _kDayStatsBusy = false;
+  }
 }
 
 function injectKitchenRefreshButton() {
@@ -939,8 +1013,18 @@ function injectKitchenRefreshButton() {
     + 'font-family:\'DM Sans\',sans-serif;transition:background .15s';
   btn.onmouseenter = function () { btn.style.background = 'rgba(255,255,255,.12)'; };
   btn.onmouseleave = function () { btn.style.background = 'rgba(255,255,255,.06)'; };
-  btn.innerHTML = '<span id="kitchen-refresh-icon" style="display:inline-block">↻</span> Refresh';
+  btn.innerHTML = '<span id="kitchen-refresh-icon" style="display:inline-flex">' + kHdrIcon('refresh') + '</span> Refresh';
 
+  // Tables board, right from the Kitchen (with how many tables have open orders).
+  if (!document.getElementById('kitchen-tables-btn')) {
+    var tb = document.createElement('div');
+    tb.id = 'kitchen-tables-btn';
+    tb.setAttribute('role', 'button');
+    tb.onclick = function () { if (typeof openTablesBoard === 'function') openTablesBoard(); };
+    tb.innerHTML = kHdrIcon('tables') + ' Tables <span id="kitchen-tables-n" class="k-hdr-n" style="display:none">0</span>';
+    var live = actionsGroup.querySelector('.live-badge');
+    if (live && live.nextSibling) actionsGroup.insertBefore(tb, live.nextSibling); else actionsGroup.appendChild(tb);
+  }
   actionsGroup.appendChild(btn);
 
   var style = document.createElement('style');
@@ -1048,6 +1132,7 @@ async function kitchenFetchOrders(showFeedback) {
       kRememberLoyalty(loyaltyMap);
     }
     renderKitchen(orders, loyaltyMap);
+    if (typeof kLoadDayStats === 'function') kLoadDayStats(showFeedback);
     if (typeof loadProductionRequests === 'function') loadProductionRequests();
     if (showFeedback) showStoreToast('🔄 Refreshed');
   } catch (e) {
@@ -2203,7 +2288,7 @@ function injectKitchenHistoryButton() {
         + 'font-family:\'DM Sans\',sans-serif;transition:background .15s';
       btn.onmouseenter = function () { btn.style.background = 'rgba(255,255,255,.12)'; };
       btn.onmouseleave = function () { btn.style.background = 'rgba(255,255,255,.06)'; };
-      btn.innerHTML = '📋 History';
+      btn.innerHTML = kHdrIcon('history') + ' History';
       actionsGroup.appendChild(btn); // was inserting before the title entirely — now joins the same right-side group
     } else if (attempts >= 20) {
       clearInterval(poll);
