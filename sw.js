@@ -1,5 +1,5 @@
 // NSDI ChocoCravings — Service Worker
-const CACHE_NAME = 'chococravings-v53-onepage';
+const CACHE_NAME = 'chococravings-v54-alerts';
 const OFFLINE_URL = '/offline.html';
 
 // Files to cache immediately on install
@@ -210,14 +210,21 @@ self.addEventListener('push', function(event) {
   if (!event.data) return;
   var data = {};
   try { data = event.data.json(); } catch (e) { data = { body: event.data.text() }; }
+  // Staff alerts carry the number of orders waiting; show it on the app icon
+  // where the phone supports it.
+  if (typeof data.count === 'number' && self.navigator && 'setAppBadge' in self.navigator) {
+    try { data.count > 0 ? self.navigator.setAppBadge(data.count) : self.navigator.clearAppBadge(); } catch (e) {}
+  }
   event.waitUntil(
     self.registration.showNotification(data.title || 'ChocoCravings 🍫', {
       body:     data.body    || 'You have a new update!',
       icon:     '/icons/maskable_icon_x72.png',
       badge:    '/icons/maskable_icon_x48.png',
-      vibrate:  [200, 100, 200],
+      vibrate:  data.urgent ? [300, 120, 300, 120, 300] : [200, 100, 200],
       tag:      data.tag || undefined,
       renotify: !!data.tag,
+      requireInteraction: !!data.urgent,
+      silent:   false,
       data:     { url: data.url || '/' }
     })
   );

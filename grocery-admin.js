@@ -29,36 +29,48 @@
     if (document.getElementById('ga-css')) return;
     var s = document.createElement('style'); s.id = 'ga-css';
     s.textContent = [
-      '.ga{padding:14px 14px 90px;max-width:980px}',
-      '.ga-tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:12px}',
-      '.ga-tab,.ga-chip{flex-shrink:0;min-height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--bdr2);background:var(--card);color:var(--off);font:600 13px "DM Sans",sans-serif;cursor:pointer}',
-      '.ga-tab.on,.ga-chip.on{background:var(--p);border-color:var(--p);color:#fff}',
+      // Boutique night look, same as the admin panel: aubergine, cream text, gold hairlines, serif headings.
+      '.ga{padding:18px 16px 90px;max-width:980px;margin:0 auto}',
+      '.ga-tabs{display:flex;gap:4px;overflow-x:auto;padding:5px;margin-bottom:16px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid var(--bdr);scrollbar-width:none}',
+      '.ga-tabs::-webkit-scrollbar{display:none}',
+      '.ga-tab{flex-shrink:0;min-height:38px;padding:0 16px;border-radius:999px;border:0;background:transparent;color:var(--dim);font:600 13px "DM Sans",sans-serif;cursor:pointer}',
+      '.ga-tab.on{background:linear-gradient(135deg,#e8c98f,#b08d57);color:#2b0a35}',
+      '.ga-chip{flex-shrink:0;min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--bdr2);background:rgba(255,255,255,.04);color:var(--off);font:600 12.5px "DM Sans",sans-serif;cursor:pointer}',
+      '.ga-chip.on{background:rgba(217,184,122,.16);border-color:rgba(217,184,122,.55);color:#ffe9c2}',
       '.ga-row{display:flex;gap:10px;align-items:center}.ga-grow{flex:1 1 0;min-width:0}',
-      '.ga-card{background:var(--card);border:1px solid var(--bdr);border-radius:16px;padding:14px;margin-bottom:10px}',
-      '.ga-h{font-family:"Cormorant Garamond",serif;font-size:20px;font-weight:700;color:var(--white)}',
+      '.ga-card{position:relative;background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid var(--bdr);border-radius:22px;padding:16px;margin-bottom:12px;box-shadow:0 18px 40px -28px rgba(0,0,0,.8)}',
+      '.ga-h{font-family:"Cormorant Garamond",serif;font-size:24px;font-weight:600;color:#fff7ea;line-height:1.1}',
       '.ga-dim{color:var(--dim);font-size:12px}',
-      '.ga-btn{min-height:40px;padding:0 14px;border-radius:12px;border:1px solid var(--bdr2);background:var(--card);color:var(--white);font:600 13px "DM Sans",sans-serif;cursor:pointer}',
-      '.ga-btn.p{background:var(--p);border-color:var(--p)}.ga-btn.g{background:#15803d;border-color:#15803d}.ga-btn.r{color:#fca5a5;border-color:rgba(239,68,68,.4)}',
+      '.ga-btn{min-height:40px;padding:0 16px;border-radius:999px;border:1px solid var(--bdr2);background:rgba(255,255,255,.04);color:#f1e3cf;font:600 12.5px "DM Sans",sans-serif;letter-spacing:.03em;cursor:pointer}',
+      '.ga-btn.p{background:linear-gradient(135deg,#6e0977,#a33aac);border-color:rgba(230,181,236,.35);color:#fff}',
+      '.ga-btn.g{background:linear-gradient(135deg,#2f7a4b,#47a86d);border-color:transparent;color:#fff}',
+      '.ga-btn.r{color:#f4a3b3;border-color:rgba(240,130,150,.4)}',
       '.ga-btn[disabled]{opacity:.5;cursor:not-allowed}',
-      '.ga-pill{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px}',
+      '.ga-pill{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.06em;padding:4px 10px;border-radius:999px}',
       '.ga-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}',
-      '.ga-stat{background:var(--card);border:1px solid var(--bdr);border-radius:14px;padding:12px}.ga-stat b{display:block;font-size:20px;color:var(--white);margin-top:2px}',
-      '.ga-thumb{width:56px;height:70px;border-radius:10px;object-fit:cover;background:#efe3c8;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#6e0977;border:1.5px solid #c9a633;overflow:hidden}',
-      '.ga-f{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--dim);font-weight:600}',
-      '.ga-f input,.ga-f select,.ga-f textarea{min-height:42px;border-radius:10px;border:1px solid var(--bdr2);background:rgba(255,255,255,.05);color:var(--white);padding:8px 12px;font:400 14px "DM Sans",sans-serif}',
+      '.ga-stat{background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.02));border:1px solid var(--bdr);border-radius:20px;padding:14px;font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)}',
+      '.ga-stat b{display:block;font-family:"Cormorant Garamond",serif;font-size:28px;font-weight:700;letter-spacing:0;text-transform:none;color:#fff7ea;margin-top:4px}',
+      '.ga-thumb{width:56px;height:70px;border-radius:14px;object-fit:cover;background:#efe3c8;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#6e0977;border:1px solid rgba(217,184,122,.6);overflow:hidden}',
+      '.ga-f{display:flex;flex-direction:column;gap:6px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);font-weight:700}',
+      '.ga-f input,.ga-f select,.ga-f textarea{min-height:44px;border-radius:14px;border:1px solid var(--bdr2);background:rgba(255,255,255,.05);color:#fff7ea;padding:8px 12px;font:400 14px "DM Sans",sans-serif;letter-spacing:0;text-transform:none}',
+      '.ga-f input:focus,.ga-f select:focus,.ga-f textarea:focus{outline:none;border-color:rgba(217,184,122,.7);box-shadow:0 0 0 3px rgba(217,184,122,.12)}',
       '.ga-f textarea{min-height:70px;resize:vertical}',
       '.ga-f2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}',
-      '.ga-err{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);color:#fecaca;border-radius:12px;padding:10px 12px;font-size:13px;margin-bottom:10px}',
-      '.ga-info{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:#fde68a;border-radius:12px;padding:10px 12px;font-size:12.5px;margin-bottom:10px;line-height:1.5}',
-      '.ga-modal{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,.7);display:flex;align-items:flex-end;justify-content:center}',
-      '.ga-sheet{background:var(--d2);border:1px solid var(--bdr2);border-radius:20px 20px 0 0;width:100%;max-width:720px;max-height:94vh;overflow-y:auto;padding:18px 16px 28px}',
-      '@media(min-width:701px){.ga-modal{align-items:center}.ga-sheet{border-radius:20px}}',
-      '.ga-prev{width:200px;border-radius:22px;overflow:hidden;background:#fff;color:#1d1020;box-shadow:0 10px 26px rgba(0,0,0,.35);flex-shrink:0}',
-      '.ga-prev-img{height:250px;position:relative;background:#f7efdc;display:flex;align-items:center;justify-content:center;border:2px solid #c9a633;border-radius:22px 22px 0 0;overflow:hidden}',
+      '.ga-err{background:rgba(240,130,150,.1);border:1px solid rgba(240,130,150,.35);color:#ffd3dc;border-radius:16px;padding:12px 14px;font-size:13px;margin-bottom:12px}',
+      '.ga-info{background:rgba(217,184,122,.08);border:1px solid rgba(217,184,122,.3);color:#f1e3cf;border-radius:16px;padding:12px 14px;font-size:12.5px;margin-bottom:12px;line-height:1.5}',
+      '.ga-modal{position:fixed;inset:0;z-index:900;background:rgba(10,3,14,.72);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center}',
+      '.ga-sheet{background:#1b0a22;border:1px solid var(--bdr2);border-radius:26px 26px 0 0;width:100%;max-width:720px;max-height:94vh;overflow-y:auto;padding:20px 18px 28px;box-shadow:0 -20px 60px -20px rgba(0,0,0,.8)}',
+      '@media(min-width:701px){.ga-modal{align-items:center}.ga-sheet{border-radius:26px}}',
+      '.ga-prev{width:200px;border-radius:22px;overflow:hidden;background:#fffdfa;color:#24112b;box-shadow:0 18px 40px -16px rgba(0,0,0,.7);flex-shrink:0}',
+      '.ga-prev-img{height:250px;position:relative;background:#f6eedf;display:flex;align-items:center;justify-content:center;border-bottom:1px solid #ecdcbf;overflow:hidden}',
       '.ga-prev-img img{width:100%;height:100%;object-fit:cover}',
-      '.ga-bar{height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}.ga-bar div{height:100%;background:var(--pl)}',
-      '.ga-sw{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--bdr)}',
-      '.ga-sw input{width:22px;height:22px;accent-color:#8B44E8}'
+      '.ga-bar{height:6px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}.ga-bar div{height:100%;background:linear-gradient(90deg,#b08d57,#e8c98f)}',
+      '.ga-sw{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--bdr)}',
+      '.ga-sw input{width:22px;height:22px;accent-color:#b08d57}',
+      '.ga-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}',
+      '.ga-eb{font-size:10px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:rgba(217,184,122,.85)}',
+      '.ga-title{font-family:"Cormorant Garamond",serif;font-size:34px;font-weight:600;line-height:1;color:#fff7ea;margin-top:4px}',
+      '.ga-title em{font-style:italic;color:#e8c98f;font-weight:500}'
     ].join('');
     document.head.appendChild(s);
   }
@@ -75,9 +87,9 @@
   function draw(body) {
     var el = root(); if (!el) return;
     var s = G.settings;
-    var status = s ? (s.enabled ? (s.pilot_only ? '<span class="ga-pill" style="background:rgba(245,158,11,.15);color:#fbbf24">Pilot · listed customers only</span>' : '<span class="ga-pill" style="background:rgba(34,197,94,.15);color:#4ade80">Open to customers</span>')
-      : '<span class="ga-pill" style="background:rgba(255,255,255,.08);color:var(--dim)">Off · staff preview only</span>') : '';
-    el.innerHTML = '<div class="ga"><div class="ga-row" style="margin-bottom:12px;flex-wrap:wrap"><div class="ga-grow"><div class="ga-h">NSDI Store</div><div class="ga-dim">Daily essentials · outlet pickup</div></div>' + status + '</div>'
+    var status = s ? (s.enabled ? (s.pilot_only ? '<span class="ga-pill" style="background:rgba(217,184,122,.14);color:#e8c98f;border:1px solid rgba(217,184,122,.4)">Pilot · listed customers only</span>' : '<span class="ga-pill" style="background:rgba(127,209,160,.12);color:#9fdcb7;border:1px solid rgba(127,209,160,.4)">● Open to customers</span>')
+      : '<span class="ga-pill" style="background:rgba(255,255,255,.06);color:var(--dim);border:1px solid var(--bdr)">Off · staff preview only</span>') : '';
+    el.innerHTML = '<div class="ga"><div class="ga-head"><div><div class="ga-eb">Daily essentials · outlet pickup</div><div class="ga-title">NSDI <em>Store</em></div></div>' + status + '</div>'
       + tabs() + '<div id="ga-body">' + body + '</div></div>';
   }
   function loading() { draw('<div class="ga-dim" style="padding:20px 0">Loading…</div>'); }
@@ -112,7 +124,7 @@
   }
 
   // ── Orders ──
-  var ST = { awaiting_payment: ['Waiting for payment', '#fbbf24'], placed: ['New', '#60a5fa'], ready: ['Ready', '#4ade80'], picked_up: ['Picked up', 'var(--dim)'], cancelled: ['Cancelled', '#f87171'], expired: ['Not paid in time', '#f87171'] };
+  var ST = { awaiting_payment: ['Waiting for payment', '#e8c98f'], placed: ['New · to pack', '#e6b5ec'], ready: ['Ready', '#9fdcb7'], picked_up: ['Picked up', 'var(--dim)'], cancelled: ['Cancelled', '#f4a3b3'], expired: ['Not paid in time', '#f4a3b3'] };
   var PAY = { pending: 'Not paid', paid: 'Paid', refund_due: 'Refund due', refunded: 'Refunded', partially_refunded: 'Part refunded' };
   async function loadOrders(quiet) {
     if (!quiet) draw(ordersHtml(true));
@@ -121,7 +133,7 @@
       var ids = list.map(function (o) { return o.id; });
       if (G.lastOrderIds && G.filter === 'open') {
         var fresh = list.filter(function (o) { return G.lastOrderIds.indexOf(o.id) < 0; });
-        if (fresh.length) { note('🛍️ New NSDI Store order', fresh[0].order_no + ' · ' + money(fresh[0].total)); if (typeof playBeep === 'function') playBeep('neworder'); }
+        if (fresh.length && !window.GroceryAlerts) { note('🛍️ New NSDI Store order', fresh[0].order_no + ' · ' + money(fresh[0].total)); if (typeof playBeep === 'function') playBeep('neworder'); }
       }
       if (G.filter === 'open') G.lastOrderIds = ids;
       G.orders = list;
@@ -144,10 +156,10 @@
       if (['awaiting_payment', 'placed', 'ready'].indexOf(o.status) >= 0) acts.push('<button class="ga-btn r" data-ga-cancel="' + o.id + '">Cancel</button>');
       if (G.role !== 'staff' && ['refund_due', 'partially_refunded'].indexOf(o.payment_status) >= 0) acts.push('<button class="ga-btn" data-ga-refund="' + o.id + '">Record refund</button>');
       return '<div class="ga-card"><div class="ga-row" style="align-items:flex-start;flex-wrap:wrap">'
-        + '<div class="ga-grow"><div style="font-size:18px;font-weight:700;color:var(--white)">' + h(o.order_no) + '</div>'
+        + '<div class="ga-grow"><div style="font-family:\'Cormorant Garamond\',serif;font-size:24px;font-weight:700;color:#fff7ea;line-height:1.1">' + h(o.order_no) + '</div>'
         + '<div class="ga-dim">' + when(o.created_at) + ' · ' + h(o.name || '') + (o.phone ? ' · <a href="tel:' + h(o.phone) + '" style="color:var(--pl)">' + h(o.phone) + '</a>' : '') + '</div></div>'
-        + '<div style="text-align:right"><div style="font-weight:700;color:var(--white)">' + money(o.total) + '</div>'
-        + '<span class="ga-pill" style="background:rgba(255,255,255,.06);color:' + st[1] + '">' + st[0] + '</span> '
+        + '<div style="text-align:right"><div style="font-family:\'Cormorant Garamond\',serif;font-size:26px;font-weight:700;color:#e8c98f;line-height:1.1;margin-bottom:4px">' + money(o.total) + '</div>'
+        + '<span class="ga-pill" style="background:rgba(255,255,255,.06);border:1px solid currentColor;color:' + st[1] + '">' + st[0] + '</span> '
         + '<span class="ga-pill" style="background:rgba(255,255,255,.06);color:var(--off)">' + (o.payment_method === 'cash' ? 'Cash · ' : 'Online · ') + (PAY[o.payment_status] || '') + '</span></div></div>'
         + '<div style="margin:10px 0;font-size:14px;color:var(--off)">' + o.items.map(function (i) { return '<div>' + i.qty + ' × ' + h(i.name) + ' <span class="ga-dim">(' + h(i.unit_label) + ')</span></div>'; }).join('') + '</div>'
         + (o.cancel_reason ? '<div class="ga-dim" style="margin-bottom:8px">' + h(o.cancel_reason) + '</div>' : '')
@@ -442,7 +454,7 @@
       + (owner ? '' : '<div class="ga-info" style="margin-top:8px">Only the owner can open the store or turn on online payment.</div>')
       + sw('enabled', 'Open NSDI Store', 'Off: only staff can see it (preview).', true)
       + sw('pilot_only', 'Pilot: only listed customers', 'Try it with a few customers first.', true)
-      + sw('online_enabled', 'Online payment (Razorpay)', 'Uses the same Razorpay account as On Store. Leave off until tested.', true)
+      + sw('online_enabled', 'Online payment (Razorpay)', 'Uses the same Razorpay account as NSDI Cafe. Leave off until tested.', true)
       + sw('cash_enabled', 'Cash at pickup', 'Customer pays at the counter.', false) + '</div>'
       + '<div class="ga-card"><div class="ga-h" style="font-size:17px;margin-bottom:10px">Outlet &amp; rules</div><div style="display:flex;flex-direction:column;gap:10px">'
       + inp('outlet_name', 'Outlet name') + inp('outlet_address', 'Outlet address') + inp('pickup_hours', 'Pickup hours')
@@ -543,7 +555,7 @@
       else clearInterval(G.timer);
     };
   }
-  window.ccGroceryAdmin = { open: open };
+  window.ccGroceryAdmin = { open: open, showOrders: function () { if (G.role) show('orders'); } };
 
   // Stand-alone page (grocery-admin.html): open straight away, on the tab in the address (#products, #orders…).
   if (document.body && document.body.hasAttribute('data-grocery-admin')) {
@@ -551,5 +563,9 @@
     if (['orders', 'products', 'requests', 'settings', 'profit'].indexOf(want) >= 0) G.tab = want; else G.tab = 'products';
     var startTab = G.tab;
     open().then(function () { if (G.role === 'staff' && startTab !== 'orders') show('orders'); });
+    // The bell in the header links to #orders.
+    window.addEventListener('hashchange', function () { if (location.hash === '#orders' && G.role) show('orders'); });
   }
+  // A new order arrived (grocery-alerts.js): refresh the list if it is on screen.
+  window.addEventListener('grocery:new-order', function () { if (G.tab === 'orders' && G.role && isVisible()) loadOrders(true); });
 })();

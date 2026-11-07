@@ -7,6 +7,7 @@
     window.registerAdminTool('Daily Operations', {
       icon: '🛍️', iconBg: 'rgba(110,9,119,0.12)',
       title: 'NSDI Store', subtitle: 'Pickup orders · owner manages items',
+      badgeId: 'grocery-orders', // count of orders to pack, set by grocery-cafe-alerts.js
       onClick: function () { window.location.href = 'grocery-admin.html'; }
     });
     return true;

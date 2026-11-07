@@ -1053,6 +1053,10 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 .bnav .ntab.on .nicon{background:linear-gradient(135deg,#f3e3f1,#f8eee6);color:#6e0977;box-shadow:0 0 0 1px rgba(176,141,87,.22) inset}
 .bnav .ntab.on .nlbl{font-weight:700}
 .bnav .ntab:focus-visible .nicon{box-shadow:0 0 0 2px #b08d57}
+/* Staff tab: NSDI Store orders waiting to be packed (grocery-alerts.js) */
+.nstaff-n{display:none;position:absolute;top:-6px;right:2px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#a33a52,#c25b74);color:#fff;font:700 10px 'DM Sans',sans-serif;box-shadow:0 0 0 2px #fffdfa}
+.nstaff-n.on{display:flex}
 .bnav .ndot{display:none}
 .bnav .cart-badge-pill{top:-3px;right:6px;min-width:17px;height:17px;padding:0 5px;border-radius:999px;font-size:9.5px;font-weight:700;
   background:linear-gradient(135deg,#6e0977,#9c0ca1);color:#fff;border:2px solid #fffdfa;box-sizing:border-box}
@@ -1622,11 +1626,11 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
         <span class="nicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8.5" r="3.6"/><path d="M4.8 20c1.2-3.6 4-5.4 7.2-5.4s6 1.8 7.2 5.4"/></svg></span><span class="nlbl">Profile</span>
       </div>
       <div class="ntab" id="nav-nstore" role="button" tabindex="0" onclick="window.location.href='/store'">
-        <span class="nicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8.5 3.5c-.6.8-.6 1.7 0 2.5M12 3.5c-.6.8-.6 1.7 0 2.5"/></svg><span id="nstore-dot" class="nlive"><span id="nstore-pulse"></span></span></span><span class="nlbl">On Store</span>
+        <span class="nicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5z"/><path d="M16 10.5h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8.5 3.5c-.6.8-.6 1.7 0 2.5M12 3.5c-.6.8-.6 1.7 0 2.5"/></svg><span id="nstore-dot" class="nlive"><span id="nstore-pulse"></span></span></span><span class="nlbl">NSDI Cafe</span>
       </div>
       <!-- Staff only: one tab that opens Stall / Attendance (openStaffSheet). -->
       <div class="ntab" id="nav-staff" role="button" tabindex="0" style="display:none" onclick="openStaffSheet()" aria-label="Staff tools">
-        <span class="nicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="3"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/><path d="M3 12.5h18"/></svg></span><span class="nlbl">Staff</span>
+        <span class="nicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="18" height="13" rx="3"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/><path d="M3 12.5h18"/></svg><span class="nstaff-n" id="nav-staff-n" aria-hidden="true"></span></span><span class="nlbl">Staff</span>
       </div>
     </nav>
     <!-- ═══ HOME ═══ -->
@@ -3686,6 +3690,31 @@ function applyStaffNav(admin, staff) {
   var tab = document.getElementById('nav-staff');
   if (tab) tab.style.display = _staffNav.staff ? 'flex' : 'none';
   if (!_staffNav.staff) closeStaffSheet();
+  else startStaffGroceryAlerts();
+}
+
+// Staff only: NSDI Store orders waiting to be packed, on the Staff tab, with
+// a chime when a new one comes in. The script loads only for staff.
+function startStaffGroceryAlerts() {
+  if (window._staffAlertsStarted) return;
+  window._staffAlertsStarted = true;
+  var go = function () {
+    if (!window.GroceryAlerts || typeof db === 'undefined' || !db) return;
+    GroceryAlerts.start(db, { onCount: function (n) {
+      var b = document.getElementById('nav-staff-n');
+      if (!b) return;
+      var show = n > 0 && _staffNav.staff;
+      b.classList.toggle('on', show);
+      b.textContent = n > 99 ? '99+' : n;
+      var tab = document.getElementById('nav-staff');
+      if (tab) tab.setAttribute('aria-label', show ? 'Staff tools, ' + n + ' NSDI Store ' + (n === 1 ? 'order' : 'orders') + ' to pack' : 'Staff tools');
+    } });
+  };
+  if (window.GroceryAlerts) return go();
+  var sc = document.createElement('script');
+  sc.src = '/grocery-alerts.js?v=20261114';
+  sc.onload = go;
+  document.body.appendChild(sc);
 }
 var _adminTabPending = null;
 function checkAndShowAdminTab() {
@@ -3740,8 +3769,11 @@ function openStaffSheet() {
   closeStaffSheet(true);
   var ic = {
     stall: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1.5-5h15L21 9"/><path d="M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/><path d="M5 12v8h14v-8"/><path d="M10 20v-5h4v5"/></svg>',
-    att: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5"/><path d="M9 2h6"/></svg>'
+    att: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5"/><path d="M9 2h6"/></svg>',
+    bag: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 12H7z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>'
   };
+  var nb = document.getElementById('nav-staff-n');
+  var toPack = nb && nb.classList.contains('on') ? nb.textContent : '';
   var card = function (href, icon, alt, title, sub) {
     return '<a class="sf-card" href="' + href + '"><div class="sf-ic' + (alt ? ' alt' : '') + '">' + icon + '</div>'
       + '<div><div class="sf-ct">' + title + '</div><div class="sf-cs">' + sub + '</div></div><span class="sf-go">›</span></a>';
@@ -3752,6 +3784,7 @@ function openStaffSheet() {
   ov.innerHTML = '<div class="sf-sh" role="dialog" aria-label="Staff tools"><div class="sf-grab"></div>'
     + '<div class="sf-hd"><div><div class="sf-eb">NSDI · Staff</div><div class="sf-t">' + (first ? 'Hi ' + first.replace(/[<>&"]/g, '') : 'Staff tools') + '</div></div>'
     + '<button class="sf-x" type="button" aria-label="Close" onclick="closeStaffSheet()">✕</button></div>'
+    + card('/grocery-admin.html#orders', ic.bag, false, 'NSDI Store orders', toPack ? '<b style="color:#a33a52">' + toPack + ' to pack</b> · pickup orders' : 'Pickup orders · mark ready & hand over')
     + card('/attendance', ic.att, true, 'Attendance', 'Clock in / out · leave & shifts')
     + (_staffNav.admin ? card('/stall', ic.stall, false, 'Stall', 'Event stall billing & sales') : '')
     + '</div>';
@@ -9908,6 +9941,6 @@ function closeTierCelebration() {
 <script src="/grocery-entry.js?v=20261112" defer></script>
 <script src="/wallet.js?v=20261110"></script>
 <script src="/diwali-card.js?v=20261105"></script>
-<script src="/festive-theme.js?v=20261111b"></script>
+<script src="/festive-theme.js?v=20261114"></script>
 </body>
 </html>

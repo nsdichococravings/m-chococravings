@@ -179,7 +179,8 @@ function renderCommandCenter() {
 }
 
 function ccToolCard(t) {
-  var badgeHtml = t.badgeId ? '<span id="' + t.badgeId + '-cc" class="acc-badge">0</span>' : '';
+  var bc = t.badgeId ? (_ccBadgeCounts[t.badgeId] || 0) : 0;
+  var badgeHtml = t.badgeId ? '<span id="' + t.badgeId + '-cc" class="acc-badge"' + (bc > 0 ? ' style="display:inline-block"' : '') + '>' + bc + '</span>' : '';
   // icon/subtitle can be a plain string, or a function returning one —
   // the latter is for tools whose display changes based on live state
   // (e.g. the Store Open/Closed toggle), re-evaluated on every render.
@@ -217,7 +218,10 @@ function ccInvoke(el) {
 
 // Called by any registered tool's badge-refresh logic to update the
 // count shown on its Command Center card (mirrors the old badge pattern).
+// Last count per badge, so it survives the panel being redrawn.
+var _ccBadgeCounts = {};
 window.ccUpdateBadge = function (badgeId, count) {
+  _ccBadgeCounts[badgeId] = count;
   var el = document.getElementById(badgeId + '-cc');
   if (!el) return;
   el.textContent = count;

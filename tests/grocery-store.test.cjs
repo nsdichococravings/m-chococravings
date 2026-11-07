@@ -327,6 +327,53 @@ const { PGlite } = require('../.production-test-runtime/node_modules/@electric-s
   await as('a');
   assert.ok((await rpc('grocery_catalog')).products.some(p => p.id === rice.id), 'customers still see published items');
 
+  // ── Staff alerts on new orders (20261114) ──
+  await db.exec(`reset role;
+    create table if not exists public.cc_push_config(key text primary key, value text);
+    insert into public.cc_push_config values ('function_url','https://push.test/send-push'),('webhook_secret','s3cret') on conflict do nothing;
+    create schema if not exists net;
+    create table if not exists net.sent(id serial primary key, url text, body jsonb);
+    create or replace function net.http_post(url text, body jsonb, headers jsonb) returns bigint language sql as
+      $f$ insert into net.sent(url, body) values (url, body) returning id::bigint $f$;`);
+  const alertSql = fs.readFileSync(path.join(__dirname, '../migrations/20261114_grocery_staff_alerts.sql'), 'utf8');
+  await db.exec(alertSql); await db.exec(alertSql);
+  const sent = async () => (await raw('select body from net.sent order by id')).map(r => r.body);
+  await raw('delete from net.sent');
+  await raw('update grocery_stock set on_hand=on_hand+10 where product_id=$1', [rice.id]);
+  await as('a');
+  const cashOrder = await rpc('grocery_place_order', [items(rice.id, 1), 'cash', 'Asha', '9000000004', key(), null]);
+  let pushes = await sent();
+  assert.equal(pushes.length, 1, 'one push for a new cash order');
+  assert.equal(pushes[0].type, 'staff_alert');
+  const toWhom = pushes[0].messages.map(m => m.customer_id).sort();
+  const staffIds = (await raw('select id from customers where is_admin or is_employee or is_super_user order by id')).map(r => r.id).sort();
+  assert.deepEqual(toWhom, staffIds, 'every staff account, no customers');
+  assert.match(pushes[0].messages[0].body, new RegExp(cashOrder.order_no + ' · ₹\\d+ · Cash at pickup · \\d+ to pack'));
+  assert.equal(pushes[0].messages[0].url, '/grocery-admin.html#orders');
+  await as('staff');
+  const st = await rpc('grocery_staff_alert_state');
+  assert.equal(st.to_pack, pushes[0].messages[0].count); assert.equal(st.latest.id, cashOrder.id);
+  await as('a'); await assert.rejects(rpc('grocery_staff_alert_state'), /do not have access/, 'customers cannot read it');
+  // Online order: no push until it is paid.
+  await raw('delete from net.sent');
+  await raw("update grocery_settings set online_enabled=true");
+  await as('b');
+  const online = await rpc('grocery_place_order', [items(rice.id, 1), 'online', 'Bala', '9000000005', key(), null]);
+  assert.equal((await sent()).length, 0, 'unpaid online order: no alert yet');
+  await pay('b', online, 'pay_alert_1');
+  pushes = await sent();
+  assert.equal(pushes.length, 1); assert.match(pushes[0].messages[0].body, /Paid online/);
+  // Moving on (ready / picked up) never alerts again.
+  await raw('delete from net.sent');
+  await as('staff'); await rpc('grocery_admin_set_status', [cashOrder.id, 'ready']);
+  assert.equal((await sent()).filter(b => b.type === 'staff_alert').length, 0, 'no staff alert for ready (the customer gets their own push)');
+  // No push set up: orders still work.
+  await raw('delete from cc_push_config'); await raw('delete from net.sent');
+  await raw("update grocery_orders set status='cancelled' where user_id=$1 and status in ('placed','awaiting_payment')", [ids.c]);
+  await as('c');
+  await rpc('grocery_place_order', [items(rice.id, 1), 'cash', 'Chitra', '9000000006', key(), null]);
+  assert.equal((await sent()).length, 0);
+
   // ── Launch check script runs and changes nothing ──
   const checkSql = fs.readFileSync(path.join(__dirname, '../scripts/grocery-launch-check.sql'), 'utf8');
   const before = JSON.stringify(await raw('select * from grocery_settings'));
