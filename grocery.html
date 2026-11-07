@@ -256,8 +256,9 @@ body{font-family:'DM Sans','Plus Jakarta Sans',system-ui,sans-serif;background:v
   box-shadow:0 14px 30px -18px rgba(36,5,45,.7);border-radius:0 0 24px 24px;padding-bottom:16px}
 .hbtn{border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14)}
 .brand-mark{border-radius:50%;background:radial-gradient(circle at 30% 25%,#ffe9c2,#d9b87a);color:#3a0a46;font-family:var(--serif);font-size:15px;font-weight:700}
-.brand-name{font-family:var(--serif);font-size:24px;font-weight:600;letter-spacing:0}
-.brand-sub{font-size:11px;letter-spacing:.04em;opacity:.75}
+.brand-name{font-family:var(--serif);font-size:30px;font-weight:600;letter-spacing:0;line-height:1;margin-top:5px}
+.brand-name em{font-style:italic;font-weight:500;color:#e8c98f}
+.brand-sub{font-size:9.5px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,233,194,.78);opacity:1;margin-top:0}
 .count{background:#ffe9c2;color:#3a0a46}
 .loc{font-size:12px;opacity:.85}
 .search{border-radius:999px;height:48px;padding:0 18px;background:#fffdfa;box-shadow:0 10px 24px -14px rgba(0,0,0,.5);transition:box-shadow .15s}
@@ -591,7 +592,7 @@ function mainHeader() {
   var s = (S.cat && S.cat.settings) || {};
   return '<header class="hdr"><div class="hdr-top">'
     + '<a class="hbtn" href="index.html" aria-label="Back to ChocoCravings">' + I.back + '</a>'
-    + '<div class="brand"><div class="brand-mark">NS</div><div style="min-width:0"><div class="brand-name">NSDI Store</div><div class="brand-sub">Everyday essentials · fair prices</div></div></div>'
+    + '<div class="brand"><div style="min-width:0"><div class="brand-sub">Everyday essentials</div><div class="brand-name">NSDI <em>Store</em></div></div></div>'
     + '<button class="hbtn" aria-label="My orders" data-go="#/orders">' + I.orders + '</button>' + bagBtn()
     + '</div>'
     + '<div class="loc"><span class="dot"></span>' + I.pin + '<span>Pickup at <b>' + h(s.outlet_name || 'our outlet') + '</b> · Ready in ~10 min</span></div>'

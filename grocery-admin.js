@@ -70,7 +70,44 @@
       '.ga-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}',
       '.ga-eb{font-size:10px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:rgba(217,184,122,.85)}',
       '.ga-title{font-family:"Cormorant Garamond",serif;font-size:34px;font-weight:600;line-height:1;color:#fff7ea;margin-top:4px}',
-      '.ga-title em{font-style:italic;color:#e8c98f;font-weight:500}'
+      '.ga-title em{font-style:italic;color:#e8c98f;font-weight:500}',
+      // Products tab
+      '.gp-top{display:flex;flex-direction:column;gap:12px;margin-bottom:14px}',
+      '.gp-sum{display:grid;grid-template-columns:repeat(4,1fr);border-radius:20px;border:1px solid var(--bdr);background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.02));overflow:hidden}',
+      '.gp-sum>div{padding:12px 8px;text-align:center}.gp-sum>div+div{border-left:1px solid var(--bdr)}',
+      '.gp-sum b{display:block;font-family:"Cormorant Garamond",serif;font-size:28px;font-weight:700;color:#fff7ea;line-height:1}',
+      '.gp-sum span{display:block;font-size:9.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-top:5px}',
+      '.gp-sum .warn b{color:#e8c98f}',
+      '.gp-acts{display:flex;align-items:center;gap:10px;flex-wrap:wrap}',
+      '.gp-del{margin-left:auto;display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--dim);cursor:pointer}.gp-del input{width:18px;height:18px;accent-color:#b08d57}',
+      '.gp-grid{display:grid;grid-template-columns:1fr;gap:14px}',
+      '@media(min-width:560px){.gp-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}',
+      '@media(min-width:900px){.gp-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}',
+      '.gp-card{display:flex;flex-direction:column;border-radius:22px;overflow:hidden;border:1px solid var(--bdr);background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.02));box-shadow:0 18px 40px -28px rgba(0,0,0,.8)}',
+      '.gp-card.is-del{opacity:.55}',
+      '.gp-img{position:relative;aspect-ratio:4/3;background:linear-gradient(150deg,#f6eee8,#efe4d6);display:flex;align-items:center;justify-content:center;overflow:hidden}',
+      '.gp-img img{width:100%;height:100%;object-fit:cover}',
+      '.gp-noimg{font-family:"Cormorant Garamond",serif;font-size:30px;font-weight:700;color:#6e0977;letter-spacing:.04em}',
+      '.gp-st,.gp-home{position:absolute;top:10px;font-size:10px;font-weight:700;letter-spacing:.08em;padding:5px 10px;border-radius:999px;backdrop-filter:blur(6px)}',
+      '.gp-st{left:10px}.gp-home{right:10px}',
+      '.gp-st.pub{background:rgba(22,60,38,.82);color:#9fdcb7}.gp-st.draft{background:rgba(43,10,53,.8);color:#e8c98f}.gp-st.del{background:rgba(90,20,40,.85);color:#f4a3b3}',
+      '.gp-body{display:flex;flex-direction:column;gap:8px;padding:14px 16px 16px;flex:1}',
+      '.gp-name{font-family:"Cormorant Garamond",serif;font-size:24px;font-weight:600;color:#fff7ea;line-height:1.1}',
+      '.gp-unit{font-size:11.5px;color:var(--dim);margin-top:-4px}',
+      '.gp-price{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}',
+      '.gp-price b{font-family:"Cormorant Garamond",serif;font-size:28px;font-weight:700;color:#e8c98f;line-height:1}',
+      '.gp-price s{font-size:12.5px;color:var(--faint)}.gp-price i{font-style:normal;font-size:10.5px;font-weight:700;color:#9fdcb7;background:rgba(127,209,160,.12);padding:3px 8px;border-radius:999px}',
+      '.gp-margin{font-size:12px;color:var(--dim)}.gp-margin b{color:#f1e3cf}.gp-margin .warn{color:#e8c98f}',
+      '.gp-stock{padding:10px 12px;border-radius:16px;background:rgba(0,0,0,.18);border:1px solid rgba(255,255,255,.05)}',
+      '.gp-stock-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:11.5px;color:var(--dim)}',
+      '.gp-stock-top b{font-size:13.5px}.gp-stock.ok b{color:#9fdcb7}.gp-stock.low b{color:#e8c98f}.gp-stock.out b{color:#f4a3b3}',
+      '.gp-bar{height:5px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin:8px 0 6px}',
+      '.gp-bar span{display:block;height:100%;border-radius:999px}',
+      '.gp-stock.ok .gp-bar span{background:linear-gradient(90deg,#2f7a4b,#7fd1a0)}.gp-stock.low .gp-bar span{background:linear-gradient(90deg,#b08d57,#e8c98f)}.gp-stock.out .gp-bar span{background:#f08296}',
+      '.gp-stock-s{font-size:11px;color:var(--faint)}',
+      '.gp-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:4px}',
+      '.gp-empty{text-align:center;padding:44px 20px;border-radius:22px;border:1px dashed var(--bdr2)}',
+      '.gp-empty-t{font-family:"Cormorant Garamond",serif;font-size:28px;font-weight:600;color:#e8c98f;margin-bottom:4px}'
     ].join('');
     document.head.appendChild(s);
   }
@@ -205,23 +242,37 @@
     return '<span style="color:' + c + ';font-weight:700">' + a + ' available</span> <span class="ga-dim">· ' + p.on_hand + ' on shelf' + (p.reserved ? ', ' + p.reserved + ' held for unpaid orders' : '') + ' · ' + p.sold_today + ' sold today</span>';
   }
   function productsHtml() {
-    var head = '<div class="ga-row" style="margin-bottom:12px;flex-wrap:wrap"><button class="ga-btn p" data-ga="new">+ Add new item</button><label class="ga-dim ga-row" style="gap:6px;margin-left:auto"><input type="checkbox" data-ga="deleted"' + (G.showDeleted ? ' checked' : '') + '> Show deleted</label></div>';
-    if (!G.products.length) return head + '<div class="ga-card ga-dim">No items yet. Tap “Add new item”.</div>';
-    return head + G.products.map(function (p) {
-      var del = !!p.deleted_at;
-      return '<div class="ga-card" style="' + (del ? 'opacity:.6' : '') + '"><div class="ga-row" style="align-items:flex-start">'
-        + (p.images[0] ? '<img class="ga-thumb" src="' + h(p.images[0].thumb) + '" alt="">' : '<div class="ga-thumb">' + h(String(p.unit_label).toUpperCase()) + '</div>')
-        + '<div class="ga-grow"><div style="font-weight:700;color:var(--white);font-size:15px">' + h(p.name) + ' <span class="ga-dim">' + h(p.unit_label) + '</span></div>'
-        + '<div class="ga-dim">' + money(p.price) + ' · MRP ' + money(p.mrp) + (p.cost != null ? ' · cost ' + money(p.cost) + ' · margin ' + Math.round((p.price - p.cost) / p.price * 100) + '%' : ' · <span style="color:#fbbf24">add cost for profit</span>') + '</div>'
-        + '<div style="font-size:12.5px;margin-top:4px">' + stockLine(p) + '</div>'
-        + '<div style="margin-top:6px">' + (del ? '<span class="ga-pill" style="background:rgba(239,68,68,.15);color:#f87171">Deleted</span>'
-          : (p.is_published ? '<span class="ga-pill" style="background:rgba(34,197,94,.15);color:#4ade80">Published</span>' : '<span class="ga-pill" style="background:rgba(255,255,255,.08);color:var(--dim)">Draft</span>'))
-        + (p.featured && !del ? ' <span class="ga-pill" style="background:' + COLORS[p.slide_color] + ';color:' + ACCENT[p.slide_color] + '">Home card</span>' : '') + '</div></div></div>'
-        + '<div class="ga-row" style="flex-wrap:wrap;gap:8px;margin-top:10px">'
+    var live = G.products.filter(function (p) { return !p.deleted_at; });
+    var avail = function (p) { return Math.max(0, p.on_hand - p.reserved); };
+    var pub = live.filter(function (p) { return p.is_published; }).length;
+    var low = live.filter(function (p) { return avail(p) <= p.low_stock_level; }).length;
+    var head = '<div class="gp-top">'
+      + '<div class="gp-sum"><div><b>' + live.length + '</b><span>Items</span></div><div><b>' + pub + '</b><span>Published</span></div>'
+      + '<div><b>' + (live.length - pub) + '</b><span>Drafts</span></div><div class="' + (low ? 'warn' : '') + '"><b>' + low + '</b><span>Low stock</span></div></div>'
+      + '<div class="gp-acts"><button class="ga-btn p" data-ga="new">+ Add new item</button>'
+      + '<label class="gp-del"><input type="checkbox" data-ga="deleted"' + (G.showDeleted ? ' checked' : '') + '> Show deleted</label></div></div>';
+    if (!G.products.length) return head + '<div class="gp-empty"><div class="gp-empty-t">No items yet</div><div class="ga-dim">Tap “Add new item” to add your first product.</div></div>';
+    return head + '<div class="gp-grid">' + G.products.map(function (p) {
+      var del = !!p.deleted_at, a = avail(p);
+      var tone = a <= 0 ? 'out' : (a <= p.low_stock_level ? 'low' : 'ok');
+      var pct = Math.max(4, Math.min(100, Math.round(a / Math.max(p.low_stock_level * 3, 1) * 100)));
+      var status = del ? '<span class="gp-st del">Deleted</span>' : (p.is_published ? '<span class="gp-st pub">● Published</span>' : '<span class="gp-st draft">Draft</span>');
+      var margin = p.cost != null && p.price > 0 ? Math.round((p.price - p.cost) / p.price * 100) : null;
+      return '<div class="gp-card' + (del ? ' is-del' : '') + '">'
+        + '<div class="gp-img">' + (p.images[0] ? '<img src="' + h(p.images[0].thumb) + '" alt="" loading="lazy">' : '<span class="gp-noimg">' + h(String(p.unit_label || '').toUpperCase()) + '</span>')
+        + status + (p.featured && !del ? '<span class="gp-home" style="background:' + COLORS[p.slide_color] + ';color:' + ACCENT[p.slide_color] + '">Home card</span>' : '') + '</div>'
+        + '<div class="gp-body">'
+        + '<div class="gp-name">' + h(p.name) + '</div><div class="gp-unit">' + h(p.brand || '') + (p.brand ? ' · ' : '') + h(p.unit_label) + (p.category ? ' · ' + h(p.category) : '') + '</div>'
+        + '<div class="gp-price"><b>' + money(p.price) + '</b>' + (p.mrp > p.price ? '<s>' + money(p.mrp) + '</s><i>' + Math.round((p.mrp - p.price) / p.mrp * 100) + '% off</i>' : '') + '</div>'
+        + '<div class="gp-margin">' + (margin != null ? 'Cost ' + money(p.cost) + ' · <b>' + margin + '% margin</b>' : '<span class="warn">Add cost to see profit</span>') + '</div>'
+        + '<div class="gp-stock ' + tone + '"><div class="gp-stock-top"><b>' + a + ' available</b><span>' + p.sold_today + ' sold today</span></div>'
+        + '<div class="gp-bar"><span style="width:' + pct + '%"></span></div>'
+        + '<div class="gp-stock-s">' + p.on_hand + ' on shelf' + (p.reserved ? ' · ' + p.reserved + ' held for unpaid orders' : '') + '</div></div>'
+        + '<div class="gp-btns">'
         + (del ? (G.role === 'owner' ? '<button class="ga-btn" data-ga-restore="' + p.id + '">Restore</button>' : '<span class="ga-dim">Only the owner can restore</span>')
           : '<button class="ga-btn p" data-ga-edit="' + p.id + '">Edit</button><button class="ga-btn" data-ga-stock="' + p.id + '">Stock</button><button class="ga-btn r" data-ga-del="' + p.id + '">Delete</button>')
-        + '</div></div>';
-    }).join('');
+        + '</div></div></div>';
+    }).join('') + '</div>';
   }
 
   // Product editor
