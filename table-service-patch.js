@@ -1,6 +1,6 @@
 /**
  * table-service-patch.js — ChocoCravings On Store
- * Feature: Dine-in Table Service Board (T1, T2, T3, BS, SL, SR, SC)
+ * Feature: Dine-in Table Service Board (T1, T2, T3, T4, BS, SL, SR, SC, DC)
  *
  * Standalone patch — loaded AFTER store-patch.js, right before </body>:
  *   <script src="table-service-patch.js"></script>
@@ -12,7 +12,7 @@
  * Requires DB migration: ALTER TABLE store_orders ADD COLUMN table_code text;
  */
 
-var TABLE_CODES = ['T1', 'T2', 'T3', 'BS', 'SL', 'SR', 'SC', 'DC'];
+var TABLE_CODES = ['T1', 'T2', 'T3', 'T4', 'BS', 'SL', 'SR', 'SC', 'DC'];
 
 var _tsItems        = [];
 var _tsTableCode    = null;

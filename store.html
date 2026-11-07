@@ -1698,7 +1698,7 @@ async function confirmQRPay(){
 // the staff Tables board. A QR on each table can link to store.html?table=T2
 // to pre-select it. Saved to store_orders.customer_table — deliberately NOT
 // table_code, which belongs to staff-run table bills.
-var SEAT_CODES = ['T1', 'T2', 'T3', 'BS', 'SL', 'SR', 'SC', 'DC', 'TAKEAWAY'];
+var SEAT_CODES = ['T1', 'T2', 'T3', 'T4', 'BS', 'SL', 'SR', 'SC', 'DC', 'TAKEAWAY'];
 var custTable = (function(){
   try {
     var q = (new URLSearchParams(location.search).get('table') || '').toUpperCase();
@@ -1771,7 +1771,7 @@ function renderSeatOpts(){
     var style = busy
       ? 'border:1.5px dashed rgba(18,10,30,0.15);background:#efe9ef;color:#b3a8b8;cursor:not-allowed'
       : 'border:1.5px solid '+(on?'#6e0977':'rgba(18,10,30,0.12)')+';background:'+(on?'#6e0977':'#fdf5e3')+';color:'+(on?'#fff':'#120a1e')+';cursor:pointer';
-    return '<div onclick="pickSeat(\''+c+'\')" style="'+(c==='TAKEAWAY'?'grid-column:span 2;':'')
+    return '<div onclick="pickSeat(\''+c+'\')" style="'+(c==='TAKEAWAY'?'grid-column:1/-1;':'')
       +'padding:8px 4px;text-align:center;border-radius:10px;font-weight:800;font-size:13px;line-height:1.2;'+style+'">'
       +seatLabel(c)+(busy?'<div style="font-size:9px;font-weight:700;letter-spacing:.5px">OCCUPIED</div>':'')+'</div>';
   }).join('');
@@ -1798,6 +1798,7 @@ function pickSeat(code){
 async function requireSeat(){
   if (!custTable) { seatMsg('Please choose your table so we can bring your order.'); return false; }
   if (custTable === 'TAKEAWAY') return true;
+  if (custTable === mergeTable) return true; // their own table (same mobile number)
   await loadSeatOccupancy();
   if (seatTaken[custTable]) {
     var code = custTable;
@@ -1808,6 +1809,66 @@ async function requireSeat(){
     return false;
   }
   return true;
+}
+
+// ── Same mobile number, one table ─────────────────────────────
+// If this number already has an open order at a table, ask whether to add
+// the new order to that table. Yes: the order goes there and the database
+// moves the number's other open orders there too, freeing the other tables
+// (migrations/20261115). Each order keeps its own payment.
+var mergeTable = null;
+function custPhone10(){
+  var inp = document.getElementById('customer-phone-input');
+  var d = String(inp ? inp.value : '').replace(/\D/g, '');
+  return d.length >= 10 ? d.slice(-10) : '';
+}
+function askMergeTable(existing, chosen){
+  return new Promise(function(resolve){
+    var old = document.getElementById('merge-ov'); if (old) old.remove();
+    var ov = document.createElement('div');
+    ov.id = 'merge-ov';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(26,8,32,.55);backdrop-filter:blur(4px);display:flex;align-items:flex-end;justify-content:center;padding:16px';
+    var t = existing.table, label = t === 'TAKEAWAY' ? 'Takeaway' : 'Table ' + t;
+    ov.innerHTML = '<div role="dialog" aria-modal="true" aria-labelledby="merge-t" style="width:100%;max-width:420px;border-radius:28px;overflow:hidden;background:#faf6f0;color:#24112b;box-shadow:0 30px 60px -20px rgba(0,0,0,.6);font-family:\'DM Sans\',sans-serif">'
+      + '<div style="padding:22px 22px 18px;color:#fff;background:radial-gradient(120% 90% at 100% 0%,rgba(255,233,194,.18),transparent 60%),linear-gradient(160deg,#2b0a35,#5a0b63 55%,#1a0820)">'
+      +   '<div style="font-size:10px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,233,194,.78)">Welcome back</div>'
+      +   '<div id="merge-t" style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:30px;font-weight:600;line-height:1.05;margin-top:6px">You\'re at <em style="font-style:italic;color:#e8c98f;font-weight:500">' + label + '</em></div>'
+      +   '<div style="font-size:13px;color:rgba(255,255,255,.75);margin-top:8px;line-height:1.5">This number already has ' + (existing.orders > 1 ? existing.orders + ' orders' : 'an order') + ' with us' + (existing.token ? ' (' + existing.token + ')' : '') + '. Add this order to ' + label + ' so everything comes to one table?</div>'
+      + '</div>'
+      + '<div style="padding:16px;display:flex;flex-direction:column;gap:10px">'
+      +   '<button type="button" id="merge-yes" style="min-height:52px;border:0;border-radius:999px;color:#fff;font:600 13.5px \'DM Sans\',sans-serif;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;background:linear-gradient(135deg,#3a0a46,#6e0977 60%,#8e1a8f);box-shadow:0 0 0 1px rgba(176,141,87,.35) inset,0 12px 26px -12px rgba(58,10,70,.55)">Yes, add to ' + label + '</button>'
+      +   '<button type="button" id="merge-no" style="min-height:48px;border-radius:999px;border:1px solid #ece2d8;background:#fffdfa;color:#3a0a46;font:600 12.5px \'DM Sans\',sans-serif;letter-spacing:.06em;cursor:pointer">' + (chosen && chosen !== t ? 'No, keep ' + (chosen === 'TAKEAWAY' ? 'Takeaway' : 'Table ' + chosen) : 'No, order separately') + '</button>'
+      + '</div></div>';
+    document.body.appendChild(ov);
+    var done = function(v){ ov.remove(); resolve(v); };
+    document.getElementById('merge-yes').onclick = function(){ done(true); };
+    document.getElementById('merge-no').onclick = function(){ done(false); };
+    ov.addEventListener('click', function(e){ if (e.target === ov) done(false); });
+  });
+}
+// Returns false only if the customer closed the question without choosing a table.
+async function offerTableMerge(){
+  mergeTable = null;
+  var phone = custPhone10();
+  if (!phone || !db || custTable === 'TAKEAWAY') return true;
+  var res;
+  try { res = await db.rpc('cc_customer_open_table', { p_phone: phone }); } catch(e) { return true; }
+  var ex = res && !res.error && res.data;
+  if (!ex || !ex.table || ex.table === 'TAKEAWAY') return true;
+  if (ex.table === custTable) { mergeTable = custTable; return true; }
+  var yes = await askMergeTable(ex, custTable);
+  if (!yes) return true;
+  mergeTable = ex.table;
+  custTable = ex.table;
+  try { sessionStorage.setItem('cc_cust_table', custTable); } catch(e) {}
+  renderSeatOpts();
+  return true;
+}
+function mergeAfterInsert(order){
+  if (!order || !order.id || !mergeTable || order.customer_table !== mergeTable) return;
+  db.rpc('cc_merge_customer_table', { p_order_id: order.id }).then(function(r){
+    if (r && r.data && r.data.moved > 0 && typeof showStoreToast === 'function') showStoreToast('All your orders are now at ' + (mergeTable === 'TAKEAWAY' ? 'Takeaway' : 'Table ' + mergeTable));
+  }, function(){});
 }
 
 async function insertStoreOrder(token, paymentId, pmMethod, pmStatus) {
@@ -1842,6 +1903,7 @@ async function insertStoreOrder(token, paymentId, pmMethod, pmStatus) {
     res = await db.from('store_orders').insert(row).select().single();
   }
   if (res.error) throw res.error;
+  mergeAfterInsert(res.data);
   return res.data;
 }
 
@@ -1851,6 +1913,7 @@ async function insertStoreOrder(token, paymentId, pmMethod, pmStatus) {
 async function placeOrder(){
   var btn = document.getElementById('place-btn');
   if (!db) { alert('Add your Supabase anon key to store.html first.'); return; }
+  await offerTableMerge();
   if (!(await requireSeat())) return;
   if (payMethod === 'upi') { openRazorpay(); return; }
 
@@ -3638,12 +3701,12 @@ async function toggleStoreOpenStatus() {
   </div>
 </div>
 <!-- END QUICK ADD MENU ITEM SHEET -->
-<script src="admin-command-center.js?v=20261115-home"></script>
+<script src="admin-command-center.js?v=20261115-nocafe"></script>
 <script src="store-patch.js?v=20260921-premium-email"></script>
 <script src="menu-art.js?v=20260956"></script>
 <script src="menu-search-patch.js?v=20261106-boutique"></script>
 <script src="remember-phone-patch.js?v=20260952-table"></script>
-<script src="checkadminbadge-override.js?v=20261114-alerts"></script>
+<script src="checkadminbadge-override.js?v=20261115-t4"></script>
 <script src="production-purchases-patch.js?v=20261018"></script>
 <link rel="stylesheet" href="production-dashboard.css?v=20260970-count">
 <script src="production-dashboard.js?v=20261113-collections"></script>

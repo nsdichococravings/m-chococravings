@@ -3763,9 +3763,8 @@ function openHomeCC() {
         }).join('') + '</div>';
     });
   } else {
-    html += '<div class="hcc-h">All tools</div><div class="hcc-note">Your full tool list appears here after you open the Command Center in NSDI Cafe once on this phone.</div>';
+    html += '<div class="hcc-h">All tools</div><div class="hcc-note">Your full tool list appears here after you open NSDI Cafe once on this phone.</div>';
   }
-  html += '<div class="hcc-h">NSDI Cafe</div><div class="hcc-quick">' + quick('/store.html?cc=open', '☕', 'Open Command Center in NSDI Cafe', 'Every tool, with live counts') + '</div>';
   var ov = document.createElement('div');
   ov.id = 'hcc-ov'; ov.className = 'hcc-ov';
   ov.innerHTML = '<aside class="hcc-sb" role="dialog" aria-label="Command Center"><div class="hcc-hd"><div><div class="hcc-eb">Admin</div><div class="hcc-t">Command <em>Center</em></div></div>'
