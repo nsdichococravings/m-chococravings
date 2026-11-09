@@ -180,9 +180,11 @@ async function loadDashboard() {
     .limit(50000)
     .then(function (r) { return r; }).catch(function () { return { data: [] }; });
 
-  var cashRes = await db.from('cash_counter_entries').select('amount')
-    .limit(50000)
-    .then(function (r) { return r; }).catch(function () { return { data: [] }; });
+  // Every entry, read in pages (a single select stops at 1,000 rows).
+  var cashRes = typeof window.ccSumAllCash === 'function'
+    ? await window.ccSumAllCash().then(function (t) { return { data: [{ amount: t }] }; }).catch(function () { return { data: [] }; })
+    : await db.from('cash_counter_entries').select('amount').limit(50000)
+        .then(function (r) { return r; }).catch(function () { return { data: [] }; });
 
   var storeOrders = storeRes.data || [];
   var storePrevOrders = storePrevRes.data || [];

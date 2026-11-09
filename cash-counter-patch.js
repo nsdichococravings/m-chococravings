@@ -70,32 +70,78 @@ function buildCashCounterUI() {
   document.body.appendChild(sheet);
 }
 
+var _ccRefreshTimer = null;
 function openCashCounter() {
   document.getElementById('cc-overlay').style.display = 'block';
   document.getElementById('cc-sheet').style.display   = 'block';
   loadCashCounter();
+  // Cash collected on another phone shows up while this sheet is open.
+  clearInterval(_ccRefreshTimer);
+  _ccRefreshTimer = setInterval(function () {
+    var sh = document.getElementById('cc-sheet');
+    if (!sh || sh.style.display !== 'block') { clearInterval(_ccRefreshTimer); return; }
+    if (!document.hidden && !_ccLoading) loadCashCounter(true);
+  }, 20000);
 }
 function closeCashCounter() {
+  clearInterval(_ccRefreshTimer);
   document.getElementById('cc-overlay').style.display = 'none';
   document.getElementById('cc-sheet').style.display   = 'none';
 }
 
-async function getCashCounterBalance() {
-  var res = await db.from('cash_counter_entries').select('amount');
-  return (res.data || []).reduce(function (s, r) { return s + (r.amount || 0); }, 0);
+// The balance is the sum of every entry ever logged. Supabase returns at most
+// 1,000 rows per request, so a single select stopped counting new entries once
+// the ledger passed 1,000 rows. Read it in pages instead.
+async function ccSumAllCash() {
+  var total = 0, from = 0, page = 1000;
+  for (var i = 0; i < 200; i++) {
+    var res = await db.from('cash_counter_entries').select('id,amount').order('id', { ascending: true }).range(from, from + page - 1);
+    if (res.error) throw res.error;
+    var rows = res.data || [];
+    rows.forEach(function (r) { total += Number(r.amount) || 0; });
+    if (rows.length < page) break;
+    from += page;
+  }
+  return Math.round(total * 100) / 100;
 }
+window.ccSumAllCash = ccSumAllCash;
+async function getCashCounterBalance() { return ccSumAllCash(); }
 
-async function loadCashCounter() {
+// Midnight in India, so "today" is right between 12 am and 5:30 am too.
+function ccDayStartIso() {
+  return new Date(Date.now() + 330 * 60000).toISOString().slice(0, 10) + 'T00:00:00+05:30';
+}
+function ccMoney(n) { n = Math.round((Number(n) || 0) * 100) / 100; return '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 2 }); }
+var _ccLoading = false;
+
+async function loadCashCounter(quiet) {
   var body = document.getElementById('cc-body');
-  body.innerHTML = '<div style="text-align:center;padding:30px;color:#9a8aaa;font-size:12px">Loading…</div>';
-
-  var balance = await getCashCounterBalance();
-  var todayRes = await db.from('cash_counter_entries').select('*')
-    .eq('entry_date', new Date().toISOString().slice(0, 10))
-    .order('created_at', { ascending: false });
-  var todayEntries = todayRes.data || [];
-
-  var hasAnyEntries = (await db.from('cash_counter_entries').select('id').limit(1)).data.length > 0;
+  // A quiet refresh keeps what's typed in the amount / note boxes.
+  if (quiet) {
+    var a = document.getElementById('cc-amount'), n = document.getElementById('cc-note');
+    if ((a && a.value) || (n && n.value) || (document.activeElement && body.contains(document.activeElement))) return;
+  } else {
+    body.innerHTML = '<div style="text-align:center;padding:30px;color:#9a8aaa;font-size:12px">Loading…</div>';
+  }
+  _ccLoading = true;
+  var balance, todayEntries;
+  try {
+    balance = await getCashCounterBalance();
+    var todayRes = await db.from('cash_counter_entries').select('*')
+      .gte('created_at', ccDayStartIso())
+      .order('created_at', { ascending: false });
+    if (todayRes.error) throw todayRes.error;
+    todayEntries = todayRes.data || [];
+  } catch (e) {
+    _ccLoading = false;
+    if (!quiet) body.innerHTML = '<div style="text-align:center;padding:24px;color:#dc2626;font-size:12.5px">Could not load the Cash Counter: ' + ((e && e.message) || e) + '</div>';
+    return;
+  }
+  _ccLoading = false;
+  var hasAnyEntries = balance !== 0 || todayEntries.length > 0;
+  var cashIn = 0, cashOut = 0;
+  todayEntries.forEach(function (r) { var v = Number(r.amount) || 0; if (v >= 0) cashIn += v; else cashOut += -v; });
+  var opening = balance - (cashIn - cashOut);
 
   var entriesHtml = todayEntries.length
     ? todayEntries.map(function (r) {
@@ -106,15 +152,22 @@ async function loadCashCounter() {
           + '<div><div style="font-size:13px;font-weight:700;color:#1a0820">' + (r.note || (isAdd ? 'Cash added' : 'Cash removed')) + '</div>'
           + '<div style="font-size:11px;color:#9a8aaa">' + time + (r.staff_name ? ' · ' + r.staff_name : '') + '</div></div>'
           + '<div style="font-size:14px;font-weight:700;color:' + (isAdd ? '#15803d' : '#dc2626') + '">'
-          + (isAdd ? '+' : '') + '₹' + r.amount + '</div></div>';
+          + (isAdd ? '+' : '−') + ccMoney(Math.abs(r.amount)) + '</div></div>';
       }).join('')
-    : '<div style="text-align:center;padding:16px;color:#9a8aaa;font-size:12px">No adjustments logged today yet.</div>';
+    : '<div style="text-align:center;padding:16px;color:#9a8aaa;font-size:12px">No cash in or out yet today.</div>';
 
   body.innerHTML =
       '<div style="background:linear-gradient(135deg,rgba(184,116,16,0.1),rgba(184,116,16,0.02));'
     + 'border:1.5px solid rgba(184,116,16,0.3);border-radius:16px;padding:20px;text-align:center;margin-bottom:16px">'
     + '<div style="font-size:10px;font-weight:700;letter-spacing:2px;color:#b87410">CURRENT CASH BALANCE</div>'
-    + '<div style="font-family:Fraunces,Georgia,serif;font-size:36px;font-weight:900;color:#b87410;margin-top:4px">₹' + balance.toFixed(0) + '</div>'
+    + '<div style="font-family:Fraunces,Georgia,serif;font-size:36px;font-weight:900;color:#b87410;margin-top:4px">' + ccMoney(balance) + '</div>'
+    + '<div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:11.5px;color:#8a6a33">'
+    +   '<span>Opening today <b>' + ccMoney(opening) + '</b></span>'
+    +   '<span style="color:#15803d">In <b>+' + ccMoney(cashIn) + '</b></span>'
+    +   '<span style="color:#dc2626">Out <b>−' + ccMoney(cashOut) + '</b></span>'
+    + '</div>'
+    + '<div style="font-size:10.5px;color:#9a8aaa;margin-top:6px">Updated ' + new Date().toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }) + ' · refreshes while open'
+    + ' · <span onclick="loadCashCounter()" style="color:#6e0977;font-weight:700;cursor:pointer">Refresh</span></div>'
     + '</div>'
     + (!hasAnyEntries
         ? '<div style="background:#fff8e6;border:1.5px solid rgba(245,196,48,0.35);border-radius:14px;padding:14px;'
@@ -137,7 +190,7 @@ async function loadCashCounter() {
     + 'outline:none;box-sizing:border-box;margin-bottom:14px">'
     + '<button onclick="ccSubmitAdjustment()" style="width:100%;padding:13px;background:linear-gradient(135deg,#6e0977,#9c0ca1);'
     + 'color:#fff;font-size:13px;font-weight:700;border:none;border-radius:12px;cursor:pointer;margin-bottom:18px">💾 Log Adjustment</button>'
-    + '<div style="font-size:11px;letter-spacing:2px;color:#c2607a;font-weight:700;margin-bottom:10px">TODAY\'S ADJUSTMENTS</div>'
+    + '<div style="font-size:11px;letter-spacing:2px;color:#c2607a;font-weight:700;margin-bottom:10px">TODAY\'S CASH IN &amp; OUT</div>'
     + entriesHtml;
 }
 
@@ -167,12 +220,13 @@ async function ccSubmitAdjustment() {
     : 'Admin';
 
   try {
-    await db.from('cash_counter_entries').insert([{
+    var ins = await db.from('cash_counter_entries').insert([{
       entry_type: 'adjustment',
       amount: signedAmount,
       note: note || null,
       staff_name: staffName
     }]);
+    if (ins.error) throw ins.error; // was silently ignored before
     showStoreToast('✅ Logged ' + (_ccAdjustType === 'add' ? '+₹' : '-₹') + amountRaw);
     loadCashCounter();
   } catch (e) {
