@@ -169,7 +169,7 @@ function applyStaffRole(admin, employee) {
     loadScriptsSequentially([
       'inventory-patch.js?v=20260960', 'display-stock-patch.js?v=20260966', 'daily-expenses-patch.js',
       'day-close-patch.js', 'sales-reports-patch.js?v=20260968', 'reports-hub-patch.js?v=20261020-owner-close', 'daily-summary-patch.js?v=20260968', 'customer-returns-patch.js?v=20260970',
-      'cash-counter-patch.js?v=20261118-total', 'custom-bookings-patch.js?v=20261117-kitchen', 'executive-dashboard-patch.js?v=20261118-total',
+      'cash-counter-patch.js?v=20261118b-look', 'custom-bookings-patch.js?v=20261117-kitchen', 'executive-dashboard-patch.js?v=20261118-total',
       'push-broadcast-patch.js?v=20260974'
     ]);
   }

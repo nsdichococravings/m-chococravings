@@ -41,32 +41,71 @@ function injectCashCounterMenuEntry() {
   });
 }
 
+// A function (not a var): _ccInit() runs before this line is reached.
+function ccxCss() { return ''
+  + '#cc-overlay{position:fixed;inset:0;background:rgba(26,8,32,.5);z-index:4000;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}'
+  + '#cc-sheet{position:fixed;bottom:0;left:0;right:0;z-index:4001;max-height:92vh;overflow-y:auto;background:#faf6f0;color:#24112b;'
+  +   'border-radius:28px 28px 0 0;font-family:"DM Sans",sans-serif;box-shadow:0 -20px 50px -20px rgba(26,8,32,.45);-webkit-font-smoothing:antialiased}'
+  + '@media(min-width:700px){#cc-sheet{left:50%;right:auto;width:560px;transform:translateX(-50%)}}'
+  + '.ccx-hd{position:sticky;top:0;z-index:2;color:#fff;padding:12px 20px 20px;border-radius:28px 28px 22px 22px;'
+  +   'background:radial-gradient(120% 90% at 100% 0%,rgba(255,233,194,.18),transparent 60%),linear-gradient(160deg,#2b0a35 0%,#5a0b63 55%,#1a0820 100%)}'
+  + '.ccx-grab{width:42px;height:4px;border-radius:2px;background:rgba(255,255,255,.3);margin:0 auto 12px}'
+  + '.ccx-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}'
+  + '.ccx-eb{font-size:10px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:rgba(255,233,194,.78)}'
+  + '.ccx-t{font-family:"Cormorant Garamond",Georgia,serif;font-size:32px;font-weight:600;line-height:1;margin-top:4px}'
+  + '.ccx-t em{font-style:italic;color:#e8c98f;font-weight:500}'
+  + '.ccx-x{flex:none;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:14px;cursor:pointer}'
+  + '.ccx-bal{margin-top:18px;text-align:center}'
+  + '.ccx-bal small{display:block;font-size:10px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,233,194,.75)}'
+  + '.ccx-bal b{display:block;font-family:"Cormorant Garamond",Georgia,serif;font-size:52px;font-weight:700;line-height:1.05;color:#ffe9c2;margin-top:4px}'
+  + '.ccx-row{display:grid;grid-template-columns:repeat(3,1fr);margin-top:16px;border-radius:18px;background:rgba(255,255,255,.07);border:1px solid rgba(255,233,194,.18);overflow:hidden}'
+  + '.ccx-row>div{padding:10px 6px;text-align:center}.ccx-row>div+div{border-left:1px solid rgba(255,233,194,.18)}'
+  + '.ccx-row span{display:block;font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.6)}'
+  + '.ccx-row b{display:block;font-family:"Cormorant Garamond",Georgia,serif;font-size:20px;font-weight:700;margin-top:3px;color:#fff7ea}'
+  + '.ccx-row .in b{color:#9fdcb7}.ccx-row .out b{color:#f4a3b3}'
+  + '.ccx-upd{font-size:10.5px;color:rgba(255,255,255,.55);margin-top:10px;text-align:center}'
+  + '.ccx-upd button{border:0;background:none;color:#ffe9c2;font:700 10.5px "DM Sans",sans-serif;cursor:pointer;text-decoration:underline;text-underline-offset:2px}'
+  + '#cc-body{padding:16px 16px calc(24px + env(safe-area-inset-bottom))}'
+  + '.ccx-card{background:#fffdfa;border:1px solid #ece2d8;border-radius:22px;padding:16px;margin-bottom:14px;box-shadow:0 10px 30px -18px rgba(58,10,70,.18)}'
+  + '.ccx-h{display:flex;align-items:center;gap:10px;font-size:10px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:#b08d57;margin:0 0 12px}'
+  + '.ccx-h::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,#ece2d8,transparent)}'
+  + '.ccx-seg{display:flex;gap:4px;padding:4px;border-radius:999px;background:#f3ece4;margin-bottom:12px}'
+  + '.ccx-seg button{flex:1;min-height:40px;border:0;border-radius:999px;background:transparent;color:#4a3a50;font:600 13px "DM Sans",sans-serif;cursor:pointer}'
+  + '.ccx-seg button.on.add{background:#fff;color:#2f7a4b;box-shadow:0 0 0 1px #d3e8da,0 6px 14px -10px rgba(47,122,75,.6)}'
+  + '.ccx-seg button.on.sub{background:#fff;color:#a33a52;box-shadow:0 0 0 1px #f3dde2,0 6px 14px -10px rgba(163,58,82,.6)}'
+  + '.ccx-in{display:block;width:100%;box-sizing:border-box;padding:13px 14px;border-radius:14px;border:1px solid #ece2d8;background:#fff;font:400 15px "DM Sans",sans-serif;color:#24112b;outline:none;margin-bottom:10px}'
+  + '.ccx-in:focus{border-color:#6e0977;box-shadow:0 0 0 3px rgba(110,9,119,.08)}'
+  + '.ccx-amt{font-family:"Cormorant Garamond",Georgia,serif;font-size:24px;font-weight:700}'
+  + '.ccx-cta{width:100%;min-height:52px;border:0;border-radius:999px;color:#fff;font:600 13.5px "DM Sans",sans-serif;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;'
+  +   'background:linear-gradient(135deg,#3a0a46 0%,#6e0977 60%,#8e1a8f 100%);box-shadow:0 0 0 1px rgba(176,141,87,.35) inset,0 12px 26px -12px rgba(58,10,70,.55)}'
+  + '.ccx-note{font-size:12px;line-height:1.5;color:#6b5228;background:#f6eedf;border:1px solid #ecdcbf;border-radius:16px;padding:12px 14px;margin-bottom:14px}'
+  + '.ccx-e{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid #f3ece4}'
+  + '.ccx-h+.ccx-e{border-top:0;padding-top:0}'
+  + '.ccx-ic{flex:none;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700}'
+  + '.ccx-ic.cafe{background:#f7eef6;color:#6e0977}.ccx-ic.store{background:#f6eedf;color:#8a6a33}.ccx-ic.adj{background:#f3ece4;color:#4a3a50}'
+  + '.ccx-e-m{flex:1;min-width:0}.ccx-e-m b{display:block;font-size:13px;font-weight:600;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}'
+  + '.ccx-e-m small{display:block;font-size:11px;color:#8d7f90;margin-top:2px}'
+  + '.ccx-e-v{flex:none;font-family:"Cormorant Garamond",Georgia,serif;font-size:20px;font-weight:700}'
+  + '.ccx-e-v.in{color:#2f7a4b}.ccx-e-v.out{color:#a33a52}'
+  + '.ccx-empty{text-align:center;padding:14px;color:#8d7f90;font-size:12.5px}';
+}
+
 function buildCashCounterUI() {
+  if (!document.getElementById('ccx-css')) { var st = document.createElement('style'); st.id = 'ccx-css'; st.textContent = ccxCss(); document.head.appendChild(st); }
   var overlay = document.createElement('div');
   overlay.id = 'cc-overlay';
   overlay.onclick = closeCashCounter;
-  overlay.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);'
-    + 'z-index:4000;backdrop-filter:blur(4px)';
+  overlay.style.display = 'none';
   document.body.appendChild(overlay);
 
   var sheet = document.createElement('div');
   sheet.id = 'cc-sheet';
-  sheet.style.cssText = 'display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;'
-    + 'border-radius:22px 22px 0 0;border-top:1px solid #e8d0f0;z-index:4001;'
-    + 'padding:0 0 28px;font-family:\'DM Sans\',sans-serif;max-height:90vh;overflow-y:auto';
-  sheet.innerHTML =
-      '<div style="width:40px;height:4px;border-radius:2px;background:#ddd0ea;margin:14px auto 0"></div>'
-    + '<div style="padding:16px 20px 12px;border-bottom:1px solid #f0e8f8">'
-    +   '<div style="font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;'
-    +     'color:#9c0ca1;margin-bottom:4px">Admin</div>'
-    +   '<div style="display:flex;align-items:center;justify-content:space-between">'
-    +     '<div style="font-size:18px;font-weight:700;color:#1a0820">Cash Counter</div>'
-    +     '<div onclick="closeCashCounter()" style="width:34px;height:34px;border-radius:50%;'
-    +       'background:#f5eeff;border:1px solid #e0c8f0;display:flex;align-items:center;'
-    +       'justify-content:center;cursor:pointer;font-size:14px;color:#6e0977">✕</div>'
-    +   '</div>'
-    + '</div>'
-    + '<div id="cc-body" style="padding:16px 20px 0"></div>';
+  sheet.setAttribute('role', 'dialog');
+  sheet.setAttribute('aria-label', 'Cash Counter');
+  sheet.style.display = 'none';
+  sheet.innerHTML = '<div class="ccx-hd" id="ccx-hd"><div class="ccx-grab"></div><div class="ccx-top"><div><div class="ccx-eb">Admin</div><div class="ccx-t">Cash <em>Counter</em></div></div>'
+    + '<button type="button" class="ccx-x" aria-label="Close" onclick="closeCashCounter()">✕</button></div><div id="ccx-sum"></div></div>'
+    + '<div id="cc-body"></div>';
   document.body.appendChild(sheet);
 }
 
@@ -143,69 +182,46 @@ async function loadCashCounter(quiet) {
   todayEntries.forEach(function (r) { var v = Number(r.amount) || 0; if (v >= 0) cashIn += v; else cashOut += -v; });
   var opening = balance - (cashIn - cashOut);
 
+  var esc = function (v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
   var entriesHtml = todayEntries.length
     ? todayEntries.map(function (r) {
-        var isAdd = r.amount >= 0;
-        var time = new Date(r.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-        return '<div style="display:flex;justify-content:space-between;align-items:center;background:#f5eeff;'
-          + 'border:1px solid #e0c8f0;border-radius:12px;padding:11px 14px;margin-bottom:8px">'
-          + '<div><div style="font-size:13px;font-weight:700;color:#1a0820">' + (r.note || (isAdd ? 'Cash added' : 'Cash removed')) + '</div>'
-          + '<div style="font-size:11px;color:#9a8aaa">' + time + (r.staff_name ? ' · ' + r.staff_name : '') + '</div></div>'
-          + '<div style="font-size:14px;font-weight:700;color:' + (isAdd ? '#15803d' : '#dc2626') + '">'
-          + (isAdd ? '+' : '−') + ccMoney(Math.abs(r.amount)) + '</div></div>';
+        var v = Number(r.amount) || 0, isAdd = v >= 0;
+        var note = r.note || (isAdd ? 'Cash added' : 'Cash removed');
+        var kind = /^NSDI Store cash/.test(note) ? ['store', '🛍'] : (r.entry_type === 'order_payment' ? ['cafe', '☕'] : ['adj', isAdd ? '+' : '−']);
+        var time = new Date(r.created_at).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }).toLowerCase();
+        return '<div class="ccx-e"><span class="ccx-ic ' + kind[0] + '">' + kind[1] + '</span>'
+          + '<div class="ccx-e-m"><b>' + esc(note) + '</b><small>' + time + (r.staff_name ? ' · ' + esc(r.staff_name) : '') + '</small></div>'
+          + '<div class="ccx-e-v ' + (isAdd ? 'in' : 'out') + '">' + (isAdd ? '+' : '−') + ccMoney(Math.abs(v)) + '</div></div>';
       }).join('')
-    : '<div style="text-align:center;padding:16px;color:#9a8aaa;font-size:12px">No cash in or out yet today.</div>';
+    : '<div class="ccx-empty">No cash in or out yet today.</div>';
+
+  document.getElementById('ccx-sum').innerHTML =
+      '<div class="ccx-bal"><small>Cash in the drawer</small><b>' + ccMoney(balance) + '</b></div>'
+    + '<div class="ccx-row"><div><span>Opening</span><b>' + ccMoney(opening) + '</b></div>'
+    + '<div class="in"><span>In today</span><b>+' + ccMoney(cashIn) + '</b></div>'
+    + '<div class="out"><span>Out today</span><b>−' + ccMoney(cashOut) + '</b></div></div>'
+    + '<div class="ccx-upd">Updated ' + new Date().toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }).toLowerCase()
+    + ' · refreshes while open · <button type="button" onclick="loadCashCounter()">Refresh</button></div>';
 
   body.innerHTML =
-      '<div style="background:linear-gradient(135deg,rgba(184,116,16,0.1),rgba(184,116,16,0.02));'
-    + 'border:1.5px solid rgba(184,116,16,0.3);border-radius:16px;padding:20px;text-align:center;margin-bottom:16px">'
-    + '<div style="font-size:10px;font-weight:700;letter-spacing:2px;color:#b87410">CURRENT CASH BALANCE</div>'
-    + '<div style="font-family:Fraunces,Georgia,serif;font-size:36px;font-weight:900;color:#b87410;margin-top:4px">' + ccMoney(balance) + '</div>'
-    + '<div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:11.5px;color:#8a6a33">'
-    +   '<span>Opening today <b>' + ccMoney(opening) + '</b></span>'
-    +   '<span style="color:#15803d">In <b>+' + ccMoney(cashIn) + '</b></span>'
-    +   '<span style="color:#dc2626">Out <b>−' + ccMoney(cashOut) + '</b></span>'
-    + '</div>'
-    + '<div style="font-size:10.5px;color:#9a8aaa;margin-top:6px">Updated ' + new Date().toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }) + ' · refreshes while open'
-    + ' · <span onclick="loadCashCounter()" style="color:#6e0977;font-weight:700;cursor:pointer">Refresh</span></div>'
-    + '</div>'
-    + (!hasAnyEntries
-        ? '<div style="background:#fff8e6;border:1.5px solid rgba(245,196,48,0.35);border-radius:14px;padding:14px;'
-          + 'margin-bottom:16px;font-size:12px;color:#8a6a1a">💡 No entries yet — this counter starts at ₹0. If you already '
-          + 'have cash in the drawer, log it below as your first adjustment (e.g. "Initial cash on hand").</div>'
+      (!hasAnyEntries
+        ? '<div class="ccx-note">No entries yet, so the counter starts at ₹0. If there is already cash in the drawer, add it below as your first entry (e.g. "Opening cash").</div>'
         : '')
-    + '<div style="display:flex;gap:8px;margin-bottom:10px">'
-    + '<button onclick="ccSetAdjustType(\'add\')" id="cc-type-add" class="cc-type-btn cc-type-on" '
-    + 'style="flex:1;padding:11px;border-radius:12px;border:1.5px solid rgba(34,197,94,0.35);'
-    + 'background:rgba(34,197,94,0.1);color:#15803d;font-size:13px;font-weight:700;cursor:pointer">➕ Add Cash</button>'
-    + '<button onclick="ccSetAdjustType(\'subtract\')" id="cc-type-subtract" class="cc-type-btn" '
-    + 'style="flex:1;padding:11px;border-radius:12px;border:1.5px solid rgba(18,10,30,0.1);'
-    + 'background:#fff;color:#9a8aaa;font-size:13px;font-weight:700;cursor:pointer">➖ Remove Cash</button>'
-    + '</div>'
-    + '<input id="cc-amount" type="number" step="any" placeholder="Amount (₹)" style="width:100%;padding:12px 14px;'
-    + 'border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);font-family:inherit;font-size:14px;'
-    + 'outline:none;box-sizing:border-box;margin-bottom:10px">'
-    + '<input id="cc-note" placeholder="Note (e.g. Change from bank, Milk purchase)" style="width:100%;padding:12px 14px;'
-    + 'border-radius:12px;border:1.5px solid rgba(18,10,30,0.12);font-family:inherit;font-size:14px;'
-    + 'outline:none;box-sizing:border-box;margin-bottom:14px">'
-    + '<button onclick="ccSubmitAdjustment()" style="width:100%;padding:13px;background:linear-gradient(135deg,#6e0977,#9c0ca1);'
-    + 'color:#fff;font-size:13px;font-weight:700;border:none;border-radius:12px;cursor:pointer;margin-bottom:18px">💾 Log Adjustment</button>'
-    + '<div style="font-size:11px;letter-spacing:2px;color:#c2607a;font-weight:700;margin-bottom:10px">TODAY\'S CASH IN &amp; OUT</div>'
-    + entriesHtml;
+    + '<div class="ccx-card"><div class="ccx-h">Adjust the drawer</div>'
+    + '<div class="ccx-seg"><button type="button" id="cc-type-add" class="add' + (_ccAdjustType === 'add' ? ' on' : '') + '" onclick="ccSetAdjustType(\'add\')">+ Add cash</button>'
+    + '<button type="button" id="cc-type-subtract" class="sub' + (_ccAdjustType !== 'add' ? ' on' : '') + '" onclick="ccSetAdjustType(\'subtract\')">− Remove cash</button></div>'
+    + '<input id="cc-amount" class="ccx-in ccx-amt" type="number" inputmode="decimal" step="any" placeholder="₹ Amount">'
+    + '<input id="cc-note" class="ccx-in" placeholder="Note (e.g. Change from bank, Milk purchase)">'
+    + '<button type="button" class="ccx-cta" onclick="ccSubmitAdjustment()">Save entry</button></div>'
+    + '<div class="ccx-card"><div class="ccx-h">Today\'s cash in &amp; out</div>' + entriesHtml + '</div>';
 }
 
 var _ccAdjustType = 'add';
 function ccSetAdjustType(type) {
   _ccAdjustType = type;
-  var addBtn = document.getElementById('cc-type-add');
-  var subBtn = document.getElementById('cc-type-subtract');
-  if (type === 'add') {
-    addBtn.style.background = 'rgba(34,197,94,0.1)'; addBtn.style.borderColor = 'rgba(34,197,94,0.35)'; addBtn.style.color = '#15803d';
-    subBtn.style.background = '#fff'; subBtn.style.borderColor = 'rgba(18,10,30,0.1)'; subBtn.style.color = '#9a8aaa';
-  } else {
-    subBtn.style.background = 'rgba(220,38,38,0.1)'; subBtn.style.borderColor = 'rgba(220,38,38,0.35)'; subBtn.style.color = '#dc2626';
-    addBtn.style.background = '#fff'; addBtn.style.borderColor = 'rgba(18,10,30,0.1)'; addBtn.style.color = '#9a8aaa';
-  }
+  var addBtn = document.getElementById('cc-type-add'), subBtn = document.getElementById('cc-type-subtract');
+  if (addBtn) addBtn.classList.toggle('on', type === 'add');
+  if (subBtn) subBtn.classList.toggle('on', type !== 'add');
 }
 
 async function ccSubmitAdjustment() {
