@@ -1954,11 +1954,47 @@ async function insertStoreOrder(token, paymentId, pmMethod, pmStatus) {
 
 
 // ── CASH: place directly ───────────────────────────────────────
+// ── One order per tap ─────────────────────────────────────────
+// The table / same-number checks wait on the network before payment starts.
+// The button used to stay tappable during that wait, so a second tap placed
+// the same order twice. Now the first tap locks it, and the same cart for
+// the same table within 3 minutes asks before placing it again.
+var _placing = false;
+var LAST_ORDER_KEY = 'cc_last_store_order';
+function cartSignature(){
+  try {
+    return cartEntries().map(function(i){ return i.name + '×' + i.qty; }).sort().join('|') + '@' + (custTable || '') + '#' + cartTotal();
+  } catch(e) { return ''; }
+}
+function rememberPlacedCart(token){
+  try { localStorage.setItem(LAST_ORDER_KEY, JSON.stringify({ sig: cartSignature(), token: token, at: Date.now() })); } catch(e) {}
+}
+function looksLikeRepeat(){
+  try {
+    var last = JSON.parse(localStorage.getItem(LAST_ORDER_KEY) || 'null');
+    var sig = cartSignature();
+    if (!last || !sig || last.sig !== sig || Date.now() - last.at > 180000) return null;
+    return last;
+  } catch(e) { return null; }
+}
+function unlockPlaceBtn(label){
+  _placing = false;
+  var btn = document.getElementById('place-btn');
+  if (!btn) return;
+  btn.disabled = false; btn.style.opacity = '1';
+  btn.textContent = label || (payMethod === 'upi' ? 'Pay ₹' + cartTotal() + ' via UPI' : 'Place Order · Cash ₹' + cartTotal());
+}
+
 async function placeOrder(){
   var btn = document.getElementById('place-btn');
   if (!db) { alert('Add your Supabase anon key to store.html first.'); return; }
+  if (_placing) return;
+  _placing = true;
+  btn.disabled = true; btn.style.opacity = '.6'; btn.textContent = 'Checking…';
+  var rep = looksLikeRepeat();
+  if (rep && !confirm('You just placed this same order (' + rep.token + ').\n\nPlace it again?')) { unlockPlaceBtn(); return; }
   await offerTableMerge();
-  if (!(await requireSeat())) return;
+  if (!(await requireSeat())) { unlockPlaceBtn(); return; }
   if (payMethod === 'upi') { openRazorpay(); return; }
 
   // Cash flow
@@ -1966,6 +2002,8 @@ async function placeOrder(){
   try {
     var token = await getToken();
     var data  = await insertStoreOrder(token, null, 'cash', 'pending');
+    rememberPlacedCart(token);
+    _placing = false;
     orderId = data.id; orderToken = token;
     var invoiceData = buildInvoiceData(data);
     closeSheet();
@@ -1975,7 +2013,7 @@ async function placeOrder(){
     }
   } catch(err) {
     console.error(err);
-    btn.textContent = 'Error — Try again'; btn.style.opacity = '1'; btn.disabled = false;
+    unlockPlaceBtn('Error — Try again');
   }
 }
 
@@ -2024,6 +2062,7 @@ async function openRazorpay() {
       theme: { color: '#6e0977' },
       modal: {
         ondismiss: function() {
+          _placing = false;
           btn.disabled = false;
           btn.textContent = 'Pay ₹' + total + ' via UPI';
           btn.className = 'place-btn place-upi';
@@ -2050,6 +2089,7 @@ async function openRazorpay() {
 
         try {
             var data = await insertStoreOrder(token, paymentId, 'upi', 'paid');
+            rememberPlacedCart(token);
             orderId = data.id; orderToken = token;
             var invoiceData = buildInvoiceData(data);
             if (invoiceData.customer_phone && invoiceData.customer_phone !== '—') {
@@ -2063,6 +2103,7 @@ async function openRazorpay() {
           overlay.style.transition = 'opacity .6s ease';
           overlay.style.opacity = '0';
           setTimeout(function() { overlay.remove(); }, 600);
+          _placing = false;
           closeSheet();
           showConfirm(token, entries, total);
         }, 3000);
@@ -2071,6 +2112,7 @@ async function openRazorpay() {
 
     var rzp = new Razorpay(options);
     rzp.on('payment.failed', function(resp) {
+      _placing = false;
       btn.disabled = false;
       btn.textContent = 'Pay ₹' + total + ' via UPI';
       btn.className = 'place-btn place-upi';
@@ -2080,6 +2122,7 @@ async function openRazorpay() {
 
   } catch(e) {
     console.error('Razorpay error:', e);
+    _placing = false;
     btn.disabled = false;
     btn.textContent = 'Pay via UPI';
     btn.style.opacity = '1';
