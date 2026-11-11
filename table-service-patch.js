@@ -65,8 +65,9 @@ function buildTablesBoardDOM() {
     +   '<button type="button" class="ts-x" aria-label="Close" onclick="closeTablesBoard()">✕</button></div>'
     + '<div class="ts-bar"><span id="ts-board-status" role="status" aria-live="polite"></span>'
     +   '<button type="button" class="ts-pill" onclick="loadTablesStatus()">↻ Refresh</button></div>'
-    + '<div class="ts-legend"><span class="free">Free</span><span class="busy">Occupied</span><span class="rank">1 = waiting longest</span></div>'
-    + '<div id="ts-grid" class="ts-grid"></div>';
+    + '<div id="ts-summary" class="ts-sum" aria-live="polite"></div>'
+    + '<div id="ts-grid" class="ts-board"></div>'
+    + '<div class="ts-legend"><span class="rank">1 = waiting longest</span><span class="free">Free</span><span class="busy">Occupied</span></div>';
   document.body.appendChild(sheet);
 
   var tOverlay = document.createElement('div');
@@ -170,30 +171,53 @@ async function loadTablesStatus() {
   }
 }
 
+function tsSince(iso) {
+  var m = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (!isFinite(m)) return '';
+  return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + (m % 60 ? (m % 60) + ' m' : '');
+}
 function renderTablesGrid(map, rankMap) {
   rankMap = rankMap || {};
   var grid = document.getElementById('ts-grid');
   if (!grid) return;
-  grid.innerHTML = TABLE_CODES.map(function (code) {
+  var busyN = 0, openAmt = 0;
+  function tile(code) {
     var o = map[code];
     if (!o) {
-      return '<button type="button" class="ts-tb free" onclick="openTableOrderSheet(\'' + code + '\')">'
-        + '<div class="ts-tb-code">' + code + '</div><div class="ts-tb-st">Free</div><div class="ts-tb-s">Tap to start an order</div></button>';
+      return '<button type="button" class="ts-tb free" aria-label="' + code + ', free. Start an order" onclick="openTableOrderSheet(\'' + code + '\')">'
+        + '<div class="ts-tb-code">' + code + '</div><div class="ts-tb-st">Free</div><span class="ts-plus" aria-hidden="true">+</span></button>';
     }
+    busyN++;
     var items = tsParseItems(o.items) || [];
     var count = items.reduce(function (n, i) { return n + (i.qty || 1); }, 0);
     var statusLbl = { pending: 'New', preparing: 'Preparing', ready: 'Ready', delivered: 'Waiting for bill' }[o.status] || o.status;
     var collected = tsCollectedAmount(items);
-    var amount = collected > 0 ? '₹' + Math.max(0, Math.round((o.total - collected) * 100) / 100) + ' left' : '₹' + o.total;
+    var due = Math.max(0, Math.round(((Number(o.total) || 0) - collected) * 100) / 100);
+    openAmt += due;
+    var amount = collected > 0 ? '₹' + due + ' <small>left</small>' : '₹' + (Number(o.total) || 0);
     var rank = rankMap[code];
+    var since = o.created_at ? tsSince(o.created_at) : '';
     return '<button type="button" class="ts-tb busy s-' + o.status + '" onclick="openTableOrderSheet(\'' + code + '\')">'
       + (rank ? '<span class="ts-rank r' + Math.min(rank, 4) + '" title="Order of arrival">' + rank + '</span>' : '')
       + '<div class="ts-tb-code">' + code + '</div><div class="ts-tb-st">' + statusLbl + '</div>'
       + '<div class="ts-tb-amt">' + amount + '</div>'
       + '<div class="ts-tb-s">' + count + (count === 1 ? ' item' : ' items') + (o.staff_name ? ' · ' + kEsc(o.staff_name) : '') + '</div>'
+      + (since ? '<div class="ts-tb-t">Open ' + since + '</div>' : '')
       + (o._tsOpenOrderCount > 1 ? '<div class="ts-tb-warn">' + o._tsOpenOrderCount + ' open bills · newest shown</div>' : '')
       + '</button>';
-  }).join('');
+  }
+  var dining = TABLE_CODES.filter(function (c) { return /^T\d/.test(c); });
+  var other = TABLE_CODES.filter(function (c) { return !/^T\d/.test(c); });
+  var html = '<div class="ts-area"><div class="ts-h">Dining tables</div><div class="ts-grid">' + dining.map(tile).join('') + '</div></div>';
+  if (other.length) html += '<div class="ts-area"><div class="ts-h">Counter &amp; outside</div><div class="ts-grid">' + other.map(tile).join('') + '</div></div>';
+  grid.innerHTML = html;
+  var sum = document.getElementById('ts-summary');
+  if (sum) {
+    var freeN = TABLE_CODES.length - busyN;
+    sum.innerHTML = '<div><b>' + busyN + '</b><span>Occupied</span></div>'
+      + '<div><b>' + freeN + '</b><span>Free</span></div>'
+      + '<div><b>₹' + Math.round(openAmt).toLocaleString('en-IN') + '</b><span>Open bills</span></div>';
+  }
 }
 
 function subscribeTablesBoard() {
