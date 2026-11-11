@@ -446,9 +446,10 @@ body{
               </div>
             </div>
             <div style="display:flex;justify-content:flex-end;margin-bottom:20px">
-              <span style="font-size:12px;color:var(--caramel);cursor:pointer;font-weight:600" onclick="showPage('pg-forgot')">Forgot Password?</span>
+              <span style="font-size:12px;color:var(--caramel);cursor:pointer;font-weight:600" onclick="openOtp('reset')">Forgot Password?</span>
             </div>
-            <button class="btn-primary" style="width:100%;margin-bottom:16px" onclick="doLogin()">Sign In →</button>
+            <button class="btn-primary" style="width:100%;margin-bottom:12px" onclick="doLogin()">Sign In →</button>
+            <button type="button" onclick="openOtp('login')" style="width:100%;margin-bottom:16px;background:transparent;border:1.5px solid var(--caramel);color:var(--caramel);font-family:'Sora',sans-serif;font-size:13px;font-weight:700;padding:13px;border-radius:14px;cursor:pointer">🔢 Sign in with a code instead</button>
            <!--
             <div class="auth-divider"><div class="ad-line"></div><span class="ad-text">or continue with</span><div class="ad-line"></div></div>
             <div class="social-row">
@@ -709,6 +710,9 @@ body{
               </div>
             </div>
             <button class="btn-primary" style="width:100%;margin-bottom:16px" onclick="doResetPassword()">🔐 Update Password</button>
+            <div id="reset-skip" style="display:none;text-align:center;font-size:13px;color:var(--muted);margin-bottom:30px">
+              Not now? <span style="color:var(--caramel);font-weight:700;cursor:pointer" onclick="finishOtpSignIn()">Skip, just sign me in →</span>
+            </div>
           </div>
         </div>
       </div>
@@ -726,60 +730,46 @@ body{
           </div>
           <div class="auth-header">
             <div class="auth-icon">🔑</div>
-            <div class="auth-title">Reset <span>Password</span></div>
-            <div class="auth-sub">Enter your email and we'll send a reset link</div>
+            <div class="auth-title" id="otp-title">Reset <span>Password</span></div>
+            <div class="auth-sub" id="otp-sub">We'll email you a 6-digit code</div>
           </div>
           <div class="auth-form">
 
-            <!-- EMAIL FIELD — hidden after send -->
+            <!-- STEP 1: mobile number or email -->
             <div id="forgot-email-wrap">
               <div class="field-group">
-                <label class="field-label">Email Address</label>
+                <label class="field-label">Mobile number or email</label>
                 <div class="field-wrap">
                   <span class="field-icon">✉️</span>
-                  <input class="field-input" id="forgot-email" type="email" placeholder="yourname@gmail.com">
+                  <input class="field-input" id="forgot-email" type="text" inputmode="email" autocomplete="username" placeholder="98765 43210 or you@gmail.com">
                 </div>
               </div>
-              <button class="btn-primary" style="width:100%;margin-bottom:16px" id="forgot-send-btn" onclick="doForgotPassword()">📧 Send Reset Link</button>
+              <button class="btn-primary" style="width:100%;margin-bottom:16px" id="forgot-send-btn" onclick="doForgotPassword()">Send 6-digit code</button>
             </div>
 
-            <!-- SUCCESS STATE — shown after send -->
-            <div id="forgot-sent-state" style="display:none">
-
-              <!-- Success card -->
-              <div style="background:rgba(76,175,125,.1);border:1px solid rgba(76,175,125,.3);border-radius:16px;padding:20px;margin-bottom:20px;text-align:center">
-                <div style="font-size:36px;margin-bottom:10px">📬</div>
-                <div style="font-size:14px;font-weight:700;color:#4caf7d;margin-bottom:6px">Email Sent!</div>
-                <div style="font-size:12px;color:var(--muted);line-height:1.6">Reset link sent to<br><strong id="forgot-email-display" style="color:var(--cream)"></strong></div>
+            <!-- STEP 2: enter the code -->
+            <div id="otp-code-state" style="display:none">
+              <div style="background:rgba(76,175,125,.1);border:1px solid rgba(76,175,125,.3);border-radius:16px;padding:16px;margin-bottom:16px;text-align:center">
+                <div style="font-size:13px;font-weight:700;color:#4caf7d;margin-bottom:4px">Code sent</div>
+                <div style="font-size:12px;color:var(--muted);line-height:1.6">Check the email for<br><strong id="otp-email-display" style="color:var(--cream)"></strong></div>
               </div>
-
-              <!-- Spam tip -->
-              <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:20px">
-                <div style="font-size:12px;color:var(--muted);line-height:1.7">
-                  📂 <strong style="color:var(--cream)">Can't find it?</strong> Check your <strong style="color:var(--cream)">Spam / Junk</strong> folder.<br>
-                  ✉️ Look for an email from <strong style="color:var(--caramel)">noreply@supabase.io</strong>
+              <div class="field-group">
+                <label class="field-label">6-digit code</label>
+                <div class="field-wrap">
+                  <span class="field-icon">🔢</span>
+                  <input class="field-input" id="otp-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="• • • • • •"
+                    style="letter-spacing:.5em;font-size:20px;font-weight:700;text-align:center" oninput="this.value=this.value.replace(/\D/g,'');if(this.value.length>=otpLength)doVerifyOtp()">
                 </div>
               </div>
-
-              <!-- Resend section -->
-              <div style="text-align:center;margin-bottom:20px">
-                <!-- Countdown (shown during cooldown) -->
-                <div id="resend-countdown" style="font-size:13px;color:var(--muted)">
-                  Resend available in <span id="countdown-secs" style="color:var(--caramel);font-weight:700">45</span>s
-                </div>
-                <!-- Resend button (shown after countdown) -->
-                <div id="resend-btn-wrap" style="display:none">
-                  <button onclick="doResendReset()" style="background:rgba(139,47,201,.15);border:1.5px solid var(--caramel);color:var(--caramel);font-family:'Sora',sans-serif;font-size:13px;font-weight:700;padding:12px 28px;border-radius:14px;cursor:pointer;width:100%;transition:all .2s" id="resend-btn">
-                    🔄 Resend Reset Link
-                  </button>
-                  <div style="font-size:11px;color:var(--dim);margin-top:8px">Didn't receive it? Try resending</div>
-                </div>
+              <button class="btn-primary" style="width:100%;margin-bottom:14px" id="otp-verify-btn" onclick="doVerifyOtp()">Verify &amp; continue →</button>
+              <div style="text-align:center;margin-bottom:14px">
+                <div id="otp-countdown" style="font-size:13px;color:var(--muted)">Send a new code in <span id="otp-secs" style="color:var(--caramel);font-weight:700">45</span>s</div>
+                <button id="otp-resend-btn" onclick="doResendReset()" style="display:none;background:rgba(139,47,201,.15);border:1.5px solid var(--caramel);color:var(--caramel);font-family:'Sora',sans-serif;font-size:13px;font-weight:700;padding:12px 28px;border-radius:14px;cursor:pointer;width:100%">Send a new code</button>
               </div>
-
-              <!-- Back to login -->
-              <button onclick="resetForgotState();showPage('pg-login')" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--cream);font-family:'Sora',sans-serif;font-size:13px;font-weight:600;padding:14px;border-radius:14px;cursor:pointer">
-                ← Back to Sign In
-              </button>
+              <div style="background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:14px">
+                <div style="font-size:12px;color:var(--muted);line-height:1.7">📂 <strong style="color:var(--cream)">Can't find it?</strong> Check <strong style="color:var(--cream)">Spam / Promotions</strong>. The code works for a few minutes.</div>
+              </div>
+              <button onclick="resetForgotState()" style="width:100%;background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--cream);font-family:'Sora',sans-serif;font-size:13px;font-weight:600;padding:14px;border-radius:14px;cursor:pointer;margin-bottom:10px">Use a different number or email</button>
             </div>
 
             <div style="text-align:center;font-size:13px;color:var(--muted);margin-top:16px;margin-bottom:30px">
@@ -1123,6 +1113,12 @@ async function doResetPassword() {
       return;
     }
 
+    // Signed in with an emailed code: keep them signed in and go to the app.
+    if (otpSignedIn) {
+      toast('✅ Password updated');
+      return finishOtpSignIn();
+    }
+
     // ── Sign out recovery session, force fresh login ──
     await db.auth.signOut();
     localStorage.removeItem('cc_user');
@@ -1145,95 +1141,169 @@ async function doResetPassword() {
   }
 }
 
-// ── FORGOT PASSWORD ──
-var forgotCountdownTimer = null;
+// ── SIGN IN WITH A CODE / FORGOT PASSWORD ──
+// A 6-digit code is emailed (Supabase email OTP). The customer types their
+// mobile number or email; a number is turned into the account's email with
+// get_email_by_phone, the same lookup as the normal sign-in. After the code:
+//   'reset' mode → set a new password (or skip) → into the app
+//   'login' mode → straight into the app
+// Needs {{ .Token }} in Supabase → Authentication → Emails → Magic Link template.
+var otpMode = 'reset', otpEmail = '', otpLength = 6, otpTimer = null, otpVerifying = false, otpSignedIn = false;
+
+function openOtp(mode) {
+  otpMode = mode === 'login' ? 'login' : 'reset';
+  resetForgotState();
+  document.getElementById('otp-title').innerHTML = otpMode === 'login' ? 'Sign in with a <span>code</span>' : 'Reset <span>Password</span>';
+  document.getElementById('otp-sub').textContent = otpMode === 'login'
+    ? 'No password needed. We\'ll email you a 6-digit code.'
+    : 'We\'ll email you a 6-digit code, then you can set a new password.';
+  var typed = (document.getElementById('login-id') || {}).value || '';
+  if (typed) document.getElementById('forgot-email').value = typed.trim();
+  showPage('pg-forgot');
+}
+
+function maskEmail(e) {
+  var p = String(e).split('@');
+  if (p.length !== 2) return e;
+  var n = p[0];
+  return (n.length <= 2 ? n[0] + '•' : n.slice(0, 2) + '•••' + n.slice(-1)) + '@' + p[1];
+}
+
+async function otpResolveEmail(id) {
+  id = String(id || '').trim();
+  if (id.includes('@')) return id.toLowerCase();
+  var digits = id.replace(/\D/g, '');
+  if (digits.length < 10) throw new Error('Enter your 10-digit mobile number or your email');
+  var { data, error } = await db.rpc('get_email_by_phone', { p_phone: digits.slice(-10) });
+  if (error || !data) throw new Error('No account found for this number. Please sign up.');
+  return data;
+}
 
 async function sendResetEmail(email) {
-  return await db.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin + '/auth.html'
-  });
+  return await db.auth.signInWithOtp({ email: email, options: { shouldCreateUser: false } });
+}
+
+function otpSendError(error) {
+  var m = (error && error.message) || 'Could not send the code';
+  if (/signups not allowed|user not found/i.test(m)) return 'No account found with these details. Please sign up.';
+  if (/rate limit|too many|security purposes/i.test(m)) return 'Please wait a minute before asking for another code.';
+  return m;
 }
 
 function startResendCountdown() {
   var secs = 45;
-  var countEl  = document.getElementById('countdown-secs');
-  var countDiv = document.getElementById('resend-countdown');
-  var btnWrap  = document.getElementById('resend-btn-wrap');
-
-  countDiv.style.display = 'block';
-  btnWrap.style.display  = 'none';
-  countEl.textContent = secs;
-
-  clearInterval(forgotCountdownTimer);
-  forgotCountdownTimer = setInterval(function() {
-    secs--;
-    countEl.textContent = secs;
-    if (secs <= 0) {
-      clearInterval(forgotCountdownTimer);
-      countDiv.style.display = 'none';
-      btnWrap.style.display  = 'block';
-    }
+  var countDiv = document.getElementById('otp-countdown'), countEl = document.getElementById('otp-secs'), btn = document.getElementById('otp-resend-btn');
+  countDiv.style.display = 'block'; btn.style.display = 'none'; countEl.textContent = secs;
+  clearInterval(otpTimer);
+  otpTimer = setInterval(function() {
+    secs--; countEl.textContent = secs;
+    if (secs <= 0) { clearInterval(otpTimer); countDiv.style.display = 'none'; btn.style.display = 'block'; }
   }, 1000);
 }
 
 function resetForgotState() {
-  clearInterval(forgotCountdownTimer);
-  document.getElementById('forgot-email-wrap').style.display  = 'block';
-  document.getElementById('forgot-sent-state').style.display  = 'none';
-  document.getElementById('forgot-email').value = '';
+  clearInterval(otpTimer);
+  otpEmail = ''; otpVerifying = false;
+  document.getElementById('forgot-email-wrap').style.display = 'block';
+  document.getElementById('otp-code-state').style.display = 'none';
+  document.getElementById('otp-code').value = '';
   var btn = document.getElementById('forgot-send-btn');
-  if (btn) { btn.disabled = false; btn.textContent = '📧 Send Reset Link'; }
+  if (btn) { btn.disabled = false; btn.textContent = 'Send 6-digit code'; }
 }
 
 async function doForgotPassword() {
-  const email = document.getElementById('forgot-email').value.trim();
-  if (!email || !email.includes('@')) { toast('Enter a valid email address', true); return; }
-
-  const btn = document.getElementById('forgot-send-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
-
+  var btn = document.getElementById('forgot-send-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
   try {
-    const { error } = await sendResetEmail(email);
-    if (error) {
-      toast(error.message, true);
-      if (btn) { btn.disabled = false; btn.textContent = '📧 Send Reset Link'; }
-      return;
-    }
-
-    // Show sent state
-    document.getElementById('forgot-email-wrap').style.display  = 'none';
-    document.getElementById('forgot-sent-state').style.display  = 'block';
-    document.getElementById('forgot-email-display').textContent = email;
-    toast('✅ Reset link sent to ' + email);
+    var email = await otpResolveEmail(document.getElementById('forgot-email').value);
+    var { error } = await sendResetEmail(email);
+    if (error) throw new Error(otpSendError(error));
+    otpEmail = email;
+    document.getElementById('forgot-email-wrap').style.display = 'none';
+    document.getElementById('otp-code-state').style.display = 'block';
+    document.getElementById('otp-email-display').textContent = maskEmail(email);
+    var code = document.getElementById('otp-code'); code.value = ''; setTimeout(function(){ code.focus(); }, 50);
+    toast('✅ Code sent to ' + maskEmail(email));
     startResendCountdown();
-
   } catch(err) {
-    toast(err.message || 'Failed to send reset link', true);
-    if (btn) { btn.disabled = false; btn.textContent = '📧 Send Reset Link'; }
+    toast(err.message || 'Could not send the code', true);
+    if (btn) { btn.disabled = false; btn.textContent = 'Send 6-digit code'; }
   }
 }
 
 async function doResendReset() {
-  const email = document.getElementById('forgot-email-display').textContent;
-  if (!email) return;
-
-  const btn = document.getElementById('resend-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Resending...'; }
-
+  if (!otpEmail) return;
+  var btn = document.getElementById('otp-resend-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
   try {
-    const { error } = await sendResetEmail(email);
-    if (error) {
-      toast(error.message, true);
-      if (btn) { btn.disabled = false; btn.textContent = '🔄 Resend Reset Link'; }
-      return;
-    }
-    toast('✅ Reset link resent! Check your inbox.');
-    if (btn) { btn.disabled = false; btn.textContent = '🔄 Resend Reset Link'; }
-    startResendCountdown(); // restart 45s countdown
+    var { error } = await sendResetEmail(otpEmail);
+    if (error) throw new Error(otpSendError(error));
+    toast('✅ New code sent');
+    startResendCountdown();
   } catch(err) {
-    toast(err.message || 'Failed to resend', true);
-    if (btn) { btn.disabled = false; btn.textContent = '🔄 Resend Reset Link'; }
+    toast(err.message || 'Could not send the code', true);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Send a new code'; }
   }
+}
+
+async function doVerifyOtp() {
+  var token = document.getElementById('otp-code').value.replace(/\D/g, '');
+  if (otpVerifying) return;
+  if (token.length < 6) { toast('Enter the code from the email', true); return; }
+  if (!otpEmail) { resetForgotState(); return; }
+  otpVerifying = true;
+  var btn = document.getElementById('otp-verify-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
+  try {
+    var { data, error } = await db.auth.verifyOtp({ email: otpEmail, token: token, type: 'email' });
+    if (error || !data || !data.session) throw new Error(/expired|invalid/i.test((error && error.message) || '') ? 'That code is wrong or has expired. Send a new code.' : ((error && error.message) || 'Could not verify the code'));
+    otpSignedIn = true;
+    if (otpMode === 'reset') {
+      document.getElementById('reset-skip').style.display = 'block';
+      showPage('pg-reset');
+    } else {
+      await finishOtpSignIn();
+    }
+  } catch(err) {
+    // Some projects send 8-digit codes: after a 6-digit miss, wait for 8 before auto-checking.
+    if (token.length === 6) otpLength = 8;
+    toast(err.message, true);
+  } finally {
+    otpVerifying = false;
+    if (btn) { btn.disabled = false; btn.textContent = 'Verify & continue →'; }
+  }
+}
+
+// Same profile save as doLogin(), for a session made with a code.
+async function finishOtpSignIn() {
+  var s = await db.auth.getSession();
+  var session = s && s.data && s.data.session;
+  if (!session) { toast('Please sign in again', true); showPage('pg-login'); return; }
+  var email = session.user.email;
+  var { data: cust } = await db.from('customers')
+    .select('id, name, phone, email, city, customer_code, is_admin,egg_preference')
+    .eq('email', email).single();
+  var sessionUser = {
+    name:    (cust && cust.name) || (session.user.user_metadata && session.user.user_metadata.name) || 'Customer',
+    phone:   (cust && cust.phone) || '',
+    email:   email,
+    city:    (cust && cust.city) || '',
+    db_id:   (cust && cust.id) || null,
+    id:      (cust && cust.customer_code) || null,
+    auth_id: session.user.id,
+    is_admin: (cust && cust.is_admin) || false,
+    egg_preference: (cust && cust.egg_preference) || 'egg'
+  };
+  localStorage.setItem('cc_user', JSON.stringify(sessionUser));
+  try {
+    localStorage.setItem('cc_sb_session', JSON.stringify({
+      access_token: session.access_token, refresh_token: session.refresh_token,
+      expires_at: session.expires_at, user_email: email
+    }));
+  } catch(e) {}
+  toast('✓ Welcome back, ' + sessionUser.name + '! 🍫');
+  setTimeout(function() { window.location.href = 'index.html'; }, 800);
 }
 
 // ── HANDLE PASSWORD RECOVERY ──

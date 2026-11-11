@@ -374,6 +374,37 @@ const { PGlite } = require('../.production-test-runtime/node_modules/@electric-s
   await rpc('grocery_place_order', [items(rice.id, 1), 'cash', 'Chitra', '9000000006', key(), null]);
   assert.equal((await sent()).length, 0);
 
+  // ── NSDI Store cash pickups reach the Cash Counter (20261118) ──
+  await raw(`create table if not exists public.cash_counter_entries(id bigserial primary key, entry_type text, amount numeric, note text,
+    staff_name text, created_at timestamptz default now())`);
+  const cashSql = fs.readFileSync(path.join(__dirname, '../migrations/20261118_grocery_cash_to_counter.sql'), 'utf8');
+  await db.exec('reset role'); await db.exec(cashSql); await db.exec(cashSql);
+  await raw('delete from cash_counter_entries');
+  await raw('update grocery_stock set on_hand=on_hand+5 where product_id=$1', [rice.id]);
+  await raw("update grocery_orders set status='cancelled' where user_id=$1 and status in ('placed','awaiting_payment','ready')", [ids.a]);
+  await as('a');
+  const cashPick = await rpc('grocery_place_order', [items(rice.id, 2), 'cash', 'Asha', '9000000004', key(), null]);
+  assert.equal((await raw('select count(*) n from cash_counter_entries'))[0].n, 0, 'nothing until the cash is taken');
+  await as('staff'); await rpc('grocery_admin_set_status', [cashPick.id, 'picked_up']);
+  let cc = await raw('select entry_type, amount, note, staff_name from cash_counter_entries');
+  assert.equal(cc.length, 1);
+  assert.equal(Number(cc[0].amount), Number(cashPick.total));
+  assert.equal(cc[0].note, 'NSDI Store cash — ' + cashPick.order_no);
+  assert.equal(cc[0].entry_type, 'order_payment'); assert.equal(cc[0].staff_name, 'Staff');
+  // Online payments are not cash.
+  await raw("update grocery_orders set status='cancelled' where user_id=$1 and status in ('placed','awaiting_payment','ready')", [ids.b]);
+  await as('b');
+  const onl = await rpc('grocery_place_order', [items(rice.id, 1), 'online', 'Bala', '9000000005', key(), null]);
+  await pay('b', onl, 'pay_cash_check_1');
+  assert.equal((await raw('select count(*) n from cash_counter_entries'))[0].n, 1, 'online payment not added');
+  // No Cash Counter table: pickups still work.
+  await raw('drop table cash_counter_entries');
+  await raw("update grocery_orders set status='cancelled' where user_id=$1 and status in ('placed','awaiting_payment','ready')", [ids.c]);
+  await as('c');
+  const noTable = await rpc('grocery_place_order', [items(rice.id, 1), 'cash', 'Chitra', '9000000006', key(), null]);
+  await as('staff');
+  assert.equal((await rpc('grocery_admin_set_status', [noTable.id, 'picked_up'])).status, 'picked_up');
+
   // ── Launch check script runs and changes nothing ──
   const checkSql = fs.readFileSync(path.join(__dirname, '../scripts/grocery-launch-check.sql'), 'utf8');
   const before = JSON.stringify(await raw('select * from grocery_settings'));
