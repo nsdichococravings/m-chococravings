@@ -587,6 +587,12 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 .mc-rate em{font-style:normal;color:#e0a526}.mc-rate small{color:#8a7a92;font-weight:500}
 .mc-badge{position:absolute;top:9px;left:9px;z-index:1;font-size:9.5px;font-weight:800;letter-spacing:.6px;padding:4px 9px;border-radius:20px}
 .mc-best{background:#1d0f24;color:#ffd98a}.mc-new{background:#fff;color:#6e0977}
+.mc-cam{display:none;position:absolute;right:9px;bottom:9px;z-index:2;width:34px;height:34px;border-radius:50%;border:1px solid rgba(232,201,143,.75);background:rgba(27,10,34,.78);color:#e8c98f;align-items:center;justify-content:center;cursor:pointer;padding:0;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 6px 14px rgba(27,10,34,.28)}
+body.cc-admin .mc-cam{display:flex}
+.mc-cam svg{width:17px!important;height:17px!important}
+.mc-cam:active{transform:scale(.92)}
+.mc-cam.busy{opacity:.6;pointer-events:none;animation:mcPulse 1s ease-in-out infinite}
+@keyframes mcPulse{50%{opacity:.35}}
 .mc-egg{position:absolute;top:9px;right:9px;z-index:1;width:18px;height:18px;border:2px solid;border-radius:4px;background:#fff;display:flex;align-items:center;justify-content:center}
 .mc-egg::before{content:'';width:8px;height:8px;border-radius:50%;background:currentColor}
 .mc-egg.eggless{color:#16a34a;border-color:#16a34a}.mc-egg.egg{color:#b91c1c;border-color:#b91c1c}
@@ -1563,7 +1569,10 @@ function menuCardHtml(item, i){
   var anim = i >= 0 ? ' fade-up-item' : ''; // i < 0: single-card refresh, no animation
   return '<div class="mcard'+anim+(q>0?' in-cart':'')+'" id="row-'+item.id+'" style="--mc-accent:'+c.accent+';animation-delay:'+((i>0?i:0)*0.05).toFixed(2)+'s">'
     + '<div class="mc-ph" onclick="add(\''+item.id+'\')" style="background:radial-gradient(circle at 30% 25%,'+c.dot+'55,'+c.accent+')">'
-    +   (photo ? '' : (MENU_ICONS[catName]||'🍽️')) + photo + badge + egg + rate + '</div>'
+    +   (photo ? '' : (MENU_ICONS[catName]||'🍽️')) + photo + badge + egg + rate
+    +   '<button type="button" class="mc-cam" aria-label="Change photo of '+escHtml(item.name)+'" onclick="event.stopPropagation();mcPickPhoto(\''+item.id+'\')">'
+    +   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>'
+    + '</div>'
     + '<div class="mc-body"><div class="mc-name">'+escHtml(item.name)+'</div><div class="mc-tag">'+escHtml(item.tag||'')+'</div>'
     + '<div class="mc-row"><div class="mc-price" id="ip-'+item.id+'">₹'+item.price+'</div>'+ctrl+'</div></div></div>';
 }
@@ -1588,6 +1597,45 @@ function refreshCard(id){
   updateBar();
 }
 function add(id){ cart[id]=(cart[id]||0)+1; refreshCard(id); }
+
+// Admins: change a menu item's photo right from the menu (camera or gallery).
+var _mcPhotoId = null;
+function mcPickPhoto(id){
+  if (!isAdmin) return;
+  _mcPhotoId = id;
+  var inp = document.getElementById('mc-photo-file');
+  if (!inp) {
+    inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/*'; inp.id = 'mc-photo-file'; inp.style.display = 'none';
+    inp.onchange = function(){ var f = inp.files && inp.files[0]; inp.value = ''; if (f && _mcPhotoId) mcUploadPhoto(_mcPhotoId, f); };
+    document.body.appendChild(inp);
+  }
+  inp.click();
+}
+async function mcUploadPhoto(id, file){
+  var card = document.getElementById('row-'+id);
+  var btn = card && card.querySelector('.mc-cam');
+  if (btn) btn.classList.add('busy');
+  try {
+    var blob = await mgResizePhoto(file);
+    var path = id + '-' + Date.now() + '.jpg';
+    var up = await db.storage.from('menu-photos').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+    if (up.error) throw new Error(up.error.message);
+    var url = db.storage.from('menu-photos').getPublicUrl(path).data.publicUrl;
+    var r = await db.from('store_menu').update({ image_url: url }).eq('id', id).select('id');
+    if (r.error) throw new Error(r.error.message);
+    if (!r.data || !r.data.length) throw new Error('Not saved. Check you are signed in as an admin.');
+    var item = findItem(id); if (item) item.image_url = url;
+    if (typeof mgAllItems !== 'undefined' && mgAllItems) mgAllItems.forEach(function(i){ if (String(i.id) === String(id)) i.image_url = url; });
+    refreshCard(id);
+    if (typeof showStoreToast === 'function') showStoreToast('Photo updated for everyone');
+  } catch(e) {
+    var msg = String(e && e.message || e);
+    if (/image_url|schema cache|column/i.test(msg)) msg = 'Photo not saved: run migration 20260954 (menu photos) in Supabase first.';
+    alert('Photo not saved: ' + msg);
+    if (btn) btn.classList.remove('busy');
+  }
+}
 function rem(id){ if(!cart[id])return; cart[id]=Math.max(cart[id]-1,0); refreshCard(id); }
 
 function updateBar(){
@@ -2944,6 +2992,7 @@ async function checkAdminBadge(){
     var chk = await db.from('customers').select('is_admin').eq('email', user.email).single();
     if(chk.data && chk.data.is_admin){
       isAdmin = true;
+      document.body.classList.add('cc-admin');
 
       // Show admin-only UI elements
       var adminActions = document.getElementById('admin-quick-actions');
@@ -3820,7 +3869,7 @@ async function toggleStoreOpenStatus() {
 <script src="menu-art.js?v=20260956"></script>
 <script src="menu-search-patch.js?v=20261106-boutique"></script>
 <script src="remember-phone-patch.js?v=20260952-table"></script>
-<script src="checkadminbadge-override.js?v=20261121-cash"></script>
+<script src="checkadminbadge-override.js?v=20261122-photo"></script>
 <script src="production-purchases-patch.js?v=20261018"></script>
 <link rel="stylesheet" href="production-dashboard.css?v=20260970-count">
 <script src="production-dashboard.js?v=20261113-collections"></script>
