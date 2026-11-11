@@ -1619,7 +1619,7 @@ async function mcUploadPhoto(id, file){
   try {
     var blob = await mgResizePhoto(file);
     var path = id + '-' + Date.now() + '.jpg';
-    var up = await db.storage.from('menu-photos').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+    var up = await db.storage.from('menu-photos').upload(path, blob, { contentType: 'image/jpeg', upsert: false });
     if (up.error) throw new Error(up.error.message);
     var url = db.storage.from('menu-photos').getPublicUrl(path).data.publicUrl;
     var r = await db.from('store_menu').update({ image_url: url }).eq('id', id).select('id');
@@ -1631,7 +1631,8 @@ async function mcUploadPhoto(id, file){
     if (typeof showStoreToast === 'function') showStoreToast('Photo updated for everyone');
   } catch(e) {
     var msg = String(e && e.message || e);
-    if (/image_url|schema cache|column/i.test(msg)) msg = 'Photo not saved: run migration 20260954 (menu photos) in Supabase first.';
+    if (/row-level security|policy/i.test(msg)) msg = 'run migration 20261121_photo_upload_fix in Supabase, then try again.';
+    else if (/image_url|schema cache|column/i.test(msg)) msg = 'run migration 20260954 (menu photos) in Supabase first.';
     alert('Photo not saved: ' + msg);
     if (btn) btn.classList.remove('busy');
   }
@@ -2688,7 +2689,7 @@ function mgResizePhoto(file){
 async function mgUploadPhoto(itemId){
   var blob = await mgResizePhoto(mgPhotoFile);
   var path = itemId + '-' + Date.now() + '.jpg';
-  var up = await db.storage.from('menu-photos').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+  var up = await db.storage.from('menu-photos').upload(path, blob, { contentType: 'image/jpeg', upsert: false });
   if (up.error) throw new Error('Photo upload failed: ' + up.error.message);
   return db.storage.from('menu-photos').getPublicUrl(path).data.publicUrl;
 }
