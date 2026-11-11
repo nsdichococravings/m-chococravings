@@ -7270,7 +7270,7 @@ async function uploadProductPhoto(file) {
     var blob = await resizeProductPhoto(file);
     var safe = String(t.sku || t.id).replace(/[^A-Za-z0-9_-]/g, '');
     var path = 'uploads/' + safe + '-' + Date.now() + '.jpg';
-    var up = await db.storage.from('product-images').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+    var up = await db.storage.from('product-images').upload(path, blob, { contentType: 'image/jpeg', upsert: false });
     if (up.error) throw new Error(up.error.message);
     var url = db.storage.from('product-images').getPublicUrl(path).data.publicUrl;
     var r = await db.rpc('cc_admin_set_product_image', { p_product_id: String(t.id), p_url: url });
@@ -7291,7 +7291,7 @@ async function uploadProductPhoto(file) {
     if (typeof showToast === 'function') showToast('Photo updated for everyone');
   } catch (e) {
     var msg = String(e && e.message || e);
-    if (/row-level|policy|Only an admin|permission|42501|function .* does not exist|schema cache/i.test(msg)) msg = 'Photo not saved: run the latest database update (product photos) in Supabase, then try again.';
+    if (/row-level|policy|Only an admin|permission|42501|function .* does not exist|schema cache/i.test(msg)) msg = 'Photo not saved: run migrations 20261120_product_photos and 20261121_photo_upload_fix in Supabase, then try again.';
     alert(msg);
   } finally {
     if (t.btn) t.btn.classList.remove('busy');
