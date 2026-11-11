@@ -47,7 +47,7 @@ function ccxCss() { return ''
   + '#cc-sheet{position:fixed;bottom:0;left:0;right:0;z-index:4001;max-height:92vh;overflow-y:auto;background:#faf6f0;color:#24112b;'
   +   'border-radius:28px 28px 0 0;font-family:"DM Sans",sans-serif;box-shadow:0 -20px 50px -20px rgba(26,8,32,.45);-webkit-font-smoothing:antialiased}'
   + '@media(min-width:700px){#cc-sheet{left:50%;right:auto;width:560px;transform:translateX(-50%)}}'
-  + '.ccx-hd{position:sticky;top:0;z-index:2;color:#fff;padding:12px 20px 20px;border-radius:28px 28px 22px 22px;'
+  + '.ccx-hd{position:relative;color:#fff;padding:12px 20px 20px;border-radius:28px 28px 22px 22px;'
   +   'background:radial-gradient(120% 90% at 100% 0%,rgba(255,233,194,.18),transparent 60%),linear-gradient(160deg,#2b0a35 0%,#5a0b63 55%,#1a0820 100%)}'
   + '.ccx-grab{width:42px;height:4px;border-radius:2px;background:rgba(255,255,255,.3);margin:0 auto 12px}'
   + '.ccx-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}'
@@ -57,7 +57,7 @@ function ccxCss() { return ''
   + '.ccx-x{flex:none;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:14px;cursor:pointer}'
   + '.ccx-bal{margin-top:18px;text-align:center}'
   + '.ccx-bal small{display:block;font-size:10px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,233,194,.75)}'
-  + '.ccx-bal b{display:block;font-family:"Cormorant Garamond",Georgia,serif;font-size:52px;font-weight:700;line-height:1.05;color:#ffe9c2;margin-top:4px}'
+  + '.ccx-bal b{display:block;font-family:"Cormorant Garamond",Georgia,serif;font-size:clamp(40px,12vw,52px);font-weight:700;line-height:1.05;color:#ffe9c2;margin-top:4px}'
   + '.ccx-row{display:grid;grid-template-columns:repeat(3,1fr);margin-top:16px;border-radius:18px;background:rgba(255,255,255,.07);border:1px solid rgba(255,233,194,.18);overflow:hidden}'
   + '.ccx-row>div{padding:10px 6px;text-align:center}.ccx-row>div+div{border-left:1px solid rgba(255,233,194,.18)}'
   + '.ccx-row span{display:block;font-size:9px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.6)}'
@@ -87,7 +87,26 @@ function ccxCss() { return ''
   + '.ccx-e-m small{display:block;font-size:11px;color:#8d7f90;margin-top:2px}'
   + '.ccx-e-v{flex:none;font-family:"Cormorant Garamond",Georgia,serif;font-size:20px;font-weight:700}'
   + '.ccx-e-v.in{color:#2f7a4b}.ccx-e-v.out{color:#a33a52}'
-  + '.ccx-empty{text-align:center;padding:14px;color:#8d7f90;font-size:12.5px}';
+  + '.ccx-empty{text-align:center;padding:14px;color:#8d7f90;font-size:12.5px}'
+  + '.ccx-ic svg{width:17px!important;height:17px!important}'
+  + '.ccx-chips{display:flex;gap:8px;flex-wrap:wrap;margin:-2px 0 12px}'
+  + '.ccx-chip{min-height:34px;padding:0 14px;border-radius:999px;border:1px solid #ece2d8;background:#fff;color:#4a3a50;font:600 12px "DM Sans",sans-serif;cursor:pointer;transition:background .15s,border-color .15s}'
+  + '.ccx-chip:active{transform:scale(.96)}'
+  + '.ccx-chip.amt{font-family:"Cormorant Garamond",Georgia,serif;font-size:15px;font-weight:700;color:#3a0a46}'
+  + '.ccx-chip.on{background:#f7eef6;border-color:#e3c9e1;color:#6e0977}'
+  + '.ccx-cta.sub{background:linear-gradient(135deg,#5c1428 0%,#a33a52 100%)}'
+  + '.ccx-cta:disabled{opacity:.6}'
+  + '.ccx-src{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:14px}'
+  + '.ccx-src>div{background:#fffdfa;border:1px solid #ece2d8;border-radius:18px;padding:12px 10px;min-width:0}'
+  + '.ccx-src span{display:flex;align-items:center;gap:6px;font-size:9.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#8d7f90;white-space:nowrap}'
+  + '.ccx-src span i{width:7px;height:7px;border-radius:50%;flex:none}'
+  + '.ccx-src b{display:block;font-family:"Cormorant Garamond",Georgia,serif;font-size:20px;font-weight:700;color:#3a0a46;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
+  + '.ccx-src small{display:block;font-size:10.5px;color:#8d7f90;margin-top:2px}'
+  + '.ccx-hrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}'
+  + '.ccx-hrow .ccx-h{margin:0;flex:1}'
+  + '.ccx-f{display:flex;gap:2px;padding:3px;border-radius:999px;background:#f3ece4;flex:none}'
+  + '.ccx-f button{border:0;background:transparent;border-radius:999px;padding:6px 11px;font:600 11px "DM Sans",sans-serif;color:#6b5a70;cursor:pointer}'
+  + '.ccx-f button.on{background:#fff;color:#3a0a46;box-shadow:0 2px 8px -4px rgba(58,10,70,.3)}';
 }
 
 function buildCashCounterUI() {
@@ -183,17 +202,17 @@ async function loadCashCounter(quiet) {
   var opening = balance - (cashIn - cashOut);
 
   var esc = function (v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
-  var entriesHtml = todayEntries.length
-    ? todayEntries.map(function (r) {
-        var v = Number(r.amount) || 0, isAdd = v >= 0;
-        var note = r.note || (isAdd ? 'Cash added' : 'Cash removed');
-        var kind = /^NSDI Store cash/.test(note) ? ['store', '🛍'] : (r.entry_type === 'order_payment' ? ['cafe', '☕'] : ['adj', isAdd ? '+' : '−']);
-        var time = new Date(r.created_at).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }).toLowerCase();
-        return '<div class="ccx-e"><span class="ccx-ic ' + kind[0] + '">' + kind[1] + '</span>'
-          + '<div class="ccx-e-m"><b>' + esc(note) + '</b><small>' + time + (r.staff_name ? ' · ' + esc(r.staff_name) : '') + '</small></div>'
-          + '<div class="ccx-e-v ' + (isAdd ? 'in' : 'out') + '">' + (isAdd ? '+' : '−') + ccMoney(Math.abs(v)) + '</div></div>';
-      }).join('')
-    : '<div class="ccx-empty">No cash in or out yet today.</div>';
+  var src = { cafe: 0, store: 0, adj: 0 }, srcN = { cafe: 0, store: 0, adj: 0 };
+  var kindOf = function (r) { var note = r.note || ''; return /^NSDI Store cash/.test(note) ? 'store' : (r.entry_type === 'order_payment' ? 'cafe' : 'adj'); };
+  todayEntries.forEach(function (r) { var k = kindOf(r); src[k] += Number(r.amount) || 0; srcN[k]++; });
+  _ccEntries = todayEntries.map(function (r) {
+    var v = Number(r.amount) || 0, isAdd = v >= 0, k = kindOf(r);
+    var note = r.note || (isAdd ? 'Cash added' : 'Cash removed');
+    var time = new Date(r.created_at).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }).toLowerCase();
+    return { dir: isAdd ? 'in' : 'out', html: '<div class="ccx-e"><span class="ccx-ic ' + k + '">' + ccIcon(k === 'adj' ? (isAdd ? 'plus' : 'minus') : k) + '</span>'
+      + '<div class="ccx-e-m"><b>' + esc(note) + '</b><small>' + time + (r.staff_name ? ' · ' + esc(r.staff_name) : '') + '</small></div>'
+      + '<div class="ccx-e-v ' + (isAdd ? 'in' : 'out') + '">' + (isAdd ? '+' : '−') + ccMoney(Math.abs(v)) + '</div></div>' };
+  });
 
   document.getElementById('ccx-sum').innerHTML =
       '<div class="ccx-bal"><small>Cash in the drawer</small><b>' + ccMoney(balance) + '</b></div>'
@@ -203,17 +222,74 @@ async function loadCashCounter(quiet) {
     + '<div class="ccx-upd">Updated ' + new Date().toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }).toLowerCase()
     + ' · refreshes while open · <button type="button" onclick="loadCashCounter()">Refresh</button></div>';
 
+  var srcCell = function (k, label, dot) {
+    var v = src[k];
+    return '<div><span><i style="background:' + dot + '"></i>' + label + '</span><b>' + (v < 0 ? '−' : '') + ccMoney(Math.abs(v)) + '</b>'
+      + '<small>' + srcN[k] + (srcN[k] === 1 ? ' entry' : ' entries') + '</small></div>';
+  };
+  var amtChips = [100, 500, 1000, 2000].map(function (n) { return '<button type="button" class="ccx-chip amt" onclick="ccQuickAmount(' + n + ')">₹' + n.toLocaleString('en-IN') + '</button>'; }).join('');
+  var noteChips = ['Opening cash', 'Change from bank', 'Milk purchase', 'Bank deposit'].map(function (t) { return '<button type="button" class="ccx-chip" onclick="ccQuickNote(this)">' + t + '</button>'; }).join('');
+
   body.innerHTML =
       (!hasAnyEntries
         ? '<div class="ccx-note">No entries yet, so the counter starts at ₹0. If there is already cash in the drawer, add it below as your first entry (e.g. "Opening cash").</div>'
         : '')
+    + '<div class="ccx-src">' + srcCell('cafe', 'Cafe', '#6e0977') + srcCell('store', 'Store', '#b08d57') + srcCell('adj', 'Manual', '#8d7f90') + '</div>'
     + '<div class="ccx-card"><div class="ccx-h">Adjust the drawer</div>'
     + '<div class="ccx-seg"><button type="button" id="cc-type-add" class="add' + (_ccAdjustType === 'add' ? ' on' : '') + '" onclick="ccSetAdjustType(\'add\')">+ Add cash</button>'
     + '<button type="button" id="cc-type-subtract" class="sub' + (_ccAdjustType !== 'add' ? ' on' : '') + '" onclick="ccSetAdjustType(\'subtract\')">− Remove cash</button></div>'
-    + '<input id="cc-amount" class="ccx-in ccx-amt" type="number" inputmode="decimal" step="any" placeholder="₹ Amount">'
-    + '<input id="cc-note" class="ccx-in" placeholder="Note (e.g. Change from bank, Milk purchase)">'
-    + '<button type="button" class="ccx-cta" onclick="ccSubmitAdjustment()">Save entry</button></div>'
-    + '<div class="ccx-card"><div class="ccx-h">Today\'s cash in &amp; out</div>' + entriesHtml + '</div>';
+    + '<input id="cc-amount" class="ccx-in ccx-amt" type="number" inputmode="decimal" step="any" min="0" placeholder="₹ Amount" oninput="ccUpdateCta()">'
+    + '<div class="ccx-chips">' + amtChips + '</div>'
+    + '<input id="cc-note" class="ccx-in" maxlength="120" placeholder="Note (optional)" oninput="ccSyncNoteChips()">'
+    + '<div class="ccx-chips">' + noteChips + '</div>'
+    + '<button type="button" id="cc-save" class="ccx-cta" onclick="ccSubmitAdjustment()">Save entry</button></div>'
+    + '<div class="ccx-card"><div class="ccx-hrow"><div class="ccx-h">Today</div>'
+    + (todayEntries.length ? '<div class="ccx-f" role="tablist">' + ['all', 'in', 'out'].map(function (f) {
+        return '<button type="button" data-f="' + f + '" class="' + (_ccFilter === f ? 'on' : '') + '" onclick="ccSetFilter(\'' + f + '\')">' + { all: 'All', in: 'In', out: 'Out' }[f] + '</button>'; }).join('') + '</div>' : '')
+    + '</div><div id="cc-entries"></div></div>';
+  ccRenderEntries();
+  ccUpdateCta();
+}
+
+var _ccEntries = [], _ccFilter = 'all';
+function ccIcon(k) {
+  var p = {
+    cafe: '<path d="M5 9h11v5a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5v2M11 3.5v2"/>',
+    store: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    minus: '<path d="M5 12h14"/>'
+  }[k] || '';
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + p + '</svg>';
+}
+function ccSetFilter(f) {
+  _ccFilter = f;
+  document.querySelectorAll('#cc-body .ccx-f button').forEach(function (b) { b.classList.toggle('on', b.dataset.f === f); });
+  ccRenderEntries();
+}
+function ccRenderEntries() {
+  var box = document.getElementById('cc-entries'); if (!box) return;
+  var list = _ccEntries.filter(function (e) { return _ccFilter === 'all' || e.dir === _ccFilter; });
+  box.innerHTML = list.length ? list.map(function (e) { return e.html; }).join('')
+    : '<div class="ccx-empty">' + (_ccEntries.length ? 'Nothing here for today.' : 'No cash in or out yet today.') + '</div>';
+}
+function ccQuickAmount(n) {
+  var a = document.getElementById('cc-amount'); if (!a) return;
+  a.value = n; ccUpdateCta();
+}
+function ccQuickNote(btn) {
+  var n = document.getElementById('cc-note'); if (!n) return;
+  n.value = n.value === btn.textContent ? '' : btn.textContent;
+  ccSyncNoteChips();
+}
+function ccSyncNoteChips() {
+  var n = document.getElementById('cc-note');
+  document.querySelectorAll('#cc-body .ccx-chip:not(.amt)').forEach(function (c) { c.classList.toggle('on', !!n && n.value === c.textContent); });
+}
+function ccUpdateCta() {
+  var btn = document.getElementById('cc-save'), a = document.getElementById('cc-amount'); if (!btn) return;
+  var v = a ? parseFloat(a.value) : NaN, add = _ccAdjustType === 'add';
+  btn.classList.toggle('sub', !add);
+  btn.textContent = v > 0 ? (add ? 'Add ' + ccMoney(v) + ' to drawer' : 'Remove ' + ccMoney(v) + ' from drawer') : 'Save entry';
 }
 
 var _ccAdjustType = 'add';
@@ -222,6 +298,7 @@ function ccSetAdjustType(type) {
   var addBtn = document.getElementById('cc-type-add'), subBtn = document.getElementById('cc-type-subtract');
   if (addBtn) addBtn.classList.toggle('on', type === 'add');
   if (subBtn) subBtn.classList.toggle('on', type !== 'add');
+  ccUpdateCta();
 }
 
 async function ccSubmitAdjustment() {
@@ -235,6 +312,9 @@ async function ccSubmitAdjustment() {
     ? _staffSession.name
     : 'Admin';
 
+  var saveBtn = document.getElementById('cc-save');
+  if (saveBtn && saveBtn.disabled) return; // no double entries from a double tap
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving…'; }
   try {
     var ins = await db.from('cash_counter_entries').insert([{
       entry_type: 'adjustment',
@@ -247,5 +327,6 @@ async function ccSubmitAdjustment() {
     loadCashCounter();
   } catch (e) {
     showStoreToast('Error: ' + e.message);
+    if (saveBtn) { saveBtn.disabled = false; ccUpdateCta(); }
   }
 }
