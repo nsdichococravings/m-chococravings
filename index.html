@@ -769,6 +769,11 @@ html {
     box-shadow: 0 0 0 10px #1a1a1a, 0 0 0 12px #272727, 0 80px 120px rgba(107,47,206,.25), 0 40px 80px rgba(0,0,0,.8) !important;
   }
   .notch { display: block !important; }
+  /* Keep the top bar and the bottom menu inside the centred app frame */
+  .logo-wrap { left: 50% !important; right: auto !important; width: 430px !important; top: 28px !important;
+    transform: translateX(-50%); border-radius: 52px 52px 0 0; background: rgba(255,253,250,.92); padding: 8px 26px !important; }
+  .phone .notch { display: none !important; }
+  .bnav { width: 398px !important; }
 }
 
 .lcard.tier-bronze {
@@ -1593,6 +1598,14 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 #page-cart.cx,#page-checkout.cx{padding-bottom:var(--bnav-space)!important}
 .cx .cx-dock{bottom:0;margin:6px 0 0;padding-bottom:12px;border-radius:18px 18px 0 0;box-shadow:0 -6px 18px rgba(26,8,32,.06)}
 </style>
+<style>
+.pp-btn{position:absolute;right:12px;bottom:12px;z-index:6;display:inline-flex;align-items:center;gap:6px;padding:8px 13px;border-radius:999px;border:1px solid rgba(232,201,143,.7);background:rgba(27,10,34,.78);color:#f6ead2;font:600 11px/1 'DM Sans',sans-serif;letter-spacing:.4px;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);box-shadow:0 6px 18px rgba(27,10,34,.25);cursor:pointer;transition:transform .15s ease,opacity .2s}
+.pp-btn:active{transform:scale(.96)}
+.pp-btn svg{width:15px!important;height:15px!important;flex:0 0 auto;color:#e8c98f}
+.pp-btn.busy{opacity:.7;pointer-events:none}
+#vsd-gallery-main .pp-btn{bottom:30px}
+.dhero .pp-btn{bottom:52px}
+</style>
 </head>
 <body>
 
@@ -1939,6 +1952,7 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
         <img id="detail-hero-img" src="" alt="NSDI ChocoCravings Brownie"
             style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;display:none"
             onerror="this.style.display='none';document.getElementById('detail-hero-emoji').style.display='flex'">
+        <div id="detail-hero-btns"></div>
         <div id="detail-hero-emoji" style="font-size:108px;position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#fcfcfc,#f0d4f0,#fcfcfc)">🍫</div>
         <div class="back" onclick="goBack()">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -5175,6 +5189,7 @@ async function ccRepairCurrentUser(email) {
 // Load products dynamically
 loadProducts();
 loadBrowniePricing();
+loadProductImages();
 renderCachedLoyaltyCard();
 
 // Check for active orders badge
@@ -6940,6 +6955,7 @@ function openDetail(el) {
     var heroImg   = document.getElementById('detail-hero-img');
     var heroEmoji = document.getElementById('detail-hero-emoji');
     var imgUrl    = getProductImage(data.sku);
+    showAdminPhotoBtn('detail-hero-btns', 'detail', { id: data.pid, sku: data.sku });
 
     if (heroImg && imgUrl) {
     heroImg.src            = imgUrl;
@@ -6987,8 +7003,10 @@ function hideProductsLoader() {
   if (overlay) { overlay.classList.remove('show'); overlay.style.display = 'none'; }
 }
 
+var _lastProducts = null;
 function showProducts(products) {
-  var json = JSON.stringify([products, _productRatings]);
+  _lastProducts = products;
+  var json = JSON.stringify([products, _productRatings, _dbProductImages]);
   if (json === _productsShown) return;
   _productsShown = json;
   renderFeaturedGrid(products);
@@ -7161,23 +7179,124 @@ var PRODUCT_IMAGES = {
 };
 
 
+// Photos saved by admins (products.image_url) come first; the list above is
+// the fallback. Kept on the phone so the right photo shows straight away.
+var _dbProductImages = (function () {
+  try { return JSON.parse(localStorage.getItem('cc_prod_imgs_v1') || '{}') || {}; } catch (e) { return {}; }
+})();
 function getProductImage(sku) {
   if (!sku) return null;
-  // Exact match first
-  if (PRODUCT_IMAGES[sku]) return PRODUCT_IMAGES[sku];
-  // Extract just the variant code (last segment) and try all prefix combos
   var parts   = sku.split('-');
   var varCode = parts[parts.length - 1];
-  var tries   = [
-    'PREM-EL-' + varCode,
-    'PREM-EG-' + varCode,
-    'COUV-EL-' + varCode,
-    'COUV-EG-' + varCode
-  ];
-  for (var i = 0; i < tries.length; i++) {
-    if (PRODUCT_IMAGES[tries[i]]) return PRODUCT_IMAGES[tries[i]];
+  var tries   = [sku, 'PREM-EL-' + varCode, 'PREM-EG-' + varCode, 'COUV-EL-' + varCode, 'COUV-EG-' + varCode];
+  var maps = [_dbProductImages, PRODUCT_IMAGES];
+  for (var m = 0; m < maps.length; m++) {
+    for (var i = 0; i < tries.length; i++) {
+      if (maps[m][tries[i]]) return maps[m][tries[i]];
+    }
   }
   return null;
+}
+function rememberProductImages(rows) {
+  var map = {};
+  (rows || []).forEach(function (r) { if (r && r.sku && r.image_url) map[r.sku] = r.image_url; });
+  var changed = JSON.stringify(map) !== JSON.stringify(_dbProductImages);
+  _dbProductImages = map;
+  try { localStorage.setItem('cc_prod_imgs_v1', JSON.stringify(map)); } catch (e) {}
+  return changed;
+}
+async function loadProductImages() {
+  try {
+    var r = await db.from('products').select('sku,image_url').not('image_url', 'is', null);
+    if (r.error || !r.data) return;
+    if (rememberProductImages(r.data)) refreshProductPhotos();
+  } catch (e) {}
+}
+// Re-draw lists already on screen with the newest photos.
+function refreshProductPhotos() {
+  try { if (typeof _lastProducts !== 'undefined' && _lastProducts && typeof showProducts === 'function') showProducts(_lastProducts); } catch (e) {}
+}
+
+// ── Admins: change a product photo (camera or gallery) ──
+var _photoTarget = null;
+function adminPhotoBtn(where) {
+  return '<button type="button" class="pp-btn" onclick="event.stopPropagation();pickProductPhoto(\'' + where + '\')" aria-label="Change photo">'
+    + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>'
+    + '<span>Change photo</span></button>';
+}
+function showAdminPhotoBtn(hostId, where, product) {
+  var host = document.getElementById(hostId);
+  if (!host) return;
+  var old = host.querySelector('.pp-btn'); if (old) old.remove();
+  if (!_staffNav.admin || !product || !product.id) return;
+  host.insertAdjacentHTML('beforeend', adminPhotoBtn(where));
+  host.querySelector('.pp-btn').dataset.pid = product.id;
+  host.querySelector('.pp-btn').dataset.sku = product.sku || '';
+}
+function pickProductPhoto(where) {
+  var btn = document.querySelector('#' + (where === 'vibe' ? 'vsd-gallery-main' : 'page-detail .dhero') + ' .pp-btn');
+  if (!btn || !_staffNav.admin) return;
+  _photoTarget = { where: where, id: btn.dataset.pid, sku: btn.dataset.sku, btn: btn };
+  var inp = document.getElementById('pp-file');
+  if (!inp) {
+    inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/*'; inp.id = 'pp-file'; inp.style.display = 'none';
+    inp.onchange = function () { var f = inp.files && inp.files[0]; inp.value = ''; if (f) uploadProductPhoto(f); };
+    document.body.appendChild(inp);
+  }
+  inp.click();
+}
+function resizeProductPhoto(file) {
+  return new Promise(function (resolve, reject) {
+    var img = new Image();
+    img.onload = function () {
+      var max = 1200, k = Math.min(1, max / Math.max(img.width, img.height));
+      var cv = document.createElement('canvas');
+      cv.width = Math.round(img.width * k); cv.height = Math.round(img.height * k);
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+      URL.revokeObjectURL(img.src);
+      cv.toBlob(function (b) { b ? resolve(b) : reject(new Error('Could not read that photo')); }, 'image/jpeg', 0.85);
+    };
+    img.onerror = function () { reject(new Error('Could not read that photo')); };
+    img.src = URL.createObjectURL(file);
+  });
+}
+async function uploadProductPhoto(file) {
+  var t = _photoTarget; if (!t || !t.id) return;
+  var label = t.btn && t.btn.querySelector('span');
+  if (t.btn) t.btn.classList.add('busy');
+  if (label) label.textContent = 'Uploading…';
+  try {
+    var blob = await resizeProductPhoto(file);
+    var safe = String(t.sku || t.id).replace(/[^A-Za-z0-9_-]/g, '');
+    var path = 'uploads/' + safe + '-' + Date.now() + '.jpg';
+    var up = await db.storage.from('product-images').upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+    if (up.error) throw new Error(up.error.message);
+    var url = db.storage.from('product-images').getPublicUrl(path).data.publicUrl;
+    var r = await db.rpc('cc_admin_set_product_image', { p_product_id: String(t.id), p_url: url });
+    if (r.error) throw new Error(r.error.message);
+    if (t.sku) { _dbProductImages[t.sku] = url; try { localStorage.setItem('cc_prod_imgs_v1', JSON.stringify(_dbProductImages)); } catch (e) {} }
+    try { (_allAccProducts || []).forEach(function (p) { if (String(p.id) === String(t.id)) p.image_url = url; }); } catch (e) {}
+    if (t.where === 'vibe') {
+      var vi = document.getElementById('vsd-gallery-img'), ve = document.getElementById('vsd-gallery-emoji');
+      if (vi) { vi.src = url; vi.style.display = 'block'; }
+      if (ve) ve.style.display = 'none';
+      if (typeof _vsdImages !== 'undefined') { if (_vsdImages[0] && _vsdImages[0].type === 'img') _vsdImages[0].src = url; else _vsdImages.unshift({ type: 'img', src: url }); }
+    } else {
+      var hi = document.getElementById('detail-hero-img'), he = document.getElementById('detail-hero-emoji');
+      if (hi) { hi.src = url; hi.style.display = 'block'; }
+      if (he) he.style.display = 'none';
+    }
+    refreshProductPhotos();
+    if (typeof showToast === 'function') showToast('Photo updated for everyone');
+  } catch (e) {
+    var msg = String(e && e.message || e);
+    if (/row-level|policy|Only an admin|permission|42501|function .* does not exist|schema cache/i.test(msg)) msg = 'Photo not saved: run the latest database update (product photos) in Supabase, then try again.';
+    alert(msg);
+  } finally {
+    if (t.btn) t.btn.classList.remove('busy');
+    if (label) label.textContent = 'Change photo';
+  }
 }
 
 function renderFeaturedGrid(products) {
@@ -8262,7 +8381,7 @@ async function openVsDetail(productId) {
   if (!product) {
     var { data } = await db
       .from('products')
-      .select('id,name,sku,description,accessory_category,is_featured,product_variants(id,pack_label,price,weight_grams,pieces)')
+      .select('id,name,sku,description,accessory_category,is_featured,image_url,product_variants(id,pack_label,price,weight_grams,pieces)')
       .eq('id', productId)
       .single();
     product = data;
@@ -8327,7 +8446,8 @@ safeHTML('vsd-variants', variants.map(function(v, i) {
   // Gallery
   // Build images array
   _vsdImages = [];
-  var mainImg = getProductImage(product.sku);
+  var mainImg = product.image_url || getProductImage(product.sku);
+  showAdminPhotoBtn('vsd-gallery-main', 'vibe', product);
   if (mainImg) {
     _vsdImages.push({ type:'img', src: mainImg });
   }

@@ -403,29 +403,43 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 .ts-bar{display:flex;align-items:center;gap:12px;padding:0 22px}
 .ts-bar span{flex:1;font-size:11.5px;color:#8d7f90;line-height:1.4}
 .ts-pill{flex:none;padding:9px 15px;border-radius:999px;border:1px solid #ece2d8;background:#fffdfa;color:#6e0977;font-family:inherit;font-size:12px;font-weight:600;letter-spacing:.04em;cursor:pointer}
-.ts-legend{display:flex;gap:14px;flex-wrap:wrap;padding:12px 22px 0;font-size:11px;color:#8d7f90}
+.ts-sum{display:grid;grid-template-columns:repeat(3,1fr);margin:14px 22px 0;border:1px solid #ece2d8;border-radius:18px;background:#fffdfa;overflow:hidden}
+.ts-sum>div{padding:12px 10px;text-align:center;min-width:0}
+.ts-sum>div+div{border-left:1px solid #f0e6dc}
+.ts-sum b{display:block;font-family:'Cormorant Garamond',Georgia,serif;font-size:24px;font-weight:700;line-height:1;color:#3a0a46;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ts-sum span{display:block;margin-top:5px;font-size:9.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#b08d57}
+.ts-area{padding:18px 22px 0}
+.ts-area .ts-h{margin-bottom:10px}
+.ts-legend{display:flex;gap:14px;flex-wrap:wrap;padding:14px 22px 4px;font-size:11px;color:#8d7f90}
 .ts-legend span{display:inline-flex;align-items:center;gap:6px}
 .ts-legend span::before{content:"";width:8px;height:8px;border-radius:50%}
-.ts-legend .free::before{background:#2f7a4b}.ts-legend .busy::before{background:#6e0977}.ts-legend .rank::before{background:#b08d57}
-.ts-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;padding:16px 22px 6px}
-@media(min-width:560px){.ts-grid{grid-template-columns:repeat(4,1fr)}}
-.ts-tb{position:relative;text-align:left;padding:16px 14px 14px;border-radius:20px;cursor:pointer;font-family:inherit;border:1px solid #ece2d8;background:#fffdfa;
-  box-shadow:0 10px 26px -20px rgba(58,10,70,.35);transition:transform .15s}
-.ts-tb:active{transform:scale(.98)}
-.ts-tb-code{font-family:'Cormorant Garamond',Georgia,serif;font-size:32px;font-weight:700;line-height:1;color:#3a0a46}
-.ts-tb-st{display:inline-block;margin-top:8px;font-size:9.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;padding:4px 9px;border-radius:999px}
+.ts-legend .free::before{background:#2f7a4b}.ts-legend .busy::before{background:#6e0977}.ts-legend .rank::before{background:#a33a52}
+.ts-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media(min-width:420px){.ts-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(min-width:560px){.ts-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.ts-tb{position:relative;text-align:left;padding:14px 14px 13px;border-radius:18px;cursor:pointer;font-family:inherit;border:1px solid #ece2d8;background:#fffdfa;min-width:0;overflow:hidden;
+  box-shadow:0 10px 26px -22px rgba(58,10,70,.4);transition:transform .15s,box-shadow .2s;-webkit-tap-highlight-color:transparent}
+.ts-tb:active{transform:scale(.97)}
+.ts-tb:focus-visible{outline:2px solid #b08d57;outline-offset:2px}
+.ts-tb-code{font-family:'Cormorant Garamond',Georgia,serif;font-size:30px;font-weight:700;line-height:1;color:#3a0a46}
+.ts-tb-st{display:inline-block;margin-top:8px;font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;padding:4px 9px;border-radius:999px;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .ts-tb-amt{font-family:'Cormorant Garamond',Georgia,serif;font-size:22px;font-weight:700;color:#3a0a46;margin-top:10px;line-height:1}
-.ts-tb-s{font-size:11px;color:#8d7f90;margin-top:6px;line-height:1.35}
+.ts-tb-amt small{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;color:#8d7f90}
+.ts-tb-s{font-size:11px;color:#8d7f90;margin-top:6px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ts-tb-t{font-size:10.5px;color:#b08d57;margin-top:4px;font-weight:600;letter-spacing:.02em}
 .ts-tb-warn{font-size:10.5px;color:#a33a52;margin-top:6px}
-.ts-tb.free{background:linear-gradient(160deg,#f3faf5,#fffdfa);border-color:#d3e8da}
-.ts-tb.free .ts-tb-code{color:#2f7a4b}
-.ts-tb.free .ts-tb-st{color:#2f7a4b;background:#e3f2e8}
-.ts-tb.busy{background:linear-gradient(160deg,#f8eef7,#fffdfa);border-color:#ecd6ea}
+.ts-tb.free{background:#fffdfa;border:1px dashed #d8cbbd;box-shadow:none;display:flex;flex-direction:column;justify-content:center;min-height:86px}
+.ts-tb.free .ts-tb-code{color:#8d7f90;font-size:26px}
+.ts-tb.free .ts-tb-st{color:#2f7a4b;background:#e8f3eb;align-self:flex-start}
+.ts-plus{position:absolute;top:12px;right:12px;width:24px;height:24px;border-radius:50%;border:1px solid #e2d6cb;color:#b08d57;display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1}
+.ts-tb.busy{background:linear-gradient(165deg,#fbf2fa,#fffdfa 70%);border-color:#ecd6ea;padding-left:18px}
+.ts-tb.busy::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:4px;border-radius:0 4px 4px 0;background:#6e0977}
 .ts-tb.busy .ts-tb-st{color:#6e0977;background:#f3e2f1}
-.ts-tb.s-ready{border-color:#d3e8da}.ts-tb.s-ready .ts-tb-st{color:#2f7a4b;background:#e3f2e8}
-.ts-tb.s-delivered .ts-tb-st{color:#8a6a33;background:#f6eedf}
-.ts-rank{position:absolute;top:12px;right:12px;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-  font-family:'Cormorant Garamond',Georgia,serif;font-size:15px;font-weight:700;color:#fff;background:#8d7f90}
+.ts-tb.s-pending::before{background:#a33a52}.ts-tb.s-pending .ts-tb-st{color:#a33a52;background:#f8e4e8}
+.ts-tb.s-ready{border-color:#d3e8da}.ts-tb.s-ready::before{background:#2f7a4b}.ts-tb.s-ready .ts-tb-st{color:#2f7a4b;background:#e3f2e8}
+.ts-tb.s-delivered::before{background:#b08d57}.ts-tb.s-delivered .ts-tb-st{color:#8a6a33;background:#f6eedf}
+.ts-rank{position:absolute;top:12px;right:12px;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-family:'Cormorant Garamond',Georgia,serif;font-size:14px;font-weight:700;color:#fff;background:#8d7f90}
 .ts-rank.r1{background:#a33a52}.ts-rank.r2{background:#c0663d}.ts-rank.r3{background:#b08d57}
 .ts-sec{margin:0 16px 12px;padding:16px;border-radius:22px;background:#fffdfa;border:1px solid #ece2d8}
 .ts-h{display:flex;align-items:center;gap:10px;font-size:10px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:#b08d57;margin-bottom:12px}
@@ -3806,7 +3820,7 @@ async function toggleStoreOpenStatus() {
 <script src="menu-art.js?v=20260956"></script>
 <script src="menu-search-patch.js?v=20261106-boutique"></script>
 <script src="remember-phone-patch.js?v=20260952-table"></script>
-<script src="checkadminbadge-override.js?v=20261119-bill"></script>
+<script src="checkadminbadge-override.js?v=20261120-tables"></script>
 <script src="production-purchases-patch.js?v=20261018"></script>
 <link rel="stylesheet" href="production-dashboard.css?v=20260970-count">
 <script src="production-dashboard.js?v=20261113-collections"></script>
