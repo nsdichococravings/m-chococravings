@@ -25,6 +25,7 @@ var _adminCheckGeneration=0, _adminAuthListener=null, _adminToolsRegistered=fals
 var _adminCheckedUserId=null, _adminRetryTimer=null, _adminRetryCount=0;
 function resetAdminVisibility() {
   isAdmin=false;
+  if(document.body) document.body.classList.remove('cc-admin');
   if(typeof ccSetAccess==='function') ccSetAccess(false);
   ['admin-quick-actions','kitchen-fab','print-invoice-btn','admin-fab-pill','admin-fab-menu','admin-fab-backdrop'].forEach(function(id){var el=document.getElementById(id);if(el)el.style.display='none';});
 }
@@ -118,6 +119,7 @@ async function checkAdminBadge(){
 function applyStaffRole(admin, employee) {
   if (admin) {
     isAdmin = true;
+    if(document.body) document.body.classList.add('cc-admin');
     if(typeof ccSetAccess==='function') ccSetAccess(true);
 
     // Show admin-only UI elements
