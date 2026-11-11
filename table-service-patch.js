@@ -601,9 +601,59 @@ function kMergeNote(o) {
   var ph = kPhone10(o.customer_phone), g = ph && _kPhoneGroups[ph];
   if (!g) return '';
   var admin = typeof isAdmin !== 'undefined' && isAdmin;
+  var btns = '';
+  if (admin) {
+    if (g.bill.length >= 2) btns += '<button type="button" class="kt-mini on" onclick="kOpenMergeBill(\'' + ph + '\')">Merge into one bill</button>';
+    if (g.tables.length > 1) btns += '<button type="button" class="kt-mini" onclick="kOpenMergePhone(\'' + ph + '\')">Merge to one table</button>';
+  }
   return '<div class="kt-merge"><span><b>Same number</b> · ' + g.orders.length + ' open orders at ' + g.tables.map(kEsc).join(', ') + '</span>'
-    + (admin ? '<button type="button" class="kt-mini on" onclick="kOpenMergePhone(\'' + ph + '\')">Merge to one table</button>' : '<span class="kt-merge-s">Ask an admin to merge</span>')
+    + (admin ? '<span class="kt-merge-b">' + btns + '</span>' : '<span class="kt-merge-s">Ask an admin to merge</span>')
     + '</div>';
+}
+// Merge into ONE bill (migrations/20261119): the oldest order gets every item
+// and the combined total; the others are closed as merged.
+function kOpenMergeBill(ph) {
+  var g = _kPhoneGroups[ph];
+  if (!g || g.bill.length < 2) return;
+  kCloseMergePhone();
+  var list = g.bill.slice().sort(function (a, b) { return String(a.created_at).localeCompare(String(b.created_at)); });
+  var sum = list.reduce(function (t, o) { return t + (Number(o.total) || 0); }, 0);
+  var tableOf = function (o) { return o.customer_table ? (o.customer_table === 'TAKEAWAY' ? 'Takeaway' : o.customer_table) : '—'; };
+  var ov = document.createElement('div');
+  ov.id = 'kt-merge-ov'; ov.className = 'kt-merge-ov';
+  ov.innerHTML = '<div class="kt-merge-sh" role="dialog" aria-label="Merge into one bill">'
+    + '<div class="kt-merge-eb">Same number · ' + kEsc(ph.slice(0, 2) + '••••••' + ph.slice(-2)) + '</div>'
+    + '<div class="kt-merge-t">Merge into <em>one bill</em></div>'
+    + '<div class="kt-merge-p">These ' + list.length + ' ' + (g.billPaid ? 'paid' : 'unpaid') + ' orders become one bill on <b>#' + kEsc(list[0].token) + '</b> (' + kEsc(tableOf(list[0])) + '). '
+    + 'All items move to it and the others close.' + (g.left ? ' ' + g.left + ' ' + (g.billPaid ? 'unpaid' : 'paid') + ' order' + (g.left === 1 ? ' stays' : 's stay') + ' separate, so nobody is charged twice.' : '') + '</div>'
+    + '<div class="kt-merge-list">' + list.map(function (o, i) {
+        var items = kOrderItems(o).map(function (it) { return (it.qty || 1) + '× ' + kEsc(it.name); }).join(', ');
+        return '<div class="kt-merge-li"><div><b>#' + kEsc(o.token) + '</b> · ' + kEsc(tableOf(o)) + (i === 0 ? ' <span class="kt-merge-keep">keeps</span>' : '') + '<small>' + items + '</small></div><span>₹' + (Number(o.total) || 0) + '</span></div>';
+      }).join('') + '<div class="kt-merge-li tot"><div><b>One bill</b></div><span>₹' + Math.round(sum * 100) / 100 + '</span></div></div>'
+    + '<button type="button" class="kt-merge-go" id="kt-merge-go" onclick="kMergeBillGo(\'' + ph + '\')">Merge into one bill</button>'
+    + '<button type="button" class="kt-merge-x" onclick="kCloseMergePhone()">Cancel</button></div>';
+  ov.addEventListener('click', function (e) { if (e.target === ov) kCloseMergePhone(); });
+  document.body.appendChild(ov);
+}
+function kOrderItems(o) {
+  var raw = o.items;
+  try { return Array.isArray(raw) ? raw : (typeof raw === 'string' ? JSON.parse(raw) : []); } catch (e) { return []; }
+}
+async function kMergeBillGo(ph) {
+  var g = _kPhoneGroups[ph], btn = document.getElementById('kt-merge-go');
+  if (!g) return;
+  if (btn) { btn.disabled = true; btn.textContent = 'Merging…'; }
+  try {
+    var res = await db.rpc('cc_admin_merge_orders', { p_order_ids: g.bill.map(function (o) { return o.id; }) });
+    if (res.error) throw res.error;
+    kCloseMergePhone();
+    showStoreToast('Merged into one bill · #' + (res.data && res.data.token) + ' · ₹' + (res.data && res.data.total));
+    if (typeof kitchenRefresh === 'function') kitchenRefresh(true);
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Merge into one bill'; }
+    var m = (e && e.message) || String(e);
+    showStoreToast(/function .*does not exist|schema cache/i.test(m) ? 'Run migrations/20261119_admin_merge_orders_bill.sql in Supabase first.' : m);
+  }
 }
 function kCloseMergePhone() { var el = document.getElementById('kt-merge-ov'); if (el) el.remove(); }
 function kOpenMergePhone(ph) {
@@ -719,7 +769,13 @@ function renderKitchen(orders, loyaltyMap) {
     var g = byPhone[ph];
     var tables = [];
     g.forEach(function (o) { var t = o.table_code ? String(o.table_code).toUpperCase() : (o.customer_table || ''); if (t && tables.indexOf(t) < 0) tables.push(t); });
-    if (g.length > 1 && tables.length > 1) _kPhoneGroups[ph] = { orders: g, tables: tables };
+    if (g.length < 2) return;
+    // Orders that can become one bill: self-orders in the same payment state (never paid + unpaid).
+    var self = g.filter(function (o) { return !o.table_code; });
+    var isPaid = function (o) { return o.payment_status === 'paid' || o.payment_status === 'complimentary'; };
+    var unpaid = self.filter(function (o) { return !isPaid(o); }), paid = self.filter(isPaid);
+    var bill = unpaid.length >= 2 ? unpaid : (paid.length >= 2 ? paid : []);
+    if (tables.length > 1 || bill.length >= 2) _kPhoneGroups[ph] = { orders: g, tables: tables, bill: bill, billPaid: bill === paid, left: self.length - bill.length };
   });
   list.innerHTML = orders.map(function (o) {
     var rawItems = o.items;
