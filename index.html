@@ -1536,8 +1536,23 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 .nf-time{flex:none;font-size:10.5px;color:#8d7f90;white-space:nowrap}
 .nf-msg{font-size:12px;color:#8d7f90;line-height:1.5;margin-top:3px}
 .nf-dot{position:absolute;top:14px;right:12px;width:7px;height:7px;border-radius:50%;background:#6e0977;box-shadow:0 0 0 3px rgba(110,9,119,.12)}
-.nf-item.unread .nf-time{margin-right:12px}
+.nf-item.unread .nf-time{color:#6e0977;font-weight:600}
 .nf-empty{text-align:center;padding:46px 20px}
+.nf-tabs{flex:none;display:flex;gap:6px;padding:12px 14px 2px}
+.nf-tabs:empty{display:none}
+.nf-tab{flex:none;min-height:32px;padding:0 13px;border-radius:999px;border:1px solid #ece2d8;background:#fffdfa;color:#6b5a70;font:600 11.5px 'DM Sans',sans-serif;letter-spacing:.03em;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.nf-tab b{font-weight:700;font-size:10px;min-width:17px;height:17px;padding:0 5px;border-radius:999px;background:#f3ece4;color:#6b5a70;display:inline-flex;align-items:center;justify-content:center}
+.nf-tab.on{background:#3a0a46;border-color:#3a0a46;color:#ffe9c2}
+.nf-tab.on b{background:rgba(255,233,194,.18);color:#ffe9c2}
+.nf-ico svg{width:19px!important;height:19px!important}
+.nf-ico.k-order{color:#6e0977;background:#f7eef6;box-shadow:0 0 0 1px #ecd6ea}
+.nf-ico.k-done{color:#2f7a4b;background:#edf6ef;box-shadow:0 0 0 1px #d3e8da}
+.nf-ico.k-move{color:#2f5aa8;background:#eef3fb;box-shadow:0 0 0 1px #d6e2f5}
+.nf-ico.k-cancel{color:#a33a52;background:#fcf1f3;box-shadow:0 0 0 1px #f3dde2}
+.nf-ico.k-offer,.nf-ico.k-bday{color:#8a6a33;background:#f6eedf;box-shadow:0 0 0 1px #ecdcbf}
+.nf-item.unread{border-color:#ecd6ea;background:linear-gradient(170deg,#fcf5fb,#fffdfa 60%)}
+.nf-item.unread::before{content:"";position:absolute;left:0;top:16px;bottom:16px;width:3px;border-radius:0 3px 3px 0;background:#6e0977}
+.nf-go{display:inline-flex;align-items:center;gap:4px;margin-top:7px;font-size:11px;font-weight:700;letter-spacing:.04em;color:#6e0977}
 .nf-empty-ico{width:64px;height:64px;margin:0 auto 14px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#3a0a46;background:radial-gradient(circle at 50% 40%,#fff,#f6eedf);box-shadow:0 0 0 1px #ecdcbf,0 0 0 8px rgba(176,141,87,.08)}
 .nf-empty-t{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:600;color:#3a0a46}
 .nf-empty-s{font-size:12px;color:#8d7f90;margin-top:4px}
@@ -2763,6 +2778,7 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
           <div class="nf-r"><span id="notif-unread-lbl"></span><button type="button" class="nf-all" onclick="markAllNotifsRead()">Mark all read</button></div>
         </div>
       </div>
+      <div id="nf-tabs" class="nf-tabs" role="tablist" aria-label="Filter updates"></div>
       <div id="notif-list" class="nf-list"></div>
     </div>
     <!-- VIBE STORE PRODUCT DETAIL SHEET -->
@@ -8855,6 +8871,8 @@ function renderNotifList() {
 
   var unread = _notifData.filter(function(n){ return !n.read_at; }).length;
   if (lbl) lbl.textContent = unread > 0 ? unread + ' unread' : 'All caught up';
+  var allBtn = document.querySelector('#notif-sheet .nf-all');
+  if (allBtn) allBtn.style.display = unread > 0 ? '' : 'none';
 
   if (_notifData.length === 0) {
     list.innerHTML = '<div class="nf-empty"><div class="nf-empty-ico"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></div>'
@@ -8862,50 +8880,82 @@ function renderNotifList() {
     return;
   }
 
-  var iconColor = {
-    order_placed:     ['🛒','rgba(110,9,119,.08)','rgba(110,9,119,.2)'],
-    order_confirmed:  ['✅','rgba(16,185,129,.08)','rgba(16,185,129,.2)'],
-    order_baking:     ['🍫','rgba(245,158,11,.08)','rgba(245,158,11,.2)'],
-    order_packed:     ['📦','rgba(59,130,246,.08)','rgba(59,130,246,.2)'],
-    order_shipped:    ['🚚','rgba(59,130,246,.08)','rgba(59,130,246,.2)'],
-    order_delivered:  ['🎉','rgba(16,185,129,.08)','rgba(16,185,129,.2)'],
-    order_cancelled:  ['❌','rgba(239,68,68,.08)','rgba(239,68,68,.2)'],
-    promo:            ['🏷️','rgba(236,72,153,.08)','rgba(236,72,153,.2)'],
-    custom_order:     ['🎂','rgba(156,12,161,.08)','rgba(156,12,161,.2)'],
-    system:           ['📢','rgba(110,9,119,.08)','rgba(110,9,119,.2)'],
-    birthday_7days:  ['🎂','rgba(245,158,11,.08)','rgba(245,158,11,.2)'],
-    birthday_3days:  ['🎈','rgba(236,72,153,.08)','rgba(236,72,153,.2)'],
-    birthday_today:  ['🎉','rgba(255,180,0,.12)','rgba(255,180,0,.3)']
-  };
+  var tabs = document.getElementById('nf-tabs');
+  var kinds = { all: _notifData.length, order: 0, offer: 0 };
+  _notifData.forEach(function (n) { kinds[nfKind(n).group]++; });
+  if (tabs) {
+    tabs.innerHTML = kinds.order && kinds.offer ? [['all', 'All'], ['order', 'Orders'], ['offer', 'Offers']].map(function (t) {
+      return '<button type="button" role="tab" aria-selected="' + (_nfFilter === t[0]) + '" class="nf-tab' + (_nfFilter === t[0] ? ' on' : '') + '" onclick="nfSetFilter(\'' + t[0] + '\')">' + t[1] + '<b>' + kinds[t[0]] + '</b></button>';
+    }).join('') : '';
+    if (!(kinds.order && kinds.offer)) _nfFilter = 'all';
+  }
+  var shown = _notifData.filter(function (n) { return _nfFilter === 'all' || nfKind(n).group === _nfFilter; });
 
-  var groups = {};
-  _notifData.forEach(function(n) {
+  var groups = {}, order = [];
+  shown.forEach(function(n) {
     var d = n.sent_at ? new Date(n.sent_at) : new Date();
     var now = new Date();
-    var diff = Math.floor((now - d) / 86400000);
-    var key = diff === 0 ? 'Today' : diff === 1 ? 'Yesterday'
-      : d.toLocaleDateString('en-IN',{day:'numeric',month:'long'});
-    if (!groups[key]) groups[key] = [];
+    var dayDiff = Math.round((new Date(now.getFullYear(), now.getMonth(), now.getDate()) - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 86400000);
+    var key = dayDiff === 0 ? 'Today' : dayDiff === 1 ? 'Yesterday' : dayDiff < 7 ? 'This week'
+      : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long' });
+    if (!groups[key]) { groups[key] = []; order.push(key); }
     groups[key].push(n);
   });
 
   var html = '';
-  Object.keys(groups).forEach(function(dateLabel) {
+  order.forEach(function(dateLabel) {
     html += '<div class="nf-day">' + dateLabel + '</div>';
     groups[dateLabel].forEach(function(n) {
-      var isRead = !!n.read_at;
-      var ic = iconColor[n.template_name] || iconColor[n.type] || iconColor.system;
-      var timeStr = n.sent_at ? new Date(n.sent_at).toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'}).toLowerCase() : '';
-      html += '<div class="nf-item' + (isRead ? '' : ' unread') + '" role="button" tabindex="0" onclick="markNotifRead(\'' + n.id + '\')">'
-        + '<span class="nf-ico">' + ic[0] + '</span>'
-        + '<div class="nf-body"><div class="nf-top"><div class="nf-subj">' + (n.subject||'') + '</div><div class="nf-time">' + timeStr + '</div></div>'
-        + '<div class="nf-msg">' + (n.message||'') + '</div></div>'
-        + (isRead ? '' : '<span class="nf-dot" aria-label="Unread"></span>')
-        + '</div>';
+      var isRead = !!n.read_at, k = nfKind(n);
+      html += '<div class="nf-item' + (isRead ? '' : ' unread') + '" role="button" tabindex="0" onclick="markNotifRead(\'' + ordJs(n.id) + '\')">'
+        + '<span class="nf-ico k-' + k.cls + '">' + nfIcon(k.icon) + '</span>'
+        + '<div class="nf-body"><div class="nf-top"><div class="nf-subj">' + ordEsc(n.subject || '') + '</div><div class="nf-time">' + nfAgo(n.sent_at) + '</div></div>'
+        + '<div class="nf-msg">' + ordEsc(n.message || '') + '</div>'
+        + (k.group === 'order' && currentUser && currentUser.db_id && k.cls !== 'bday' ? '<span class="nf-go">View my orders <span aria-hidden="true">→</span></span>'
+          : String(n.id).indexOf('offer-') === 0 ? '<span class="nf-go">See offer <span aria-hidden="true">→</span></span>' : '')
+        + '</div></div>';
     });
   });
 
-  list.innerHTML = html;
+  list.innerHTML = html || '<div class="nf-empty"><div class="nf-empty-t">Nothing here</div><div class="nf-empty-s">Try another tab</div></div>';
+}
+
+var _nfFilter = 'all';
+function nfSetFilter(f) { _nfFilter = f; renderNotifList(); var l = document.getElementById('notif-list'); if (l) l.scrollTop = 0; }
+// What a notification is about: icon, colour, and which tab it sits under.
+function nfKind(n) {
+  var t = String(n.template_name || n.type || '');
+  if (String(n.id).indexOf('offer-') === 0 || t === 'promo' || t === 'system') return { group: 'offer', cls: 'offer', icon: 'tag' };
+  if (/^birthday/.test(t)) return { group: 'offer', cls: 'bday', icon: 'gift' };
+  if (/delivered/.test(t)) return { group: 'order', cls: 'done', icon: 'check' };
+  if (/cancel/.test(t)) return { group: 'order', cls: 'cancel', icon: 'x' };
+  if (/shipped|out_for|packed/.test(t)) return { group: 'order', cls: 'move', icon: 'truck' };
+  if (/baking/.test(t)) return { group: 'order', cls: 'order', icon: 'oven' };
+  if (/custom/.test(t)) return { group: 'order', cls: 'order', icon: 'cake' };
+  if (/^order/.test(t) || n.order_id) return { group: 'order', cls: 'order', icon: 'bag' };
+  return { group: 'offer', cls: 'offer', icon: 'bell' };
+}
+function nfIcon(k) {
+  var p = {
+    bag: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+    check: '<circle cx="12" cy="12" r="8.5"/><path d="M8.5 12.2l2.4 2.4 4.6-5"/>',
+    x: '<circle cx="12" cy="12" r="8.5"/><path d="M9.5 9.5l5 5M14.5 9.5l-5 5"/>',
+    truck: '<path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/>',
+    oven: '<rect x="4" y="5" width="16" height="14" rx="2.5"/><path d="M4 9h16"/><rect x="7.5" y="12" width="9" height="4.5" rx="1"/>',
+    cake: '<path d="M4 20h16v-7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2z"/><path d="M4 15c2 1.5 4 1.5 5.3 0 1.4 1.5 4 1.5 5.4 0 1.3 1.5 3.3 1.5 5.3 0"/><path d="M12 11V7.5M12 4.5v.5"/>',
+    tag: '<path d="M3.5 12.5V4.5h8l9 9-8 8z"/><circle cx="8" cy="9" r="1.5"/>',
+    gift: '<rect x="4" y="9" width="16" height="11" rx="1.5"/><path d="M3 9h18M12 9v11"/><path d="M12 9c-1.5-3-5-3.5-5-1.2C7 9 9 9 12 9zm0 0c1.5-3 5-3.5 5-1.2C17 9 15 9 12 9z"/>',
+    bell: '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/>'
+  }[k] || '';
+  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + p + '</svg>';
+}
+function nfAgo(iso) {
+  if (!iso) return '';
+  var d = new Date(iso), m = Math.max(0, Math.round((Date.now() - d.getTime()) / 60000));
+  if (m < 1) return 'now';
+  if (m < 60) return m + 'm ago';
+  if (m < 24 * 60) return Math.round(m / 60) + 'h ago';
+  return d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }).toLowerCase();
 }
 
 async function markNotifRead(notifId) {
@@ -8917,9 +8967,15 @@ async function markNotifRead(notifId) {
   });
   renderNotifList();
   updateNotifBadge();
+  var n = _notifData.find(function (x) { return x.id === notifId; });
+  var k = n ? nfKind(n) : null;
   try {
     await db.from('notifications').update({ read_at: now, status: 'read' }).eq('id', notifId);
   } catch(e) {}
+  if (k && k.group === 'order' && k.cls !== 'bday' && currentUser && currentUser.db_id) {
+    closeNotificationSheet();
+    loadAndShowOrders();
+  }
 }
 
 async function markAllNotifsRead() {
