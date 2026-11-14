@@ -165,12 +165,12 @@ function applyStaffRole(admin, employee) {
   // flag, for staff PIN login to the Tables board) — everything else
   // is admin-only.
   if (admin || employee) {
-    loadScriptsSequentially(['table-service-patch.js?v=20261120-tables', 'staff-order-patch.js?v=20261113-access', 'birthday-report-patch.js?v=20261102-io', 'ratings-report-patch.js?v=20261102-io', 'grocery-alerts.js?v=20261114', 'grocery-cafe-alerts.js?v=20261114']);
+    loadScriptsSequentially(['table-service-patch.js?v=20261122-fast', 'staff-order-patch.js?v=20261113-access', 'birthday-report-patch.js?v=20261102-io', 'ratings-report-patch.js?v=20261102-io', 'grocery-alerts.js?v=20261114', 'grocery-cafe-alerts.js?v=20261114']);
   }
   if (admin) {
     loadScriptsSequentially([
-      'inventory-patch.js?v=20260960', 'display-stock-patch.js?v=20260966', 'daily-expenses-patch.js',
-      'day-close-patch.js', 'sales-reports-patch.js?v=20260968', 'reports-hub-patch.js?v=20261020-owner-close', 'daily-summary-patch.js?v=20260968', 'customer-returns-patch.js?v=20260970',
+      'inventory-patch.js?v=20260960', 'display-stock-patch.js?v=20260966', 'daily-expenses-patch.js?v=20261122',
+      'day-close-patch.js?v=20261122', 'sales-reports-patch.js?v=20260968', 'reports-hub-patch.js?v=20261020-owner-close', 'daily-summary-patch.js?v=20260968', 'customer-returns-patch.js?v=20260970',
       'cash-counter-patch.js?v=20261121-cash', 'custom-bookings-patch.js?v=20261117-kitchen', 'executive-dashboard-patch.js?v=20261118-total',
       'push-broadcast-patch.js?v=20260974'
     ]);

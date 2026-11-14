@@ -114,9 +114,22 @@ function buildTablesBoardDOM() {
   document.body.appendChild(tSheet);
 }
 
+// The last good check is kept on the phone, so the board shows straight
+// away (marked as the saved view) while the fresh check runs.
+function tsShowSavedSnap() {
+  if (_tsBoardHasSnapshot) return false;
+  try {
+    var snap = JSON.parse(localStorage.getItem(TS_SNAP_KEY) || 'null');
+    if (!snap || !snap.map || Date.now() - snap.at > 12 * 3600000) return false;
+    renderTablesGrid(snap.map, snap.rank || {});
+    _tsSavedAt = snap.at;
+    return true;
+  } catch (e) { return false; }
+}
 function openTablesBoard() {
   document.getElementById('ts-board-overlay').style.display = 'block';
   document.getElementById('ts-board-sheet').style.display   = 'block';
+  tsShowSavedSnap();
   loadTablesStatus();
   subscribeTablesBoard();
 }
@@ -129,6 +142,11 @@ function closeTablesBoard() {
 }
 
 var _tsBoardRead = 0;
+var _tsSavedAt = 0, _tsLastLoadAt = 0;
+var TS_SNAP_KEY = 'cc_tables_snap_v1';
+function tsSaveSnap(map, rankMap) {
+  try { localStorage.setItem(TS_SNAP_KEY, JSON.stringify({ at: Date.now(), map: map, rank: rankMap })); } catch (e) {}
+}
 var _tsBoardHasSnapshot = false;
 var _tsOrderRead = 0;
 var _tsOrderLoading = false;
@@ -138,8 +156,10 @@ function tsOpenOrdersQuery(columns) {
 }
 async function loadTablesStatus() {
   var serial=++_tsBoardRead,notice=document.getElementById('ts-board-status'),grid=document.getElementById('ts-grid');
-  if(notice)notice.textContent='Checking open orders…';
-  if(grid&&!_tsBoardHasSnapshot)grid.textContent='Loading table status…';
+  _tsLastLoadAt=Date.now();
+  var savedShown=!_tsBoardHasSnapshot&&_tsSavedAt&&grid&&grid.querySelector('.ts-tb');
+  if(notice)notice.textContent=savedShown?'Updating… showing the check from '+new Date(_tsSavedAt).toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'}):'Checking open orders…';
+  if(grid&&!_tsBoardHasSnapshot&&!savedShown)grid.textContent='Loading table status…';
   try {
     var all=[],offset=0,pageSize=200;
     while(true) {
@@ -161,12 +181,13 @@ async function loadTablesStatus() {
       .forEach(function(code,idx){rankMap[code]=idx+1;});
     // Validate item payloads before replacing the previous successful snapshot.
     Object.keys(map).forEach(function(code){if(!Array.isArray(tsParseItems(map[code].items)))throw new Error('Invalid order items');});
-    renderTablesGrid(map,rankMap);_tsBoardHasSnapshot=true;
+    renderTablesGrid(map,rankMap);_tsBoardHasSnapshot=true;tsSaveSnap(map,rankMap);
     if(notice)notice.textContent='Open orders checked '+new Date().toLocaleTimeString('en-IN')+' · Includes overnight orders';
   } catch(error) {
     if(serial!==_tsBoardRead)return;
-    if(notice)notice.textContent='Could not refresh tables. '+(_tsBoardHasSnapshot?'Showing the last successful check. ':'Status is unknown. ')+'Tap Refresh to retry.';
-    if(grid&&!_tsBoardHasSnapshot)grid.textContent='Table availability could not be loaded. No tables have been marked free.';
+    var onSaved=!_tsBoardHasSnapshot&&_tsSavedAt&&grid&&grid.querySelector('.ts-tb');
+    if(notice)notice.textContent='Could not refresh tables. '+(_tsBoardHasSnapshot?'Showing the last successful check. ':onSaved?'Showing the saved check from '+new Date(_tsSavedAt).toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit'})+' — it may be out of date. ':'Status is unknown. ')+'Tap Refresh to retry.';
+    if(grid&&!_tsBoardHasSnapshot&&!onSaved)grid.textContent='Table availability could not be loaded. No tables have been marked free.';
     console.warn('Tables status:',error.message);
   }
 }
@@ -226,7 +247,7 @@ function subscribeTablesBoard() {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'store_orders' }, function () {
       if(document.getElementById('ts-board-sheet').style.display==='block')loadTablesStatus();
     })
-    .subscribe(function(status){if(status==='SUBSCRIBED'&&document.getElementById('ts-board-sheet').style.display==='block')loadTablesStatus();});
+    .subscribe(function(status){if(status==='SUBSCRIBED'&&document.getElementById('ts-board-sheet').style.display==='block'&&Date.now()-_tsLastLoadAt>5000)loadTablesStatus();});
 }
 
 window.addEventListener('online',function(){if(document.getElementById('ts-board-sheet')?.style.display==='block')loadTablesStatus();});
