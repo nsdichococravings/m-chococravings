@@ -1109,6 +1109,27 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
     box-shadow:0 18px 40px -18px rgba(58,10,70,.35)}
 }
 
+/* Egg preference sheet */
+.ep-sheet{position:absolute;left:0;right:0;bottom:0;z-index:401;background:#faf6f0;border-radius:28px 28px 0 0;border-top:1px solid #ece2d8;
+  padding:12px 18px calc(24px + env(safe-area-inset-bottom));box-shadow:0 -20px 50px -20px rgba(26,8,32,.45);font-family:'DM Sans',sans-serif}
+.ep-grab{width:42px;height:4px;border-radius:2px;background:#e2d6cb;margin:0 auto 16px}
+.ep-eb{font-size:10px;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:#b08d57;padding:0 4px}
+.ep-t{font-family:'Cormorant Garamond',Georgia,serif;font-size:30px;font-weight:600;line-height:1.05;color:#3a0a46;margin-top:4px;padding:0 4px}
+.ep-t em{font-style:italic;color:#b08d57;font-weight:500}
+.ep-s{font-size:12.5px;color:#8d7f90;margin:6px 4px 16px;line-height:1.45}
+.ep-list{display:flex;flex-direction:column;gap:10px}
+.ep-opt{display:flex;align-items:center;gap:14px;width:100%;text-align:left;padding:15px 16px;border-radius:18px;border:1px solid #ece2d8;background:#fffdfa;cursor:pointer;font-family:inherit;transition:border-color .15s,box-shadow .15s}
+.ep-opt:active{transform:scale(.99)}
+.ep-opt.on{border-color:#6e0977;box-shadow:0 0 0 3px rgba(110,9,119,.08);background:linear-gradient(170deg,#fcf5fb,#fffdfa 70%)}
+.ep-mark{flex:none;width:22px;height:22px;border:2px solid;border-radius:5px;display:flex;align-items:center;justify-content:center}
+.ep-mark::before{content:"";width:9px;height:9px;border-radius:50%;background:currentColor}
+.ep-mark.eg{color:#16a34a}.ep-mark.ee{color:#b91c1c}
+.ep-mark.ee::before{border-radius:0;width:0;height:0;background:none;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:9px solid currentColor}
+.ep-mark.bo{color:#b08d57;border-style:dashed}
+.ep-txt{flex:1;min-width:0}.ep-txt b{display:block;font-size:14.5px;font-weight:700;color:#24112b}.ep-txt small{display:block;font-size:11.5px;color:#8d7f90;margin-top:2px}
+.ep-check{flex:none;width:24px;height:24px;border-radius:50%;border:1px solid #e2d6cb;color:transparent;display:flex;align-items:center;justify-content:center}
+.ep-check svg{width:14px!important;height:14px!important}
+.ep-opt.on .ep-check{background:#6e0977;border-color:#6e0977;color:#fff}
 /* Profile on the boutique look (tokens from cart-ui.css) */
 #page-profile.cx{background:var(--cx-bg)}
 #page-profile .prof-hero{min-height:0;text-align:center;padding:26px 20px 22px;
@@ -2194,6 +2215,10 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
             <span class="mico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg></span>
             <div class="mtxt"><div class="mtitle">Delivery addresses</div><div class="msub" id="prof-addr-sub">Loading...</div></div><span class="marrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>
           </div>
+          <div class="mitem" id="prof-wallet-item" role="button" tabindex="0" onclick="if(typeof ccWalletOpen==='function')ccWalletOpen()">
+            <span class="mico gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H18v3"/><rect x="4" y="8" width="16" height="11" rx="2.5"/><path d="M16 13.5h.01"/></svg></span>
+            <div class="mtxt"><div class="mtitle">NSDI Wallet</div><div class="msub" id="prof-wallet-sub">Pay faster at checkout</div></div><span class="marrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>
+          </div>
           <div class="mitem" id="prof-push-item" role="button" tabindex="0" onclick="togglePushNotifications()" style="display:none">
             <span class="mico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg></span>
             <div class="mtxt"><div class="mtitle">Order updates &amp; offers</div><div class="msub" id="prof-push-sub">Off — tap to turn on</div></div><span class="marrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>
@@ -2207,9 +2232,9 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 
         <div class="mgrp">Preferences</div>
         <div class="mlist">
-          <div class="mitem mitem-static" id="egg-pref-item">
+          <div class="mitem" id="egg-pref-item" role="button" tabindex="0" onclick="openEggPrefSheet()">
             <span class="mico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3.5 0 6.5 5.5 6.5 10a6.5 6.5 0 0 1-13 0C5.5 8.5 8.5 3 12 3z"/></svg></span>
-            <div class="mtxt"><div class="mtitle">Egg preference</div><div class="msub"><span id="prof-egg">Eggless</span> · set at sign-up</div></div>
+            <div class="mtxt"><div class="mtitle">Egg preference</div><div class="msub"><span id="prof-egg">Eggless</span> · tap to change</div></div><span class="marrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></span>
           </div>
           <div class="mitem" role="button" tabindex="0" onclick="window.open('https://instagram.com/nsdi.chococravings','_blank')">
             <span class="mico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.2 6.8v.01"/></svg></span>
@@ -2428,36 +2453,16 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
     </div>
 
     <!-- EGG PREFERENCE SHEET -->
-    <div id="egg-sheet-overlay" onclick="closeEggPrefSheet()" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,.6);z-index:400;backdrop-filter:blur(4px)"></div>
-    <div id="egg-pref-sheet" style="display:none;position:absolute;bottom:0;left:0;right:0;background:var(--d2);border-radius:22px 22px 0 0;border-top:1px solid var(--bdr2);z-index:401;padding:0 0 28px;transition:transform .3s">
-      <div style="width:40px;height:4px;border-radius:2px;background:var(--faint);margin:14px auto 20px"></div>
-      <div style="font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:var(--white);padding:0 22px;margin-bottom:6px">Egg Preference</div>
-      <div style="font-size:12px;color:var(--dim);padding:0 22px;margin-bottom:20px">This will be applied to all your future orders</div>
-      <div style="display:flex;flex-direction:column;gap:10px;padding:0 16px">
-        <div onclick="setEggPref('eggless')" id="ep-eggless" style="display:flex;align-items:center;gap:14px;padding:16px;border-radius:14px;cursor:pointer;border:1.5px solid var(--p);background:rgba(107,47,206,.1)">
-          <div style="width:36px;height:36px;border-radius:50%;background:rgba(34,197,94,.15);display:flex;align-items:center;justify-content:center;font-size:18px">💚</div>
-          <div style="flex:1">
-            <div style="font-size:14px;font-weight:700;color:var(--white)">Eggless</div>
-            <div style="font-size:11px;color:var(--dim);margin-top:2px">No egg products in your brownies</div>
-          </div>
-          <div id="ep-check-eggless" style="width:20px;height:20px;border-radius:50%;background:var(--p);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff">✓</div>
-        </div>
-        <div onclick="setEggPref('egg')" id="ep-egg" style="display:flex;align-items:center;gap:14px;padding:16px;border-radius:14px;cursor:pointer;border:1.5px solid var(--bdr);background:var(--card)">
-          <div style="width:36px;height:36px;border-radius:50%;background:rgba(244,114,182,.12);display:flex;align-items:center;justify-content:center;font-size:18px">❤️</div>
-          <div style="flex:1">
-            <div style="font-size:14px;font-weight:700;color:var(--white)">With Egg</div>
-            <div style="font-size:11px;color:var(--dim);margin-top:2px">Contains egg in brownie base</div>
-          </div>
-          <div id="ep-check-egg" style="width:20px;height:20px;border-radius:50%;background:var(--bdr);display:none;align-items:center;justify-content:center;font-size:11px;color:#fff">✓</div>
-        </div>
-        <div onclick="setEggPref('both')" id="ep-both" style="display:flex;align-items:center;gap:14px;padding:16px;border-radius:14px;cursor:pointer;border:1.5px solid var(--bdr);background:var(--card)">
-          <div style="width:36px;height:36px;border-radius:50%;background:rgba(107,47,206,.12);display:flex;align-items:center;justify-content:center;font-size:18px">🍫</div>
-          <div style="flex:1">
-            <div style="font-size:14px;font-weight:700;color:var(--white)">Both</div>
-            <div style="font-size:11px;color:var(--dim);margin-top:2px">Show both eggless and egg variants</div>
-          </div>
-          <div id="ep-check-both" style="width:20px;height:20px;border-radius:50%;background:var(--bdr);display:none;align-items:center;justify-content:center;font-size:11px;color:#fff">✓</div>
-        </div>
+    <div id="egg-sheet-overlay" onclick="closeEggPrefSheet()" style="display:none;position:absolute;inset:0;background:rgba(26,8,32,.5);z-index:400;backdrop-filter:blur(4px)"></div>
+    <div id="egg-pref-sheet" class="ep-sheet cx" role="dialog" aria-label="Egg preference" style="display:none">
+      <div class="ep-grab"></div>
+      <div class="ep-eb">Your taste</div>
+      <div class="ep-t">Egg <em>preference</em></div>
+      <div class="ep-s">We show these first and use them for your future orders</div>
+      <div class="ep-list">
+        <button type="button" class="ep-opt" onclick="setEggPref('eggless')" id="ep-eggless"><span class="ep-mark eg" aria-hidden="true"></span><span class="ep-txt"><b>Eggless</b><small>No egg in your brownies</small></span><span class="ep-check" id="ep-check-eggless" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5l4 4 8-9"/></svg></span></button>
+        <button type="button" class="ep-opt" onclick="setEggPref('egg')" id="ep-egg"><span class="ep-mark ee" aria-hidden="true"></span><span class="ep-txt"><b>With egg</b><small>Classic recipe with egg</small></span><span class="ep-check" id="ep-check-egg" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5l4 4 8-9"/></svg></span></button>
+        <button type="button" class="ep-opt" onclick="setEggPref('both')" id="ep-both"><span class="ep-mark bo" aria-hidden="true"></span><span class="ep-txt"><b>Show me both</b><small>Eggless and with-egg side by side</small></span><span class="ep-check" id="ep-check-both" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12.5l4 4 8-9"/></svg></span></button>
       </div>
     </div>
     <!-- TIER UPGRADE CELEBRATION SHEET -->
@@ -4550,12 +4555,13 @@ function closeThemePicker() {
 })();
 
 function openEggPrefSheet() {
-  var current = (currentUser && currentUser.egg_preference) || 'Both';
+  var current = (currentUser && currentUser.egg_preference) || '';
   try {
     var saved = JSON.parse(localStorage.getItem('cc_user'));
     if (saved && saved.egg_preference) current = saved.egg_preference;
   } catch(e){}
-  updateEggPrefUI(current);
+  if (!current) { var lbl = document.getElementById('prof-egg'); current = lbl ? ({ 'Eggless': 'eggless', 'With egg': 'egg', 'Both': 'both' }[lbl.textContent.trim()] || 'both') : 'both'; }
+  updateEggPrefUI(String(current).toLowerCase());
   updateCartDots(); // ← show badge on first load if cart has items
   document.getElementById('egg-sheet-overlay').style.display = 'block';
   document.getElementById('egg-pref-sheet').style.display = 'block';
@@ -4568,21 +4574,17 @@ function closeEggPrefSheet() {
 
 function updateEggPrefUI(pref) {
   ['eggless','egg','both'].forEach(function(p) {
-    var card  = document.getElementById('ep-' + p);
-    var check = document.getElementById('ep-check-' + p);
-    if (!card || !check) return;
-    var isOn = p === pref;
-    card.style.border      = isOn ? '1.5px solid var(--p)' : '1.5px solid var(--bdr)';
-    card.style.background  = isOn ? 'rgba(107,47,206,.1)' : 'var(--card)';
-    check.style.display    = isOn ? 'flex' : 'none';
-    check.style.background = isOn ? 'var(--p)' : 'var(--bdr)';
+    var card = document.getElementById('ep-' + p);
+    if (card) { card.classList.toggle('on', p === pref); card.setAttribute('aria-pressed', p === pref ? 'true' : 'false'); }
   });
 }
 
 async function setEggPref(pref) {
   if (!currentUser || !currentUser.db_id) { showToast('Please log in first'); return; }
 
-  // Update UI immediately
+  // Update UI immediately (put back if saving fails)
+  var prevPref = document.querySelector('#egg-pref-sheet .ep-opt.on');
+  prevPref = prevPref ? prevPref.id.replace('ep-', '') : null;
   updateEggPrefUI(pref);
 
   // Update Supabase
@@ -4590,7 +4592,7 @@ async function setEggPref(pref) {
     .update({ egg_preference: pref })
     .eq('id', currentUser.db_id);
 
-  if (error) { showToast('Could not save preference'); return; }
+  if (error) { showToast('Could not save preference'); if (prevPref) updateEggPrefUI(prevPref); return; }
 
   // Update localStorage
   try {
@@ -10292,7 +10294,7 @@ function closeTierCelebration() {
 
 <script src="/lucky-draw.js"></script>
 <script src="/grocery-entry.js?v=20261112" defer></script>
-<script src="/wallet.js?v=20261110"></script>
+<script src="/wallet.js?v=20261123"></script>
 <script src="/diwali-card.js?v=20261105"></script>
 <script src="/festive-theme.js?v=20261114"></script>
 </body>
