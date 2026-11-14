@@ -1198,6 +1198,32 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 .ord-star{cursor:pointer;font-size:21px;padding:0 1px;color:#e3d6cf;transition:color .15s}
 .ord-star.on{color:var(--cx-gold)}
 .ord-card :focus-visible{outline:2px solid var(--cx-gold);outline-offset:2px;border-radius:6px}
+.ord-sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--cx-line);border-radius:20px;background:var(--cx-card);overflow:hidden;margin-bottom:4px}
+.ord-sum>div{padding:13px 8px;text-align:center;min-width:0}
+.ord-sum>div+div{border-left:1px solid var(--cx-line2)}
+.ord-sum b{display:block;font-family:var(--cx-serif);font-size:23px;font-weight:700;line-height:1;color:var(--cx-plum);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ord-sum span{display:block;margin-top:5px;font-size:9.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--cx-gold)}
+.ord-sec{display:flex;align-items:center;gap:10px;margin:10px 2px -2px;font-size:10px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--cx-gold)}
+.ord-sec::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--cx-line),transparent)}
+.ord-card.live{border-color:#e6cfe4;background:linear-gradient(170deg,#fcf5fb,var(--cx-card) 55%)}
+.ord-card.off{opacity:.78}
+.ord-head{display:flex;gap:14px;align-items:flex-start}
+.ord-thumb{flex:none;width:58px;height:58px;border-radius:16px;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(150deg,#f3e3f1,#f8eee6);color:var(--cx-plum);font-family:var(--cx-serif);font-size:24px;font-weight:700;box-shadow:0 0 0 1px rgba(176,141,87,.22) inset}
+.ord-thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.ord-thumb small{position:absolute;right:-1px;bottom:-1px;min-width:20px;height:20px;padding:0 5px;border-radius:999px 0 14px 999px;background:var(--cx-plum);color:#ffe9c2;
+  font:700 10px/20px 'DM Sans',sans-serif;text-align:center;z-index:1}
+.ord-hb{flex:1;min-width:0}
+.ord-lines{margin:8px 0 0;padding:0;list-style:none}
+.ord-lines li{display:flex;gap:8px;font-size:12.5px;color:var(--cx-ink);line-height:1.5}
+.ord-lines li b{flex:none;color:var(--cx-gold);font-weight:700;min-width:22px}
+.ord-lines li span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ord-lines li em{flex:none;font-style:normal;color:var(--cx-muted);font-size:11.5px}
+.ord-lines .more{color:var(--cx-brand);font-weight:600;font-size:12px}
+.ord-acts{display:flex;gap:8px;margin-top:12px}
+.ord-act{flex:1;min-height:42px;border-radius:999px;border:1px solid var(--cx-line);background:#fff;color:var(--cx-plum);font:600 12.5px 'DM Sans',sans-serif;letter-spacing:.04em;cursor:pointer}
+.ord-act.pri{border:0;color:#fff;background:linear-gradient(135deg,#3a0a46,#6e0977 60%,#8e1a8f);box-shadow:0 0 0 1px rgba(176,141,87,.35) inset,0 10px 22px -12px rgba(58,10,70,.55)}
+.ord-act:active{transform:scale(.98)}
 /* Rating sheet */
 #rate-sheet .rate-card{width:100%;max-width:480px;background:var(--cx-card);border-radius:28px 28px 0 0;padding:12px 22px calc(24px + env(safe-area-inset-bottom));box-shadow:0 -20px 40px -20px rgba(36,5,45,.5)}
 #rate-sheet .rate-grab{width:40px;height:4px;border-radius:2px;background:#e6d9cf;margin:0 auto 16px}
@@ -3981,19 +4007,33 @@ function renderOrdersList(orders) {
     return;
   }
 
-  listEl.innerHTML = orders.map(function(o) {
+  var LIVE = ['pending', 'confirmed', 'baking', 'packed', 'shipped', 'out_for_delivery', 'ready_for_baking', 'ready_to_dispatch'];
+  var live = orders.filter(function (o) { return LIVE.indexOf(o.status) >= 0; });
+  var past = orders.filter(function (o) { return LIVE.indexOf(o.status) < 0; });
+  var spent = orders.reduce(function (n, o) { return n + (o.status === 'cancelled' ? 0 : (Number(o.total) || 0)); }, 0);
+  if (!window._coData) window._coData = {};
+
+  function card(o) {
     var items = o.order_items || [];
     var first = items[0];
     var title = first ? first.product_name : 'Your order';
-    var more = items.length > 1 ? ' <span class="ord-more">+ ' + (items.length - 1) + ' more</span>' : '';
     var qty = items.reduce(function (n, i) { return n + (i.quantity || 1); }, 0);
-    var meta = first ? [first.pack_label, qty ? qty + (qty === 1 ? ' item' : ' items') : ''].filter(Boolean).join(' · ') : '';
     var isAcc = isAccessoryOrder(o.order_items);
     var st = ORDER_STATUS[o.status] || { t: o.status || 'Order', c: '#4a3a50', b: '#f3ece4' };
-    var date = o.created_at ? new Date(o.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    var date = o.created_at ? ordDateLabel(o.created_at) : '';
     var pay = { cod: 'Cash on delivery', upi: 'UPI', wallet: 'NSDI Wallet', card: 'Card' }[o.payment_method] || (o.payment_method || '').toUpperCase();
+    var isLive = LIVE.indexOf(o.status) >= 0;
 
-    // Progress line for orders still on their way.
+    // Photo of the first item when we know it; otherwise its initial.
+    var img = first ? ordProductImage(first.product_name) : '';
+    var thumb = '<div class="ord-thumb" aria-hidden="true">' + ordEsc((title || '·').charAt(0))
+      + (img ? '<img src="' + ordEsc(img) + '" alt="" loading="lazy" onerror="this.remove()">' : '')
+      + (qty > 1 ? '<small>×' + qty + '</small>' : '') + '</div>';
+
+    var lines = items.slice(0, 3).map(function (i) {
+      return '<li><b>' + (i.quantity || 1) + '×</b><span>' + ordEsc(i.product_name) + '</span>' + (i.pack_label ? '<em>' + ordEsc(i.pack_label) + '</em>' : '') + '</li>';
+    }).join('') + (items.length > 3 ? '<li class="more">+ ' + (items.length - 3) + ' more</li>' : '');
+
     var steps = isAcc ? ORDER_STEPS_ACC : ORDER_STEPS;
     var at = steps.indexOf(o.status);
     var progress = '';
@@ -4003,27 +4043,76 @@ function renderOrdersList(orders) {
         + '</div><div class="ord-steps-l"><span>' + ORDER_STEP_LABEL[steps[0]] + '</span><span>' + ordEsc(st.t) + '</span><span>' + ORDER_STEP_LABEL[steps[steps.length - 1]] + '</span></div>';
     }
 
-    // Store custom order data in memory — avoids JSON escaping issues in HTML attributes
-    if (!window._coData) window._coData = {};
     var customBtn = '';
     if (o.is_custom) {
       var co = Array.isArray(o.custom_orders) ? o.custom_orders[0] : o.custom_orders;
       if (co) {
         window._coData[o.order_number] = co;
-        customBtn = '<button type="button" class="ord-custom" onclick="showCustomOrderDetail(\'' + o.order_number + '\',\'' + o.status + '\')">View custom order details</button>';
+        customBtn = '<button type="button" class="ord-custom" onclick="showCustomOrderDetail(\'' + ordJs(o.order_number) + '\',\'' + ordJs(o.status) + '\')">View custom order details</button>';
       }
     }
-    return '<div class="ord-card">'
+
+    var acts = '';
+    if (isLive) {
+      var desc = first ? ((first.egg_type === 'eggless' ? 'Eggless' : first.egg_type ? 'With egg' : '') + (first.pack_label ? (first.egg_type ? ' · ' : '') + first.pack_label : '') + (items.length > 1 ? ' · +' + (items.length - 1) + ' more' : '')) : '';
+      acts = '<div class="ord-acts"><button type="button" class="ord-act pri" onclick="openTrackingDetail(\'' + ordJs(o.order_number) + '\',\'' + ordJs(o.order_number) + '\',\'' + ordJs(o.status) + '\',\'' + ordJs(o.total) + '\',\'' + ordJs(date) + '\',\'' + ordJs(title) + '\',\'' + ordJs(desc) + '\')">Track order</button></div>';
+    } else if (o.status === 'delivered' && first && !o.is_custom) {
+      acts = '<div class="ord-acts"><button type="button" class="ord-act" onclick="ordOrderAgain(\'' + ordJs(first.product_name) + '\')">Order again</button></div>';
+    }
+
+    return '<div class="ord-card' + (isLive ? ' live' : '') + (o.status === 'cancelled' ? ' off' : '') + '">'
       + '<div class="ord-top"><span class="ord-no">' + ordEsc(o.order_number || '#' + String(o.id).slice(0, 6)) + '</span>'
       +   '<span class="ord-chip" style="color:' + st.c + ';background:' + st.b + '"><i style="background:' + st.c + '"></i>' + ordEsc(st.t) + '</span></div>'
-      + '<div class="ord-title">' + ordEsc(title) + more + '</div>'
-      + (meta ? '<div class="ord-meta">' + ordEsc(meta) + '</div>' : '')
+      + '<div class="ord-head">' + thumb + '<div class="ord-hb">'
+      +   (items.length > 1
+            ? '<div class="ord-title">' + items.length + ' items</div><ul class="ord-lines">' + lines + '</ul>'
+            : '<div class="ord-title">' + ordEsc(title) + '</div><div class="ord-meta">' + ordEsc([qty ? qty + '×' : '', first && first.pack_label, first && first.egg_type ? (first.egg_type === 'eggless' ? 'Eggless' : 'With egg') : ''].filter(Boolean).join(' · ')) + '</div>')
+      + '</div></div>'
       + progress
-      + '<div class="ord-foot"><span>' + ordEsc(date) + (pay ? ' · ' + ordEsc(pay) : '') + '</span><span class="ord-total">₹' + ordEsc(o.total) + '</span></div>'
+      + '<div class="ord-foot"><span>' + ordEsc(date) + (pay ? ' · ' + ordEsc(pay) : '') + '</span><span class="ord-total">₹' + ordEsc(Number(o.total || 0).toLocaleString('en-IN')) + '</span></div>'
+      + acts
       + customBtn
       + orderRatingRow(o)
       + '</div>';
-  }).join('');
+  }
+
+  listEl.innerHTML =
+      '<div class="ord-sum"><div><b>' + orders.length + '</b><span>Orders</span></div>'
+    + '<div><b>' + live.length + '</b><span>On the way</span></div>'
+    + '<div><b>₹' + Math.round(spent).toLocaleString('en-IN') + '</b><span>Spent</span></div></div>'
+    + (live.length ? '<div class="ord-sec">On the way</div>' + live.map(card).join('') : '')
+    + (past.length ? '<div class="ord-sec">' + (live.length ? 'Past orders' : 'Your orders') + '</div>' + past.map(card).join('') : '');
+}
+
+function ordJs(v) { return String(v == null ? '' : v).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+function ordDateLabel(iso) {
+  var d = new Date(iso), now = new Date();
+  var day = function (x) { return new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime(); };
+  var diff = Math.round((day(now) - day(d)) / 86400000);
+  var time = d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }).toLowerCase();
+  if (diff === 0) return 'Today, ' + time;
+  if (diff === 1) return 'Yesterday, ' + time;
+  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: d.getFullYear() === now.getFullYear() ? undefined : 'numeric' });
+}
+// The product's photo, found through the menu cards already on the page.
+function ordFindCard(name) {
+  if (!name) return null;
+  var cards = document.querySelectorAll('[data-name][data-sku]');
+  for (var i = 0; i < cards.length; i++) if (cards[i].dataset.name === name) return cards[i];
+  return null;
+}
+function ordProductImage(name) {
+  var c = ordFindCard(name);
+  return c && typeof getProductImage === 'function' ? (getProductImage(c.dataset.sku) || '') : '';
+}
+// Order again: open that product so the customer picks the pack and adds it.
+function ordOrderAgain(name) {
+  var c = ordFindCard(name);
+  if (c && typeof openDetail === 'function') { openDetail(c); return; }
+  if (typeof setNav === 'function') setNav('explore');
+  showPage('explore');
+  var inp = document.getElementById('explore-search');
+  if (inp) { inp.value = name; if (typeof searchProducts === 'function') searchProducts(name); }
 }
 
 // ── ORDER RATINGS ──
