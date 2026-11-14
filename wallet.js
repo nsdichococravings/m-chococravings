@@ -88,6 +88,8 @@
       + '<div class="wl-mid"><div class="wl-lbl">NSDI Wallet</div><div class="wl-bal">' + bal + '</div></div>'
       + '<button class="wl-add" type="button" onclick="event.stopPropagation();ccWalletOpen(true)">+ Add money</button>'
       + '</div>';
+    var ps = document.getElementById('prof-wallet-sub');
+    if (ps) ps.textContent = d ? bal + ' balance · tap to add money' : 'Pay faster at checkout';
   }
 
   async function load() {
