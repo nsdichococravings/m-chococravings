@@ -679,6 +679,30 @@ body{background:var(--cream);font-family:'DM Sans','Instrument Sans',system-ui,s
 .total-amt{font-family:var(--serif);font-size:34px;font-weight:700;color:var(--plum)}
 .pay-opt{border-radius:999px;border:1px solid var(--rule);background:#fff;color:#4a3a50;font-weight:600}
 .pay-opt.on{background:var(--plum);border-color:var(--plum);color:#fff;box-shadow:0 8px 18px -10px rgba(58,10,70,.6)}
+.pay-opts .pay-opt{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:11px 8px;border-radius:18px;text-align:center;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.pay-opt .po-t{font-size:14px;font-weight:700;letter-spacing:.02em}
+.pay-opt .po-s{font-size:10.5px;font-weight:500;color:#8d7f90;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.pay-opt.on .po-s{color:rgba(255,233,194,.85)}
+#pay-wallet .po-s{font-family:'Cormorant Garamond',Georgia,serif;font-size:14px;font-weight:700;color:#8a6a33}
+#pay-wallet.on .po-s{color:#ffe9c2}
+.wlp{margin:-6px 0 16px}
+.wlp-card{border:1px solid #ecdcbf;border-radius:20px;padding:15px 16px;background:linear-gradient(165deg,#fffaf2,#fffdfa 65%)}
+.wlp-card.ok{border-color:#d3e8da;background:linear-gradient(165deg,#f4faf6,#fffdfa 65%)}
+.wlp-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.wlp-l{font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#b08d57}
+.wlp-b{font-family:'Cormorant Garamond',Georgia,serif;font-size:26px;font-weight:700;color:#3a0a46;line-height:1}
+.wlp-line{display:flex;justify-content:space-between;font-size:12.5px;color:#6b5a70;margin-top:8px}
+.wlp-after{padding-top:8px;border-top:1px dashed #e2d6cb;color:#2f7a4b;font-weight:700}
+.wlp-short{margin-top:8px;font-size:12.5px;font-weight:600;color:#a33a52}
+.wlp-sl{margin-top:12px;font-size:10px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#8d7f90}
+.wlp-chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.wlp-chip{min-height:38px;padding:0 15px;border-radius:999px;border:1px solid #ece2d8;background:#fff;color:#3a0a46;font-family:'Cormorant Garamond',Georgia,serif;font-size:16px;font-weight:700;cursor:pointer}
+.wlp-chip.on{background:#3a0a46;border-color:#3a0a46;color:#ffe9c2}
+.wlp-t{font-family:'Cormorant Garamond',Georgia,serif;font-size:19px;font-weight:700;color:#3a0a46}
+.wlp-s{font-size:11.5px;color:#8d7f90;margin-top:8px;line-height:1.45}
+.wlp-link{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:0;border:0;background:none;color:#6e0977;font:700 12.5px 'DM Sans',sans-serif;text-decoration:none;cursor:pointer}
+.wlp-skel{width:80px;height:20px;border-radius:8px;background:linear-gradient(90deg,#f3ece4,#fbf7f2,#f3ece4);background-size:200% 100%;animation:wlpSk 1.2s linear infinite}
+@keyframes wlpSk{to{background-position:-200% 0}}
 .place-btn{border-radius:999px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:18px}
 .place-upi,.place-cash{background:linear-gradient(135deg,var(--plum) 0%,#6e0977 60%,#8e1a8f 100%);box-shadow:0 0 0 1px rgba(176,141,87,.35) inset,0 14px 28px -12px rgba(58,10,70,.6)}
 
@@ -1144,10 +1168,11 @@ body{background:var(--cream);font-family:'DM Sans','Instrument Sans',system-ui,s
     </div>
     <div class="pay-lbl">PAY VIA</div>
     <div class="pay-opts">
-      <div class="pay-opt on" id="pay-upi"  onclick="selPay('upi')">📱  UPI</div>
-      <div class="pay-opt"   id="pay-qr"   onclick="selPay('qr')">📷  Scan QR</div>
-      <div class="pay-opt"   id="pay-cash" onclick="selPay('cash')">💵  Cash</div>
+      <div class="pay-opt on" id="pay-upi" role="button" tabindex="0" onclick="selPay('upi')"><span class="po-t">UPI</span><span class="po-s">Any UPI app</span></div>
+      <div class="pay-opt" id="pay-wallet" role="button" tabindex="0" onclick="selPay('wallet')"><span class="po-t">Wallet</span><span class="po-s" id="pay-wallet-bal">NSDI Wallet</span></div>
+      <div class="pay-opt" id="pay-cash" role="button" tabindex="0" onclick="selPay('cash')"><span class="po-t">Cash</span><span class="po-s">Pay at counter</span></div>
     </div>
+    <div id="wl-pay" class="wlp" style="display:none" aria-live="polite"></div>
 
     <!-- QR Scanner panel -->
     <div id="qr-panel" style="display:none;margin-bottom:16px">
@@ -1671,6 +1696,7 @@ function openSheet(){
   setTimeout(autoFillPhone, 100);
   refreshSeatOpts();
   selPay(payMethod);
+  if (payMethod !== 'wallet') wlpLoad(true); // shows the balance on the Wallet option
   document.getElementById('backdrop').style.display='block';
   var s=document.getElementById('sheet');
   s.style.display='block';
@@ -1683,26 +1709,165 @@ function closeSheet(){
   document.getElementById('sheet').style.display='none';
 }
 function selPay(m){
+  if (m === 'qr') m = 'upi'; // Scan QR was removed
   payMethod=m;
-  document.getElementById('pay-upi').classList.toggle('on',m==='upi');
-  document.getElementById('pay-cash').classList.toggle('on',m==='cash');
-  document.getElementById('pay-qr').classList.toggle('on',m==='qr');
+  ['upi','wallet','cash'].forEach(function(k){ var el=document.getElementById('pay-'+k); if(el){ el.classList.toggle('on',m===k); el.setAttribute('aria-pressed', m===k ? 'true' : 'false'); } });
   var btn   = document.getElementById('place-btn');
   var panel = document.getElementById('qr-panel');
-  if(m==='qr'){
-    btn.style.display = 'none';
-    panel.style.display = 'block';
-    // reset scanner state
-    document.getElementById('qr-scan-state').style.display='block';
-    document.getElementById('qr-scanned-state').style.display='none';
-    document.getElementById('qr-paid-btn').style.display='none';
-    startScanner();
-  } else {
-    btn.style.display = 'block';
-    panel.style.display = 'none';
-    btn.className='place-btn place-'+m;
-    btn.textContent=m==='upi'?'Pay ₹'+cartTotal()+' via UPI':'Place Order · Cash ₹'+cartTotal();
+  if (panel) panel.style.display = 'none';
+  btn.style.display = 'block';
+  btn.className = 'place-btn place-' + (m === 'cash' ? 'cash' : 'upi');
+  var wp = document.getElementById('wl-pay');
+  if (m === 'wallet') { if (wp) wp.style.display = 'block'; wlpLoad(); }
+  else { if (wp) wp.style.display = 'none'; }
+  btn.textContent = payBtnLabel();
+}
+function payBtnLabel(){
+  var t = cartTotal();
+  if (payMethod === 'wallet') {
+    var w = _wlp.data;
+    if (_wlp.state === 'signin') return 'Sign in to pay with Wallet';
+    if (_wlp.state === 'nophone') return 'Choose UPI or Cash';
+    if (_wlp.state !== 'ready' || !w) return 'Pay ₹' + t + ' from Wallet';
+    var short = Math.max(0, t - Number(w.balance || 0));
+    return short > 0 ? 'Add ₹' + _wlp.add + ' & pay ₹' + t : 'Pay ₹' + t + ' from Wallet';
   }
+  return payMethod === 'upi' ? 'Pay ₹' + t + ' via UPI' : 'Place Order · Cash ₹' + t;
+}
+
+// ── NSDI WALLET AT CHECKOUT ───────────────────────────────────
+// Pay the whole order from the wallet. When the balance is short, the
+// customer adds money with UPI first (same top-up as the app), then the
+// order is paid from the wallet in one go.
+var _wlp = { state: 'idle', data: null, add: 0, err: '', busy: false };
+function wlpMoney(n){ n = Math.round((Number(n) || 0) * 100) / 100; return '₹' + n.toLocaleString('en-IN', { maximumFractionDigits: 2 }); }
+async function wlpLoad(quiet){
+  if (!db) return;
+  if (!quiet) { _wlp.state = 'loading'; wlpRender(); }
+  try {
+    var ss = await db.auth.getSession();
+    if (!(ss && ss.data && ss.data.session)) { _wlp.state = 'signin'; _wlp.data = null; wlpRender(); return; }
+    var r = await db.rpc('cc_wallet_me');
+    if (r.error) throw r.error;
+    _wlp.data = r.data || { balance: 0 };
+    _wlp.state = _wlp.data.no_phone ? 'nophone' : 'ready';
+    _wlp.err = '';
+    wlpPickAdd();
+  } catch(e) {
+    _wlp.state = 'error'; _wlp.err = /function|schema cache/i.test(String(e && e.message)) ? 'Wallet is not set up yet.' : 'Could not load your wallet. Check your connection.';
+  }
+  wlpRender();
+}
+// Smallest sensible top-up that covers the order (at least ₹10).
+function wlpShort(){ return _wlp.data ? Math.max(0, Math.round((cartTotal() - Number(_wlp.data.balance || 0)) * 100) / 100) : 0; }
+function wlpChoices(){
+  var need = Math.max(10, Math.ceil(wlpShort() / 10) * 10);
+  return [need].concat([100, 200, 500, 1000].filter(function(v){ return v > need; })).slice(0, 4);
+}
+function wlpPickAdd(){ var c = wlpChoices(); if (c.indexOf(_wlp.add) === -1) _wlp.add = c[0]; }
+function wlpSetAdd(v){ _wlp.add = v; wlpRender(); }
+function wlpRender(){
+  var box = document.getElementById('wl-pay'), chip = document.getElementById('pay-wallet-bal');
+  if (chip) chip.textContent = _wlp.state === 'ready' && _wlp.data ? wlpMoney(_wlp.data.balance) : 'NSDI Wallet';
+  var btn = document.getElementById('place-btn');
+  if (btn && payMethod === 'wallet' && !_placing) btn.textContent = payBtnLabel();
+  if (!box) return;
+  var total = cartTotal(), h = '';
+  if (_wlp.state === 'loading' || _wlp.state === 'idle') {
+    h = '<div class="wlp-card"><div class="wlp-row"><span class="wlp-l">NSDI Wallet</span><span class="wlp-skel"></span></div><div class="wlp-s">Checking your balance…</div></div>';
+  } else if (_wlp.state === 'signin') {
+    h = '<div class="wlp-card"><div class="wlp-t">Sign in to use your wallet</div><div class="wlp-s">Your NSDI Wallet lives in the NSDI app. Sign in there, then come back to pay.</div>'
+      + '<a class="wlp-link" href="/auth.html">Sign in <span aria-hidden="true">→</span></a></div>';
+  } else if (_wlp.state === 'nophone') {
+    h = '<div class="wlp-card"><div class="wlp-t">Add your mobile number</div><div class="wlp-s">Your wallet is linked to your mobile number. Add it in your profile in the NSDI app.</div></div>';
+  } else if (_wlp.state === 'error') {
+    h = '<div class="wlp-card"><div class="wlp-s">' + _wlp.err + '</div><button type="button" class="wlp-link" onclick="wlpLoad()">Try again</button></div>';
+  } else {
+    var bal = Number(_wlp.data.balance || 0), short = wlpShort();
+    if (short <= 0) {
+      h = '<div class="wlp-card ok"><div class="wlp-row"><span class="wlp-l">Wallet balance</span><b class="wlp-b">' + wlpMoney(bal) + '</b></div>'
+        + '<div class="wlp-line"><span>This order</span><span>−' + wlpMoney(total) + '</span></div>'
+        + '<div class="wlp-line wlp-after"><span>Left after paying</span><span>' + wlpMoney(bal - total) + '</span></div></div>';
+    } else {
+      h = '<div class="wlp-card"><div class="wlp-row"><span class="wlp-l">Wallet balance</span><b class="wlp-b">' + wlpMoney(bal) + '</b></div>'
+        + '<div class="wlp-short">' + wlpMoney(short) + ' more needed for this order</div>'
+        + '<div class="wlp-sl">Add to wallet</div><div class="wlp-chips">'
+        + wlpChoices().map(function(v){ return '<button type="button" class="wlp-chip' + (v === _wlp.add ? ' on' : '') + '" onclick="wlpSetAdd(' + v + ')">₹' + v.toLocaleString('en-IN') + '</button>'; }).join('')
+        + '</div><div class="wlp-s">Paid with UPI, then this order is paid from your wallet. '
+        + (bal + _wlp.add - total > 0 ? wlpMoney(bal + _wlp.add - total) + ' stays in your wallet.' : 'This covers the order exactly.') + '</div></div>';
+    }
+  }
+  box.innerHTML = h;
+}
+// UPI top-up through the wallet-topup edge function (same as the app).
+async function wlpEdge(body){
+  var s = await db.auth.getSession(), sess = s && s.data && s.data.session;
+  if (!sess) throw new Error('Please sign in again');
+  var res = await fetch(SUPABASE_URL + '/functions/v1/wallet-topup', {
+    method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + sess.access_token }, body: JSON.stringify(body)
+  });
+  var data = await res.json().catch(function(){ return {}; });
+  if (!res.ok || data.error) throw new Error(data.error || 'Could not reach payments. Please try again.');
+  return data;
+}
+async function wlpTopUp(amount){
+  if (!window.Razorpay) await storeLoadScript('https://checkout.razorpay.com/v1/checkout.js');
+  var o = await wlpEdge({ action: 'create', amount: amount });
+  var paid = await new Promise(function(resolve){
+    var rzp = new window.Razorpay({
+      key: o.key_id, amount: o.amount, currency: 'INR', order_id: o.order_id,
+      name: 'NSDI Wallet', description: 'Add ₹' + amount + ' to wallet',
+      config: { display: { blocks: { upi: { name: 'Pay with UPI', instruments: [{ method: 'upi' }] } }, sequence: ['block.upi'], preferences: { show_default_blocks: true } } },
+      theme: { color: '#6e0977' },
+      modal: { ondismiss: function(){ resolve(false); } },
+      handler: function(){ resolve(true); }
+    });
+    rzp.open();
+  });
+  // A UPI app can finish after the checkout closes, so always ask the server.
+  for (var i = 0; i < 4; i++) {
+    try { var r = await wlpEdge({ action: 'confirm', order_id: o.order_id }); if (r.status === 'paid') return true; } catch(e) {}
+    if (!paid && i === 0) return false; // closed without paying
+    await new Promise(function(ok){ setTimeout(ok, 1500 * (i + 1)); });
+  }
+  throw new Error('Top-up not confirmed yet. If money left your account it will show in your wallet shortly.');
+}
+async function placeWalletOrder(btn){
+  await wlpLoad(true);
+  if (_wlp.state === 'signin') { unlockPlaceBtn(); location.href = '/auth.html'; return; }
+  if (_wlp.state !== 'ready') { wlpRender(); unlockPlaceBtn(); return; }
+  if (wlpShort() > 0) {
+    btn.textContent = 'Opening UPI…';
+    try {
+      var ok = await wlpTopUp(_wlp.add);
+      if (!ok) { unlockPlaceBtn(); return; }
+    } catch(e) { alert(e.message || 'Top-up failed'); await wlpLoad(true); unlockPlaceBtn(); return; }
+    await wlpLoad(true);
+    if (wlpShort() > 0) { wlpRender(); unlockPlaceBtn(); return; }
+  }
+  btn.textContent = 'Paying from wallet…';
+  var token, data;
+  try {
+    token = await getToken();
+    data = await insertStoreOrder(token, null, 'wallet', 'pending');
+  } catch(e) { console.error(e); unlockPlaceBtn('Error — Try again'); return; }
+  var paidOk = true;
+  try {
+    var r = await db.rpc('cc_wallet_pay_store_order', { p_order_id: data.id });
+    if (r.error) throw r.error;
+    data.payment_status = 'paid';
+  } catch(e) {
+    paidOk = false;
+    alert('Your order is placed (' + token + '), but the wallet payment did not go through:\n' + ((e && e.message) || e) + '\n\nPlease pay at the counter.');
+  }
+  rememberPlacedCart(token);
+  _placing = false;
+  orderId = data.id; orderToken = token;
+  var invoiceData = buildInvoiceData(data);
+  closeSheet();
+  showConfirm(token, cartEntries(), cartTotal());
+  if (paidOk && typeof showStoreToast === 'function') showStoreToast('Paid from your NSDI Wallet');
+  if (invoiceData.customer_phone && invoiceData.customer_phone !== '—') sendInvoiceAuto(invoiceData);
 }
 
 // ── QR SCANNER ────────────────────────────────────────────────
@@ -2058,7 +2223,7 @@ function unlockPlaceBtn(label){
   var btn = document.getElementById('place-btn');
   if (!btn) return;
   btn.disabled = false; btn.style.opacity = '1';
-  btn.textContent = label || (payMethod === 'upi' ? 'Pay ₹' + cartTotal() + ' via UPI' : 'Place Order · Cash ₹' + cartTotal());
+  btn.textContent = label || payBtnLabel();
 }
 
 async function placeOrder(){
@@ -2072,6 +2237,7 @@ async function placeOrder(){
   await offerTableMerge();
   if (!(await requireSeat())) { unlockPlaceBtn(); return; }
   if (payMethod === 'upi') { openRazorpay(); return; }
+  if (payMethod === 'wallet') { await placeWalletOrder(btn); return; }
 
   // Cash flow
   btn.textContent = 'Placing…'; btn.style.opacity = '.6'; btn.disabled = true;
