@@ -204,7 +204,8 @@
     topup:  { i: '↑', bg: '#e3f4e8', c: '#15803d', t: 'Added with UPI' },
     change: { i: '◎', bg: '#fdf3dc', c: '#8a6d12', t: 'Change saved at counter' },
     spend:  { i: '↓', bg: '#f6ebf8', c: '#6e0977', t: 'Paid at counter' },
-    adjust: { i: '✎', bg: '#eef1f6', c: '#475569', t: 'Correction' }
+    adjust: { i: '✎', bg: '#eef1f6', c: '#475569', t: 'Correction' },
+    refund: { i: '↺', bg: '#e3f4e8', c: '#15803d', t: 'Refund · cancelled order' }
   };
   function when(ts) {
     var d = new Date(ts); if (isNaN(d)) return '';

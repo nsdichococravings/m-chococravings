@@ -83,7 +83,7 @@ async function swLookup() {
   catch (e) { swMsg(e.message); } finally { _swBusy = false; }
 }
 
-var SW_KIND = { topup: 'Added with UPI', change: 'Change kept', spend: 'Paid an order', adjust: 'Correction' };
+var SW_KIND = { topup: 'Added with UPI', change: 'Change kept', spend: 'Paid an order', adjust: 'Correction', refund: 'Refund · cancelled order' };
 function swRender() {
   var d = _swData, el = document.getElementById('sw-out');
   if (!el || !d) return;
