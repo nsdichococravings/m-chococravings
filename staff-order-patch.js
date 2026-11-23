@@ -304,7 +304,8 @@ var _staffShift;          // undefined = not checked yet, null = not clocked in,
 var _shiftAfter = null;   // what to do after the sheet closes (e.g. open Tables)
 
 // Same date convention as attendance.html so both pages see the same rows.
-function shiftToday() { return new Date().toISOString().slice(0, 10); }
+// Today in local (India) time; toISOString() is still yesterday before 5:30 am.
+function shiftToday() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 function shiftSkipKey() { return 'cc_shift_skip_' + (_staffSession ? _staffSession.name : '') + '_' + shiftToday(); }
 function shiftSkipped() { try { return localStorage.getItem(shiftSkipKey()) === '1'; } catch (e) { return false; } }
 
