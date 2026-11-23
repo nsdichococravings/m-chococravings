@@ -102,6 +102,54 @@ input,select,textarea{font-family:inherit}
 .payroll-card{background:var(--card)!important;border:1px solid var(--line)!important;border-radius:22px!important;padding:18px!important;margin-bottom:12px;
   box-shadow:0 1px 0 rgba(255,255,255,.8) inset,0 10px 30px -18px rgba(58,10,70,.18)}
 .payroll-name{font-family:var(--serif);font-size:20px;font-weight:600;color:var(--plum)}
+.at-eb{font-size:10px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--gold)}
+.at-hrow{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px}
+.at-hint{font-size:11px;color:var(--muted)}
+.at-count{min-width:22px;height:22px;padding:0 7px;border-radius:999px;background:var(--plum);color:#ffe9c2;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.at-pay{background:linear-gradient(165deg,#fbf3fa,var(--card) 60%)!important}
+.at-total{font-family:var(--serif);font-size:42px;font-weight:700;line-height:1;color:var(--plum);margin-top:8px}
+.at-sub{font-size:12px;color:var(--muted);margin-top:6px}
+.at-rows{margin-top:14px;padding-top:6px;border-top:1px solid var(--line)}
+.at-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px dashed #efe6dc;font-size:13px;color:var(--ink2)}
+.at-row:last-child{border-bottom:0}
+.at-row small{display:block;font-size:10.5px;color:var(--rose);margin-top:2px}
+.at-row b{font-family:var(--serif);font-size:17px;color:var(--ink)}
+.at-row.off b{color:var(--rose);text-decoration:line-through}
+.at-sum{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-bottom:14px}
+.at-sum>div{padding:10px 6px;text-align:center}.at-sum>div+div{border-left:1px solid var(--line)}
+.at-sum b{display:block;font-family:var(--serif);font-size:22px;font-weight:700;color:var(--plum);line-height:1}
+.at-sum span{display:block;margin-top:4px;font-size:9.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.at-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.at-wd{text-align:center;font-size:10px;font-weight:700;letter-spacing:.1em;color:var(--muted);padding-bottom:2px}
+.at-day{aspect-ratio:1;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:700;border:1px solid transparent;font-family:inherit;padding:0;color:var(--ink2);background:#faf6f0}
+button.at-day{cursor:pointer}
+.at-day.ok{background:#e8f3eb;color:#2f7a4b}
+.at-day.leave{background:#fbe9ec;color:var(--rose)}
+.at-day.closed{color:#a89aa8;background:repeating-linear-gradient(135deg,#f3ede6 0 5px,#faf6f0 5px 10px)}
+.at-day.pend{background:#fbf1dc;color:var(--amber)}
+.at-day.appr{background:#e9f0fb;color:#2f5aa8}
+.at-day.fut{background:#fffdfa;border-color:#efe6dc;color:var(--muted)}
+.at-day.today{box-shadow:0 0 0 2px var(--p);color:var(--plum)}
+.at-legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:14px;font-size:10.5px;color:var(--muted)}
+.at-legend span{display:inline-flex;align-items:center;gap:5px}
+.at-legend span::before{content:"";width:10px;height:10px;border-radius:3px}
+.at-legend .ok::before{background:#cfe6d6}.at-legend .leave::before{background:#f4cfd6}.at-legend .pend::before{background:#f3dfb2}.at-legend .appr::before{background:#cddcf3}
+.at-legend .closed::before{background:repeating-linear-gradient(135deg,#ddd2c7 0 2px,#faf6f0 2px 4px)}
+.at-note{font-size:11px;color:var(--muted);margin-top:10px;line-height:1.45}
+.at-btn{width:100%;min-height:46px;margin-top:14px;border-radius:999px;border:1px solid #e3c9e1;background:#fff;color:var(--p);font:600 13px 'DM Sans',sans-serif;letter-spacing:.04em;cursor:pointer}
+.at-req{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid #f3ece4}
+.at-hrow+.at-req{border-top:0;padding-top:0}
+.at-req-m{min-width:0}.at-req-m b{display:block;font-size:14px;color:var(--ink)}.at-req-m span{display:block;font-size:11.5px;color:var(--amber);margin-top:2px}
+.at-req-m small{display:block;font-size:11px;color:var(--muted);margin-top:3px}
+.at-req-a{display:flex;gap:6px;flex:none}
+.at-req-a button{min-height:34px;padding:0 13px;border-radius:999px;font:700 11.5px 'DM Sans',sans-serif;cursor:pointer;border:1px solid}
+.at-req-a .ok{background:#e8f3eb;border-color:#cfe6d6;color:#2f7a4b}.at-req-a .no{background:#fff;border-color:#f3dde2;color:var(--rose)}
+.at-empty{text-align:center;padding:12px;color:var(--muted);font-size:12px}
+.at-staff{border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:8px;background:#fffdfa}
+.at-staff-n{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;font-weight:700;color:var(--ink);margin-bottom:4px}
+.at-staff-n span{font-family:var(--serif);font-size:17px;color:var(--plum)}
+.at-edit{display:flex;width:100%;justify-content:space-between;align-items:center;padding:7px 0;border:0;background:none;font-family:inherit;cursor:pointer;color:var(--ink2);font-size:12px}
+.at-edit b{font-size:13px;color:var(--p);border-bottom:1px dashed #e3c9e1}
 .payroll-detail{font-size:12px;color:var(--muted);margin-top:3px}
 .payroll-pay{font-family:var(--serif);font-size:28px;font-weight:700;color:var(--ok);margin-top:6px}
 
@@ -352,7 +400,7 @@ function updateClockDisplay() {
 }
 
 async function loadClockStatus() {
-  var today = new Date().toISOString().slice(0, 10);
+  var today = ymd(new Date());
   var res = await db.from('staff_attendance').select('*').eq('staff_name', staffName).eq('work_date', today).is('clock_out', null).maybeSingle();
   openAttendanceRow = res.data || null;
   renderClockButton();
@@ -394,7 +442,7 @@ async function handleClockAction() {
       showToast('🔴 Clocked out — see you next time!');
       openAttendanceRow = null;
     } else {
-      var today = new Date().toISOString().slice(0, 10);
+      var today = ymd(new Date());
       var res = await db.from('staff_attendance').insert([{ staff_name: staffName, work_date: today }]).select('*').single();
       if (res.error) throw res.error;
       openAttendanceRow = res.data;
@@ -410,7 +458,7 @@ async function handleClockAction() {
 }
 
 async function loadTodayLog() {
-  var today = new Date().toISOString().slice(0, 10);
+  var today = ymd(new Date());
   var res = await db.from('staff_attendance').select('*').eq('work_date', today).order('clock_in', { ascending: false });
   var rows = res.data || [];
   var list = document.getElementById('today-log-list');
@@ -425,6 +473,14 @@ async function loadTodayLog() {
     return '<div class="log-row"><span class="log-name"><span class="log-avatar">' + initial + '</span>' + r.staff_name + '</span>'
       + '<span style="color:var(--muted);font-size:12px">' + inTime + ' → ' + outTime + '</span></div>';
   }).join('');
+}
+
+// A date as YYYY-MM-DD in local (India) time. toISOString() gives the UTC
+// date, which before 5:30 am is still the previous day — that shifted the
+// whole calendar (and saved leave) by one day.
+function ymd(d) {
+  d = new Date(d);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
 function getMonthRange(offset) {
@@ -464,12 +520,12 @@ async function loadPayroll() {
 
   var myRequestsRes = await db.from('leave_requests').select('*')
     .eq('staff_name', staffName)
-    .gte('leave_date', range.start.toISOString().slice(0, 10))
-    .lte('leave_date', range.end.toISOString().slice(0, 10));
+    .gte('leave_date', ymd(range.start))
+    .lte('leave_date', ymd(range.end));
   var myRequests = {};
   (myRequestsRes.data || []).forEach(function (r) { myRequests[r.leave_date] = r; });
 
-  var html = mySalaryCard(s, noLeaveAmt, noLeaveForfeited, leaveDays.length, total)
+  var html = mySalaryCard(s, noLeaveAmt, noLeaveForfeited, leaveDays.length, total, range)
     + monthCalendarCard(range, leaveDays, myRequests);
 
   if (isSuperAdmin) {
@@ -480,106 +536,93 @@ async function loadPayroll() {
   list.innerHTML = html;
 }
 
-function mySalaryCard(s, noLeaveAmt, forfeited, leaveCount, total) {
-  return '<div class="payroll-card">'
-    + '<div class="payroll-name">💰 Your Salary — ' + staffName + '</div>'
-    + salaryRow('Basic Salary', s.basic_salary || 0, false, '')
-    + salaryRow('Customer Feedback Bonus', s.customer_feedback_bonus || 0, false, '')
-    + salaryRow('Sales Target Bonus', s.sales_target_bonus || 0, false, '')
-    + salaryRow('No Leave Allowance', noLeaveAmt, forfeited, forfeited ? leaveCount + ' leave days this month — forfeited' : '')
-    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid rgba(18,10,30,0.08)">'
-    + '<span style="font-size:13px;font-weight:700;color:var(--ink)">Total This Month</span>'
-    + '<span class="payroll-pay">₹' + total.toFixed(0) + '</span></div>'
-    + '</div>';
+function attEsc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function attMoney(n) { return '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN'); }
+function mySalaryCard(s, noLeaveAmt, forfeited, leaveCount, total, range) {
+  var month = range ? range.start.toLocaleDateString('en-IN', { month: 'long' }) : 'this month';
+  return '<div class="payroll-card at-pay">'
+    + '<div class="at-eb">Your pay · ' + attEsc(month) + '</div>'
+    + '<div class="at-total">' + attMoney(total) + '</div>'
+    + '<div class="at-sub">' + attEsc(staffName) + (forfeited ? ' · No-leave allowance missed (' + leaveCount + ' leave days)' : ' · Full attendance bonus on track') + '</div>'
+    + '<div class="at-rows">'
+    + salaryRow('Basic salary', s.basic_salary || 0, false, '')
+    + salaryRow('Customer feedback bonus', s.customer_feedback_bonus || 0, false, '')
+    + salaryRow('Sales target bonus', s.sales_target_bonus || 0, false, '')
+    + salaryRow('No-leave allowance', forfeited ? (s.no_leave_allowance || 0) : noLeaveAmt, forfeited, forfeited ? 'more than 1 leave day' : '')
+    + '</div></div>';
 }
 
 function salaryRow(label, amount, struckOut, note) {
-  return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0">'
-    + '<span style="font-size:12px;color:var(--muted)">' + label + (note ? ' <span style="color:#dc2626;font-size:10px">(' + note + ')</span>' : '') + '</span>'
-    + '<span style="font-size:13px;font-weight:700;' + (struckOut ? 'color:#dc2626;text-decoration:line-through' : 'color:var(--ink)') + '">₹' + amount.toFixed(0) + '</span>'
-    + '</div>';
+  return '<div class="at-row' + (struckOut ? ' off' : '') + '"><span>' + label + (note ? '<small>' + note + '</small>' : '') + '</span>'
+    + '<b>' + attMoney(amount) + '</b></div>';
 }
 
 // Returns the list of dates (YYYY-MM-DD) in the given month range where
 // this staff member has NO attendance record at all — i.e. automatic
 // Leave days. Only counts days up to today (never marks future days).
 async function getLeaveDaysInMonth(name, range) {
-  var today = new Date();
-  var effectiveEnd = range.end > today ? today : range.end;
+  // Only finished days count: today isn't a leave day while it's still going.
+  var yesterday = new Date(); yesterday.setHours(0, 0, 0, 0); yesterday.setDate(yesterday.getDate() - 1);
+  var effectiveEnd = range.end > yesterday ? yesterday : range.end;
 
-  var res = await db.from('staff_attendance').select('work_date').eq('staff_name', name)
-    .gte('work_date', range.start.toISOString().slice(0, 10))
-    .lte('work_date', range.end.toISOString().slice(0, 10));
-  var presentDates = {};
-  (res.data || []).forEach(function (r) { presentDates[r.work_date] = true; });
+  // Every check-in this month, all staff: a day nobody worked means the
+  // outlet was closed or it was a holiday, not anyone's leave.
+  var res = await db.from('staff_attendance').select('staff_name, work_date')
+    .gte('work_date', ymd(range.start))
+    .lte('work_date', ymd(range.end));
+  var presentDates = {}, openDates = {};
+  (res.data || []).forEach(function (r) {
+    openDates[r.work_date] = true;
+    if (r.staff_name === name) presentDates[r.work_date] = true;
+  });
 
-  var leaveDays = [];
+  var leaveDays = [], closedDays = {};
   var cursor = new Date(range.start);
   while (cursor <= effectiveEnd) {
-    var dateStr = cursor.toISOString().slice(0, 10);
-    if (!presentDates[dateStr]) leaveDays.push(dateStr);
+    var dateStr = ymd(cursor);
+    if (!openDates[dateStr]) closedDays[dateStr] = true;
+    else if (!presentDates[dateStr]) leaveDays.push(dateStr);
     cursor.setDate(cursor.getDate() + 1);
   }
+  leaveDays.closed = closedDays;
+  leaveDays.present = presentDates;
   return leaveDays;
 }
 
 function monthCalendarCard(range, leaveDays, myRequests) {
   var leaveSet = {};
   leaveDays.forEach(function (d) { leaveSet[d] = true; });
-
-  var today = new Date();
+  var closed = leaveDays.closed || {}, present = leaveDays.present || {};
+  var todayStr = ymd(new Date());
   var firstDay = range.start.getDay(); // 0=Sun
   var daysInMonth = range.end.getDate();
-  var cellsHtml = '';
-
-  for (var i = 0; i < firstDay; i++) cellsHtml += '<div></div>';
+  var counts = { present: 0, leave: 0, closed: 0 };
+  var cells = ['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(function (w) { return '<div class="at-wd">' + w + '</div>'; }).join('');
+  for (var i = 0; i < firstDay; i++) cells += '<div></div>';
 
   for (var d = 1; d <= daysInMonth; d++) {
-    var cellDate = new Date(range.start.getFullYear(), range.start.getMonth(), d);
-    var dateStr = cellDate.toISOString().slice(0, 10);
-    var isFuture = cellDate > today;
-    var isPast = !isFuture && dateStr !== today.toISOString().slice(0, 10);
-    var isToday = dateStr === today.toISOString().slice(0, 10);
+    var dateStr = ymd(new Date(range.start.getFullYear(), range.start.getMonth(), d));
+    var isToday = dateStr === todayStr, isFuture = dateStr > todayStr;
     var request = myRequests[dateStr];
-
-    var bg, color, label = d, clickable = false, onclick = '';
-
-    if (!isFuture && !isToday && !leaveSet[dateStr]) {
-      // Past day, clocked in — Present, regardless of any request on file.
-      bg = 'rgba(34,197,94,0.12)'; color = '#15803d';
-    } else if (request && request.status === 'approved') {
-      bg = 'rgba(59,130,246,0.14)'; color = '#2563eb';
-    } else if (request && request.status === 'pending') {
-      bg = 'rgba(245,196,48,0.18)'; color = '#8a6a1a';
-    } else if (request && request.status === 'rejected') {
-      bg = isFuture ? 'rgba(18,10,30,0.04)' : 'rgba(220,38,38,0.1)';
-      color = isFuture ? 'var(--muted)' : '#dc2626';
-    } else if (isFuture) {
-      bg = 'rgba(18,10,30,0.03)'; color = 'var(--muted)';
-      clickable = true; onclick = 'onclick="applyForLeavePrompt(\'' + dateStr + '\')"';
-    } else if (isToday && !leaveSet[dateStr]) {
-      bg = 'rgba(34,197,94,0.12)'; color = '#15803d';
-    } else {
-      bg = 'rgba(220,38,38,0.1)'; color = '#dc2626';
-    }
-
-    if (request) { clickable = true; onclick = 'onclick="viewLeaveRequestStatus(\'' + dateStr + '\')"'; }
-
-    var border = isToday ? '1.5px solid var(--p)' : 'none';
-    cellsHtml += '<div ' + onclick + ' style="aspect-ratio:1;border-radius:8px;background:' + bg + ';border:' + border + ';'
-      + 'display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:' + color
-      + (clickable ? ';cursor:pointer' : '') + '">' + label + '</div>';
+    var cls = 'fut', title = '', onclick = '';
+    if (present[dateStr]) { cls = 'ok'; title = 'Present'; counts.present++; }
+    else if (request && request.status === 'approved') { cls = 'appr'; title = 'Leave approved'; if (!isFuture) counts.leave++; }
+    else if (request && request.status === 'pending') { cls = 'pend'; title = 'Leave pending'; }
+    else if (closed[dateStr]) { cls = 'closed'; title = 'Outlet closed / holiday'; counts.closed++; }
+    else if (leaveSet[dateStr]) { cls = 'leave'; title = 'Leave'; counts.leave++; }
+    else if (isToday) { cls = 'fut'; title = 'Today'; }
+    else if (isFuture) { cls = 'fut'; title = 'Tap to apply for leave'; onclick = 'applyForLeavePrompt(\'' + dateStr + '\')'; }
+    if (request) onclick = 'viewLeaveRequestStatus(\'' + dateStr + '\')';
+    cells += '<' + (onclick ? 'button type="button" onclick="' + onclick + '"' : 'div') + ' class="at-day ' + cls + (isToday ? ' today' : '') + '" title="' + title + '" aria-label="' + d + ': ' + title + '">' + d + '</' + (onclick ? 'button' : 'div') + '>';
   }
 
-  return '<div class="payroll-card">'
-    + '<div class="payroll-name" style="margin-bottom:4px">📅 Attendance Calendar</div>'
-    + '<div style="font-size:10px;color:var(--muted);margin-bottom:10px">Tap a future day, or use the button below for a multi-day request.</div>'
-    + '<div style="display:flex;gap:8px;margin-bottom:10px;font-size:9px;color:var(--muted);flex-wrap:wrap">'
-    + '<span>🟢 Present</span><span>🔴 Leave</span><span>🟡 Pending</span><span>🔵 Approved</span></div>'
-    + '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:14px">' + cellsHtml + '</div>'
-    + '<button onclick="openLeaveModal()" style="width:100%;padding:12px;background:rgba(110,9,119,0.08);'
-    + 'border:1.5px solid rgba(110,9,119,0.25);color:var(--p);font-size:12px;font-weight:700;border-radius:12px;cursor:pointer">'
-    + '📝 Apply for Leave</button>'
+  return '<div class="payroll-card at-cal">'
+    + '<div class="at-hrow"><div class="at-eb">Attendance</div><div class="at-hint">Tap a future day to ask for leave</div></div>'
+    + '<div class="at-sum"><div><b>' + counts.present + '</b><span>Present</span></div><div><b>' + counts.leave + '</b><span>Leave</span></div><div><b>' + counts.closed + '</b><span>Closed</span></div></div>'
+    + '<div class="at-grid">' + cells + '</div>'
+    + '<div class="at-legend"><span class="ok">Present</span><span class="leave">Leave</span><span class="closed">Closed / holiday</span><span class="pend">Pending</span><span class="appr">Approved</span></div>'
+    + '<div class="at-note">Days when nobody clocked in (outlet closed or a holiday) are not counted as leave.</div>'
+    + '<button type="button" class="at-btn" onclick="openLeaveModal()">Apply for leave</button>'
     + '</div>';
 }
 
@@ -597,7 +640,7 @@ function openLeaveModal(prefilledStart, prefilledEnd) {
   document.getElementById('half-day-check').textContent = '';
   document.getElementById('leave-reason').value = '';
 
-  var today = new Date().toISOString().slice(0, 10);
+  var today = ymd(new Date());
   var startEl = document.getElementById('leave-start-date');
   var endEl = document.getElementById('leave-end-date');
   startEl.min = today; endEl.min = today;
@@ -655,7 +698,7 @@ async function submitLeaveRequest() {
   var cursor = new Date(start + 'T00:00:00');
   var endDate = new Date(end + 'T00:00:00');
   while (cursor <= endDate) {
-    dates.push(cursor.toISOString().slice(0, 10));
+    dates.push(ymd(cursor));
     cursor.setDate(cursor.getDate() + 1);
   }
 
@@ -726,23 +769,17 @@ async function pendingLeaveRequestsCard() {
 
   var rowsHtml = rows.length
     ? rows.map(function (r) {
-        var typeLabel = r.leave_type === 'sick' ? '🤒 Sick' : '🌴 Casual';
-        return '<div style="display:flex;align-items:center;justify-content:space-between;background:rgba(245,196,48,0.1);'
-          + 'border:1px solid rgba(245,196,48,0.3);border-radius:12px;padding:12px 14px;margin-bottom:8px">'
-          + '<div><div style="font-size:13px;font-weight:700;color:var(--ink)">' + r.staff_name + ' — ' + r.leave_date + '</div>'
-          + '<div style="font-size:10px;color:#8a6a1a;font-weight:700;margin-top:2px">' + typeLabel + (r.is_half_day ? ' · Half Day' : '') + '</div>'
-          + (r.reason ? '<div style="font-size:11px;color:var(--muted);margin-top:2px">' + r.reason + '</div>' : '') + '</div>'
-          + '<div style="display:flex;gap:6px">'
-          + '<button onclick="reviewLeaveRequest(\'' + r.id + '\',\'approved\')" style="padding:7px 12px;border-radius:8px;'
-          + 'background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.35);color:#15803d;font-size:11px;font-weight:700;cursor:pointer">✓ Approve</button>'
-          + '<button onclick="reviewLeaveRequest(\'' + r.id + '\',\'rejected\')" style="padding:7px 12px;border-radius:8px;'
-          + 'background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);color:#dc2626;font-size:11px;font-weight:700;cursor:pointer">✕ Reject</button>'
-          + '</div></div>';
+        var typeLabel = r.leave_type === 'sick' ? 'Sick leave' : 'Casual leave';
+        var when = new Date(r.leave_date + 'T00:00:00').toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+        return '<div class="at-req"><div class="at-req-m"><b>' + attEsc(r.staff_name) + '</b><span>' + when + ' · ' + typeLabel + (r.is_half_day ? ' · Half day' : '') + '</span>'
+          + (r.reason ? '<small>' + attEsc(r.reason) + '</small>' : '') + '</div>'
+          + '<div class="at-req-a"><button type="button" class="ok" onclick="reviewLeaveRequest(\'' + attEsc(r.id) + '\',\'approved\')">Approve</button>'
+          + '<button type="button" class="no" onclick="reviewLeaveRequest(\'' + attEsc(r.id) + '\',\'rejected\')">Reject</button></div></div>';
       }).join('')
-    : '<div style="text-align:center;padding:16px;color:var(--muted);font-size:12px">No pending requests.</div>';
+    : '<div class="at-empty">No leave requests waiting.</div>';
 
   return '<div class="payroll-card">'
-    + '<div class="payroll-name" style="margin-bottom:10px">📋 Pending Leave Requests (Super Admin)</div>'
+    + '<div class="at-hrow"><div class="at-eb">Leave requests</div>' + (rows.length ? '<span class="at-count">' + rows.length + '</span>' : '') + '</div>'
     + rowsHtml + '</div>';
 }
 
@@ -760,8 +797,8 @@ async function manageSalariesCard() {
   var rows = res.data || [];
 
   var rowsHtml = rows.map(function (s) {
-    return '<div style="background:rgba(255,255,255,.5);border-radius:12px;padding:12px;margin-bottom:8px">'
-      + '<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px">' + s.name + '</div>'
+    return '<div class="at-staff">'
+      + '<div class="at-staff-n">' + attEsc(s.name) + '<span>' + attMoney((s.basic_salary || 0) + (s.customer_feedback_bonus || 0) + (s.sales_target_bonus || 0) + (s.no_leave_allowance || 0)) + '</span></div>'
       + salaryEditRow(s.name, 'basic_salary', 'Basic Salary', s.basic_salary)
       + salaryEditRow(s.name, 'customer_feedback_bonus', 'Customer Feedback Bonus', s.customer_feedback_bonus)
       + salaryEditRow(s.name, 'sales_target_bonus', 'Sales Target Bonus', s.sales_target_bonus)
@@ -770,16 +807,13 @@ async function manageSalariesCard() {
   }).join('');
 
   return '<div class="payroll-card">'
-    + '<div class="payroll-name" style="margin-bottom:4px">⚙️ Manage Salaries (Super Admin)</div>'
-    + '<div style="font-size:11px;color:var(--muted);margin-bottom:12px">Tap any amount to update it.</div>'
+    + '<div class="at-hrow"><div class="at-eb">Team salaries</div><div class="at-hint">Tap an amount to change it</div></div>'
     + rowsHtml + '</div>';
 }
 
 function salaryEditRow(staffNameForRow, field, label, value) {
-  return '<div onclick="editSalaryComponent(\'' + staffNameForRow.replace(/'/g, "\\'") + '\',\'' + field + '\',\'' + label + '\',' + (value || 0) + ')" '
-    + 'style="display:flex;justify-content:space-between;padding:6px 0;cursor:pointer">'
-    + '<span style="font-size:11px;color:var(--muted)">' + label + '</span>'
-    + '<span style="font-size:12px;font-weight:700;color:var(--p)">₹' + (value || 0).toFixed(0) + ' ✎</span></div>';
+  return '<button type="button" class="at-edit" onclick="editSalaryComponent(\'' + attEsc(staffNameForRow).replace(/'/g, "\\'") + '\',\'' + field + '\',\'' + label + '\',' + (Number(value) || 0) + ')">'
+    + '<span>' + label + '</span><b>' + attMoney(value) + '</b></button>';
 }
 
 async function editSalaryComponent(staffNameForRow, field, label, current) {
@@ -800,7 +834,7 @@ async function editSalaryComponent(staffNameForRow, field, label, current) {
 // Admin/Super Admin notifications — live toast + badge on check-in
 // ══════════════════════════════════════════════════════════════
 async function loadNotifCount() {
-  var today = new Date().toISOString().slice(0, 10);
+  var today = ymd(new Date());
   var res = await db.from('staff_attendance').select('id', { count: 'exact', head: true }).eq('work_date', today);
   updateNotifBadge(res.count || 0);
 }
@@ -820,7 +854,7 @@ function toggleNotifPanel() {
 }
 
 async function renderNotifList() {
-  var today = new Date().toISOString().slice(0, 10);
+  var today = ymd(new Date());
   var res = await db.from('staff_attendance').select('*').eq('work_date', today).order('clock_in', { ascending: false });
   var rows = res.data || [];
   var list = document.getElementById('notif-list');
