@@ -174,12 +174,13 @@ async function openStaffLoginSheet() {
   var sel = document.getElementById('staff-login-name');
   sel.innerHTML = '<option value="">Loading staff…</option>';
   try {
-    var res = await db.from('store_staff').select('name').eq('active', true)
-      .in('role', ['Admin', 'Employee']).order('name');
-    var staff = res.data || [];
+    var res = await db.rpc('cc_staff_names', { p_roles: ['Admin', 'Employee'] });
+    if (res.error) throw res.error;
+    var staff = (res.data || []).map(function (n) { return { name: n }; });
     sel.innerHTML = staff.length
       ? '<option value="">Select your name...</option>' + staff.map(function (s) {
-          return '<option value="' + s.name.replace(/"/g, '&quot;') + '">' + s.name + '</option>';
+          var n = String(s.name).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+          return '<option value="' + n + '">' + n + '</option>';
         }).join('')
       : '<option value="">No staff added yet — ask admin</option>';
   } catch (e) {
@@ -205,7 +206,7 @@ async function staffAttemptLogin() {
   submitBtn.disabled = true; submitBtn.textContent = 'Signing in…';
 
   try {
-    var res = await db.rpc('rpc_staff_login', { p_name: name, p_pin: pin });
+    var res = await db.rpc('cc_staff_login', { p_name: name, p_pin: pin });
     var data = res.data, error = res.error;
     if (error || !data || !data.ok) {
       errEl.textContent = (data && data.error) || 'Login failed. Try again.';
@@ -501,8 +502,19 @@ function closeManageStaff() {
 async function mstaffLoadList() {
   var list = document.getElementById('mstaff-list');
   list.innerHTML = '<div style="text-align:center;padding:20px;color:#b090c0;font-size:12px">Loading…</div>';
-  var res = await db.from('store_staff').select('*').order('created_at', { ascending: false });
-  var staff = res.data || [];
+  var res = await db.rpc('cc_admin_store_staff', { p_action: 'list', p_payload: {} });
+  if (res.error) { list.innerHTML = '<div style="text-align:center;padding:20px;color:#a33a52;font-size:12px">' + mstaffErr(res.error) + '</div>'; return; }
+  mstaffRender(res.data || []);
+}
+function mstaffErr(e) {
+  var m = String((e && e.message) || e || '');
+  if (/function .*does not exist|schema cache|Could not find the function/i.test(m)) return 'Run the database update 20261125_store_staff_functions in Supabase, then try again.';
+  if (/access|42501/i.test(m)) return 'Only an admin can manage staff.';
+  return m || 'Something went wrong';
+}
+function mstaffEsc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function mstaffRender(staff) {
+  var list = document.getElementById('mstaff-list');
   if (!staff.length) {
     list.innerHTML = '<div style="text-align:center;padding:20px;color:#b090c0;font-size:12px">No staff added yet</div>';
     return;
@@ -517,17 +529,17 @@ async function mstaffLoadList() {
       + 'background:#f5eeff;border:1px solid #e0c8f0;border-radius:12px;padding:12px 14px">'
       + '<div style="flex:1">'
       + '<div style="display:flex;align-items:center;gap:6px">'
-      + '<div style="font-size:13px;font-weight:700;color:#1a0820">' + s.name + '</div>'
+      + '<div style="font-size:13px;font-weight:700;color:#1a0820">' + mstaffEsc(s.name) + '</div>'
       + '<div style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;'
       + 'background:' + roleBg + ';color:' + roleColor + '">' + (s.role || 'Employee') + '</div>'
       + '</div>'
-      + '<div style="font-size:11px;color:#9c0ca1;margin-top:2px">PIN: ' + s.pin + '</div>'
+      + '<div style="font-size:11px;color:#9c0ca1;margin-top:2px">PIN: ' + mstaffEsc(s.pin) + '</div>'
       + '</div>'
       + '<div style="display:flex;align-items:center;gap:8px">'
-      + '<div onclick="mstaffToggle(\'' + s.id + '\',' + s.active + ')" style="font-size:10px;font-weight:700;'
+      + '<div onclick="mstaffToggle(\'' + mstaffEsc(s.id) + '\',' + !!s.active + ')" style="font-size:10px;font-weight:700;'
       + 'padding:4px 10px;border-radius:20px;background:' + pillBg + ';color:' + pillColor + ';cursor:pointer">'
       + pillLabel + '</div>'
-      + '<div onclick="mstaffDelete(\'' + s.id + '\')" style="width:28px;height:28px;border-radius:50%;'
+      + '<div onclick="mstaffDelete(\'' + mstaffEsc(s.id) + '\')" style="width:28px;height:28px;border-radius:50%;'
       + 'background:rgba(220,38,38,0.08);display:flex;align-items:center;justify-content:center;'
       + 'cursor:pointer;font-size:13px">🗑</div>'
       + '</div></div>';
@@ -541,8 +553,8 @@ async function mstaffAdd() {
   if (!name) { showStoreToast('Enter a staff name'); return; }
   if (!pin)  { showStoreToast('Enter a PIN'); return; }
 
-  var res = await db.from('store_staff').insert([{ name: name, pin: pin, role: role, active: true }]);
-  if (res.error) { showStoreToast('Error: ' + res.error.message); return; }
+  var res = await db.rpc('cc_admin_store_staff', { p_action: 'add', p_payload: { name: name, pin: pin, role: role } });
+  if (res.error) { showStoreToast(mstaffErr(res.error)); return; }
 
   document.getElementById('mstaff-name').value = '';
   document.getElementById('mstaff-pin').value  = '';
@@ -552,15 +564,17 @@ async function mstaffAdd() {
 }
 
 async function mstaffToggle(id, current) {
-  await db.from('store_staff').update({ active: !current }).eq('id', id);
-  mstaffLoadList();
+  var res = await db.rpc('cc_admin_store_staff', { p_action: 'set_active', p_payload: { id: id, active: !current } });
+  if (res.error) { showStoreToast(mstaffErr(res.error)); return; }
+  mstaffRender(res.data || []);
 }
 
 async function mstaffDelete(id) {
   if (!confirm('Remove this staff member? Their PIN stops working. If they also see the Staff tab in the app, switch that off under "Staff tab in the app".')) return;
-  await db.from('store_staff').delete().eq('id', id);
+  var res = await db.rpc('cc_admin_store_staff', { p_action: 'delete', p_payload: { id: id } });
+  if (res.error) { showStoreToast(mstaffErr(res.error)); return; }
   showStoreToast('Staff removed');
-  mstaffLoadList();
+  mstaffRender(res.data || []);
 }
 
 // ── Staff tab in the app (customers.is_employee / is_admin) ──

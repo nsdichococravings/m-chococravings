@@ -1375,8 +1375,8 @@ async function openItemRecipePopup(orderId, itemIndex) {
   var guide = guideRes.data;
 
   if (!_krStaffListCache) {
-    var staffRes = await db.from('store_staff').select('name').eq('active', true).order('name');
-    _krStaffListCache = (staffRes.data || []).map(function (s) { return s.name; });
+    var staffRes = await db.rpc('cc_staff_names');
+    _krStaffListCache = staffRes.error ? null : (staffRes.data || []);
   }
 
   renderRecipeCard(item, ingredients, unitMap, guide);
