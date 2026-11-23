@@ -146,12 +146,14 @@ function showToast(msg) {
 
 window.addEventListener('DOMContentLoaded', async function () {
   try {
-    var res = await db.from('store_staff').select('name').eq('active', true).order('name');
-    var staff = res.data || [];
+    var res = await db.rpc('cc_staff_names');
+    if (res.error) throw res.error;
+    var staff = (res.data || []).map(function (n) { return { name: n }; });
     var sel = document.getElementById('login-name');
     sel.innerHTML = staff.length
       ? '<option value="">Select your name...</option>' + staff.map(function (s) {
-          return '<option value="' + s.name.replace(/"/g, '&quot;') + '">' + s.name + '</option>';
+          var n = String(s.name).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+          return '<option value="' + n + '">' + n + '</option>';
         }).join('')
       : '<option value="">No staff found</option>';
   } catch (e) {
@@ -168,17 +170,14 @@ async function doLogin() {
   if (!pin) { errEl.textContent = 'Enter your PIN'; return; }
 
   try {
-    var res = await db.rpc('rpc_staff_login', { p_name: name, p_pin: pin });
+    var res = await db.rpc('cc_staff_login', { p_name: name, p_pin: pin });
     if (res.error || !res.data || !res.data.ok) {
       errEl.textContent = (res.data && res.data.error) || 'Login failed';
       return;
     }
     staffName = res.data.name;
 
-    try {
-      var roleRes = await db.from('store_staff').select('role').eq('name', staffName).eq('active', true).order('role', { ascending: true }).limit(1);
-      staffRole = (roleRes.data && roleRes.data[0] && roleRes.data[0].role) || 'Employee';
-    } catch (e) { staffRole = 'Employee'; }
+    staffRole = res.data.role || 'Employee';
 
     document.getElementById('staff-pill').textContent = '👤 ' + staffName;
     document.getElementById('login-page').classList.remove('show');

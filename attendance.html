@@ -256,6 +256,7 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, (typeof ccClientOptions==='function'?ccClientOptions({}):{}));
 
 var staffName = null;
+var staffPin = null; // kept in memory only, for the pay screens
 var staffRole = 'Employee';
 var isSuperAdmin = false;
 var monthOffset = 0;
@@ -272,12 +273,14 @@ function showToast(msg) {
 
 window.addEventListener('DOMContentLoaded', async function () {
   try {
-    var res = await db.from('store_staff').select('name').eq('active', true).order('name');
-    var staff = res.data || [];
+    var res = await db.rpc('cc_staff_names');
+    if (res.error) throw res.error;
+    var staff = (res.data || []).map(function (n) { return { name: n }; });
     var sel = document.getElementById('login-name');
     sel.innerHTML = staff.length
       ? '<option value="">Select your name...</option>' + staff.map(function (s) {
-          return '<option value="' + s.name.replace(/"/g, '&quot;') + '">' + s.name + '</option>';
+          var n = String(s.name).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+          return '<option value="' + n + '">' + n + '</option>';
         }).join('')
       : '<option value="">No staff found</option>';
   } catch (e) {
@@ -294,19 +297,16 @@ async function doLogin() {
   if (!pin) { errEl.textContent = 'Enter your PIN'; return; }
 
   try {
-    var res = await db.rpc('rpc_staff_login', { p_name: name, p_pin: pin });
+    var res = await db.rpc('cc_staff_login', { p_name: name, p_pin: pin });
     if (res.error || !res.data || !res.data.ok) {
       errEl.textContent = (res.data && res.data.error) || 'Login failed';
       return;
     }
     staffName = res.data.name;
 
-    try {
-      var roleRes = await db.from('store_staff').select('role, is_super_admin').eq('name', staffName).eq('active', true).order('role', { ascending: true }).limit(1);
-      var row = roleRes.data && roleRes.data[0];
-      staffRole = (row && row.role) || 'Employee';
-      isSuperAdmin = !!(row && row.is_super_admin);
-    } catch (e) { staffRole = 'Employee'; isSuperAdmin = false; }
+    staffPin = pin;
+    staffRole = res.data.role || 'Employee';
+    isSuperAdmin = !!res.data.is_super_admin;
 
     document.getElementById('staff-pill').textContent = staffName;
     // Payroll is now visible to EVERY staff member — each person sees
@@ -455,7 +455,7 @@ async function loadPayroll() {
   list.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">Loading…</div>';
 
   var leaveDays = await getLeaveDaysInMonth(staffName, range);
-  var sRes = await db.from('store_staff').select('*').eq('name', staffName).single();
+  var sRes = await db.rpc('cc_staff_self', { p_name: staffName, p_pin: staffPin });
   var s = sRes.data || {};
 
   var noLeaveForfeited = leaveDays.length > 1;
@@ -756,7 +756,7 @@ async function reviewLeaveRequest(id, decision) {
 // Super Admin only — manage every staff member's salary components
 // ══════════════════════════════════════════════════════════════
 async function manageSalariesCard() {
-  var res = await db.from('store_staff').select('*').eq('active', true).order('name');
+  var res = await db.rpc('cc_staff_salaries', { p_name: staffName, p_pin: staffPin });
   var rows = res.data || [];
 
   var rowsHtml = rows.map(function (s) {
@@ -790,7 +790,8 @@ async function editSalaryComponent(staffNameForRow, field, label, current) {
 
   var payload = {};
   payload[field] = num;
-  await db.from('store_staff').update(payload).eq('name', staffNameForRow);
+  var up = await db.rpc('cc_staff_set_salary', { p_name: staffName, p_pin: staffPin, p_staff: staffNameForRow, p_field: field, p_amount: num });
+  if (up.error) { showToast('Not saved: ' + up.error.message); return; }
   showToast('✅ Updated');
   loadPayroll();
 }
