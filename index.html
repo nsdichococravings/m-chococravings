@@ -1132,14 +1132,20 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 .ep-opt.on .ep-check{background:#6e0977;border-color:#6e0977;color:#fff}
 /* Profile on the boutique look (tokens from cart-ui.css) */
 #page-profile.cx{background:var(--cx-bg)}
-#page-profile .prof-hero{min-height:0;text-align:center;padding:26px 20px 22px;
-  background:radial-gradient(120% 70% at 50% 0%,#f3e3f1 0%,rgba(250,246,240,0) 70%),var(--cx-bg)}
-#page-profile .pavatar{width:88px;height:88px;margin:0 auto 14px;border-radius:50%;border:0;position:relative;
-  display:flex;align-items:center;justify-content:center;font-family:var(--cx-serif);font-size:34px;font-weight:600;letter-spacing:.02em;color:#ffe9c2;
+#page-profile .prof-hero{min-height:0;text-align:left;padding:24px 16px 6px;
+  background:radial-gradient(120% 70% at 0% 0%,#f3e3f1 0%,rgba(250,246,240,0) 70%),var(--cx-bg)}
+#page-profile .ph-row{display:flex;align-items:center;gap:16px;margin:0 4px 18px}
+#page-profile .ph-id{min-width:0;flex:1}
+#page-profile .ph-code{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:4px 10px;border-radius:999px;background:var(--cx-gold-l);border:1px solid #ecdcbf;
+  font-size:10px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8a6a33}
+#page-profile .pavatar{flex:none;width:72px;height:72px;margin:0;border-radius:50%;border:0;position:relative;
+  display:flex;align-items:center;justify-content:center;font-family:var(--cx-serif);font-size:28px;font-weight:600;letter-spacing:.02em;color:#ffe9c2;
   background:radial-gradient(circle at 30% 25%,#8e1a8f,#3a0a46 70%);
   box-shadow:0 0 0 3px var(--cx-bg),0 0 0 4.5px var(--cx-gold),0 16px 30px -14px rgba(58,10,70,.6)}
-#page-profile .pname{font-family:var(--cx-serif);font-size:30px;font-weight:600;color:var(--cx-plum);line-height:1.05;margin:0 0 4px;letter-spacing:-.01em}
-#page-profile .pemail{font-size:12.5px;color:var(--cx-muted);letter-spacing:.02em;margin-bottom:18px}
+#page-profile .pname{font-family:var(--cx-serif);font-size:28px;font-weight:600;color:var(--cx-plum);line-height:1.05;margin:0 0 3px;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#page-profile .pemail{font-size:12.5px;color:var(--cx-muted);letter-spacing:.02em;margin:0}
+#page-profile .pstat{text-align:center}
+#page-profile .pstat[role=button]{cursor:pointer}
 #page-profile .pstats{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin:0 auto;max-width:420px;background:var(--cx-card);
   border:1px solid var(--cx-line);border-radius:20px;padding:14px 4px;box-shadow:0 10px 30px -18px rgba(58,10,70,.18)}
 #page-profile .pstat{background:none;border:0;border-radius:0;padding:0 6px}
@@ -1151,11 +1157,12 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 #page-profile .lcard{--foil:#e8c46a;min-height:0;position:relative;overflow:hidden;margin:18px 16px 6px;padding:20px 20px 18px;border-radius:24px;border:1px solid rgba(255,255,255,.08);
   background:radial-gradient(120% 90% at 100% 0%,rgba(255,233,194,.16),transparent 55%),linear-gradient(135deg,#2b0a35 0%,#5a0b63 55%,#1a0820 100%);
   color:#fff;box-shadow:0 18px 36px -20px rgba(36,5,45,.75)}
-#page-profile .lcard::after{content:"";position:absolute;right:-40px;bottom:-60px;width:180px;height:180px;border-radius:50%;border:1px solid rgba(255,255,255,.08);box-shadow:0 0 0 22px rgba(255,255,255,.03)}
-#page-profile .lcard.tier-bronze{--foil:#e0a875;background:radial-gradient(120% 90% at 100% 0%,rgba(224,168,117,.2),transparent 55%),linear-gradient(135deg,#2b0a35 0%,#5a0b63 55%,#1a0820 100%);border-color:rgba(224,168,117,.25)}
-#page-profile .lcard.tier-silver{--foil:#dfe4ea;background:radial-gradient(120% 90% at 100% 0%,rgba(223,228,234,.2),transparent 55%),linear-gradient(135deg,#2b0a35 0%,#5a0b63 55%,#1a0820 100%);border-color:rgba(223,228,234,.25)}
-#page-profile .lcard.tier-gold{--foil:#f0cf7a;background:radial-gradient(120% 90% at 100% 0%,rgba(240,207,122,.24),transparent 55%),linear-gradient(135deg,#2b0a35 0%,#5a0b63 55%,#1a0820 100%);border-color:rgba(240,207,122,.3)}
-#page-profile .lcard.tier-platinum{--foil:#cfe9f5;background:radial-gradient(120% 90% at 100% 0%,rgba(207,233,245,.22),transparent 55%),linear-gradient(135deg,#1f1030 0%,#3f2a6b 55%,#120a1e 100%);border-color:rgba(207,233,245,.3)}
+#page-profile .lcard::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 35%,rgba(255,233,194,.1) 48%,transparent 62%);pointer-events:none}
+#page-profile .lcard{box-shadow:0 0 0 1px rgba(176,141,87,.18) inset,0 18px 34px -18px rgba(26,8,32,.6)}
+#page-profile .lcard.tier-bronze{--foil:#e0a875;background:radial-gradient(120% 140% at 100% 0%,color-mix(in srgb,#e0a875 26%,transparent),transparent 55%),linear-gradient(135deg,#1b0a22 0%,#3a0a46 55%,#120714 100%);border-color:color-mix(in srgb,#e0a875 55%,transparent)}
+#page-profile .lcard.tier-silver{--foil:#dfe4ea;background:radial-gradient(120% 140% at 100% 0%,color-mix(in srgb,#dfe4ea 26%,transparent),transparent 55%),linear-gradient(135deg,#1b0a22 0%,#3a0a46 55%,#120714 100%);border-color:color-mix(in srgb,#dfe4ea 55%,transparent)}
+#page-profile .lcard.tier-gold{--foil:#f0cf7a;background:radial-gradient(120% 140% at 100% 0%,color-mix(in srgb,#f0cf7a 26%,transparent),transparent 55%),linear-gradient(135deg,#1b0a22 0%,#3a0a46 55%,#120714 100%);border-color:color-mix(in srgb,#f0cf7a 55%,transparent)}
+#page-profile .lcard.tier-platinum{--foil:#cfe9f5;background:radial-gradient(120% 140% at 100% 0%,color-mix(in srgb,#cfe9f5 26%,transparent),transparent 55%),linear-gradient(135deg,#1b0a22 0%,#3a0a46 55%,#120714 100%);border-color:color-mix(in srgb,#cfe9f5 55%,transparent)}
 #page-profile .lc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;position:relative;z-index:1}
 #page-profile .lc-eb{font-size:9.5px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.6)}
 #page-profile .lt{font-family:var(--cx-serif);font-size:24px;font-weight:600;color:var(--foil);margin:4px 0 0;line-height:1.05}
@@ -2205,13 +2212,18 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
     <!-- ═══ PROFILE ═══ -->
     <div class="page cx" id="page-profile">
       <div class="prof-hero">
-        <div class="pavatar" id="prof-avatar" aria-hidden="true">·</div>
-        <div class="pname" id="prof-name">Guest</div>
-        <div class="pemail" id="prof-phone">Not signed in</div>
+        <div class="ph-row">
+          <div class="pavatar" id="prof-avatar" aria-hidden="true">·</div>
+          <div class="ph-id">
+            <div class="pname" id="prof-name">Guest</div>
+            <div class="pemail" id="prof-phone">Not signed in</div>
+            <span class="ph-code" id="prof-code" style="display:none"></span>
+          </div>
+        </div>
         <div class="pstats">
           <div class="pstat"><div class="pstat-n" id="prof-orders">0</div><div class="pstat-l">Orders</div></div>
           <div class="pstat"><div class="pstat-n" id="prof-points">0</div><div class="pstat-l">Points</div></div>
-          <div class="pstat"><div class="pstat-n" id="prof-spent">0</div><div class="pstat-l">Pieces enjoyed</div></div>
+          <div class="pstat" role="button" tabindex="0" onclick="if(typeof ccWalletOpen==='function')ccWalletOpen()"><div class="pstat-n" id="prof-wallet-stat">—</div><div class="pstat-l">Wallet</div></div>
         </div>
       </div>
 
@@ -3677,6 +3689,8 @@ async function loadReferralSummary(code) {
   if (!_referral) { item.style.display = 'none'; return; }
   item.style.display = '';
   document.getElementById('prof-refer-code').textContent = _referral.code;
+  var pc = document.getElementById('prof-code');
+  if (pc) { pc.textContent = 'Member · ' + _referral.code; pc.style.display = ''; }
   document.getElementById('prof-refer-sub').textContent = _referral.joined > 0
     ? _referral.joined + ' friend' + (_referral.joined === 1 ? '' : 's') + ' joined · ' + _referral.points_earned + ' pts earned'
     : 'You both get ' + _referral.reward_points + ' points on their first order';
@@ -10340,7 +10354,7 @@ function closeTierCelebration() {
 
 <script src="/lucky-draw.js"></script>
 <script src="/grocery-entry.js?v=20261112" defer></script>
-<script src="/wallet.js?v=20261127"></script>
+<script src="/wallet.js?v=20261128"></script>
 <script src="/diwali-card.js?v=20261105"></script>
 <script src="/festive-theme.js?v=20261114"></script>
 </body>
