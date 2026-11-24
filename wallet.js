@@ -27,39 +27,64 @@
   function user() { return (typeof currentUser !== 'undefined' && currentUser && currentUser.db_id) ? currentUser : null; }
 
   var css = ''
-    + '.wl-strip{margin:-6px 16px 20px;display:flex;align-items:center;gap:12px;padding:11px 12px 11px 14px;border-radius:18px;'
-    +   'background:linear-gradient(120deg,#fffaf3,#fdf0e4);border:1px solid rgba(201,166,51,.45);box-shadow:0 4px 14px rgba(61,5,67,.08);cursor:pointer;-webkit-tap-highlight-color:transparent}'
-    + '.wl-ico{flex:none;width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;'
-    +   'background:linear-gradient(135deg,#6e0977,#2b0a35);color:#ffd6b0;font-size:17px}'
-    + '.wl-mid{flex:1;min-width:0}.wl-lbl{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#8a6d12}'
-    + '.wl-bal{font-family:"Cormorant Garamond",Georgia,serif;font-size:22px;font-weight:700;color:#3d0543;line-height:1.05}'
-    + '.wl-add{flex:none;border:0;border-radius:999px;padding:9px 14px;font-family:inherit;font-weight:700;font-size:12px;line-height:1;color:#fff;'
-    +   'background:linear-gradient(135deg,#6e0977,#9c0ca1);box-shadow:0 4px 12px rgba(110,9,119,.3);cursor:pointer}'
+    // Home strip
+    + '.wl-strip{margin:-6px 16px 20px;display:flex;align-items:center;gap:12px;padding:10px 10px 10px 12px;border-radius:18px;'
+    +   'background:linear-gradient(120deg,#fffdf8,#fbf1e2);border:1px solid rgba(201,154,82,.4);box-shadow:0 8px 20px -14px rgba(61,5,67,.35);cursor:pointer;-webkit-tap-highlight-color:transparent}'
+    + '.wl-ico{flex:none;width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#e8c98f;'
+    +   'background:linear-gradient(140deg,#3a0a46,#1b0a22);box-shadow:0 0 0 1px rgba(232,201,143,.45) inset}'
+    + '.wl-ico svg{width:19px;height:19px}'
+    + '.wl-mid{flex:1;min-width:0}.wl-lbl{font-size:9px;font-weight:700;letter-spacing:2.2px;text-transform:uppercase;color:#a07a3c}'
+    + '.wl-bal{font-family:"Cormorant Garamond",Georgia,serif;font-size:23px;font-weight:700;color:#3a0a46;line-height:1.05}'
+    + '.wl-add{flex:none;border:0;border-radius:999px;padding:10px 15px;font-family:inherit;font-weight:700;font-size:12px;line-height:1;color:#fff;letter-spacing:.02em;'
+    +   'background:linear-gradient(135deg,#3a0a46,#6e0977 60%,#8e1a8f);box-shadow:0 0 0 1px rgba(176,141,87,.35) inset,0 8px 18px -10px rgba(58,10,70,.6);cursor:pointer}'
+    // Sheet
     + '.wl-ov{position:fixed;inset:0;z-index:5000;background:rgba(18,8,24,.55);backdrop-filter:blur(3px);display:flex;align-items:flex-end;justify-content:center;opacity:0;transition:opacity .2s}'
-    + '.wl-ov.on{opacity:1}.wl-sh{width:100%;max-width:480px;max-height:92vh;overflow-y:auto;background:#fffaf5;border-radius:26px 26px 0 0;'
-    +   'transform:translateY(30px);transition:transform .25s cubic-bezier(.3,.8,.3,1);padding-bottom:calc(18px + env(safe-area-inset-bottom))}'
+    + '.wl-ov.on{opacity:1}.wl-sh{width:100%;max-width:480px;max-height:92vh;overflow-y:auto;background:#faf6f0;border-radius:28px 28px 0 0;'
+    +   'transform:translateY(30px);transition:transform .25s cubic-bezier(.3,.8,.3,1);padding-bottom:calc(20px + env(safe-area-inset-bottom));font-family:"DM Sans",sans-serif}'
     + '.wl-ov.on .wl-sh{transform:none}'
-    + '.wl-hd{position:relative;margin:10px 12px 0;border-radius:22px;padding:18px 20px 20px;color:#fff;overflow:hidden;'
-    +   'background:radial-gradient(circle at 85% 0%,rgba(255,214,176,.28),transparent 55%),linear-gradient(135deg,#2b0a35,#6e0977 60%,#1a0820)}'
-    + '.wl-grab{width:38px;height:4px;border-radius:2px;background:#e3d3e6;margin:10px auto 0}'
-    + '.wl-x{position:absolute;top:12px;right:12px;width:30px;height:30px;border-radius:50%;border:0;background:rgba(255,255,255,.14);color:#fff;font-size:15px;cursor:pointer}'
-    + '.wl-hl{font-size:9px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,.6)}'
-    + '.wl-hb{font-family:"Cormorant Garamond",Georgia,serif;font-size:42px;font-weight:700;line-height:1;margin-top:6px;color:#fff}'
-    + '.wl-hs{font-size:11px;color:rgba(255,255,255,.6);margin-top:6px}'
-    + '.wl-sec{padding:18px 20px 0}.wl-t{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#8a6d12;margin-bottom:10px}'
+    + '.wl-grab{width:42px;height:4px;border-radius:2px;background:#e2d6cb;margin:12px auto 0}'
+    + '.wl-hd{position:relative;margin:12px 16px 0;border-radius:24px;padding:18px 20px 18px;color:#fff7e6;overflow:hidden;min-height:150px;'
+    +   'background:radial-gradient(120% 140% at 100% 0%,rgba(232,201,143,.26),transparent 55%),linear-gradient(135deg,#1b0a22 0%,#3a0a46 55%,#120714 100%);'
+    +   'border:1px solid rgba(232,201,143,.5);box-shadow:0 0 0 1px rgba(176,141,87,.2) inset,0 18px 34px -18px rgba(26,8,32,.7)}'
+    + '.wl-hd::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 35%,rgba(255,233,194,.1) 48%,transparent 62%);pointer-events:none}'
+    + '.wl-x{position:absolute;top:14px;right:14px;z-index:1;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,233,194,.25);background:rgba(255,255,255,.06);color:#fff7e6;font-size:13px;cursor:pointer}'
+    + '.wl-hl{display:flex;align-items:center;gap:8px;font-size:9.5px;font-weight:700;letter-spacing:2.4px;text-transform:uppercase;color:#e8c98f}'
+    + '.wl-hl svg{width:15px;height:15px}'
+    + '.wl-hb{font-family:"Cormorant Garamond",Georgia,serif;font-size:46px;font-weight:700;line-height:1;margin-top:14px;'
+    +   'background:linear-gradient(90deg,#fff7e6,#f0d3a0);-webkit-background-clip:text;background-clip:text;color:transparent}'
+    + '.wl-hf{position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-top:14px}'
+    + '.wl-hs{font-size:11px;color:rgba(255,247,230,.62);line-height:1.4}'
+    + '.wl-num{font-size:12px;letter-spacing:2.5px;color:rgba(255,233,194,.85);white-space:nowrap}'
+    + '.wl-sec{margin:14px 16px 0;padding:16px;border-radius:22px;background:#fffdfa;border:1px solid #ece2d8}'
+    + '.wl-t{display:flex;align-items:center;gap:10px;font-size:10px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:#b08d57;margin-bottom:12px}'
+    + '.wl-t::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,#ece2d8,transparent)}'
     + '.wl-chips{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}'
-    + '.wl-chip{border:1.5px solid #ead9ee;background:#fff;border-radius:12px;padding:11px 0;font-family:inherit;font-weight:700;font-size:14px;line-height:1;color:#3d0543;cursor:pointer}'
-    + '.wl-chip.on{border-color:#6e0977;background:#f6ebf8;color:#6e0977}'
-    + '.wl-inp{display:flex;align-items:center;gap:6px;margin-top:10px;border:1.5px solid #ead9ee;border-radius:12px;background:#fff;padding:0 14px}'
-    + '.wl-inp span{font-size:18px;font-weight:700;color:#6e0977}.wl-inp input{flex:1;border:0;outline:0;background:transparent;padding:13px 0;font-family:inherit;font-weight:700;font-size:17px;line-height:1;color:#1a0820;min-width:0}'
-    + '.wl-go{width:100%;margin-top:12px;border:0;border-radius:14px;padding:15px;font-family:inherit;font-weight:700;font-size:15px;line-height:1;color:#fff;cursor:pointer;'
-    +   'background:linear-gradient(135deg,#6e0977,#9c0ca1);box-shadow:0 8px 20px rgba(110,9,119,.28)}.wl-go:disabled{opacity:.55}'
-    + '.wl-note{font-size:11.5px;color:#7a6a80;margin-top:10px;line-height:1.45}'
-    + '.wl-row{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #f1e6f2}.wl-row:last-child{border-bottom:0}'
-    + '.wl-ri{flex:none;width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:15px}'
-    + '.wl-rm{flex:1;min-width:0}.wl-rt{font-size:13px;font-weight:700;color:#2a1530}.wl-rd{font-size:11px;color:#9a8aaa;margin-top:2px}'
-    + '.wl-ra{font-size:14px;font-weight:800;white-space:nowrap}.wl-empty{font-size:12.5px;color:#9a8aaa;padding:6px 0 4px}'
-    + '.wl-err{margin:12px 20px 0;padding:10px 12px;border-radius:10px;background:#fdecec;color:#a02929;font-size:12.5px}';
+    + '.wl-chip{border:1px solid #ece2d8;background:#fff;border-radius:14px;padding:12px 0;font-family:"Cormorant Garamond",Georgia,serif;font-weight:700;font-size:18px;line-height:1;color:#3a0a46;cursor:pointer}'
+    + '.wl-chip.on{border-color:#3a0a46;background:#3a0a46;color:#ffe9c2}'
+    + '.wl-inp{display:flex;align-items:center;gap:6px;margin-top:10px;border:1px solid #ece2d8;border-radius:14px;background:#fff;padding:0 14px}'
+    + '.wl-inp:focus-within{border-color:#6e0977;box-shadow:0 0 0 3px rgba(110,9,119,.08)}'
+    + '.wl-inp span{font-family:"Cormorant Garamond",Georgia,serif;font-size:20px;font-weight:700;color:#b08d57}.wl-inp input{flex:1;border:0;outline:0;background:transparent;padding:13px 0;font-family:inherit;font-weight:600;font-size:16px;line-height:1;color:#24112b;min-width:0}'
+    + '.wl-go{width:100%;min-height:52px;margin-top:12px;border:0;border-radius:999px;font-family:inherit;font-weight:600;font-size:13.5px;letter-spacing:.08em;text-transform:uppercase;line-height:1;color:#fff;cursor:pointer;'
+    +   'background:linear-gradient(135deg,#3a0a46 0%,#6e0977 60%,#8e1a8f 100%);box-shadow:0 0 0 1px rgba(176,141,87,.35) inset,0 12px 26px -12px rgba(58,10,70,.55)}.wl-go:disabled{opacity:.55}'
+    + '.wl-note{font-size:11.5px;color:#8d7f90;margin-top:10px;line-height:1.5}'
+    + '.wl-day{font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#a89aa8;margin:12px 0 2px}'
+    + '.wl-day:first-child{margin-top:0}'
+    + '.wl-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f3ece4}.wl-row:last-child{border-bottom:0}'
+    + '.wl-ri{flex:none;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center}'
+    + '.wl-ri svg{width:17px;height:17px}'
+    + '.wl-rm{flex:1;min-width:0}.wl-rt{font-size:13px;font-weight:600;color:#24112b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.wl-rd{font-size:11px;color:#8d7f90;margin-top:2px}'
+    + '.wl-ra{font-family:"Cormorant Garamond",Georgia,serif;font-size:18px;font-weight:700;white-space:nowrap}.wl-empty{font-size:12.5px;color:#8d7f90;padding:6px 0 4px;text-align:center}'
+    + '.wl-err{margin:12px 16px 0;padding:10px 12px;border-radius:12px;background:#fcf1f3;border:1px solid #f3dde2;color:#a33a52;font-size:12.5px}';
+
+  var WL_ICON = {
+    wallet: '<path d="M4 7.5A2.5 2.5 0 0 1 6.5 5H18v3"/><rect x="4" y="8" width="16" height="11" rx="2.5"/><path d="M16 13.5h.01"/>',
+    up: '<path d="M12 19V5M6 11l6-6 6 6"/>',
+    down: '<path d="M5 8h14l-1 12H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>',
+    coin: '<circle cx="12" cy="12" r="8"/><path d="M12 8v8M9.5 10h3.5a1.5 1.5 0 0 1 0 3h-2a1.5 1.5 0 0 0 0 3H14"/>',
+    back: '<path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/>',
+    pen: '<path d="M4 20h4l10-10-4-4L4 16z"/>'
+  };
+  function icon(k) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (WL_ICON[k] || '') + '</svg>'; }
 
   function ensureCss() {
     if (document.getElementById('wl-css')) return;
@@ -84,7 +109,7 @@
     var d = state.data;
     var bal = d ? money(d.balance) : '—';
     el.innerHTML = '<div class="wl-strip" role="button" tabindex="0" aria-label="Open wallet" onclick="ccWalletOpen()">'
-      + '<div class="wl-ico" aria-hidden="true">◈</div>'
+      + '<div class="wl-ico" aria-hidden="true">' + icon('wallet') + '</div>'
       + '<div class="wl-mid"><div class="wl-lbl">NSDI Wallet</div><div class="wl-bal">' + bal + '</div></div>'
       + '<button class="wl-add" type="button" onclick="event.stopPropagation();ccWalletOpen(true)">+ Add money</button>'
       + '</div>';
@@ -201,27 +226,38 @@
   }
 
   var KIND = {
-    topup:  { i: '↑', bg: '#e3f4e8', c: '#15803d', t: 'Added with UPI' },
-    change: { i: '◎', bg: '#fdf3dc', c: '#8a6d12', t: 'Change saved at counter' },
-    spend:  { i: '↓', bg: '#f6ebf8', c: '#6e0977', t: 'Paid at counter' },
-    adjust: { i: '✎', bg: '#eef1f6', c: '#475569', t: 'Correction' },
-    refund: { i: '↺', bg: '#e3f4e8', c: '#15803d', t: 'Refund · cancelled order' }
+    topup:  { i: 'up',   bg: '#edf6ef', c: '#2f7a4b', t: 'Added with UPI' },
+    change: { i: 'coin', bg: '#f6eedf', c: '#8a6a33', t: 'Change saved at counter' },
+    spend:  { i: 'down', bg: '#f7eef6', c: '#6e0977', t: 'Paid at counter' },
+    adjust: { i: 'pen',  bg: '#f3ece4', c: '#4a3a50', t: 'Correction' },
+    refund: { i: 'back', bg: '#edf6ef', c: '#2f7a4b', t: 'Refund · cancelled order' }
   };
   function when(ts) {
     var d = new Date(ts); if (isNaN(d)) return '';
     return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) + ' · ' + d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
   }
 
+  var _wlLastDay = '';
+  function dayLabel(ts) {
+    var d = new Date(ts); if (isNaN(d)) return '';
+    var t = new Date(); t.setHours(0, 0, 0, 0);
+    var x = new Date(d); x.setHours(0, 0, 0, 0);
+    var diff = Math.round((t - x) / 864e5);
+    return diff === 0 ? 'Today' : diff === 1 ? 'Yesterday' : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  }
+  function timeOf(ts) { var d = new Date(ts); return isNaN(d) ? '' : d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }).toLowerCase(); }
   function sheetHtml() {
+    _wlLastDay = '';
     var d = state.data || { balance: 0, txns: [] };
     var txns = d.txns || [];
     var amt = state.amount;
     var noPhone = d.no_phone;
     return '<div class="wl-grab"></div>'
       + '<div class="wl-hd"><button class="wl-x" type="button" aria-label="Close" onclick="ccWalletClose()">✕</button>'
-      +   '<div class="wl-hl">NSDI Wallet · Balance</div>'
+      +   '<div class="wl-hl">' + icon('wallet') + 'NSDI Wallet</div>'
       +   '<div class="wl-hb">' + money(d.balance) + '</div>'
-      +   '<div class="wl-hs">' + (d.phone_last4 ? 'Linked to ••••' + esc(d.phone_last4) + ' · use it at the counter' : 'Use it at the counter on your next visit') + '</div></div>'
+      +   '<div class="wl-hf"><div class="wl-hs">Pay at NSDI Cafe checkout<br>or at the counter</div>'
+      +   (d.phone_last4 ? '<div class="wl-num">•••• ' + esc(d.phone_last4) + '</div>' : '') + '</div></div>'
       + (state.error ? '<div class="wl-err">' + esc(state.error) + '</div>' : '')
       + '<div class="wl-sec"><div class="wl-t">Add money</div>'
       + (noPhone
@@ -233,15 +269,17 @@
           +   (QUICK.indexOf(Number(amt)) === -1 && amt ? esc(amt) : '') + '" oninput="ccWalletAmt(this.value,true)"></label>'
           + '<button class="wl-go" type="button" onclick="ccWalletTopUp()"' + (state.busy ? ' disabled' : '') + '>'
           +   (state.confirming ? 'Confirming payment…' : state.busy ? 'Opening UPI…' : 'Add ' + money(amt || 0) + ' with UPI') + '</button>'
-          + '<div class="wl-note">GPay · PhonePe · Paytm · any UPI app. Change you don\'t take at the counter can be saved here too.</div>')
+          + '<div class="wl-note">Pay with any UPI app. Change you don\'t take at the counter can be saved to your wallet too.</div>')
       + '</div>'
-      + '<div class="wl-sec"><div class="wl-t">Recent activity</div>'
+      + '<div class="wl-sec"><div class="wl-t">Activity</div>'
       + (txns.length ? txns.map(function (t) {
           var k = KIND[t.kind] || KIND.adjust, a = Number(t.amount);
-          var label = (t.kind === 'adjust' || /^Online order/.test(t.note || '')) && t.note ? t.note : k.t;
-          return '<div class="wl-row"><div class="wl-ri" style="background:' + k.bg + ';color:' + k.c + '">' + k.i + '</div>'
-            + '<div class="wl-rm"><div class="wl-rt">' + esc(label) + '</div><div class="wl-rd">' + when(t.created_at) + '</div></div>'
-            + '<div class="wl-ra" style="color:' + (a >= 0 ? '#15803d' : '#2a1530') + '">' + (a >= 0 ? '+' : '−') + money(Math.abs(a)) + '</div></div>';
+          var label = t.note && t.kind !== 'topup' && t.kind !== 'change' ? t.note : k.t;
+          var day = dayLabel(t.created_at), head = day !== _wlLastDay ? '<div class="wl-day">' + day + '</div>' : '';
+          _wlLastDay = day;
+          return head + '<div class="wl-row"><div class="wl-ri" style="background:' + k.bg + ';color:' + k.c + '">' + icon(k.i) + '</div>'
+            + '<div class="wl-rm"><div class="wl-rt">' + esc(label) + '</div><div class="wl-rd">' + timeOf(t.created_at) + ' · balance ' + money(t.balance_after) + '</div></div>'
+            + '<div class="wl-ra" style="color:' + (a >= 0 ? '#2f7a4b' : '#24112b') + '">' + (a >= 0 ? '+' : '−') + money(Math.abs(a)) + '</div></div>';
         }).join('') : '<div class="wl-empty">Nothing yet. Add money or save your change at the counter.</div>')
       + '</div>';
   }
@@ -322,7 +360,7 @@
       ck.shown = key;
       ensureCss();
       box.innerHTML = !show ? '' : '<div class="ckw' + (ck.on ? ' on' : '') + '" role="switch" aria-checked="' + ck.on + '" tabindex="0" onclick="ccCheckoutWalletToggle()">'
-        + '<div class="wl-ico" aria-hidden="true">◈</div>'
+        + '<div class="wl-ico" aria-hidden="true">' + icon('wallet') + '</div>'
         + '<div style="flex:1;min-width:0"><div class="ckw-t">Use NSDI Wallet · ' + money(bal) + '</div>'
         + '<div class="ckw-s">' + (!ck.on ? 'Tap to pay with your wallet balance'
             : use >= total ? 'Whole order paid from wallet' : money(use) + ' from wallet · ' + money(total - use) + ' by UPI') + '</div></div>'
