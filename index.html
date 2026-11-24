@@ -1303,6 +1303,13 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 /* Home on the boutique look (tokens from cart-ui.css) */
 #page-home.cx{background:var(--cx-bg)}
 #page-home .greet{padding:16px 22px 12px}
+#page-home .greet-eb{font-size:10px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:var(--cx-gold);margin-bottom:6px;min-height:12px}
+.hq{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:2px 16px 18px}
+.hq-i{display:flex;flex-direction:column;align-items:center;gap:7px;padding:12px 4px 10px;border-radius:18px;border:1px solid var(--cx-line,#ece2d8);background:var(--cx-card,#fffdfa);
+  font:600 11px 'DM Sans',sans-serif;color:var(--cx-ink,#24112b);cursor:pointer;-webkit-tap-highlight-color:transparent;box-shadow:0 8px 20px -16px rgba(58,10,70,.35)}
+.hq-i:active{transform:scale(.97)}
+.hq-ic{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#3a0a46;background:radial-gradient(circle at 50% 35%,#fff,#f6eedf);box-shadow:0 0 0 1px #ecdcbf}
+.hq-ic svg{width:19px;height:19px}
 #page-home .greet-main{font-family:var(--cx-serif);font-size:27px;font-weight:600;line-height:1.1;color:var(--cx-plum);letter-spacing:-.01em}
 #page-home .greet-main em{color:var(--cx-gold);font-style:italic;font-weight:500}
 
@@ -1772,7 +1779,16 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
       </div>-->
 
       <div class="greet">
+        <div class="greet-eb" id="greet-eb"></div>
         <div class="greet-main" id="greet-main">What's your <em>craving</em> today?</div>
+      </div>
+
+      <!-- Quick links -->
+      <div class="hq" role="navigation" aria-label="Quick links">
+        <button type="button" class="hq-i" onclick="if(currentUser&&currentUser.db_id){loadAndShowOrders()}else{location.href='/auth.html'}"><span class="hq-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8l8-4 8 4v8l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8"/></svg></span><span>My orders</span></button>
+        <button type="button" class="hq-i" onclick="openLiveTracking()"><span class="hq-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h11v9H3z"/><path d="M14 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg></span><span>Track</span></button>
+        <button type="button" class="hq-i" onclick="showPage('accessories');if(typeof loadAccessories==='function')loadAccessories()"><span class="hq-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z"/><path d="M18.5 15l.8 1.7 1.7.8-1.7.8-.8 1.7-.8-1.7-1.7-.8 1.7-.8z"/></svg></span><span>Vibe Store</span></button>
+        <button type="button" class="hq-i" onclick="location.href='/store.html'"><span class="hq-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 9h11v5a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5z"/><path d="M16 10h1.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 3.5v2M11 3.5v2"/></svg></span><span>NSDI Cafe</span></button>
       </div>
 
       <!-- ═══ LOYALTY CARD — stamp progress ═══ -->
@@ -1799,11 +1815,13 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
         color:#2b0a35;background:linear-gradient(90deg,#f6dca6,#e0b871)}
       .lcp-ready svg{width:17px;height:17px;flex:none}
       .lcp-meta{position:relative;margin-top:8px;font-size:10px;letter-spacing:.3px;color:rgba(255,233,194,.55)}
-      .lc-card{position:relative;margin:0 16px 18px;border-radius:18px;overflow:hidden;background:linear-gradient(120deg,#2b0a35 0%,#6e0977 60%,#1a0820 100%);padding:12px 16px 13px;cursor:pointer;box-shadow:0 6px 16px rgba(61,5,67,.18)}
+      .lc-card{position:relative;margin:0 16px 18px;border-radius:20px;overflow:hidden;padding:14px 16px 13px;cursor:pointer;
+        background:radial-gradient(120% 140% at 100% 0%,rgba(197,111,208,.3),transparent 55%),linear-gradient(135deg,#1b0a22 0%,#3a0a46 55%,#120714 100%);
+        border:1px solid rgba(232,201,143,.35);box-shadow:0 0 0 1px rgba(176,141,87,.15) inset,0 12px 26px -12px rgba(58,10,70,.55)}
       .lc-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
       .lc-eyebrow-text{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.6);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .lc-code{color:#ffd6b0;letter-spacing:.5px}
-      .lc-pill{flex:none;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.14);color:#fff}
+      .lc-pill{flex:none;font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:rgba(232,201,143,.12);border:1px solid rgba(232,201,143,.35);color:#f0d3a0}
       .lc-pill.off{background:#c0392b}
       .lc-main{display:flex;align-items:baseline;gap:8px;margin:6px 0 9px;min-width:0}
       .lc-title{flex:none;font-family:'Cormorant Garamond',serif;font-size:20px;font-weight:700;color:#fff;line-height:1}
@@ -1822,6 +1840,7 @@ footer span{font-family:'Cinzel',serif;font-size:8px;letter-spacing:0.3em;color:
 
       <!-- NSDI Store cards (grocery-entry.js). Empty until the store is open for this person. -->
       <div id="ns-entry"></div>
+
 
       <!--
       <div class="loc">
@@ -3305,6 +3324,7 @@ function updateProfileUI() {
   el = document.getElementById('prof-name');   if(el) el.textContent = name;
   el = document.getElementById('prof-phone');  if(el) el.textContent = phone + city;
     // Update home greeting with customer name
+    setGreetEyebrow();
     var greetEl = document.getElementById('greet-main');
     var firstName = (currentUser.name || '').split(' ')[0];
     if (greetEl && firstName) {
@@ -3511,6 +3531,13 @@ function showPushHelp(state) {
   wrap.addEventListener('click', function (e) { if (e.target === wrap) wrap.remove(); });
   document.body.appendChild(wrap);
 }
+
+function setGreetEyebrow() {
+  var el = document.getElementById('greet-eb'); if (!el) return;
+  var h = new Date().getHours();
+  el.textContent = h >= 5 && h < 12 ? 'Good morning' : h >= 12 && h < 17 ? 'Good afternoon' : h >= 17 && h < 22 ? 'Good evening' : 'Late-night cravings';
+}
+setGreetEyebrow();
 
 // ── LOYALTY CARD (Home) ──
 // Reads the signed-in customer's own card via cc_loyalty_my_card(),
