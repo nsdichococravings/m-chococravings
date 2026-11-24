@@ -213,8 +213,9 @@ function lcMemberCard(m) {
     + '<div style="display:flex;justify-content:space-between;margin-top:20px;font-size:12px">'
     + '<span style="font-size:20px;font-weight:700;letter-spacing:1px">' + lcEsc(m.card_code) + '</span>'
     + '<span>Card ' + m.cycle + '</span></div>'
-    + '<div style="font-size:11px;color:#dabc84;margin-top:6px">Total since Card 1: ' + totalDays + ' / 100 days</div></div>'
+    + '<div style="font-size:11px;color:#dabc84;margin-top:6px">' + (totalDays >= 100 ? '★ Premium · 100+ days' : 'Total since Card 1: ' + totalDays + ' / 100 days') + '</div></div>'
     + lcProfileFields(m)
+    + (totalDays >= 100 ? lcPremiumPanel(m) : '')
 
     + '<div style="margin:18px 0"><div style="display:flex;justify-content:space-between;align-items:center">'
     + '<h3 style="font-size:17px;margin:0">Visit count</h3><strong>' + m.stamp_count + ' / ' + cycleLen + '</strong></div>'
@@ -271,6 +272,69 @@ function lcMemberCard(m) {
     + '<button onclick="lcDeleteMember()" style="cursor:pointer;border:1px solid #f0d0d0;background:white;color:#a02929;'
     +   'border-radius:10px;padding:10px 14px;font:inherit;margin-top:10px;width:100%">🗑️ Permanently delete this card (super admin only)</button>';
 }
+
+// Premium (100+ days): a free coffee every 25 visits.
+function lcPremiumPanel(m) {
+  var n = m.premium_count || 0, ready = m.premium_ready || 0;
+  return '<div style="margin:18px 0;border:1px solid #e8c98f;border-radius:16px;padding:16px;background:linear-gradient(165deg,#fff8ea,#fffdf8 70%)">'
+    + '<div style="display:flex;justify-content:space-between;align-items:baseline"><h3 style="font-size:16px;margin:0;color:#3a0a46">Premium visits</h3>'
+    + '<strong style="font:22px Georgia,serif;color:#8a6a33">' + n + ' / 25</strong></div>'
+    + '<progress max="25" value="' + n + '" style="width:100%;height:8px;accent-color:#b08d57;margin-top:8px"></progress>'
+    + '<p style="font-size:12px;color:#79677e;margin:8px 0 0">A free coffee every 25 visits; the count goes back to 0 after each one. '
+    + (m.premium_given ? m.premium_given + ' given so far.' : '') + '</p>'
+    + (ready > 0
+      ? '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:12px;padding:10px 12px;border-radius:12px;background:#3a0a46;color:#ffe9c2">'
+        + '<span>☕ ' + (ready === 1 ? '1 free coffee waiting' : ready + ' free coffees waiting') + '</span>'
+        + '<button onclick="lcPremiumGive()" style="cursor:pointer;border:0;border-radius:999px;padding:9px 14px;background:#e8c98f;color:#2b0a35;font:600 13px inherit">Mark given</button></div>'
+      : '')
+    + '<details style="margin-top:10px"><summary style="cursor:pointer;font-size:12px;color:#79677e">Correct premium visits</summary>'
+    + '<div style="display:flex;gap:8px;margin-top:8px"><input id="lc-prem-input" type="number" min="0" max="24" value="' + n + '" style="width:80px;padding:10px;border:1px solid #ddcce2;border-radius:9px;font:inherit">'
+    + '<button onclick="lcPremiumSet()" style="cursor:pointer;background:#790c88;color:#fff;border:0;border-radius:10px;padding:10px 14px;font:inherit">Save</button></div></details>'
+    + '</div>';
+}
+function lcStaffName() {
+  return (typeof _staffSession !== 'undefined' && _staffSession && _staffSession.name) ? _staffSession.name : ((typeof isAdmin !== 'undefined' && isAdmin) ? 'Admin' : null);
+}
+async function lcPremiumCall(action, payload) {
+  var res = await window.db.rpc('cc_loyalty_premium', { p_action: action, p_payload: payload });
+  if (res.error) throw new Error(/schema cache|does not exist/i.test(res.error.message) ? 'Premium cards are not installed yet. Run migrations/20261126_loyalty_premium.sql.' : res.error.message);
+  return res.data;
+}
+async function lcPremiumGive() {
+  if (!confirm('Give ' + _lcMember.name + ' their free coffee now?')) return;
+  lcBusy(true);
+  try { _lcMember = await lcPremiumCall('give_coffee', { member_id: _lcMember.id, staff_name: lcStaffName() }); lcMsg(''); lcRenderResults(); showStoreToast('☕ Free coffee given'); }
+  catch (e) { lcMsg(e.message); } finally { lcBusy(false); }
+}
+async function lcPremiumSet() {
+  var v = parseInt(document.getElementById('lc-prem-input').value, 10);
+  if (isNaN(v) || v < 0 || v > 24) { lcMsg('Premium visits must be from 0 to 24'); return; }
+  lcBusy(true);
+  try { _lcMember = await lcPremiumCall('set_count', { member_id: _lcMember.id, count: v, staff_name: lcStaffName() }); lcMsg(''); lcRenderResults(); showStoreToast('Premium visits updated'); }
+  catch (e) { lcMsg(e.message); } finally { lcBusy(false); }
+}
+// Kitchen ticket: mark one coffee in this order free and use up the reward.
+async function lcApplyPremiumCoffee(orderId, memberId) {
+  try {
+    var res = await db.from('store_orders').select('items,total').eq('id', orderId).single();
+    if (res.error) throw res.error;
+    var items = Array.isArray(res.data.items) ? res.data.items : JSON.parse(res.data.items || '[]');
+    var coffeeNames = {};
+    try { ((MENU.Coffee && MENU.Coffee.items) || []).forEach(function (i) { coffeeNames[i.name] = true; }); } catch (e) {}
+    var idx = items.findIndex(function (i) { return !i.complimentary && (coffeeNames[i.name] || /coffee|latte|mocha|cappuccino|espresso|americano/i.test(i.name)); });
+    if (idx === -1) { showStoreToast('Add a coffee to this order first, then apply the free coffee.'); return; }
+    var name = items[idx].name;
+    if (items[idx].qty > 1) { items[idx].qty -= 1; items.splice(idx + 1, 0, { name: name, price: items[idx].price, qty: 1, complimentary: true }); }
+    else items[idx].complimentary = true;
+    var newTotal = items.reduce(function (s, i) { return s + (i.complimentary ? 0 : i.price * i.qty); }, 0);
+    await lcPremiumCall('give_coffee', { member_id: memberId, staff_name: lcStaffName() });
+    var upd = await db.from('store_orders').update({ items: JSON.stringify(items), total: newTotal }).eq('id', orderId);
+    if (upd.error) throw upd.error;
+    showStoreToast('☕ ' + name + ' is free — premium reward used');
+    if (typeof kitchenManualRefresh === 'function') kitchenManualRefresh();
+  } catch (e) { showStoreToast('Error: ' + e.message); }
+}
+window.lcApplyPremiumCoffee = lcApplyPremiumCoffee;
 
 async function lcSetStamp() {
   var input = document.getElementById('lc-stamp-input');
@@ -802,7 +866,7 @@ async function lcxReset(i) {
 // unlocked once the server confirms the signed-in person is one.
 var _lcxTool = {
   icon: '🏁', iconBg: 'rgba(121,12,136,0.12)',
-  title: 'Completed Loyalty Cards', subtitle: '100 days: auto-hidden; show or reset',
+  title: 'Completed Loyalty Cards', subtitle: '100+ days (Premium): hide, show or reset',
   superAdminOnly: true, onClick: lcxOpen
 };
 function lcxUnlockWhenSuper() {
