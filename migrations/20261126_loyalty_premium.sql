@@ -22,14 +22,17 @@
 -- Cards hidden only because they reached 100 are shown again; a super
 -- admin can still hide one from Command Center → Completed Loyalty Cards.
 --
--- Run AFTER 20261107_loyalty_auto_hide.sql. Safe to run more than once.
+-- Run AFTER 20261106_loyalty_completed_controls.sql. Safe to run more than once.
 begin;
 do $$ begin
  if not exists(select 1 from information_schema.columns where table_schema='public' and table_name='cc_loyalty_members' and column_name='home_hidden') then
   raise exception 'Run migrations/20261106_loyalty_completed_controls.sql first.';
  end if;
- if not exists(select 1 from pg_proc where proname='cc_loyalty_ensure_member') then
-  raise exception 'Run migrations/20260938_loyalty_auto_stamp_fix.sql first.';
+ if not exists(select 1 from information_schema.tables where table_schema='public' and table_name='cc_loyalty_stamp_log') then
+  raise exception 'cc_loyalty_stamp_log not found -- run the Loyalty Cards migrations first.';
+ end if;
+ if not exists(select 1 from pg_proc where proname='cc_loyalty_role') then
+  raise exception 'cc_loyalty_role() not found -- run the Loyalty Cards migrations first.';
  end if;
 end $$;
 
@@ -64,14 +67,17 @@ create trigger cc_loyalty_premium_sync before update on public.cc_loyalty_member
 -- Order collected → stamp (unchanged), or a premium stamp once past 100 days.
 create or replace function public.cc_loyalty_order_trigger() returns trigger
 language plpgsql security definer set search_path=pg_catalog,public as $$
-declare v_member public.cc_loyalty_members; v_day date; v_phone text; v_phones jsonb; v_digits text; v_role text=public.cc_loyalty_role(); v_cycle_len integer;
+declare v_member public.cc_loyalty_members; v_day date; v_phone text; v_phones jsonb; v_digits text; v_cycle_len integer;
 begin
- v_phones=coalesce(new.customer_group_phones,'[]'::jsonb);
+ v_phones=coalesce(to_jsonb(new)->'customer_group_phones','[]'::jsonb);
+ if jsonb_typeof(v_phones)<>'array' then v_phones='[]'::jsonb; end if;
  if new.customer_phone is not null then v_phones=v_phones||jsonb_build_array(new.customer_phone); end if;
 
- if v_role in ('staff','admin') then
+ -- Cards that don't exist yet are made the same way as before this update.
+ if exists(select 1 from pg_proc where proname='cc_loyalty_ensure_member')
+    and coalesce(public.cc_loyalty_role(),'') in ('staff','admin') then
   for v_phone in select value from jsonb_array_elements_text(v_phones) loop
-   perform public.cc_loyalty_ensure_member(v_phone);
+   execute 'select public.cc_loyalty_ensure_member($1)' using v_phone;
   end loop;
  end if;
 

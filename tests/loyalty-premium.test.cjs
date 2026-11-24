@@ -16,8 +16,8 @@ create table cc_loyalty_members(id uuid primary key default gen_random_uuid(),na
  issued_by uuid,updated_at timestamptz default now());
 alter table cc_loyalty_members add column completed_days_dummy int;
 create table cc_loyalty_stamp_log(id serial,member_id uuid,from_count int,to_count int,staff_name text,actor uuid,created_at timestamptz default now());
-create table store_orders(id serial primary key,customer_phone text,customer_group_phones jsonb,status text,payment_status text);`);
-for(const f of ['20260938_loyalty_auto_stamp_fix','20261106_loyalty_completed_controls','20261107_loyalty_auto_hide'])
+create table store_orders(id serial primary key,customer_phone text,status text,payment_status text);`);
+for(const f of ['20261106_loyalty_completed_controls','20261107_loyalty_auto_hide'])
  await db.exec(fs.readFileSync('migrations/'+f+'.sql','utf8'));
 await db.exec(`insert into cc_loyalty_members(name,phone,card_code,cycle,stamp_count,completed_days,schedule) values
  ('Asha','+919876543210','NSDI-CARD-3210',5,9,90,'[{"day":10,"item":"Brownie"}]'),('Bala','+919000000001','NSDI-CARD-0001',1,3,0,'[{"day":10,"item":"Brownie"}]')`);
