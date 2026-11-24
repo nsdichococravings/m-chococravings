@@ -329,6 +329,32 @@ button{font-family:inherit;cursor:pointer;border:none;background:none}
 .kt-ic{flex:none;width:28px;height:28px;border-radius:9px;border:1px solid rgba(217,184,122,.28);background:rgba(217,184,122,.08);color:#e8c98f;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
 .kt-ic.ok{color:#9fdcb7;border-color:rgba(127,209,160,.35);background:rgba(127,209,160,.1)}
 .kt-price{flex:none;min-width:44px;text-align:right;font-size:12.5px;font-weight:600;color:rgba(245,234,220,.75);font-variant-numeric:tabular-nums}
+.kl{margin-top:12px;padding:10px 12px 4px;border-radius:16px;background:rgba(255,255,255,.035);border:1px solid rgba(232,201,143,.14)}
+.kl-h{font-size:9.5px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;color:rgba(232,201,143,.75);margin-bottom:6px}
+.kl-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:8px 0;border-top:1px solid rgba(232,201,143,.1)}
+.kl-h+.kl-row{border-top:0}
+.kl-row.off{opacity:.6}
+.kl-chip{flex:none;width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',Georgia,serif;font-size:15px;font-weight:700;
+  color:#f3dcf6;background:linear-gradient(140deg,#5a1a68,#2b0a35);box-shadow:0 0 0 1px rgba(214,150,222,.35) inset}
+.kl-chip.gold{color:#2b0a35;background:linear-gradient(140deg,#f6dca6,#c99a52);box-shadow:0 0 0 1px rgba(255,233,194,.6) inset}
+.kl-chip.blank{width:22px;height:22px;border-radius:7px;background:transparent;box-shadow:0 0 0 1px dashed rgba(245,234,220,.25) inset;border:1px dashed rgba(245,234,220,.25)}
+.kl-mid{flex:1 1 120px;min-width:0}
+.kl-name{display:flex;align-items:baseline;gap:7px;font-size:13px;font-weight:700;color:#f6ead9;white-space:nowrap;overflow:hidden}
+.kl-name em{font-style:normal;color:#f0c98a}
+.kl-name small{font-size:9.5px;font-weight:600;letter-spacing:.12em;color:rgba(230,181,236,.7);overflow:hidden;text-overflow:ellipsis}
+.kl-sub{font-size:10.5px;color:rgba(245,234,220,.6);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kl-bar{height:3px;border-radius:2px;background:rgba(255,255,255,.08);margin-top:6px;overflow:hidden}
+.kl-bar i{display:block;height:100%;border-radius:2px;background:linear-gradient(90deg,#c56fd0,#e6b5ec)}
+.kl-row.prem .kl-bar i{background:linear-gradient(90deg,#c99a52,#f6dca6)}
+.kl-acts{flex:0 1 auto;margin-left:auto;display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.kl-give{min-height:32px;padding:0 12px;border-radius:999px;border:0;background:#e6b5ec;color:#2b0a35;font:700 11px 'DM Sans',sans-serif;cursor:pointer;white-space:nowrap}
+.kl-give.gold{background:linear-gradient(90deg,#f6dca6,#e0b871)}
+.kl-edit{min-width:32px;height:32px;padding:0 10px;border-radius:999px;border:1px solid rgba(214,150,222,.35);background:transparent;color:#f3dcf6;font:600 10.5px 'DM Sans',sans-serif;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.kl-edit svg{width:14px!important;height:14px!important}
+.kl-tag{font-size:9.5px;font-weight:700;padding:3px 8px;border-radius:999px;color:#f0c98a;background:rgba(232,180,110,.12)}
+.kl-tag.off{color:#f4a3b3;background:rgba(244,163,179,.12)}
+.kl-row.none{padding:6px 0}
+.kl-none{font-size:11px;color:rgba(245,234,220,.5)}
 .kt-card{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-top:12px;padding:10px 14px;border-radius:14px;background:rgba(197,111,208,.1);border:1px solid rgba(214,150,222,.28)}
 .kt-card.none{display:block;background:transparent;border-style:dashed;color:rgba(245,234,220,.55);font-size:11.5px}
 .kt-card-code{font-size:10px;font-weight:700;letter-spacing:.18em;color:#e6b5ec}
@@ -4036,7 +4062,7 @@ async function toggleStoreOpenStatus() {
 <script src="menu-art.js?v=20260956"></script>
 <script src="menu-search-patch.js?v=20261106-boutique"></script>
 <script src="remember-phone-patch.js?v=20260952-table"></script>
-<script src="checkadminbadge-override.js?v=20261126-premium"></script>
+<script src="checkadminbadge-override.js?v=20261127-kl"></script>
 <script src="production-purchases-patch.js?v=20261018"></script>
 <link rel="stylesheet" href="production-dashboard.css?v=20260970-count">
 <script src="production-dashboard.js?v=20261113-collections"></script>

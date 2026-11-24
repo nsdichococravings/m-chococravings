@@ -751,6 +751,47 @@ var K_ICON = {
 };
 var K_STATUS = { pending: 'New', preparing: 'Preparing', ready: 'Ready', delivered: 'Served' };
 // A function (not a var) so it works even when called before this line runs.
+// One loyalty card on a Kitchen ticket: chip, name, progress, the one
+// reward to give now, and a small edit button.
+function kLoyaltyRow(o, phone, loyaltyMap) {
+  var m = loyaltyMap[lcLast10(phone)];
+  if (!m) {
+    return '<div class="kl-row none"><span class="kl-chip blank" aria-hidden="true"></span><span class="kl-none">'
+      + '••' + String(lcLast10(phone) || '').slice(-4) + ' · ' + (loyaltyMap._pending ? 'checking card…' : loyaltyMap._unavailable ? 'lookup unavailable, refresh to retry' : 'no loyalty card') + '</span></div>';
+  }
+  var premium = (m.completed_days || 0) + (m.stamp_count || 0) >= 100;
+  var name = m.name_pending ? 'Name needed' : (m.name || 'Customer');
+  var esc = function (v) { return lcEsc(v); };
+  var progress, label, acts = '';
+  if (premium) {
+    var n = m.premium_count || 0;
+    label = 'Premium · ' + n + '/25';
+    progress = n / 25;
+    if (!m.suspended && (m.premium_ready || 0) > 0 && typeof lcApplyPremiumCoffee === 'function') {
+      acts += '<button type="button" class="kl-give gold" onclick="lcApplyPremiumCoffee(\'' + o.id + '\',\'' + m.id + '\')">Free coffee' + (m.premium_ready > 1 ? ' ×' + m.premium_ready : '') + '</button>';
+    }
+  } else {
+    var len = (m.schedule || []).length ? Math.max.apply(null, m.schedule.map(function (s) { return s.day; })) : 100;
+    label = 'Card ' + (m.cycle || 1) + ' · ' + (m.stamp_count || 0) + '/' + len;
+    progress = Math.min(1, (m.stamp_count || 0) / len);
+    if (!m.suspended) lcRewardsFor(m).filter(function (r) { return r.status === 'available'; }).forEach(function (r) {
+      acts += '<button type="button" class="kl-give" onclick="lcApplyRewardToOrder(\'' + o.id + '\',\'' + m.id + '\',' + r.day + ',\'' + String(r.item).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;') + '\')">Give ' + esc(r.item) + '</button>';
+    });
+    if (!(m.schedule || []).length) acts += '<span class="kl-tag">Rewards not set up</span>';
+  }
+  if (m.suspended) acts += '<span class="kl-tag off">Suspended</span>';
+  var initials = String(m.name_pending ? '?' : name).trim().split(/\s+/).map(function (w) { return w.charAt(0); }).slice(0, 2).join('').toUpperCase();
+  return '<div class="kl-row' + (premium ? ' prem' : '') + (m.suspended ? ' off' : '') + '">'
+    + '<span class="kl-chip' + (premium ? ' gold' : '') + '" aria-hidden="true">' + esc(initials || '·') + '</span>'
+    + '<div class="kl-mid" title="' + esc(m.card_code || '') + '"><div class="kl-name">' + (m.name_pending ? '<em>Name needed</em>' : esc(name)) + '</div>'
+    + '<div class="kl-sub">' + esc(label) + ' · ••' + esc(String(lcLast10(m.phone) || '').slice(-4)) + '</div>'
+    + '<div class="kl-bar"><i style="width:' + Math.round(progress * 100) + '%"></i></div></div>'
+    + '<div class="kl-acts">' + acts
+    + '<button type="button" class="kl-edit" aria-label="' + (m.name_pending ? 'Add name' : 'Edit card') + '" title="' + (m.name_pending ? 'Add name' : 'Edit card') + '" onclick="lcOpenPhone(&quot;' + esc(m.phone) + '&quot;)">'
+    + (m.name_pending ? 'Add name' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>')
+    + '</button></div></div>';
+}
+
 function kHdrIcon(name) {
   var d = {
     tables: '<rect x="3" y="8" width="18" height="4" rx="1.5"/><path d="M6 12v7M18 12v7M9 5h6"/>',
@@ -881,26 +922,10 @@ function renderKitchen(orders, loyaltyMap) {
     // functions are all defined (same script, same load), so a single
     // guard here covers lcRewardsFor/lcEsc/lcApplyRewardToOrder below too.
     var loyaltyBox = '';
-    if (typeof lcOrderPhones === 'function') lcOrderPhones(o).forEach(function(phone) {
-      var loyaltyMember=loyaltyMap[lcLast10(phone)];
-      if (!loyaltyMember) {
-        loyaltyBox += '<div class="kt-card none">NSDI card ' + lcMaskPhone(phone) + (loyaltyMap._pending ? ' · Checking card…' : loyaltyMap._unavailable ? ' · Lookup unavailable; refresh to retry' : ' · No card found') + '</div>';
-        return;
-      }
-      var lcPremium = (loyaltyMember.completed_days || 0) + (loyaltyMember.stamp_count || 0) >= 100;
-      var lcAvailable = lcPremium ? [] : lcRewardsFor(loyaltyMember).filter(function (r) { return !loyaltyMember.suspended && r.status === 'available'; });
-      loyaltyBox += '<div class="kt-card">'
-        + '<div><div class="kt-card-code">' + lcEsc(loyaltyMember.card_code) + '</div>'
-        + '<div class="kt-card-s">' + lcEsc(loyaltyMember.name_pending ? 'Name needed' : loyaltyMember.name) + ' · ' + (lcPremium ? '★ Premium ' + (loyaltyMember.premium_count || 0) + '/25' : 'Day ' + loyaltyMember.stamp_count + '/100') + ' · ' + lcMaskPhone(loyaltyMember.phone) + (loyaltyMember.suspended ? ' · Suspended' : '') + '</div></div>'
-        + '<div class="kt-card-acts"><button class="kt-mini" onclick="lcOpenPhone(&quot;' + lcEsc(loyaltyMember.phone) + '&quot;)">' + (loyaltyMember.name_pending ? 'Add name' : 'Edit name / card') + '</button>'
-        + (lcPremium && !loyaltyMember.suspended && (loyaltyMember.premium_ready || 0) > 0 && typeof lcApplyPremiumCoffee === 'function'
-            ? '<button class="kt-mini on" onclick="lcApplyPremiumCoffee(\'' + o.id + '\',\'' + loyaltyMember.id + '\')">☕ Free coffee' + (loyaltyMember.premium_ready > 1 ? ' ×' + loyaltyMember.premium_ready : '') + '</button>' : '')
-        + (!lcPremium && !(loyaltyMember.schedule || []).length ? '<small class="kt-tag gold">Rewards pending admin setup</small>' : '') + lcAvailable.map(function (r) {
-            return '<button class="kt-mini on" onclick="lcApplyRewardToOrder(\'' + o.id + '\',\'' + loyaltyMember.id + '\',' + r.day + ',\'' + String(r.item).replace(/'/g, "\\'") + '\')">'
-              + '🎁 ' + lcEsc(r.item) + '</button>';
-          }).join('') + '</div>'
-        + '</div>';
-    });
+    if (typeof lcOrderPhones === 'function') {
+      var lcRows = lcOrderPhones(o).map(function (phone) { return kLoyaltyRow(o, phone, loyaltyMap); }).join('');
+      if (lcRows) loyaltyBox = '<div class="kl"><div class="kl-h">Loyalty</div>' + lcRows + '</div>';
+    }
 
     var collectedSoFar = o.table_code ? tsCollectedAmount(itemsArr) : 0;
     var remainingBill = Math.max(0, Math.round(((o.total || 0) - collectedSoFar) * 100) / 100);
