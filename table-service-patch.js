@@ -887,12 +887,15 @@ function renderKitchen(orders, loyaltyMap) {
         loyaltyBox += '<div class="kt-card none">NSDI card ' + lcMaskPhone(phone) + (loyaltyMap._pending ? ' · Checking card…' : loyaltyMap._unavailable ? ' · Lookup unavailable; refresh to retry' : ' · No card found') + '</div>';
         return;
       }
-      var lcAvailable = lcRewardsFor(loyaltyMember).filter(function (r) { return !loyaltyMember.suspended && r.status === 'available'; });
+      var lcPremium = (loyaltyMember.completed_days || 0) + (loyaltyMember.stamp_count || 0) >= 100;
+      var lcAvailable = lcPremium ? [] : lcRewardsFor(loyaltyMember).filter(function (r) { return !loyaltyMember.suspended && r.status === 'available'; });
       loyaltyBox += '<div class="kt-card">'
         + '<div><div class="kt-card-code">' + lcEsc(loyaltyMember.card_code) + '</div>'
-        + '<div class="kt-card-s">' + lcEsc(loyaltyMember.name_pending ? 'Name needed' : loyaltyMember.name) + ' · Day ' + loyaltyMember.stamp_count + '/100 · ' + lcMaskPhone(loyaltyMember.phone) + (loyaltyMember.suspended ? ' · Suspended' : '') + '</div></div>'
+        + '<div class="kt-card-s">' + lcEsc(loyaltyMember.name_pending ? 'Name needed' : loyaltyMember.name) + ' · ' + (lcPremium ? '★ Premium ' + (loyaltyMember.premium_count || 0) + '/25' : 'Day ' + loyaltyMember.stamp_count + '/100') + ' · ' + lcMaskPhone(loyaltyMember.phone) + (loyaltyMember.suspended ? ' · Suspended' : '') + '</div></div>'
         + '<div class="kt-card-acts"><button class="kt-mini" onclick="lcOpenPhone(&quot;' + lcEsc(loyaltyMember.phone) + '&quot;)">' + (loyaltyMember.name_pending ? 'Add name' : 'Edit name / card') + '</button>'
-        + (!(loyaltyMember.schedule || []).length ? '<small class="kt-tag gold">Rewards pending admin setup</small>' : '') + lcAvailable.map(function (r) {
+        + (lcPremium && !loyaltyMember.suspended && (loyaltyMember.premium_ready || 0) > 0 && typeof lcApplyPremiumCoffee === 'function'
+            ? '<button class="kt-mini on" onclick="lcApplyPremiumCoffee(\'' + o.id + '\',\'' + loyaltyMember.id + '\')">☕ Free coffee' + (loyaltyMember.premium_ready > 1 ? ' ×' + loyaltyMember.premium_ready : '') + '</button>' : '')
+        + (!lcPremium && !(loyaltyMember.schedule || []).length ? '<small class="kt-tag gold">Rewards pending admin setup</small>' : '') + lcAvailable.map(function (r) {
             return '<button class="kt-mini on" onclick="lcApplyRewardToOrder(\'' + o.id + '\',\'' + loyaltyMember.id + '\',' + r.day + ',\'' + String(r.item).replace(/'/g, "\\'") + '\')">'
               + '🎁 ' + lcEsc(r.item) + '</button>';
           }).join('') + '</div>'
